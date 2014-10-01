@@ -9,5 +9,3 @@ Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran
 
 ## Installation
 To install `COMMIT`, please refer to the [installation guide](https://github.com/daducci/COMMIT/wiki/Install).
-
-**NB**: I am preparing the code for the release, please be patient...
