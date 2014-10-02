@@ -12,7 +12,7 @@ function KERNELS_PrecomputeRotationMatrices( lmax )
 	
 	fprintf( '\n-> Precomputing rotation matrices for l_max=%d:\n', lmax );
 
-	filename = fullfile(COMMIT_path,'code','kernels',sprintf('AUX_matrices__lmax=%d.mat',lmax) );
+	filename = fullfile(COMMIT_path,'kernels',sprintf('AUX_matrices__lmax=%d.mat',lmax) );
 	if exist( filename, 'file' )
 		fprintf( '   [ already computed ]\n' );
 		return

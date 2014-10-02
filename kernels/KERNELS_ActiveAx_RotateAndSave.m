@@ -24,7 +24,7 @@ function KERNELS_ActiveAx_RotateAndSave( CONFIG, lmax )
 	end
 	
 	% check if auxiliary matrices have been precomputed
-	auxFilename = fullfile(COMMIT_path,'code','kernels',sprintf('AUX_matrices__lmax=%d.mat',lmax) );
+	auxFilename = fullfile(COMMIT_path,'kernels',sprintf('AUX_matrices__lmax=%d.mat',lmax) );
 	if ~exist( auxFilename, 'file' )
 		error( '[KERNELS_ActiveAx_RotateAndSave] Auxiliary matrices "%s" not found', auxFilename )
 	else
