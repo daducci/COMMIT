@@ -11,12 +11,13 @@ global COMMIT_path DATA_path CAMINO_path
 global KERNELS DICTIONARY THREADS
 
 
-% Path definition
-% ===============
+% Path definition: adapt these to your needs
+% ==========================================
 COMMIT_path = '/Users/Ale/Documents/LTS5/Projects/Tractography/COMMIT/code';
 DATA_path   = '/Users/Ale/Documents/LTS5/Projects/Tractography/COMMIT/data';
 CAMINO_path = '/Users/Ale/Downloads/camino/bin/';
 
+% DO NOT MODIFY THE FOLLOWING STATEMENTS
 addpath( fullfile(COMMIT_path,'kernels') )
 addpath( fullfile(COMMIT_path,'dictionary') )
 addpath( fullfile(COMMIT_path,'optimization') )
