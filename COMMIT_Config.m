@@ -1,6 +1,5 @@
 %
-%
-%
+% Set the default parameters for a specific experiment (protocol/subject)
 %
 % Parameters
 % ----------
