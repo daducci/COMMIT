@@ -146,8 +146,9 @@ title( sprintf('LiFE : %.1f%% +/- %.1f%%', mean(yL), std(yL) ))
 
 ![NRMSE for LiFE](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig1.png)
 
+The average fitting error is, in this case, pretty high, i.e. **68.6% ± 18.0%**. Also, we see that *LiFE* shows the highest errors in regions with crossing fibers and close to gray matter, as expected.
 
-Plot the fitting error with *COMMIT*:
+We plot now the fitting error with *COMMIT*:
 
 ```matlab
 figure(2), imagesc( rot90(squeeze(100 * niiNMSE_C.img(:,70,:))), [0 100] )
@@ -158,6 +159,8 @@ title( sprintf('COMMIT : %.1f%% +/- %.1f%%', mean(yC), std(yC) ))
 
 ![NRMSE for COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig2.png)
 
+The average fitting error is drastically reduced with *COMMIT*, i.e. (**19.3% ± 4.6%**). Also, a more homogeneous distribution of the errors can be observed, notably in crossing regions and in proximity with gray matter.
+ 
 Compare the *fitting error histograms* of the two models:
 
 ```matlab
