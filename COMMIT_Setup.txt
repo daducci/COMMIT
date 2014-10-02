@@ -1,0 +1,25 @@
+%
+% Initialization for COMMIT
+%
+% NB: DO NOT MODIFY THIS FILE!
+%     Make a copy of it, adapt to your paths and rename it to "COMMIT_Setup.m"
+%
+
+% Global variables
+% ================
+global COMMIT_path DATA_path CAMINO_path
+global KERNELS DICTIONARY THREADS
+
+
+% Path definition
+% ===============
+COMMIT_path = '/Users/Ale/Documents/LTS5/Projects/Tractography/COMMIT/code';
+DATA_path   = '/Users/Ale/Documents/LTS5/Projects/Tractography/COMMIT/data';
+CAMINO_path = '/Users/Ale/Downloads/camino/bin/';
+
+addpath( fullfile(COMMIT_path,'kernels') )
+addpath( fullfile(COMMIT_path,'dictionary') )
+addpath( fullfile(COMMIT_path,'optimization') )
+addpath( fullfile(COMMIT_path,'extern','NIFTI') )
+addpath( fullfile(COMMIT_path,'extern','sbb') )
+addpath( fullfile(COMMIT_path,'extern','spgl1') )

@@ -1,7 +1,7 @@
 %
-% 
-% 
-% 
+%
+%
+%
 % Parameters
 % ----------
 % protocol : string
@@ -16,14 +16,14 @@
 %
 function [ CONFIG ] = COMMIT_Config( protocol, subject )
 
-global COMMIT_path 
+global COMMIT_path DATA_path
 
 CONFIG = [];
 
 CONFIG.protocol			= protocol;
 CONFIG.subject			= subject;
 
-CONFIG.DATA_path		= fullfile(COMMIT_path,'data',CONFIG.protocol,CONFIG.subject);
+CONFIG.DATA_path		= fullfile(DATA_path,CONFIG.protocol,CONFIG.subject);
 CONFIG.dwiFilename		= fullfile(CONFIG.DATA_path,'DWI.nii');
 CONFIG.normalizeSignal	= true;
 CONFIG.doDemean			= false;
@@ -46,7 +46,7 @@ CONFIG.OPTIMIZATION = [];
 CONFIG.OPTIMIZATION.nTHREADS = 1;
 CONFIG.OPTIMIZATION.verbosity       = 3;
 CONFIG.OPTIMIZATION.optTol			= 1e-5;
-CONFIG.OPTIMIZATION.maxIter			= 50;
+CONFIG.OPTIMIZATION.maxIter			= 100;
 CONFIG.OPTIMIZATION.solver			= 'NNLS';
 
 CONFIG.OPTIMIZATION.SNR_estimated	= NaN;
