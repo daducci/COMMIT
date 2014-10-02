@@ -13,9 +13,9 @@ global KERNELS DICTIONARY THREADS
 
 % Path definition: adapt these to your needs
 % ==========================================
-COMMIT_path = '/Users/Ale/Documents/LTS5/Projects/Tractography/COMMIT/code';
-DATA_path   = '/Users/Ale/Documents/LTS5/Projects/Tractography/COMMIT/data';
-CAMINO_path = '/Users/Ale/Downloads/camino/bin/';
+COMMIT_path = 'absolute path to COMMIT code in your filesystem';
+DATA_path   = 'absolute path to your data folder';
+CAMINO_path = 'absolute path to the Camino installation';
 
 % DO NOT MODIFY THE FOLLOWING STATEMENTS
 addpath( fullfile(COMMIT_path,'kernels') )
