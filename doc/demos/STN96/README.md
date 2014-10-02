@@ -138,10 +138,10 @@ niiMASK   = load_untouch_nii( fullfile('scan1','Tracking','PROB','dictionary_mas
 Plot the fitting error with *LiFE*:
 
 ```matlab
-figure(1), imagesc( rot90(squeeze(niiNMSE_L.img(:,70,:))), [0 1] )
+figure(1), imagesc( rot90(squeeze(100 * niiNMSE_L.img(:,70,:))), [0 100] )
 axis ij image off, colorbar
-yL = niiNMSE_L.img( niiMASK.img>0 );
-title( sprintf('LiFE : %.2f +/- %.2f', mean(yL), std(yL) ))
+yL = 100 * niiNMSE_L.img( niiMASK.img>0 );
+title( sprintf('LiFE : %.1f%% +/- %.1f%%', mean(yL), std(yL) ))
 ```
 
 ![NRMSE for LiFE](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig1.png)
@@ -150,10 +150,10 @@ title( sprintf('LiFE : %.2f +/- %.2f', mean(yL), std(yL) ))
 Plot the fitting error with *COMMIT*:
 
 ```matlab
-figure(2), imagesc( rot90(squeeze(niiNMSE_C.img(:,70,:))), [0 1] )
+figure(2), imagesc( rot90(squeeze(100 * niiNMSE_C.img(:,70,:))), [0 100] )
 axis ij image off, colorbar
-yC = niiNMSE_C.img( niiMASK.img>0 );
-title( sprintf('COMMIT : %.2f +/- %.2f', mean(yC), std(yC) ))
+yC = 100 * niiNMSE_C.img( niiMASK.img>0 );
+title( sprintf('COMMIT : %.1f%% +/- %.1f%%', mean(yC), std(yC) ))
 ```
 
 ![NRMSE for COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig2.png)
@@ -163,14 +163,14 @@ Compare the *fitting error histograms* of the two models:
 ```matlab
 figure(3), set(gcf,'Color',[1 1 1]);
 cla, set(gca,'Color',[.97 .97 .97]); hold on
-x = linspace(0,1,100);
-yL = hist( niiNMSE_L.img(niiMASK.img>0), x );
-yC = hist( niiNMSE_C.img(niiMASK.img>0), x );
+x = linspace(0,100,100);
+yL = hist( 100 * niiNMSE_L.img(niiMASK.img>0), x );
+yC = hist( 100 * niiNMSE_C.img(niiMASK.img>0), x );
 plot( x, yL, '- ', 'LineWidth', 3, 'Color',[.8 0 0] )
 plot( x, yC, '- ', 'LineWidth', 3, 'Color',[0 .8 0] )
 grid on, box on
 legend( 'LiFE', 'COMMIT' )
-xlabel( 'NRMSE' ), ylabel('frequency')
+xlabel( 'NRMSE [%]' ), ylabel('frequency')
 title('LiFE vs COMMIT')
 ```
 
@@ -181,13 +181,14 @@ Compare *voxel-by-voxel* the fitting error:
 ```matlab
 figure(4), set(gcf,'Color',[1 1 1]);
 cla, set(gca,'Color',[.97 .97 .97]); hold on
-yL = niiNMSE_L.img( niiMASK.img>0 );
-yC = niiNMSE_C.img( niiMASK.img>0 );
+yL = 100 * niiNMSE_L.img( niiMASK.img>0 );
+yC = 100 * niiNMSE_C.img( niiMASK.img>0 );
 plot( yL, yC, 'bx' )
-plot( [0 1], [0 1], 'k--', 'LineWidth', 2 )
+plot( [0 100], [0 100], 'k--', 'LineWidth', 2 )
 grid on, box on
-axis([0 1 0 1])
-xlabel( 'LiFE' ), ylabel( 'COMMIT' )
+axis([0 100 0 100])
+xlabel( 'NMSE [%] with LiFE' ), ylabel( 'NMSE [%] with COMMIT' )
+title('LiFE vs COMMIT')
 ```
 
 ![NRMSE for COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig4.png)
