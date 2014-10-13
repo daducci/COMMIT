@@ -9,3 +9,7 @@ Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran
 
 ## Installation
 To install `COMMIT`, please refer to the [installation guide](https://github.com/daducci/COMMIT/wiki/Install).
+
+##Getting started
+
+Tutorials/demos are provided in the folder `doc/demos` [(here)](https://github.com/daducci/COMMIT/tree/master/doc/demos/STN96) to help you get started with the COMMIT framework.
