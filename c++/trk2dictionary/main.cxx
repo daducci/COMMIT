@@ -124,13 +124,13 @@ int main(int argc, char** argv)
 	/*          SETUP          */
 	/*=========================*/
     time_t tStart = time(0);
-	minFiberLen         = 5;
-	minFiberSegments    = 2;
+	minFiberLen         = 1;
+	minFiberSegments    = 1;
     nSectors            = 1;
-    radiusSigma         = 0.45;
+    radiusSigma         = 8;
     radii.push_back( 0 );
-    //radii.push_back( 0.25 );
-	//radii.push_back( 1 );
+    //radii.push_back( 4 );
+	//radii.push_back( 8 );
 
 
     printf("\n-> SETTINGS:\n");
@@ -281,13 +281,10 @@ int main(int argc, char** argv)
         fiberLen = 0;
 		if ( FiberSegments.size() >= minFiberSegments )
 		{
-		    // save on different files
-
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 fiberLen += it->second;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
-                it->second /= fiberLen;
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
                 fwrite( &(it->first.x),  1, 1, pDict_IC_vx );
                 fwrite( &(it->first.y),  1, 1, pDict_IC_vy );

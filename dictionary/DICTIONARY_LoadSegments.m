@@ -52,6 +52,14 @@ clear ox oy
 
 DICTIONARY.IC.len    = fread( pDict_IC_len,    [DICTIONARY.IC.n  1], '*float32' );	% length of the segment
 
+if ( CONFIG.kernels.doNormalize )
+	% all the columns will have same length
+	for s = 1:numel(DICTIONARY.IC.fiber)
+		f = DICTIONARY.IC.fiber(s) + 1;
+		DICTIONARY.IC.len(s) = DICTIONARY.IC.len(s) / DICTIONARY.IC.trkLen(f);
+	end
+end
+
 fclose(pDict_IC_trkLen);
 fclose(pDict_IC_f);
 fclose(pDict_IC_vx);
@@ -62,7 +70,7 @@ fclose(pDict_IC_oy);
 fclose(pDict_IC_len);
 clear pDict_IC_*
 
-fprintf( '\t[ %d fibers and %d segments]\n', DICTIONARY.IC.nF, DICTIONARY.IC.n );
+fprintf( '\t[ %d fibers and %d segments ]\n', DICTIONARY.IC.nF, DICTIONARY.IC.n );
 
 
 % extra-axonal compartments
@@ -99,7 +107,7 @@ fclose(pDict_EC_ox);
 fclose(pDict_EC_oy);
 clear pDict_EC_*
 
-fprintf( '\t[ %d segments]\n', DICTIONARY.EC.nE );
+fprintf( '\t[ %d segments ]\n', DICTIONARY.EC.nE );
 
 
 % isotropic compartment
@@ -111,7 +119,7 @@ DICTIONARY.nV = nnz( DICTIONARY.MASK );
 DICTIONARY.ISO.v = uint32(vx-1) + DICTIONARY.dim(1) * ( uint32(vy-1) + DICTIONARY.dim(2) * uint32(vz-1) );
 clear vx vy vz
 
-fprintf( '\t\t\t\t[ %d voxels ]\n', DICTIONARY.nV );
+fprintf( '\t\t[ %d voxels ]\n', DICTIONARY.nV );
 
 DICTIONARY.MASKidx = find( permute(repmat(DICTIONARY.MASK,[1 1 1 niiSIGNAL.hdr.dime.dim(2) ]),[4 1 2 3]) );
 
