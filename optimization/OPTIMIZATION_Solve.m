@@ -30,7 +30,7 @@ switch ( CONFIG.OPTIMIZATION.solver )
 				if  abs( norm(x_prev,1)-norm(x,1) ) / norm(x_prev,1) < 1e-2, break, end
 			end
 		else
-			[x, r, g, info] = spgl1(A, Y, A.nF*A.nR, [], At*Y, CONFIG.OPTIMIZATION.spgParam );
+			[x, r, g, info] = spgl1(A, Y, 100*size(A,2), [], At*Y, CONFIG.OPTIMIZATION.spgParam );
 		end
 		CONFIG.OPTIMIZATION.x = x;
 		CONFIG.OPTIMIZATION.output = info;
