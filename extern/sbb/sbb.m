@@ -199,23 +199,25 @@ function plotResult(A, out, maxNorm )
 	end
 
 	% print EC coefficients
-	if A.nT>=1
-		idx = A.nR*A.nF+1 : A.nR*A.nF+A.nE;
-		plot( idx, x(idx), '.', 'Color',[0 1 0] )
+	if A.nE > 0 
+		if A.nT>=1
+			idx = A.nR*A.nF+1 : A.nR*A.nF+A.nE;
+			plot( idx, x(idx), '.', 'Color',[0 1 0] )
+		end
+		if A.nT>=2
+			idx = idx(end)+1 : idx(end)+A.nE;
+			plot( idx, x(idx), '.', 'Color',[0 .5 0] )
+		end
+		if A.nT>=3
+			idx = idx(end)+1 : idx(end)+A.nE;
+			plot( idx, x(idx), '.', 'Color',[0 1 0] )
+		end
+		if A.nT>=4
+			idx = idx(end)+1 : idx(end)+A.nE;
+			plot( idx, x(idx), '.', 'Color',[0 .5 0] )
+		end
 	end
-	if A.nT>=2
-		idx = idx(end)+1 : idx(end)+A.nE;
-		plot( idx, x(idx), '.', 'Color',[0 .5 0] )
-	end
-	if A.nT>=3
-		idx = idx(end)+1 : idx(end)+A.nE;
-		plot( idx, x(idx), '.', 'Color',[0 1 0] )
-	end
-	if A.nT>=4
-		idx = idx(end)+1 : idx(end)+A.nE;
-		plot( idx, x(idx), '.', 'Color',[0 .5 0] )
-	end
-
+	
 	% print CSF coefficients
 	if A.nI>=1
 		idx = idx(end)+1 : idx(end)+A.nV;
