@@ -16,31 +16,9 @@ end
 KERNELS.nS = CONFIG.scheme.dwi_count;
 fprintf( ' [ OK ]\n' );
 
-% normalize atoms
-% ---------------
-if ( CONFIG.kernels.doNormalize )
-	fprintf('\t - normalizing to have unitary norm...');
-	for i = 1:numel(KERNELS.wmr)
-		for j = 1:181
-		for k = 1:181
-			KERNELS.wmr{i}(:,j,k) = KERNELS.wmr{i}(:,j,k) / KERNELS.wmr_norm(i);
-		end
-		end
-	end
-	for i = 1:numel(KERNELS.wmh)
-		for j = 1:181
-		for k = 1:181
-			KERNELS.wmh{i}(:,j,k) = KERNELS.wmh{i}(:,j,k) / KERNELS.wmh_norm(i);
-		end
-		end
-	end
-	for i = 1:numel(KERNELS.iso)
-		KERNELS.iso{i} = KERNELS.iso{i} / KERNELS.iso_norm(i);
-	end
-	fprintf( ' [ OK ]\n' );
-end
 
 % De-mean kernels as LiFE
+% -----------------------
 if ( CONFIG.doDemean )
 	fprintf('\t - de-meaning atoms as LiFE...');
 	for j = 1:181
@@ -59,9 +37,10 @@ if ( CONFIG.doDemean )
 	fprintf( ' [ OK ]\n' );
 end
 
-% ensure double data type for mex code
- % ------------------------------------
- if ( CONFIG.useReference )
+
+% Add b0 reference (promote unitary sum)
+% --------------------------------------
+if ( CONFIG.useReference )
 	fprintf('\t - adding reference...');
 	for i = 1:numel(KERNELS.wmr)
 		KERNELS.wmr{i} = KERNELS.wmr{i}([1 1:KERNELS.nS],:,:);
@@ -77,7 +56,36 @@ end
 	end
 	KERNELS.nS = KERNELS.nS + 1;
 	fprintf( ' [ OK ]\n' );
- end
+end
+
+
+% Normalize atoms
+% ---------------
+if ( CONFIG.kernels.doNormalize )
+	fprintf('\t - normalizing to have unitary norm...');
+	for i = 1:numel(KERNELS.wmr)
+		KERNELS.wmr_norm(i) = norm( KERNELS.wmr{i}(:,1,1) );
+		for j = 1:181
+		for k = 1:181
+			KERNELS.wmr{i}(:,j,k) = KERNELS.wmr{i}(:,j,k) / KERNELS.wmr_norm(i);
+		end
+		end
+	end
+	for i = 1:numel(KERNELS.wmh)
+		KERNELS.wmh_norm(i) = norm( KERNELS.wmh{i}(:,1,1) );
+		for j = 1:181
+		for k = 1:181
+			KERNELS.wmh{i}(:,j,k) = KERNELS.wmh{i}(:,j,k) / KERNELS.wmh_norm(i);
+		end
+		end
+	end
+	for i = 1:numel(KERNELS.iso)
+		KERNELS.iso_norm(i) = norm( KERNELS.iso{i}(:,1,1) );
+		KERNELS.iso{i} = KERNELS.iso{i} / KERNELS.iso_norm(i);
+	end
+	fprintf( ' [ OK ]\n' );
+end
+
   
- fprintf( '   [ %.2f seconds ]\n', toc(ticID) );
- clear ticID i j k
+fprintf( '   [ %.2f seconds ]\n', toc(ticID) );
+clear ticID i j k
