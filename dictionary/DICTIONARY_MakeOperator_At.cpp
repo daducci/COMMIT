@@ -1,9 +1,6 @@
-// the following 2 lines are to fix a bug with XCode 5.1 in OSX
-#include <stdint.h>
-typedef uint16_t char16_t;
-
-#include <stdint.h>
-typedef uint16_t char16_t;
+// NOTE: uncomment the following 2 lines are to fix a bug with XCode 5.1 in OSX
+//#include <stdint.h>
+//typedef uint16_t char16_t;
 
 #include <cmath>
 #include <matrix.h>
@@ -16,7 +13,7 @@ typedef uint16_t char16_t;
 #ifdef nIC
 	#if (nIC<0 || nIC>4)
 	#error nIC must be >= 0 and <= 4
-	#endif	
+	#endif
 #else
 	#error "nIC" parameter must be passed to the compiler as "-DnIC=<value>"
 #endif
@@ -25,7 +22,7 @@ typedef uint16_t char16_t;
 #ifdef nEC
 	#if (nEC<0 || nEC>4)
 	#error nEC must be >= 0 and <= 4
-	#endif	
+	#endif
 #else
 	#error "nEC" parameter must be passed to the compiler as "-DnEC=<value>"
 #endif
@@ -34,7 +31,7 @@ typedef uint16_t char16_t;
 #ifdef nISO
 	#if (nISO<0 || nISO>4)
 	#error nISO must be >= 0 and <= 4
-	#endif	
+	#endif
 #else
 	#error "nISO" parameter must be passed to the compiler as "-DnISO=<value>"
 #endif
@@ -151,7 +148,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexErrMsgIdAndTxt("InvalidInput:ISO.v","'ISO.v' must be a n*1 vector");
 	#endif
 	UINT32_T* ISOv = (UINT32_T*) mxGetData(tmp);
-	
+
 	// Parse "KERNELS.wmr", "KERNELS.wmh" and "KERNELS.iso"
 	mxArray* wmr = mxGetField( prhs[1], 0, "wmr" );
 	#if DO_CHECK > 0
@@ -170,7 +167,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	#if nIC>=4
 	double* wmrSFP3 = (double*) mxGetData( mxGetCell(wmr,3) );
 	#endif
-	
+
 	#if nEC>=1
 	mxArray* wmh = mxGetField( prhs[1], 0, "wmh" );
 	#if DO_CHECK > 0
@@ -239,7 +236,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	double x0_tmp, x1_tmp, x2_tmp, x3_tmp, Y_tmp;
 	double *Yptr, *YptrEnd;
 	int offset;
-	
+
 
 	/* intra-cellular compartments */
 	#if nIC>=1
@@ -277,7 +274,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		wmrSFP3ptr   = wmrSFP3   + offset;
 		x3_tmp = (*wmrSFP3ptr++) * Y_tmp;
 		#endif
-		
+
 		double w;
 		while( ++Yptr != YptrEnd )
 		{
@@ -310,7 +307,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	}
 	#endif
 
-	
+
 	/* extra-cellular compartments */
 	#if nEC>=1
 
@@ -331,7 +328,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		YptrEnd      = Yptr      + nS;
 
 		offset = nS * (*ECo++);
-		
+
 		Y_tmp = *Yptr;
 		wmhSFP0ptr    = wmhSFP0  + offset;
 		x0_tmp = (*wmhSFP0ptr++) * Y_tmp;
@@ -405,7 +402,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		#if nISO>=4
 		isoSFP3ptr   = isoSFP3;
 		#endif
-		
+
 		Y_tmp = *Yptr;
 		x0_tmp = (*isoSFP0ptr++) * Y_tmp;
 		#if nISO>=2

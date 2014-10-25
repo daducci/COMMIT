@@ -1,6 +1,6 @@
-// the following 2 lines are to fix a bug with XCode 5.1 in OSX
-#include <stdint.h>
-typedef uint16_t char16_t;
+// NOTE: uncomment the following 2 lines are to fix a bug with XCode 5.1 in OSX
+//#include <stdint.h>
+//typedef uint16_t char16_t;
 
 #include <pthread.h>
 #include <cmath>
