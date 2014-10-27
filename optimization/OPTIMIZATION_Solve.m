@@ -49,6 +49,15 @@ switch ( CONFIG.OPTIMIZATION.solver )
 		CONFIG.OPTIMIZATION.x = out.x;
 		CONFIG.OPTIMIZATION.output = out;
 		clear opt x out
+
+	case 'RAFA'		
+		param = [];
+		param.verbose  = CONFIG.OPTIMIZATION.verbosity;
+		param.max_iter = CONFIG.OPTIMIZATION.maxIter;
+		param.rel_obj  = CONFIG.OPTIMIZATION.optTol;
+		x = solve_nnls( Y, A, param );
+		CONFIG.OPTIMIZATION.x = x;
+		clear param x
 end
 
 CONFIG.OPTIMIZATION.time = toc(ticID);
