@@ -19,7 +19,7 @@ RESULTS_path = fullfile( CONFIG.TRACKING_path, RESULTS_path );
 % -------------------------
 fprintf( '\t- configuration\n');
 save( fullfile(RESULTS_path,'CONFIG.mat'), 'CONFIG' )
-print( sfigure(1), fullfile( RESULTS_path, sprintf('summary.png') ), '-dpng' );
+print( gcf, fullfile( RESULTS_path, sprintf('summary.png') ), '-dpng' );
 
 
 % map of wovelwise errors
@@ -82,7 +82,7 @@ close( figure(99) )
 fprintf( '\t- volume fractions\n' );
 
 if ( CONFIG.kernels.doNormalize )
-	xW = CONFIG.OPTIMIZATION.x ./ [ reshape(repmat(KERNELS.wmr_norm,A.nF,1),1,[]) reshape(repmat(KERNELS.wmh_norm,A.nE,1),1,[]) reshape(repmat(KERNELS.iso_norm,A.nV,1),1,[]) ]';
+	xW = CONFIG.OPTIMIZATION.x ./ [ repmat( KERNELS.wmr_norm, 1, A.nF ) repmat( KERNELS.wmh_norm, 1, A.nE ) repmat( KERNELS.iso_norm, 1, A.nV ) ]';
 else
 	xW = CONFIG.OPTIMIZATION.x;
 end
@@ -131,10 +131,10 @@ for s = 1:numel(DICTIONARY.IC.v)
 	f = DICTIONARY.IC.fiber(s) + 1;
 	v = DICTIONARY.IC.v(s) + 1;
 	for k = 1:A.nR
-		w = xW(f + (k-1)*A.nF) * DICTIONARY.IC.len(s);% / DICTIONARY.IC.trkLen(f);
+		w = xW(f + (k-1)*A.nF) * DICTIONARY.IC.len(s);
 		IMG(v) = IMG(v) + w;
 	end
-	IMG2(v) = IMG2(v) + DICTIONARY.IC.len(s) * DICTIONARY.IC.trkLen(f);
+	IMG2(v) = IMG2(v) + DICTIONARY.IC.len(s);
 end
 
 niiERR.img( :,:,:,1 ) = IMG;

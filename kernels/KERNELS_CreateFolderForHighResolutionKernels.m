@@ -1,6 +1,6 @@
 %
 % Create the folder to simulate data with Camino at higher q-space resolution (500 directions per shell)
-%
+% 
 % Parameters
 % ----------
 % CONFIG : struct
@@ -35,7 +35,7 @@ function KERNELS_CreateFolderForHighResolutionKernels( CONFIG )
 		schemeHR(row:row+500-1,7)   = scheme.shells{i}.TE;
 		row = row + 500;
 	end
-
+	
 	fidCAMINO = fopen( fullfile(output_path,'protocol_HR.scheme'),'w+');
 	if scheme.version == 0
 		fprintf(fidCAMINO,'VERSION: BVECTOR\n');
@@ -50,5 +50,7 @@ function KERNELS_CreateFolderForHighResolutionKernels( CONFIG )
 	end
 	fclose(fidCAMINO);
 
+
+	% precompute some values to speed up the computation		
 	fprintf( '   [ DONE ]\n' );
 end

@@ -278,9 +278,9 @@ int main(int argc, char** argv)
         fiberForwardModel( fiber, pts, nSectors, radii );
 
         // store data on file
+        fiberLen = 0;
 		if ( FiberSegments.size() >= minFiberSegments )
 		{
-            fiberLen = 0;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 fiberLen += it->second;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)

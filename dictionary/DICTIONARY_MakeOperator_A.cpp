@@ -143,15 +143,15 @@ void* computeProductBlock( void *ptr )
 			x3 = x[*t_fiber+3*nF];
 			#endif
 
-			if ( x0 != 0
+			if ( x0 > 0
 			#if nIC>=2
-				|| x1 != 0
+				|| x1 > 0
 			#endif
 			#if nIC>=3
-				|| x2 != 0
+				|| x2 > 0
 			#endif
 			#if nIC>=4
-				|| x3 != 0
+				|| x3 > 0
 			#endif
 			)
 			{
@@ -448,15 +448,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		x3 = *x_wmhPtr3++;
 		#endif
 		if (
-			   x0 != 0
+			   x0 > 0
 			#if nEC>=2
-			|| x1 != 0
+			|| x1 > 0
 			#endif
 			#if nEC>=3
-			|| x2 != 0
+			|| x2 > 0
 			#endif
 			#if nEC>=4
-			|| x3 != 0
+			|| x3 > 0
 			#endif
 		  )
 		{
@@ -522,15 +522,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		x3 = *x_isoPtr3++;
 		#endif
 		if (
-				x0 != 0
+				x0 > 0
 			#if nISO>=2
-			 || x1 != 0
+			 || x1 > 0
 			#endif
 			#if nISO>=3
-			 || x2 != 0
+			 || x2 > 0
 			#endif
 			#if nISO>=4
-			 || x3 != 0
+			 || x3 > 0
 			#endif
 			)
 		{
