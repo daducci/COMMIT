@@ -1,6 +1,7 @@
 FIND_PATH( BLITZ_INCLUDE_DIR
-	blitz.h
-	/usr/local/include/blitz /usr/include/blitz
+	blitz/blitz.h
+	PATHS /usr/local/include /usr/include
+	ONLY_CMAKE_FIND_ROOT_PATH
 )
 
 FIND_LIBRARY( BLITZ_LIBRARIES
