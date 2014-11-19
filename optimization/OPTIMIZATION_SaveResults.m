@@ -82,7 +82,7 @@ close( figure(99) )
 fprintf( '\t- volume fractions\n' );
 
 if ( CONFIG.kernels.doNormalize )
-	xW = CONFIG.OPTIMIZATION.x ./ [ repmat( KERNELS.wmr_norm, 1, A.nF ) repmat( KERNELS.wmh_norm, 1, A.nE ) repmat( KERNELS.iso_norm, 1, A.nV ) ]';
+	xW = CONFIG.OPTIMIZATION.x ./ [ reshape(repmat(KERNELS.wmr_norm,A.nF,1),1,[]) reshape(repmat(KERNELS.wmh_norm,A.nE,1),1,[]) reshape(repmat(KERNELS.iso_norm,A.nV,1),1,[]) ]';
 else
 	xW = CONFIG.OPTIMIZATION.x;
 end
@@ -127,7 +127,7 @@ end
 fprintf( '\t\t- intra-axonal\n' );
 IMG   = zeros( DICTIONARY.dim );
 IMG2  = zeros( DICTIONARY.dim );
-for s = 1:numel(DICTIONARY.IC.v)
+for s = 1:DICTIONARY.IC.n
 	f = DICTIONARY.IC.fiber(s) + 1;
 	v = DICTIONARY.IC.v(s) + 1;
 	for k = 1:A.nR

@@ -54,7 +54,7 @@ DICTIONARY.IC.len    = fread( pDict_IC_len,    [DICTIONARY.IC.n  1], '*float32' 
 
 if ( CONFIG.kernels.doNormalize )
 	% all the columns will have same length
-	for s = 1:numel(DICTIONARY.IC.fiber)
+	for s = 1:DICTIONARY.IC.n
 		f = DICTIONARY.IC.fiber(s) + 1;
 		DICTIONARY.IC.len(s) = DICTIONARY.IC.len(s) / DICTIONARY.IC.trkLen(f);
 	end

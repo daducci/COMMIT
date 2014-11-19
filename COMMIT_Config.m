@@ -39,7 +39,7 @@ CONFIG.kernels.d			= 1.7;				% float: parallel diffusivity to use (units of 1e-1
 CONFIG.kernels.Rs			= [ 0.5 10 ];		% float array: radii of the cylinders for the intra-cellular atoms (units of 1e-3, eg specify 2.0 for 2.0 micrometers)
 CONFIG.kernels.ICVFs		= [ 0.7 ];			% float array: the intra-cellular volume fractions (used in the tortuosity model) to simulate the extra-cellular atoms
 CONFIG.kernels.dISOs		= [ 3.0 1.7 ];		% float array: free diffusivities to simulate the isotropic atoms (units of 1e-10, eg specify 3.0 for 3.0 mm^2/s)
-CONFIG.kernels.doNormalize  = false;
+CONFIG.kernels.doNormalize  = true;
 
 CONFIG.OPTIMIZATION = [];
 CONFIG.OPTIMIZATION.nTHREADS = 1;

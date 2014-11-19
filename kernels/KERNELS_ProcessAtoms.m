@@ -1,7 +1,7 @@
 fprintf('\n-> Processing kernels...\n');
 ticID = tic;
 
-% ensure double data type for mex code
+% Ensure double data type for mex code
 % ------------------------------------
 fprintf('\t - convert to double data type...');
 for i = 1:numel(KERNELS.wmr)
@@ -86,6 +86,6 @@ if ( CONFIG.kernels.doNormalize )
 	fprintf( ' [ OK ]\n' );
 end
 
-  
+
 fprintf( '   [ %.2f seconds ]\n', toc(ticID) );
 clear ticID i j k
