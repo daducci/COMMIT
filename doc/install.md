@@ -30,10 +30,31 @@ In case of issues, please refer to the [MATLAB documentation](http://www.mathwor
 
 `COMMIT` uses the [Camino](http://camino.org.uk) toolkit to generate the kernels.
 To install it, please follow the corresponding [documentation](http://cmic.cs.ucl.ac.uk/camino//index.php?n=Main.Installation).
+NB: be sure to properly update the configuration variable `CAMINO_path` (see later).
 
 # Setup paths/variables in MATLAB
 
+Add the folder containing the source code of COMMIT to your `MATLAB PATH`.
+
 Before using COMMIT, you need to copy the file `COMMIT_Setup.txt` and rename it to `COMMIT_Setup.m`.
-Modify its content to set the paths to your specific needs, e.g. set `CAMINO_path` to the folder where you installed *Camino* in the previous step.
+Modify its content to set the paths to your specific needs:
+
+- `COMMIT_path` : path to the folder containing the source code of COMMIT (this repository). E.g. `/home/user/COMMIT/code`.
+
+- `CAMINO_path` : path to the `bin` folder containing the executables of the Camino toolkit. E.g. `/home/user/camino/bin`.
+
+- `DATA_path` : path to the folder where you store all your datasets. E.g. `/home/user/COMMIT/data`. Then, the software assumes the folder structure is the following:
+    ```
+    ├── data
+        ├── Study_01                 --> all subjects acquired with protocol "Study_01"
+            ├── Subject_01
+            ├── Subject_02
+            ├── ...
+        ├── Study_02                 --> all subjects acquired with protocol "Study_02"
+            ├── Subject_01
+            ├── Subject_02
+            ├── ...
+        ├── ...
+    ```
 
 `COMMIT` is ready to use!
