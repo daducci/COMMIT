@@ -28,7 +28,7 @@ In case of issues, please refer to the [MATLAB documentation](http://www.mathwor
 
 # Install the Camino toolkit
 
-`COMMIT` uses the [Camino](http://camino.org.uk) toolkit to generate the kernels.
+COMMIT uses the [Camino](http://camino.org.uk) toolkit to generate the kernels.
 To install it, please follow the corresponding [documentation](http://cmic.cs.ucl.ac.uk/camino//index.php?n=Main.Installation).
 NB: be sure to properly update the configuration variable `CAMINO_path` (see later).
 
@@ -57,4 +57,4 @@ Modify its content to set the paths to your specific needs:
         ├── ...
     ```
 
-`COMMIT` is ready to use!
+COMMIT is ready to use!
