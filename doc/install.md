@@ -1,5 +1,15 @@
 # Compile C++ code
 
+## Install dependencies
+
+You will still need to install the following libraries:
+
+- [CMake](http://www.cmake.org/) to allow cross-platform compilation;
+- [Niftilib](https://sourceforge.net/projects/niftilib/) to read/write NIFTI files;
+- [Blitz++](http://sourceforge.net/projects/blitz/) to efficiently manipulate multi-dimensional arrays.
+
+Please follow the corresponding documentation to install these libraries on your platform. Our code was successfully tested on Linux (Ubuntu 14.04) and OSX (10.9 and 10.10) systems.
+
 ##  Reading a .trk file ([TrackVis](http://www.trackvis.org/docs/?subsect=fileformat) format)
 
 Open the terminal and type:
