@@ -21,6 +21,7 @@ CAMINO_path = 'absolute path to the Camino installation';
 addpath( fullfile(COMMIT_path,'kernels') )
 addpath( fullfile(COMMIT_path,'dictionary') )
 addpath( fullfile(COMMIT_path,'optimization') )
+addpath( fullfile(COMMIT_path,'extern') )
 addpath( fullfile(COMMIT_path,'extern','NIFTI') )
 addpath( fullfile(COMMIT_path,'extern','sbb') )
 addpath( fullfile(COMMIT_path,'extern','spgl1') )
