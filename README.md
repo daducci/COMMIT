@@ -12,4 +12,4 @@ To install `COMMIT`, please refer to the [installation guide](doc/install.md).
 
 ##Getting started
 
-Tutorials/demos are provided in the folder[`doc/demos`](demos/) to help you get started with the COMMIT framework.
+Tutorials/demos are provided in the folder[`doc/demos`](doc/demos/) to help you get started with the COMMIT framework.
