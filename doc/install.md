@@ -10,7 +10,7 @@ You will still need to install the following libraries:
 
 Please follow the corresponding documentation to install these libraries on your platform. Our code was successfully tested on Linux (Ubuntu 14.04) and OSX (10.9 and 10.10) systems.
 
-##  Reading a .trk file ([TrackVis](http://www.trackvis.org/docs/?subsect=fileformat) format)
+##  Compile, build and install
 
 Open the terminal and type:
 ```bash
@@ -26,7 +26,7 @@ Once back to the terminal, type:
 make
 sudo make install
 ```
-This will install the binaries (e.g. `trk2dictionary`) in your filesystem. Please specify a folder in your `$PATH`, e.g. `/usr/bin`.
+This will install all the binaries to your filesystem, e.g. `trk2dictionary` for reading a .trk file in [TrackVis](http://www.trackvis.org/docs/?subsect=fileformat) format. Please specify a folder in your `$PATH`, e.g. `/usr/bin`.
 
 ## Creating the linear operator **A**
 
