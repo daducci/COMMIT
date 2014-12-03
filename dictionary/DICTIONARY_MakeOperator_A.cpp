@@ -12,8 +12,8 @@
 
 // number of THREADS
 #ifdef nTHREADS
-	#if (nTHREADS<1 || nTHREADS>16)
- 	#error "nTHREADS" must be >= 1 and <= 16
+	#if (nTHREADS<1 || nTHREADS>32)
+ 	#error "nTHREADS" must be >= 1 and <= 32
 	#endif
 #else
 	#error "nTHREADS" parameter must be passed to the compiler as "-DnTHREADS=<value>"
@@ -47,7 +47,7 @@
 #endif
 
 /* global variables */
-int				n, nV, nE, nF, nS, Y_dimx, Y_dimy, Y_dimz;
+int				n, nV, nE, nF, nS;
 double			*x, *Y;
 UINT32_T		*ICthreads, *ECthreads, *ISOthreads;
 UINT32_T		*ICf, *ICv, *ECv, *ISOv;
@@ -494,17 +494,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	#if nISO>=4
 	isoSFP3 = (double*) mxGetData( mxGetCell(iso,3) );
 	#endif
-
-	// Parse "Y_dimx", "Y_dimy" and "Y_dimz"
-	mxArray* dim = mxGetField( prhs[0], 0, "dim" );
-	#if DO_CHECK > 0
-	if ( !mxIsDouble(dim) || mxIsComplex(dim) || mxGetNumberOfElements(dim)!=3 )
-		mexErrMsgIdAndTxt("InvalidInput:dim","'dim' must be a 3x1 double array");
-	#endif
-	double* Y_dim = (double*) mxGetData(dim);
-	Y_dimx = Y_dim[0];
-	Y_dimy = Y_dim[1];
-	Y_dimz = Y_dim[2];
 
     // Parse "x"
     #if DO_CHECK > 0
