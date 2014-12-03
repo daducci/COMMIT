@@ -70,6 +70,13 @@ fclose(pDict_IC_oy);
 fclose(pDict_IC_len);
 clear pDict_IC_*
 
+% reorder the segments based on the "v" field
+[DICTIONARY.IC.v, idx] = sort( DICTIONARY.IC.v );
+DICTIONARY.IC.o     = DICTIONARY.IC.o( idx );
+DICTIONARY.IC.fiber = DICTIONARY.IC.fiber( idx );
+DICTIONARY.IC.len   = DICTIONARY.IC.len( idx );
+clear idx
+
 fprintf( '\t[ %d fibers and %d segments ]\n', DICTIONARY.IC.nF, DICTIONARY.IC.n );
 
 
@@ -107,6 +114,11 @@ fclose(pDict_EC_ox);
 fclose(pDict_EC_oy);
 clear pDict_EC_*
 
+% reorder the segments based on the "v" field
+[DICTIONARY.EC.v, idx] = sort( DICTIONARY.EC.v );
+DICTIONARY.EC.o     = DICTIONARY.EC.o( idx );
+clear idx
+
 fprintf( '\t[ %d segments ]\n', DICTIONARY.EC.nE );
 
 
@@ -117,9 +129,13 @@ fprintf( '\t- isotropic compartments...' );
 DICTIONARY.nV = nnz( DICTIONARY.MASK );
 [ vx, vy, vz ] = ind2sub( niiSIGNAL.hdr.dime.dim(3:5), find( DICTIONARY.MASK ) );
 DICTIONARY.ISO.v = uint32(vx-1) + DICTIONARY.dim(1) * ( uint32(vy-1) + DICTIONARY.dim(2) * uint32(vz-1) );
+
+% reorder the segments based on the "v" field
+DICTIONARY.ISO.v = sort( DICTIONARY.ISO.v );
+
 clear vx vy vz
 
-fprintf( '\t\t[ %d voxels ]\n', DICTIONARY.nV );
+fprintf( '\t[ %d voxels ]\n', DICTIONARY.nV );
 
 DICTIONARY.MASKidx = find( permute(repmat(DICTIONARY.MASK,[1 1 1 niiSIGNAL.hdr.dime.dim(2) ]),[4 1 2 3]) );
 

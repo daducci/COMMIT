@@ -48,7 +48,7 @@ methods
         if obj.adjoint == 0
 			% A*x
 			if ( obj.size(2) ~= size(x,1) ), error('A.times(): dimensions do not match'); end
-			v = DICTIONARY_MakeOperator_A( DICTIONARY, KERNELS, THREADS, x );
+			v = DICTIONARY_MakeOperator_A( DICTIONARY, KERNELS, x, THREADS );
 			v = v( DICTIONARY.MASKidx );
 		else
 			% At*y

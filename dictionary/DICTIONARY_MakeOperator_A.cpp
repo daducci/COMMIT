@@ -49,15 +49,10 @@
 /* global variables */
 int				n, nV, nE, nF, nS, Y_dimx, Y_dimy, Y_dimz;
 double			*x, *Y;
-
-UINT8_T			*threadForSegment;
-UINT32_T		*fiber;
-UINT32_T		*ICv;
-UINT16_T		*ICo;
-float			*len;
-UINT32_T		*ECv;
-UINT16_T		*ECo;
-UINT32_T		*ISOv;
+UINT32_T		*ICthreads, *ECthreads, *ISOthreads;
+UINT32_T		*ICf, *ICv, *ECv, *ISOv;
+UINT16_T		*ICo, *ECo;
+float			*ICl;
 
 #if nIC>=1
 double *wmrSFP0;
@@ -86,112 +81,254 @@ double *wmhSFP3;
 #endif
 
 #if nISO>=1
-double *isoSFP0, *isoSFP0ptr, *x_isoPtr0, *x_isoPtr0End;
+double *isoSFP0;
 #endif
 #if nISO>=2
-double *isoSFP1, *isoSFP1ptr, *x_isoPtr1;
+double *isoSFP1;
 #endif
 #if nISO>=3
-double *isoSFP2, *isoSFP2ptr, *x_isoPtr2;
+double *isoSFP2;
 #endif
 #if nISO>=4
-double *isoSFP3, *isoSFP3ptr, *x_isoPtr3;
+double *isoSFP3;
 #endif
 
 
+/* ================================================ */
 /* Compute a sub-block of the MATRIX-VECTOR product */
+/* ================================================ */
 void* computeProductBlock( void *ptr )
 {
-	int			id = (long)ptr;
-	int			offset;
-	double		w, x0, x1, x2, x3;
-	double		*Yptr, *YptrEnd;
-	UINT8_T		*t_threadForSegment = threadForSegment;
+	int      id = (long)ptr;
+	int      offset;
+	double   x0, x1, x2, x3, w;
+    double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3;
+	double   *Yptr, *YptrEnd;
+    double   *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
+	UINT32_T *t_v, *t_vEnd, *t_f;
+	UINT16_T *t_o;
+	float    *t_l;
 
-	UINT32_T	*t_fiber = fiber;
-	UINT32_T	*t_v     = ICv;
-	UINT16_T	*t_o     = ICo;
-	float		*t_len   = len;
+    /* intra-cellular compartments */
+#if nIC>=1
+    t_v    = ICv + ICthreads[id];
+    t_vEnd = ICv + ICthreads[id+1];
+    t_o    = ICo + ICthreads[id];
+    t_l    = ICl + ICthreads[id];
+    t_f    = ICf + ICthreads[id];
 
-	#if nIC>=1
-	double *wmrSFP0ptr;
-	#endif
-	#if nIC>=2
-	double *wmrSFP1ptr;
-	#endif
-	#if nIC>=3
-	double *wmrSFP2ptr;
-	#endif
-	#if nIC>=4
-	double *wmrSFP3ptr;
-	#endif
-
-	#if nIC>=1
-	UINT8_T		*t_threadForSegmentEnd = t_threadForSegment + n;
-	while( t_threadForSegment != t_threadForSegmentEnd )
+	while( t_v != t_vEnd )
 	{
-		if ( *t_threadForSegment++ == id )
+        x_Ptr0 = x + *t_f;
+		x0 = *x_Ptr0;
+		#if nIC>=2
+        x_Ptr1 = x_Ptr0 + nF;
+		x1 = *x_Ptr1;
+		#endif
+		#if nIC>=3
+        x_Ptr2 = x_Ptr1 + nF;
+        x2 = *x_Ptr2;
+		#endif
+		#if nIC>=4
+        x_Ptr3 = x_Ptr2 + nF;
+        x3 = *x_Ptr3;
+		#endif
+
+		if ( x0 != 0
+		#if nIC>=2
+			|| x1 != 0
+		#endif
+		#if nIC>=3
+			|| x2 != 0
+		#endif
+		#if nIC>=4
+			|| x3 != 0
+		#endif
+		)
 		{
-			x0 = x[*t_fiber];
+			Yptr    = Y    + nS * (*t_v);
+			YptrEnd = Yptr + nS;
+			w       = (double)(*t_l);
+			offset  = nS * (*t_o);
+			SFP0ptr = wmrSFP0 + offset;
 			#if nIC>=2
-			x1 = x[*t_fiber+nF];
+			SFP1ptr = wmrSFP1 + offset;
 			#endif
 			#if nIC>=3
-			x2 = x[*t_fiber+2*nF];
+			SFP2ptr = wmrSFP2 + offset;
 			#endif
 			#if nIC>=4
-			x3 = x[*t_fiber+3*nF];
+			SFP3ptr = wmrSFP3 + offset;
 			#endif
 
-			if ( x0 != 0
-			#if nIC>=2
-				|| x1 != 0
-			#endif
-			#if nIC>=3
-				|| x2 != 0
-			#endif
-			#if nIC>=4
-				|| x3 != 0
-			#endif
-			)
-			{
-				Yptr         = Y         + nS * (*t_v);
-				YptrEnd      = Yptr      + nS;
-				w            = (double)(*t_len);
-				offset       = nS * (*t_o);
-				wmrSFP0ptr   = wmrSFP0   + offset;
-				#if nIC>=2
-				wmrSFP1ptr   = wmrSFP1   + offset;
-				#endif
-				#if nIC>=3
-				wmrSFP2ptr   = wmrSFP2   + offset;
-				#endif
-				#if nIC>=4
-				wmrSFP3ptr   = wmrSFP3   + offset;
-				#endif
-
-				while( Yptr != YptrEnd )
-					(*Yptr++) += w * (
-							  x0 * (*wmrSFP0ptr++)
-							#if nIC>=2
-							+ x1 * (*wmrSFP1ptr++)
-							#endif
-							#if nIC>=3
-							+ x2 * (*wmrSFP2ptr++)
-							#endif
-							#if nIC>=4
-							+ x3 * (*wmrSFP3ptr++)
-							#endif
-					);
-			}
+			while( Yptr != YptrEnd )
+				(*Yptr++) += w * (
+						  x0 * (*SFP0ptr++)
+						#if nIC>=2
+						+ x1 * (*SFP1ptr++)
+						#endif
+						#if nIC>=3
+						+ x2 * (*SFP2ptr++)
+						#endif
+						#if nIC>=4
+						+ x3 * (*SFP3ptr++)
+						#endif
+				);
 		}
 
-		t_fiber++;
+		t_f++;
 		t_v++;
 		t_o++;
-		t_len++;
+		t_l++;
 	}
-	#endif
+#endif
+
+    /* extra-cellular compartments */
+#if nEC>=1
+    t_v    = ECv + ECthreads[id];
+    t_vEnd = ECv + ECthreads[id+1];
+    t_o    = ECo + ECthreads[id];
+
+    x_Ptr0 = x + nIC*nF + ECthreads[id];
+    #if nEC>=2
+    x_Ptr1 = x_Ptr0 + nE;
+    #endif
+    #if nEC>=3
+    x_Ptr2 = x_Ptr1 + nE;
+    #endif
+    #if nEC>=4
+    x_Ptr3 = x_Ptr2 + nE;
+    #endif
+
+    while( t_v != t_vEnd )
+    {
+        x0 = *x_Ptr0++;
+        #if nEC>=2
+        x1 = *x_Ptr1++;
+        #endif
+        #if nEC>=3
+        x2 = *x_Ptr2++;
+        #endif
+        #if nEC>=4
+        x3 = *x_Ptr3++;
+        #endif
+        if (
+               x0 != 0
+            #if nEC>=2
+            || x1 != 0
+            #endif
+            #if nEC>=3
+            || x2 != 0
+            #endif
+            #if nEC>=4
+            || x3 != 0
+            #endif
+          )
+        {
+            Yptr    = Y    + nS * (*t_v);
+            YptrEnd = Yptr + nS;
+            offset  = nS * (*t_o);
+            SFP0ptr = wmhSFP0 + offset;
+            #if nEC>=2
+            SFP1ptr = wmhSFP1 + offset;
+            #endif
+            #if nEC>=3
+            SFP2ptr = wmhSFP2 + offset;
+            #endif
+            #if nEC>=4
+            SFP3ptr = wmhSFP3 + offset;
+            #endif
+
+            while( Yptr != YptrEnd )
+                (*Yptr++) += (
+                      x0 * (*SFP0ptr++)
+                    #if nEC>=2
+                    + x1 * (*SFP1ptr++)
+                    #endif
+                    #if nEC>=3
+                    + x2 * (*SFP2ptr++)
+                    #endif
+                    #if nEC>=4
+                    + x3 * (*SFP3ptr++)
+                    #endif
+                );
+        }
+        t_v++;
+        t_o++;
+    }
+#endif
+
+    /* isotropic compartments */
+#if nISO>=1
+    t_v    = ISOv + ISOthreads[id];
+    t_vEnd = ISOv + ISOthreads[id+1];
+
+    x_Ptr0 = x + nIC*nF + nEC*nE + ISOthreads[id];
+    #if nISO>=2
+    x_Ptr1 = x_Ptr0 + nV;
+    #endif
+    #if nISO>=3
+    x_Ptr2 = x_Ptr1 + nV;
+    #endif
+    #if nISO>=4
+    x_Ptr3 = x_Ptr2 + nV;
+    #endif
+
+    while( t_v != t_vEnd )
+    {
+        x0 = *x_Ptr0++;
+        #if nEC>=2
+        x1 = *x_Ptr1++;
+        #endif
+        #if nEC>=3
+        x2 = *x_Ptr2++;
+        #endif
+        #if nEC>=4
+        x3 = *x_Ptr3++;
+        #endif
+        if (
+               x0 != 0
+            #if nEC>=2
+            || x1 != 0
+            #endif
+            #if nEC>=3
+            || x2 != 0
+            #endif
+            #if nEC>=4
+            || x3 != 0
+            #endif
+          )
+        {
+            Yptr    = Y    + nS * (*t_v);
+            YptrEnd = Yptr + nS;
+            SFP0ptr = isoSFP0;
+            #if nISO>=2
+            SFP1ptr = isoSFP1;
+            #endif
+            #if nISO>=3
+            SFP2ptr = isoSFP2;
+            #endif
+            #if nISO>=4
+            SFP3ptr = isoSFP3;
+            #endif
+
+            while( Yptr != YptrEnd )
+                (*Yptr++) += (
+                      x0 * (*SFP0ptr++)
+                    #if nISO>=2
+                    + x1 * (*SFP1ptr++)
+                    #endif
+                    #if nISO>=3
+                    + x2 * (*SFP2ptr++)
+                    #endif
+                    #if nISO>=4
+                    + x3 * (*SFP3ptr++)
+                    #endif
+                );
+        }
+        t_v++;
+    }
+#endif
 
     pthread_exit( 0 );
 }
@@ -257,7 +394,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
 		mexErrMsgIdAndTxt("InvalidInput:fiber","'fiber' must be a n*1 vector");
 	#endif
- 	fiber = (UINT32_T*) mxGetData( tmp );
+ 	ICf = (UINT32_T*) mxGetData( tmp );
 
 	// Parse "len"
 	tmp = mxGetField( IC, 0, "len" );
@@ -265,7 +402,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
 		mexErrMsgIdAndTxt("InvalidInput:len","'len' must be a n*1 vector");
 	#endif
- 	len = (float*) mxGetData(tmp);
+ 	ICl = (float*) mxGetData(tmp);
 
 	// Parse "ICv", "ICo"
 	tmp = mxGetField( IC, 0, "v" );
@@ -369,23 +506,43 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	Y_dimy = Y_dim[1];
 	Y_dimz = Y_dim[2];
 
-	// parse "threadForSegment"
-	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions( prhs[2] ) != 2 || mxGetN(prhs[2]) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:threadForSegment","'threadForSegment' must be a n*1 vector");
-	#endif
- 	threadForSegment = (UINT8_T*) mxGetData( prhs[2] );
+    // Parse "x"
+    #if DO_CHECK > 0
+    if ( mxGetNumberOfDimensions( prhs[2] ) != 2 || mxGetN(prhs[2]) != 1 )
+        mexErrMsgIdAndTxt("InvalidInput:x","'x' must be a n*1 vector");
+    #endif
+    x = (double*) mxGetData( prhs[2] );
+    if ( nIC > 0 )
+        nF = ( mxGetM(prhs[2]) - nE*nEC - nV*nISO) / nIC;
+    else
+        nF = 0;
 
-	// Parse "x"
+    // parse "THREADS"
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions( prhs[3] ) != 2 || mxGetN(prhs[3]) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:x","'x' must be a n*1 vector");
+    if ( !mxIsStruct(prhs[3]) )
+        mexErrMsgIdAndTxt("InvalidInput:THREADS", "'THREADS' must be a struct");
+    #endif
+
+    tmp  = mxGetField( prhs[3], 0, "IC" );
+    #if DO_CHECK > 0
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
+		mexErrMsgIdAndTxt("InvalidInput:THREADS.IC","'THREADS.IC' must be a n*1 vector");
 	#endif
- 	x = (double*) mxGetData( prhs[3] );
-	if ( nIC > 0 )
-		nF = ( mxGetM(prhs[3]) - nE*nEC - nV*nISO) / nIC;
-	else
-		nF = 0;
+ 	ICthreads = (UINT32_T*) mxGetData( tmp );
+
+    tmp  = mxGetField( prhs[3], 0, "EC" );
+    #if DO_CHECK > 0
+    if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
+        mexErrMsgIdAndTxt("InvalidInput:THREADS.EC","'THREADS.EC' must be a n*1 vector");
+    #endif
+    ECthreads = (UINT32_T*) mxGetData( tmp );
+
+    tmp  = mxGetField( prhs[3], 0, "ISO" );
+    #if DO_CHECK > 0
+    if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
+        mexErrMsgIdAndTxt("InvalidInput:THREADS.ISO","'THREADS.ISO' must be a n*1 vector");
+    #endif
+    ISOthreads = (UINT32_T*) mxGetData( tmp );
 
 
 	/* =============== */
@@ -401,168 +558,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Y = (double*)mxGetData( plhs[0] );
 
 	/* ====================================================== */
-	/* Run SEPARATE THREADS for intra- and extra-compartments */
+	/* Run SEPARATE THREADS for intra-compartments */
 	/* ====================================================== */
-	#if nIC>=1
 	pthread_t threads[nTHREADS];
 	for(int t=0; t<nTHREADS ; t++)
 		pthread_create( &threads[t], NULL, computeProductBlock, (void *) (long int)t );
 	for(int t=0; t<nTHREADS ; t++)
 		pthread_join( threads[t], NULL );
-	#endif
-
-
-	/* =================================================== */
-	/* EC and ISO compartments are computed by MAIN THREAD */
-	/* =================================================== */
-	double	x0, x1, x2, x3;
-	double	*Yptr, *YptrEnd;
-	int		offset;
-
-
-	/* extra-cellular compartments */
-	#if nEC>=1
-	double *wmhSFP0ptr;
-	double *x_wmhPtr0    = x + nIC*nF;
-	double *x_wmhPtr0End = x_wmhPtr0 + nE;
-	#if nEC>=2
-	double *wmhSFP1ptr, *x_wmhPtr1 = x_wmhPtr0 + nE;
-	#endif
-	#if nEC>=3
-	double *wmhSFP2ptr, *x_wmhPtr2 = x_wmhPtr1 + nE;
-	#endif
-	#if nEC>=4
-	double *wmhSFP3ptr, *x_wmhPtr3 = x_wmhPtr2 + nE;
-	#endif
-
-	while( x_wmhPtr0 != x_wmhPtr0End )
-	{
-		x0 = *x_wmhPtr0++;
-		#if nEC>=2
-		x1 = *x_wmhPtr1++;
-		#endif
-		#if nEC>=3
-		x2 = *x_wmhPtr2++;
-		#endif
-		#if nEC>=4
-		x3 = *x_wmhPtr3++;
-		#endif
-		if (
-			   x0 != 0
-			#if nEC>=2
-			|| x1 != 0
-			#endif
-			#if nEC>=3
-			|| x2 != 0
-			#endif
-			#if nEC>=4
-			|| x3 != 0
-			#endif
-		  )
-		{
-			Yptr          = Y         + nS * (*ECv);
-			YptrEnd       = Yptr      + nS;
-			offset        = nS * (*ECo);
-			wmhSFP0ptr    = wmhSFP0  + offset;
-			#if nEC>=2
-			wmhSFP1ptr    = wmhSFP1  + offset;
-			#endif
-			#if nEC>=3
-			wmhSFP2ptr    = wmhSFP2  + offset;
-			#endif
-			#if nEC>=4
-			wmhSFP3ptr    = wmhSFP3  + offset;
-			#endif
-
-			while( Yptr != YptrEnd )
-				(*Yptr++) += (
-					  x0 * (*wmhSFP0ptr++)
-					#if nEC>=2
-					+ x1 * (*wmhSFP1ptr++)
-					#endif
-					#if nEC>=3
-					+ x2 * (*wmhSFP2ptr++)
-					#endif
-					#if nEC>=4
-					+ x3 * (*wmhSFP3ptr++)
-					#endif
-				);
-		}
-		ECv++;
-		ECo++;
-	}
-	#endif
-
-
-	/* isotropic compartments */
-	#if nISO>=1
-
-	x_isoPtr0		= x + nIC*nF + nEC*nE;
-	x_isoPtr0End	= x_isoPtr0 + nV;
-	#if nISO>=2
-	x_isoPtr1		= x_isoPtr0 + nV;
-	#endif
-	#if nISO>=3
-	x_isoPtr2		= x_isoPtr1 + nV;
-	#endif
-	#if nISO>=4
-	x_isoPtr3		= x_isoPtr2 + nV;
-	#endif
-
-	while( x_isoPtr0 != x_isoPtr0End )
-	{
-		x0 = *x_isoPtr0++;
-		#if nISO>=2
-		x1 = *x_isoPtr1++;
-		#endif
-		#if nISO>=3
-		x2 = *x_isoPtr2++;
-		#endif
-		#if nISO>=4
-		x3 = *x_isoPtr3++;
-		#endif
-		if (
-				x0 != 0
-			#if nISO>=2
-			 || x1 != 0
-			#endif
-			#if nISO>=3
-			 || x2 != 0
-			#endif
-			#if nISO>=4
-			 || x3 != 0
-			#endif
-			)
-		{
-			Yptr         = Y         + nS * (*ISOv);
-			YptrEnd      = Yptr      + nS;
-			isoSFP0ptr   = isoSFP0;
-			#if nISO>=2
-			isoSFP1ptr   = isoSFP1;
-			#endif
-			#if nISO>=3
-			isoSFP2ptr   = isoSFP2;
-			#endif
-			#if nISO>=4
-			isoSFP3ptr   = isoSFP3;
-			#endif
-			while( Yptr != YptrEnd )
-				(*Yptr++) +=
-						    x0 * (*isoSFP0ptr++)
-						  #if nISO>=2
-						  + x1 * (*isoSFP1ptr++)
-						  #endif
-						  #if nISO>=3
-						  + x2 * (*isoSFP2ptr++)
-						  #endif
-						  #if nISO>=4
-						  + x3 * (*isoSFP3ptr++)
-						  #endif
-				;
-		}
-		ISOv++;
-	}
-	#endif
 
 	return;
 }
