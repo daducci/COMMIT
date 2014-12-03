@@ -277,24 +277,24 @@ void* computeProductBlock( void *ptr )
     while( t_v != t_vEnd )
     {
         x0 = *x_Ptr0++;
-        #if nEC>=2
+        #if nISO>=2
         x1 = *x_Ptr1++;
         #endif
-        #if nEC>=3
+        #if nISO>=3
         x2 = *x_Ptr2++;
         #endif
-        #if nEC>=4
+        #if nISO>=4
         x3 = *x_Ptr3++;
         #endif
         if (
                x0 != 0
-            #if nEC>=2
+            #if nISO>=2
             || x1 != 0
             #endif
-            #if nEC>=3
+            #if nISO>=3
             || x2 != 0
             #endif
-            #if nEC>=4
+            #if nISO>=4
             || x3 != 0
             #endif
           )
@@ -557,9 +557,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[0] = mxCreateNumericArray(4, outDims, mxDOUBLE_CLASS, mxREAL);
     Y = (double*)mxGetData( plhs[0] );
 
-	/* ====================================================== */
-	/* Run SEPARATE THREADS for intra-compartments */
-	/* ====================================================== */
+
+	/* ================================================== */
+	/* Run SEPARATE THREADS to perform the multiplication */
+	/* ================================================== */
 	pthread_t threads[nTHREADS];
 	for(int t=0; t<nTHREADS ; t++)
 		pthread_create( &threads[t], NULL, computeProductBlock, (void *) (long int)t );
