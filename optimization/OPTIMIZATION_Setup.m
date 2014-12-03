@@ -1,9 +1,9 @@
 ticID = tic;
-fprintf( '\n-> Creating the linear operator\n   ==========================\n' );
+fprintf( '\n-> Creating the linear operator\n   ============================\n' );
 
 
-% distribute DIFFERENT VOXELS to DIFFERENT THREADS to avoid conflicts
-% ===================================================================
+% Distribute VOXELS to DIFFERENT THREADS to avoid conflicts in A*x product
+% ========================================================================
 THREADS = [];
 
 % intra-cellular segments
@@ -35,8 +35,7 @@ for i = 0:CONFIG.OPTIMIZATION.nTHREADS-1
     THREADS.IC(i+1) = find( tmp==i, 1, 'first' ) - 1;
 end
 THREADS.IC(end) = DICTIONARY.IC.n;
-
-clear Uidx tID tot iPrev i C tmp
+clear Uidx tID tot iPrev C
 
 % extra-cellular segments
 % -----------------------
@@ -52,8 +51,6 @@ for i = 0:CONFIG.OPTIMIZATION.nTHREADS-1
 end
 THREADS.EC(end) = DICTIONARY.EC.nE;
 
-clear tmp i
-
 % isotropic segments
 % ------------------
 tmp = (CONFIG.OPTIMIZATION.nTHREADS-1)*ones( DICTIONARY.nV, 1, 'uint8' );
@@ -67,8 +64,61 @@ for i = 0:CONFIG.OPTIMIZATION.nTHREADS-1
     THREADS.ISO(i+1) = find( tmp==i, 1, 'first' ) - 1;
 end
 THREADS.ISO(end) = DICTIONARY.nV;
-
 clear tmp i
+
+
+% Distribute COMPARTMENTS to DIFFERENT THREADS to avoid conflicts in At*y product
+% ===============================================================================
+
+% intra-cellular segments
+% -----------------------
+tmp = (CONFIG.OPTIMIZATION.nTHREADS-1)*ones( DICTIONARY.IC.n , 1, 'uint8' );
+if CONFIG.OPTIMIZATION.nTHREADS>1
+	fprintf( '\t- distributing compartments to %d different threads...\n', CONFIG.OPTIMIZATION.nTHREADS );
+	[~,~,Uidx] = unique(DICTIONARY.IC.fiber,'stable');
+	C = accumarray(Uidx,1);
+	tID = 0;
+	tot = 0;
+	iPrev = 1;
+	for i = 1:numel(C)
+		if tot >= floor(DICTIONARY.IC.n/CONFIG.OPTIMIZATION.nTHREADS)
+			tmp( Uidx>=iPrev & Uidx<i ) = tID;
+			tID   = tID+1;
+			if tID==CONFIG.OPTIMIZATION.nTHREADS-1, break, end
+			iPrev = i;
+			tot   = C(i);
+		else
+			tot = tot + C(i);
+		end
+	end
+end
+
+% store only the pointers of the start of each thread's block 
+THREADS.ICt = tmp;%zeros( CONFIG.OPTIMIZATION.nTHREADS+1, 1, 'uint32' );
+% for i = 0:CONFIG.OPTIMIZATION.nTHREADS-1
+%     THREADS.ICt(i+1) = find( tmp==i, 1, 'first' ) - 1;
+% end
+% THREADS.ICt(end) = DICTIONARY.IC.n;
+clear Uidx tID tot iPrev C i tmp
+
+% extra-cellular segments
+% -----------------------
+THREADS.ECt = zeros( CONFIG.OPTIMIZATION.nTHREADS+1, 1, 'uint32' );
+n =	floor(DICTIONARY.EC.nE/CONFIG.OPTIMIZATION.nTHREADS);
+for i = 1:CONFIG.OPTIMIZATION.nTHREADS-1
+    THREADS.ECt(i+1) = THREADS.ECt(i) + n;
+end
+THREADS.ECt(end) = DICTIONARY.EC.nE;
+
+% isotropic segments
+% ------------------
+THREADS.ISOt = zeros( CONFIG.OPTIMIZATION.nTHREADS+1, 1, 'uint32' );
+n =	floor(DICTIONARY.nV/CONFIG.OPTIMIZATION.nTHREADS);
+for i = 1:CONFIG.OPTIMIZATION.nTHREADS-1
+    THREADS.ISOt(i+1) = THREADS.ISOt(i) + n;
+end
+THREADS.ISOt(end) = DICTIONARY.nV;
+clear n i
 
 
 % Compiling the mex-files encoding the linear operator A
