@@ -49,13 +49,10 @@ methods
 			% A*x
 			if ( obj.size(2) ~= size(x,1) ), error('A.times(): dimensions do not match'); end
 			v = DICTIONARY_MakeOperator_A( DICTIONARY, KERNELS, x, THREADS );
-			v = v( DICTIONARY.MASKidx );
 		else
 			% At*y
 			if ( obj.size(2) ~= size(x,1) ), error('At.times(): dimensions do not match'); end
-			y = zeros( [KERNELS.nS DICTIONARY.dim] );
-			y( DICTIONARY.MASKidx ) = x;
-			v = DICTIONARY_MakeOperator_At( DICTIONARY, KERNELS, y );
+			v = DICTIONARY_MakeOperator_At( DICTIONARY, KERNELS, x );
         end
 	end
 

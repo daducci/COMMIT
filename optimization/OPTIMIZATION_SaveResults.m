@@ -97,54 +97,62 @@ niiERR.img = zeros(niiERR.hdr.dime.dim(2:5),'single');
 
 % isotropic
 fprintf( '\t\t- isotropic\n' );
-IMG  = zeros( DICTIONARY.dim );
+tmp  = zeros( DICTIONARY.nV, 1 );
 base = A.nF*A.nR + A.nE*A.nT;
 for s = 1:numel(DICTIONARY.ISO.v)
-	v = DICTIONARY.ISO.v(s) + 1;
+	v = DICTIONARY.ISO.v(s)/KERNELS.nS + 1;
 	xx = xW(base+s : A.nV : base+A.nV*A.nI);
 	for k = 1:A.nI
-		IMG(v) = IMG(v) + xx(k);
+		tmp(v) = tmp(v) + xx(k);
 	end
 end
+IMG  = zeros( DICTIONARY.dim );
+IMG( DICTIONARY.MASK>0 ) = tmp;
 niiERR.img( :,:,:,3 ) = IMG;
 
 % extra-axonal
 if numel(KERNELS.wmh) > 0
 	fprintf( '\t\t- extra-axonal\n' );
-	IMG  = zeros( DICTIONARY.dim );
-	base = A.nF*A.nR;
+    tmp  = zeros( DICTIONARY.nV, 1 );
+    base = A.nF*A.nR;
 	for s = 1:numel(DICTIONARY.EC.v)
-		v = DICTIONARY.EC.v(s) + 1;
+		v = DICTIONARY.EC.v(s)/KERNELS.nS + 1;
 		xx = xW( base+s: A.nE : base+A.nE*A.nT);
 		for k = 1:A.nT
-			IMG(v) = IMG(v) + xx(k);
+			tmp(v) = tmp(v) + xx(k);
 		end
-	end
+    end
+    IMG  = zeros( DICTIONARY.dim );
+    IMG( DICTIONARY.MASK>0 ) = tmp;
 	niiERR.img( :,:,:,2 ) = IMG;
 end
 
 % intra-axonal
 fprintf( '\t\t- intra-axonal\n' );
-IMG   = zeros( DICTIONARY.dim );
-IMG2  = zeros( DICTIONARY.dim );
+tmp   = zeros( DICTIONARY.nV, 1 );
+tmp2  = zeros( DICTIONARY.nV, 1 );
 for s = 1:DICTIONARY.IC.n
 	f = DICTIONARY.IC.fiber(s) + 1;
-	v = DICTIONARY.IC.v(s) + 1;
+	v = DICTIONARY.IC.v(s)/KERNELS.nS + 1;
 	for k = 1:A.nR
 		w = xW(f + (k-1)*A.nF) * DICTIONARY.IC.len(s);
-		IMG(v) = IMG(v) + w;
+		tmp(v) = tmp(v) + w;
 	end
-	IMG2(v) = IMG2(v) + DICTIONARY.IC.len(s);
+	tmp2(v) = tmp2(v) + DICTIONARY.IC.len(s);
 end
 
+IMG  = zeros( DICTIONARY.dim );
+IMG( DICTIONARY.MASK>0 ) = tmp;
 niiERR.img( :,:,:,1 ) = IMG;
 save_untouch_nii( niiERR, fullfile(RESULTS_path,'vf.nii') )
 
-niiERR.img( :,:,:,1 ) = IMG2;
+IMG  = zeros( DICTIONARY.dim );
+IMG( DICTIONARY.MASK>0 ) = tmp2;
+niiERR.img( :,:,:,1 ) = IMG;
 save_untouch_nii( niiERR, fullfile(RESULTS_path,'vf__raw.nii') )
 
 
 fprintf( '   [ %.2f seconds ]\n', toc(ticID) );
 
-clear ticID RESULTS_path niiERR y_est y_mea IMG IMG2 w xW xx f v s k base
+clear ticID RESULTS_path niiERR y_est y_mea tmp tmp2 IMG w xW xx f v s k base
 

@@ -137,7 +137,33 @@ clear vx vy vz
 
 fprintf( '\t[ %d voxels ]\n', DICTIONARY.nV );
 
+
+% post-processing
+% ---------------
+fprintf( '\t- post-processing...' );
+
 DICTIONARY.MASKidx = find( permute(repmat(DICTIONARY.MASK,[1 1 1 niiSIGNAL.hdr.dime.dim(2) ]),[4 1 2 3]) );
+
+idx = find( DICTIONARY.MASK );
+lut = zeros( DICTIONARY.dim, 'uint32' );
+for i = 1:numel(idx)
+    lut( idx(i) ) = (i-1)*KERNELS.nS;
+end
+
+
+for i = 1:numel(DICTIONARY.IC.v)
+    DICTIONARY.IC.v(i) = lut( DICTIONARY.IC.v(i)+1 );
+end
+for i = 1:numel(DICTIONARY.EC.v)
+    DICTIONARY.EC.v(i) = lut( DICTIONARY.EC.v(i)+1 );
+end
+for i = 1:numel(DICTIONARY.ISO.v)
+    DICTIONARY.ISO.v(i) = lut( DICTIONARY.ISO.v(i)+1 );
+end
+
+clear idx lut i
+
+fprintf( '\t\t[ OK ]\n' );
 
 
 fprintf( '   [ %.2f seconds ]\n', toc(ticID) );

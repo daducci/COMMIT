@@ -146,7 +146,7 @@ void* computeProductBlock( void *ptr )
 		#endif
 		)
 		{
-			Yptr    = Y    + nS * (*t_v);
+			Yptr    = Y    + (*t_v);
 			YptrEnd = Yptr + nS;
 			w       = (double)(*t_l);
 			offset  = nS * (*t_o);
@@ -225,7 +225,7 @@ void* computeProductBlock( void *ptr )
             #endif
           )
         {
-            Yptr    = Y    + nS * (*t_v);
+            Yptr    = Y    + (*t_v);
             YptrEnd = Yptr + nS;
             offset  = nS * (*t_o);
             SFP0ptr = wmhSFP0 + offset;
@@ -299,7 +299,7 @@ void* computeProductBlock( void *ptr )
             #endif
           )
         {
-            Yptr    = Y    + nS * (*t_v);
+            Yptr    = Y    + (*t_v);
             YptrEnd = Yptr + nS;
             SFP0ptr = isoSFP0;
             #if nISO>=2
@@ -553,8 +553,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexErrMsgIdAndTxt("InvalidOutput:nlhs", "Required 1 output.");
 	#endif
 
-	const int outDims[4] = { nS, Y_dimx, Y_dimy, Y_dimz };
-    plhs[0] = mxCreateNumericArray(4, outDims, mxDOUBLE_CLASS, mxREAL);
+	const int outDims[2] = { nS*nV, 1 };
+    plhs[0] = mxCreateNumericArray(2, outDims, mxDOUBLE_CLASS, mxREAL);
     Y = (double*)mxGetData( plhs[0] );
 
 

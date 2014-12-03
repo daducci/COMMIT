@@ -206,15 +206,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	// Parse "Y"
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions( prhs[2] ) != 4 )
-		mexErrMsgIdAndTxt("InvalidInput:Y","'Y' must be a 4D matrix");
+	if ( mxGetNumberOfDimensions( prhs[2] ) != 2 )
+		mexErrMsgIdAndTxt("InvalidInput:Y","'Y' must be a 2D matrix");
 	#endif
  	double* Y = (double*) mxGetData( prhs[2] );
-
-	const mwSize* Y_dims = mxGetDimensions( prhs[2] );
-	const int Y_dimx = (int)Y_dims[1];
-	const int Y_dimy = (int)Y_dims[2];
-	const int Y_dimz = (int)Y_dims[3];
 
 
 	/* =============== */
@@ -255,7 +250,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	UINT32_T* ICvEnd = ICv+n;
 	while( ICv != ICvEnd )
 	{
-		Yptr         = Y         + nS * (*ICv++);
+		Yptr         = Y         + (*ICv++);
 		YptrEnd      = Yptr      + nS;
 
 		offset = nS * (*ICo++);
@@ -324,7 +319,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	while( x_wmhPtr0 != x_wmhPtr0End )
 	{
-		Yptr         = Y         + nS * (*ECv++);
+		Yptr         = Y         + (*ECv++);
 		YptrEnd      = Yptr      + nS;
 
 		offset = nS * (*ECo++);
@@ -389,7 +384,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	while( x_isoPtr0 != x_isoPtr0End )
 	{
-		Yptr         = Y         + nS * (*ISOv++);
+		Yptr         = Y         + (*ISOv++);
 		YptrEnd      = Yptr      + nS;
 
 		isoSFP0ptr   = isoSFP0;
