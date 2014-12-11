@@ -1,11 +1,31 @@
 # COMMIT
 
-Implementation of the linear framework for combining tractography and tissue micro-structure models described here:
+Tractography is a class of algorithms aiming at in vivo mapping the major neuronal pathways in the white matter from diffusion MRI data. These techniques offer a powerful tool to non-invasively investigate at the macroscopic scale the architecture of the neuronal connections of the brain. However, unfortunately, the reconstructions recovered with existing tractography algorithms are not really quantitative even though diffusion MRI is a quantitative modality by nature. As a matter of fact, several techniques have been proposed in recent years to estimate, at the voxel level, intrinsic micro-structural features of the tissue, such as axonal density and diameter, by using multi-compartment models.
+
+COMMIT implements a novel framework to reestablish the link between tractography and tissue micro-structure. Starting from an input set of candidate fiber-tracts, which are estimated from the data using standard fiber-tracking techniques, it models the diffusion MRI signal in each voxel of the image as a linear combination of the restricted and hindered contributions generated in every location of the brain by these candidate tracts. Then, COMMIT seeks for the effective contribution of each of them such that they globally fit the measured signal at best.
+
+COMMIT estimates these weights by solving a global convex optimization problem and using efficient algorithms. Results clearly demonstrated the benefits of the proposed formulation, opening new perspectives for a more quantitative and biologically-plausible assessment of the structural connectivity of the brain.
+
+
+## Main features
+
+- Accepts and work with **any input tractogram** (i.e. set of fiber tracts)
+- Can easily implement and consider **any multi-compartment model** available in the literature: possibility to consider restricted, hindered as well any isotropic contributions into the signal forward model
+- Very efficient: the core is implemented in c++ using **multi-threading programming** for efficient parallel computation
+- **Low memory** consumption, using optimized sparse data structures, e.g. it can easily run on a standard laptop with 8GB ram a full-brain tractogram with on the HCP data (1M fibers, 3 shells, 1.25 mm^3 resolution)
+- **Soon**: **GPU implementation** for even faster model fitting! Code is ready and it is currently in beta testing phase.
+
+## How to cite COMMIT
 
 **COMMIT: Convex Optimization Modeling for Microstructure Informed Tractography**  
 Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran  
-*IEEE Transactions on Medical Imaging*, in press, 2014  
+*IEEE Transactions on Medical Imaging* 34(1) 1-12, 2014  
 [Link to publisher](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6884830)
+
+**A convex optimization framework for global tractography**
+Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran  
+*IEEE 10th International Symposium on Biomedical Imaging (ISBI)* 524-527, 2013
+[Link to publisher](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6556527)
 
 ## Installation
 To install `COMMIT`, please refer to the [installation guide](doc/install.md).
