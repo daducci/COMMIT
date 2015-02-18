@@ -39,6 +39,8 @@ NB: the output tractogram from *MrTrix* has been already converted to the format
 
 ## Process data with COMMIT
 
+Start MATLAB.
+
 Setup and load the data:
 
 ```matlab
