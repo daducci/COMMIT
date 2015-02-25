@@ -304,4 +304,4 @@ saveas(gcf,'RESULTS_Fig8.png')
 
 ![Scatterplot comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig8.png)
 
-As we can see, the results essentially lead to the the same results, as previously highlighted using the *NRMSE* metric, de facto showing the drastic superiority in explaining the measured diffusion MRI signal of the *COMMIT* model with respect to *LiFE*.
+As we can see, the results essentially lead to the the same results, as previously highlighted using the *NRMSE* metric, de facto showing the **superiority of the *COMMIT* model in explaining the measured diffusion MRI signal** with respect to *LiFE*.
