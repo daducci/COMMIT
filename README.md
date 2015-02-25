@@ -30,6 +30,9 @@ Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran
 ## Installation
 To install COMMIT, please refer to the [installation guide](doc/install.md).
 
-##Getting started
+More information/documentation can be found in the [`doc`](doc/) folder.
 
-Tutorials/demos are provided in the folder[`doc/demos`](doc/demos/) to help you get started with the COMMIT framework.
+## Getting started
+
+Tutorials/demos are provided in the [`doc/demos`](doc/demos/) folder to help you get started with the COMMIT framework.
+
