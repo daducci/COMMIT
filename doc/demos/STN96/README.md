@@ -17,10 +17,10 @@ For more information, please refer to [this abstract](ISMRM_3148.pdf), that rece
 2. Download the original DWI data from [here](https://stacks.stanford.edu/file/druid:cs392kv3054/life_demo_data.tar.gz).
 
 3. Extract the file `life_demo_scan1_subject1_b2000_150dirs_stanford.nii.gz` from the archive, unzip it and move it to the `scan1` folder with the name `DWI.nii`, i.e.
-```bash
-gunzip life_demo_scan1_subject1_b2000_150dirs_stanford.nii.gz
-mv life_demo_scan1_subject1_b2000_150dirs_stanford.nii STN96/scan1/DWI.nii
-```
+ ```bash
+ gunzip life_demo_scan1_subject1_b2000_150dirs_stanford.nii.gz
+ mv life_demo_scan1_subject1_b2000_150dirs_stanford.nii STN96/scan1/DWI.nii
+ ```
 
 4. Download precomputed reconstructions from [here](http://hardi.epfl.ch/static/data/COMMIT_demos/STN96_scan1.zip). This archive contains a CSD reconstruction + probabilistic tracking performed according to the experimental setting used in the corresponding publication (e.g. CSD implemented in *MrTrix* and probabilistic tracking with 500000 tracts). 
 
