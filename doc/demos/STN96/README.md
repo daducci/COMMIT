@@ -186,9 +186,9 @@ title( sprintf('COMMIT : %.1f%% +/- %.1f%%', mean(yL), std(yL) ))
 
 ![NRMSE for COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig2.png)
 
-The average fitting error is drastically reduced with *COMMIT*, i.e. (**18.3% ± 4.7%**). Also, a more homogeneous distribution of the errors can be observed, notably in crossing regions and in proximity with gray matter.
+The average fitting error is drastically reduced with *COMMIT*, i.e. (**18.3% ± 4.7%**). Also, a more homogeneous distribution of the errors can be observed, notably in crossing regions and in proximity to gray matter.
  
-We now directly compare the *fitting error distributions* of the two models:
+Now we can directly compare the *fitting error distributions* of the two models:
 
 ```matlab
 % direct comparison of the NRMSE of LiFE and COMMIT
@@ -207,7 +207,7 @@ title('Error distributions')
 
 ![Histograms comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig3.png)
 
-Also, we can directly compare *voxel-by-voxel* the fitting errors of the two models:
+Also, we can directly compare their fitting errors *voxel-by-voxel* with the following scatter-plot:
 
 ```matlab
 % voxelwise comparison of the NRMSE of LiFE and COMMIT
@@ -229,9 +229,9 @@ As we can see, in all voxels the *COMMIT* model **always explains the data much 
 
 ## Compare the two models (continued)
 
-However, one might also want to **evaluate how well both models explain the measured diffusion MRI signal** acquired with the scanner.
-Thus, we need to *add back the mean* to the data used by the *LiFE* model and utilize the previously estimated fiber weights. This way, we can directly compare the two models with respect to the same common quantity, i.e. the acquired diffusion MRI signal.
-In this case, no normalization is needed and we can use the *RMSE* (expressed in raw signal units) to compare **the accuracy of the fit**.
+One might also want to **evaluate how well both models explain the measured diffusion MRI signal** acquired with the scanner.
+To this end, we need to *add back the mean* to the data used by the *LiFE* model and utilize the previously estimated fiber weights. By doing this we can directly compare the two models with respect to the same common quantity, i.e. the acquired diffusion MRI signal.
+No normalization is needed in this case and we can then use the *RMSE* (expressed in raw signal units) to compare **the accuracy of the fit** of the two approaches.
 
 To this aim, it is simply necessary to perform the following operations after processing the data with *LiFE*:
 
@@ -249,7 +249,8 @@ KERNELS_ProcessAtoms
 OPTIMIZATION_SaveResults
 ```
 
-At this point, we can load the *RMSE* fit errors and compare the results, as follows:
+By doing this, both the measurements **y** and the signal **Ax** predicted by the *LiFE* model will be compared using the *NMSE* error metric to evaluate how well the *LiFE* model actually explains the measures diffusion MRI signal.
+We then load the *RMSE* errors and compare the accuracy of the two models, as follows:
 
 ```matlab
 niiERR_L  = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_LIFE','fit_RMSE.nii') );
