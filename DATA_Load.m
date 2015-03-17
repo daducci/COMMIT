@@ -19,7 +19,7 @@ if CONFIG.scheme.nS == niiSIGNAL.hdr.dime.dim(5)
     fprintf( ' ) and %d b=0\n', CONFIG.scheme.b0_count );
 	fprintf( '\t  [ OK ]\n' );
 else
-	error( '[main] Data and scheme do not match\n' );
+	error( '[main] Data and scheme do not match' );
 end
 
 if ( CONFIG.normalizeSignal )
