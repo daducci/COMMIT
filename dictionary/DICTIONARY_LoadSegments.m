@@ -2,12 +2,15 @@ ticID = tic;
 fprintf( '\n-> Loading the dictionary\n   ======================\n' );
 
 DICTIONARY = [];
-DICTIONARY.trkFilename = 'dictionary_fibers.trk';
 DICTIONARY.dim    = niiSIGNAL.hdr.dime.dim(3:5);
 DICTIONARY.pixdim = niiSIGNAL.hdr.dime.pixdim(3:5);
 
+if ~exist( fullfile(CONFIG.TRACKING_path,'dictionary_mask.nii'), 'file' )
+	error( 'Dictionary not found. Launch ''trk2dictionary'' script first!' );
+end
+
 niiMASK = load_untouch_nii( fullfile(CONFIG.TRACKING_path,'dictionary_mask.nii') );
-DICTIONARY.MASK = niiMASK.img;
+DICTIONARY.MASK = uint8(niiMASK.img > 0);
 clear niiMASK
 
 % intra-axonal compartments
@@ -77,7 +80,7 @@ DICTIONARY.IC.fiber = DICTIONARY.IC.fiber( idx );
 DICTIONARY.IC.len   = DICTIONARY.IC.len( idx );
 clear idx
 
-fprintf( '\t[ %d fibers and %d segments ]\n', DICTIONARY.IC.nF, DICTIONARY.IC.n );
+fprintf( '  [ %d fibers and %d segments ]\n', DICTIONARY.IC.nF, DICTIONARY.IC.n );
 
 
 % extra-axonal compartments
@@ -119,7 +122,7 @@ clear pDict_EC_*
 DICTIONARY.EC.o     = DICTIONARY.EC.o( idx );
 clear idx
 
-fprintf( '\t[ %d segments ]\n', DICTIONARY.EC.nE );
+fprintf( '  [ %d segments ]\n', DICTIONARY.EC.nE );
 
 
 % isotropic compartment
@@ -135,7 +138,7 @@ DICTIONARY.ISO.v = sort( DICTIONARY.ISO.v );
 
 clear vx vy vz
 
-fprintf( '\t[ %d voxels ]\n', DICTIONARY.nV );
+fprintf( '     [ %d voxels ]\n', DICTIONARY.nV );
 
 
 % post-processing

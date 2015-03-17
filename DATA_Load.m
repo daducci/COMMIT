@@ -8,11 +8,15 @@ fprintf( '\n-> Loading and setup:\n' );
 fprintf( '\t* Loading data...\n' );
 niiSIGNAL = load_untouch_nii( CONFIG.dwiFilename );
 niiSIGNAL.img = single(niiSIGNAL.img);
-CONFIG.scheme = KERNELS_LoadScheme( CONFIG.schemeFilename );
+CONFIG.scheme = KERNELS_LoadScheme( CONFIG.schemeFilename, CONFIG.b0_thr );
 fprintf( '\t\t* dim    = %d x %d x %d x %d\n' , niiSIGNAL.hdr.dime.dim(2:5) );
 fprintf( '\t\t* pixdim = %.3f x %.3f x %.3f\n', niiSIGNAL.hdr.dime.pixdim(2:4) );
 if CONFIG.scheme.nS == niiSIGNAL.hdr.dime.dim(5)
-	fprintf( '\t\t* %d measurements divided in %d shells (%d b=0)\n', CONFIG.scheme.nS, numel(CONFIG.scheme.shells), CONFIG.scheme.b0_count );
+	fprintf( '\t\t* %d measurements divided in %d shells (', CONFIG.scheme.nS, numel(CONFIG.scheme.shells) );
+    for i=1:numel(CONFIG.scheme.shells)
+        fprintf( ' %.1f', CONFIG.scheme.shells{i}.b );
+    end
+    fprintf( ' ) and %d b=0\n', CONFIG.scheme.b0_count );
 	fprintf( '\t  [ OK ]\n' );
 else
 	error( '[main] Data and scheme do not match\n' );

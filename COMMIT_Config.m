@@ -27,6 +27,7 @@ CONFIG.dwiFilename		= fullfile(CONFIG.DATA_path,'DWI.nii');
 CONFIG.normalizeSignal	= true;
 CONFIG.doDemean			= false;
 CONFIG.useReference		= false;
+CONFIG.b0_thr           = 1;
 
 CONFIG.schemeFilename	    = fullfile(CONFIG.DATA_path,'DWI.scheme');
 CONFIG.scheme			    = [];
