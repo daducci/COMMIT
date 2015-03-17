@@ -8,7 +8,7 @@
 #include <mex.h>
 
 // avoid to perform parameter checking each time
-#define DO_CHECK 0
+#define DO_CHECK 1
 
 // number of THREADS
 #ifdef nTHREADS
@@ -55,42 +55,42 @@ UINT16_T		*ICo, *ECo;
 float			*ICl;
 
 #if nIC>=1
-double *wmrSFP0;
+float *wmrSFP0;
 #endif
 #if nIC>=2
-double *wmrSFP1;
+float *wmrSFP1;
 #endif
 #if nIC>=3
-double *wmrSFP2;
+float *wmrSFP2;
 #endif
 #if nIC>=4
-double *wmrSFP3;
+float *wmrSFP3;
 #endif
 
 #if nEC>=1
-double *wmhSFP0;
+float *wmhSFP0;
 #endif
 #if nEC>=2
-double *wmhSFP1;
+float *wmhSFP1;
 #endif
 #if nEC>=3
-double *wmhSFP2;
+float *wmhSFP2;
 #endif
 #if nEC>=4
-double *wmhSFP3;
+float *wmhSFP3;
 #endif
 
 #if nISO>=1
-double *isoSFP0;
+float *isoSFP0;
 #endif
 #if nISO>=2
-double *isoSFP1;
+float *isoSFP1;
 #endif
 #if nISO>=3
-double *isoSFP2;
+float *isoSFP2;
 #endif
 #if nISO>=4
-double *isoSFP3;
+float *isoSFP3;
 #endif
 
 
@@ -104,7 +104,7 @@ void* computeProductBlock( void *ptr )
 	double   x0, x1, x2, x3, w;
     double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3;
 	double   *Yptr, *YptrEnd;
-    double   *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
+    float   *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
 	UINT32_T *t_v, *t_vEnd, *t_f;
 	UINT16_T *t_o;
 	float    *t_l;
@@ -356,149 +356,197 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY", "'DICTIONARY' format is wrong");
 	#endif
 
-	// Parse "nS"
-	tmp = mxGetField( prhs[1], 0, "nS" );
-	#if DO_CHECK > 0
-	if( !mxIsDouble(tmp) || mxIsComplex(tmp) ||  mxGetNumberOfElements(tmp)!=1 )
-		mexErrMsgIdAndTxt("InvalidInput:nS","'nS' must be a real scalar");
-	#endif
-	nS = mxGetScalar( tmp );
-
-	// Parse "nV"
+	// Parse "DICTIONARY.nV"
 	tmp = mxGetField( prhs[0], 0, "nV" );
 	#if DO_CHECK > 0
 	if( !mxIsDouble(tmp) || mxIsComplex(tmp) ||  mxGetNumberOfElements(tmp)!=1 )
-		mexErrMsgIdAndTxt("InvalidInput:nV","'nV' must be a real scalar");
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.nV","'DICTIONARY.nV' must be a real scalar");
 	#endif
 	nV = mxGetScalar( tmp );
 
-	// Parse "nE"
+	// Parse "DICTIONARY.EC.nE"
 	tmp = mxGetField( EC, 0, "nE" );
 	#if DO_CHECK > 0
 	if( !mxIsDouble(tmp) || mxIsComplex(tmp) ||  mxGetNumberOfElements(tmp)!=1 )
-		mexErrMsgIdAndTxt("InvalidInput:EC.nE","'EC.nE' must be a real scalar");
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.EC.nE","'DICTIONARY.EC.nE' must be a real scalar");
 	#endif
 	nE = mxGetScalar( tmp );
 
-	// Parse "n"
+	// Parse "DICTIONARY.IC.n"
 	tmp = mxGetField( IC, 0, "n" );
 	#if DO_CHECK > 0
 	if( !mxIsDouble(tmp) || mxIsComplex(tmp) ||  mxGetNumberOfElements(tmp)!=1 )
-		mexErrMsgIdAndTxt("InvalidInput:n","'n' must be a real scalar");
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.IC.n","'DICTIONARY.IC.n' must be a real scalar");
 	#endif
 	n = mxGetScalar( tmp );
 
-	// Parse "fiber"
+	// Parse "DICTIONARY.IC.fiber"
 	tmp = mxGetField( IC, 0, "fiber" );
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:fiber","'fiber' must be a n*1 vector");
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.IC.fiber","'DICTIONARY.IC.fiber' must be a n*1 vector (uint32)");
 	#endif
  	ICf = (UINT32_T*) mxGetData( tmp );
 
-	// Parse "len"
+	// Parse "DICTIONARY.IC.len"
 	tmp = mxGetField( IC, 0, "len" );
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:len","'len' must be a n*1 vector");
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"single") )
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.IC.len","'DICTIONARY.IC.len' must be a n*1 vector (single)");
 	#endif
  	ICl = (float*) mxGetData(tmp);
 
-	// Parse "ICv", "ICo"
+	// Parse "DICTIONARY.IC.v", "DICTIONARY.IC.o"
 	tmp = mxGetField( IC, 0, "v" );
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:IC.v","'IC.v' must be a n*1 vector");
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.IC.v","'DICTIONARY.IC.v' must be a n*1 vector (uint32)");
 	#endif
 	ICv = (UINT32_T*) mxGetData(tmp);
 	tmp = mxGetField( IC, 0, "o" );
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:IC.o","'IC.o' must be a n*1 vector");
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint16") )
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.IC.o","'DICTIONARY.IC.o' must be a n*1 vector (uint16)");
 	#endif
 	ICo = (UINT16_T*) mxGetData(tmp);
 
-	// Parse "ECv","ECo"
+	// Parse "DICTIONARY.EC.v","DICTIONARY.EC.o"
 	tmp = mxGetField( EC, 0, "v" );
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:EC.v","'EC.v' must be a n*1 vector");
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.EC.v","'DICTIONARY.EC.v' must be a n*1 vector (uint32)");
 	#endif
 	ECv = (UINT32_T*) mxGetData(tmp);
 	tmp = mxGetField( EC, 0, "o" );
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:EC.o","'EC.o' must be a n*1 vector");
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint16") )
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.EC.o","'DICTIONARY.EC.o' must be a n*1 vector (uint16)");
 	#endif
 	ECo = (UINT16_T*) mxGetData(tmp);
 
-	// Parse "ISOv"
+	// Parse "DICTIONARY.ISO.v"
 	tmp = mxGetField( ISO, 0, "v" );
 	#if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:ISO.v","'ISO.v' must be a n*1 vector");
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
+		mexErrMsgIdAndTxt("InvalidInput:DICTIONARY.ISO.v","'DICTIONARY.ISO.v' must be a n*1 vector (uint32)");
 	#endif
 	ISOv = (UINT32_T*) mxGetData(tmp);
+
+	// Parse "KERNELS.nS"
+	tmp = mxGetField( prhs[1], 0, "nS" );
+	#if DO_CHECK > 0
+	if( !mxIsDouble(tmp) || mxIsComplex(tmp) ||  mxGetNumberOfElements(tmp)!=1 )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.nS","'KERNELS.nS' must be a real scalar");
+	#endif
+	nS = mxGetScalar( tmp );
 
 	// Parse "KERNELS.wmr", "KERNELS.wmh" and "KERNELS.iso"
 	mxArray* wmr = mxGetField( prhs[1], 0, "wmr" );
 	#if DO_CHECK > 0
 	if ( !mxIsCell(wmr) )
-		mexErrMsgIdAndTxt("InvalidInput:wmr","'wmr' must be a cell array");
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmr","'KERNELS.wmr' must be a cell array");
 	#endif
 	#if nIC>=1
-	wmrSFP0 = (double*) mxGetData( mxGetCell(wmr,0) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(wmr,0),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmr","'KERNELS.wmr' must contain single");
+	#endif
+	wmrSFP0 = (float*) mxGetData( mxGetCell(wmr,0) );
 	#endif
 	#if nIC>=2
-	wmrSFP1 = (double*) mxGetData( mxGetCell(wmr,1) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(wmr,1),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmr","'KERNELS.wmr' must contain single");
+	#endif
+	wmrSFP1 = (float*) mxGetData( mxGetCell(wmr,1) );
 	#endif
 	#if nIC>=3
-	wmrSFP2 = (double*) mxGetData( mxGetCell(wmr,2) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(wmr,2),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmr","'KERNELS.wmr' must contain single");
+	#endif
+	wmrSFP2 = (float*) mxGetData( mxGetCell(wmr,2) );
 	#endif
 	#if nIC>=4
-	wmrSFP3 = (double*) mxGetData( mxGetCell(wmr,3) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(wmr,3),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmr","'KERNELS.wmr' must contain single");
+	#endif
+	wmrSFP3 = (float*) mxGetData( mxGetCell(wmr,3) );
 	#endif
 
 	mxArray* wmh = mxGetField( prhs[1], 0, "wmh" );
 	#if DO_CHECK > 0
 	if ( !mxIsCell(wmh) )
-		mexErrMsgIdAndTxt("InvalidInput:wmh","'wmh' must be a cell array");
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmh","'KERNELS.wmh' must be a cell array");
 	#endif
 	#if nEC>=1
-	wmhSFP0 = (double*) mxGetData( mxGetCell(wmh,0) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(wmh,0),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmh","'KERNELS.wmh' must contain single");
+	#endif
+	wmhSFP0 = (float*) mxGetData( mxGetCell(wmh,0) );
 	#endif
 	#if nEC>=2
-	wmhSFP1 = (double*) mxGetData( mxGetCell(wmh,1) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(wmh,1),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmh","'KERNELS.wmh' must contain single");
+	#endif
+	wmhSFP1 = (float*) mxGetData( mxGetCell(wmh,1) );
 	#endif
 	#if nEC>=3
-	wmhSFP2 = (double*) mxGetData( mxGetCell(wmh,2) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(wmh,2),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmh","'KERNELS.wmh' must contain single");
+	#endif
+	wmhSFP2 = (float*) mxGetData( mxGetCell(wmh,2) );
 	#endif
 	#if nEC>=4
-	wmhSFP3 = (double*) mxGetData( mxGetCell(wmh,3) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(wmh,3),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.wmh","'KERNELS.wmh' must contain single");
+	#endif
+	wmhSFP3 = (float*) mxGetData( mxGetCell(wmh,3) );
 	#endif
 
 	mxArray* iso = mxGetField( prhs[1], 0, "iso" );
 	#if DO_CHECK > 0
 	if ( !mxIsCell(iso) )
-		mexErrMsgIdAndTxt("InvalidInput:iso","'iso' must be a cell array");
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.iso","'KERNELS.iso' must be a cell array");
 	#endif
 	#if nISO>=1
-	isoSFP0 = (double*) mxGetData( mxGetCell(iso,0) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(iso,0),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.iso","'KERNELS.iso' must contain single");
+	#endif
+	isoSFP0 = (float*) mxGetData( mxGetCell(iso,0) );
 	#endif
 	#if nISO>=2
-	isoSFP1 = (double*) mxGetData( mxGetCell(iso,1) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(iso,1),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.iso","'KERNELS.iso' must contain single");
+	#endif
+	isoSFP1 = (float*) mxGetData( mxGetCell(iso,1) );
 	#endif
 	#if nISO>=3
-	isoSFP2 = (double*) mxGetData( mxGetCell(iso,2) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(iso,2),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.iso","'KERNELS.iso' must contain single");
+	#endif
+	isoSFP2 = (float*) mxGetData( mxGetCell(iso,2) );
 	#endif
 	#if nISO>=4
-	isoSFP3 = (double*) mxGetData( mxGetCell(iso,3) );
+	#if DO_CHECK > 0
+    if( !mxIsClass(mxGetCell(iso,3),"single") )
+		mexErrMsgIdAndTxt("InvalidInput:KERNELS.iso","'KERNELS.iso' must contain single");
+	#endif
+	isoSFP3 = (float*) mxGetData( mxGetCell(iso,3) );
 	#endif
 
     // Parse "x"
     #if DO_CHECK > 0
-    if ( mxGetNumberOfDimensions( prhs[2] ) != 2 || mxGetN(prhs[2]) != 1 )
-        mexErrMsgIdAndTxt("InvalidInput:x","'x' must be a n*1 vector");
+    if ( mxGetNumberOfDimensions(prhs[2]) != 2 || mxGetN(prhs[2]) != 1 || !mxIsClass(prhs[2],"double") )
+        mexErrMsgIdAndTxt("InvalidInput:x","'x' must be a n*1 vector (double)");
     #endif
     x = (double*) mxGetData( prhs[2] );
     if ( nIC > 0 )
@@ -514,22 +562,22 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     tmp  = mxGetField( prhs[3], 0, "IC" );
     #if DO_CHECK > 0
-	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-		mexErrMsgIdAndTxt("InvalidInput:THREADS.IC","'THREADS.IC' must be a n*1 vector");
+	if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
+		mexErrMsgIdAndTxt("InvalidInput:THREADS.IC","'THREADS.IC' must be a n*1 vector (uint32)");
 	#endif
  	ICthreads = (UINT32_T*) mxGetData( tmp );
 
     tmp  = mxGetField( prhs[3], 0, "EC" );
     #if DO_CHECK > 0
-    if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-        mexErrMsgIdAndTxt("InvalidInput:THREADS.EC","'THREADS.EC' must be a n*1 vector");
+    if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
+        mexErrMsgIdAndTxt("InvalidInput:THREADS.EC","'THREADS.EC' must be a n*1 vector (uint32)");
     #endif
     ECthreads = (UINT32_T*) mxGetData( tmp );
 
     tmp  = mxGetField( prhs[3], 0, "ISO" );
     #if DO_CHECK > 0
-    if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 )
-        mexErrMsgIdAndTxt("InvalidInput:THREADS.ISO","'THREADS.ISO' must be a n*1 vector");
+    if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
+        mexErrMsgIdAndTxt("InvalidInput:THREADS.ISO","'THREADS.ISO' must be a n*1 vector (uint32)");
     #endif
     ISOthreads = (UINT32_T*) mxGetData( tmp );
 

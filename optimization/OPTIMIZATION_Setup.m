@@ -145,7 +145,7 @@ mex( ...
 A  = DICTIONARY_MakeOperator();
 At = A';
 
-Y = niiSIGNAL.img( DICTIONARY.MASKidx );
+Y = double( niiSIGNAL.img( DICTIONARY.MASKidx ) );
 
 fprintf( '   [ %.2f seconds ]\n', toc(ticID) );
 clear ticID

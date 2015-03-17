@@ -1,17 +1,17 @@
 fprintf('\n-> Processing kernels...\n');
 ticID = tic;
 
-% Ensure double data type for mex code
+% Ensure single data type for mex code
 % ------------------------------------
-fprintf('\t - convert to double data type...');
+fprintf('\t - convert to single data type...');
 for i = 1:numel(KERNELS.wmr)
-	KERNELS.wmr{i} = double( KERNELS.wmr{i}(CONFIG.scheme.dwi_idx,:,:) );
+	KERNELS.wmr{i} = single( KERNELS.wmr{i}(CONFIG.scheme.dwi_idx,:,:) );
 end
 for i = 1:numel(KERNELS.wmh)
-	KERNELS.wmh{i} = double( KERNELS.wmh{i}(CONFIG.scheme.dwi_idx,:,:) );
+	KERNELS.wmh{i} = single( KERNELS.wmh{i}(CONFIG.scheme.dwi_idx,:,:) );
 end
 for i = 1:numel(KERNELS.iso)
-	KERNELS.iso{i} = double( KERNELS.iso{i}(CONFIG.scheme.dwi_idx,:,:) );
+	KERNELS.iso{i} = single( KERNELS.iso{i}(CONFIG.scheme.dwi_idx,:,:) );
 end
 KERNELS.nS = CONFIG.scheme.dwi_count;
 fprintf( ' [ OK ]\n' );
