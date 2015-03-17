@@ -1,12 +1,12 @@
 % Load scheme file (must be in camino format)
-% 
+%
 % Parameters
 % ----------
 % filename : string
 % 	The filename of the Camino scheme file
 % b0_thr : float
 % 	The threshold on b-values to identify the b0 images
-% 
+%
 % Returns
 % -------
 % scheme : struct
@@ -15,36 +15,45 @@ function [ scheme ] = KERNELS_LoadScheme( filename, b0_thr )
 	if nargin < 2, b0_thr = 0; end
 	scheme = {};
 	scheme.version = NaN;
-	
-	tmp = importdata( filename );
-	scheme.camino = tmp.data;
-	
+
+    try
+		n = 0; % headers lines to skip to get to the numeric data
+		fid = fopen( filename );
+		while( 1 )
+			txt = fgetl(fid);
+			if ( txt(1)~='#' ), break, end
+			n = n + 1;
+		end
+		version = textscan( txt, 'VERSION: %s' ); version = version{1}{1};
+		while( 1 )
+			n = n + 1;
+			txt = fgetl(fid);
+			if ( txt(1)~='#' ), break, end
+		end
+		fclose(fid);
+		
+		scheme.camino = dlmread( filename, '', n, 0 );		
+	catch
+        error('[AMICO_LoadScheme] Unrecognized file format');
+	end
+
 	% ensure the directions are in the spherical range [0,180]x[0,180]
 	idx = scheme.camino(:,2) < 0;
 	scheme.camino(idx,1:3) = -scheme.camino(idx,1:3);
-	
+
 	scheme.nS = size(scheme.camino,1); % number of volumes
 
-	for i = 1:numel(tmp.textdata)
-		row = tmp.textdata{i};
-		if row(1) == '#'
-			continue
-		elseif strcmp( row(1:9),'VERSION: ' )
-			switch ( row(10:end) )
-				case { '0', 'BVECTOR' }
-					scheme.version = 0;
-					scheme.b = scheme.camino(:,4);
-				case { '1', 'STEJSKALTANNER' }
-					scheme.version = 1;
-					scheme.b = ( 267.513e6 * scheme.camino(:,4) .* scheme.camino(:,6) ).^2 .* (scheme.camino(:,5) - scheme.camino(:,6)/3) * 1e-6; % in mm^2/s
-				otherwise
-					error( '[LoadScheme] Unrecognized scheme type' );
-			end
-		else
-			error( '[LoadScheme] Wrong file format' );
-		end
+	switch ( version )
+		case { '0', 'BVECTOR' }
+			scheme.version = 0;
+			scheme.b = scheme.camino(:,4);
+		case { '1', 'STEJSKALTANNER' }
+			scheme.version = 1;
+			scheme.b = ( 267.513e6 * scheme.camino(:,4) .* scheme.camino(:,6) ).^2 .* (scheme.camino(:,5) - scheme.camino(:,6)/3) * 1e-6; % in mm^2/s
+		otherwise
+			error( '[AMICO_LoadScheme] Unrecognized scheme type' );
 	end
-	
+
 	% store information about the volumes
 	tmp = find( scheme.b > b0_thr );
 	scheme.dwi_count = numel( tmp );
@@ -52,13 +61,13 @@ function [ scheme ] = KERNELS_LoadScheme( filename, b0_thr )
 	tmp = find( scheme.b <= b0_thr );
 	scheme.b0_count = numel( tmp );
 	scheme.b0_idx   = tmp;
-	
+
 
 	% get unique parameters (ie shells)
 	if scheme.version == 0
-		[schemeUnique,ia] = unique( scheme.camino(:,4), 'rows' );
+		[schemeUnique,ia] = unique( scheme.camino(:,4), 'rows', 'stable' );
 	else
-		[schemeUnique,ia] = unique( scheme.camino(:,4:7), 'rows' );
+		[schemeUnique,ia] = unique( scheme.camino(:,4:7), 'rows', 'stable' );
 	end
 
 	% store information about each shell in a dictionary
@@ -79,7 +88,7 @@ function [ scheme ] = KERNELS_LoadScheme( filename, b0_thr )
 				scheme.shells{end}.delta = schemeUnique(i,3);
 				scheme.shells{end}.TE    = schemeUnique(i,4);
 			end
-			scheme.shells{end}.b     = schemeUnique(i,end);
+			scheme.shells{end}.b     = bUnique(i);
 
 			if scheme.version == 0
 				scheme.shells{end}.idx   = find( all(bsxfun(@eq,scheme.camino(:,4),schemeUnique(i,:)),2) );
