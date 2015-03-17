@@ -16,13 +16,6 @@ function KERNELS_ActiveAx_RotateAndSave( CONFIG, lmax )
 	TIME = tic();	
 	fprintf( '\n-> Rotating kernels to 180x180 directions for subject="%s" and d=%4.2f:\n', CONFIG.subject, CONFIG.kernels.d );
 
-	% check if original scheme exists
-	if ~exist( CONFIG.schemeFilename, 'file' )
-		error( '[KERNELS_ActiveAx_RotateAndSave] File "%s" not found', CONFIG.schemeFilename )
-	else
-		scheme = KERNELS_LoadScheme( CONFIG.schemeFilename );
-	end
-	
 	% check if auxiliary matrices have been precomputed
 	auxFilename = fullfile(COMMIT_path,'kernels',sprintf('AUX_matrices__lmax=%d.mat',lmax) );
 	if ~exist( auxFilename, 'file' )
@@ -40,10 +33,10 @@ function KERNELS_ActiveAx_RotateAndSave( CONFIG, lmax )
 	idx_OUT = [];
 	Ylm_OUT = [];
 	row = 1;
-	for i = 1:numel(scheme.shells)
+	for i = 1:numel(CONFIG.scheme.shells)
 		idx_IN{end+1}  = row : row+500-1;
-		idx_OUT{end+1} = scheme.shells{i}.idx;
-		[colatitude, longitude] = cart2sphere( scheme.shells{i}.grad(:,1), scheme.shells{i}.grad(:,2), scheme.shells{i}.grad(:,3) );
+		idx_OUT{end+1} = CONFIG.scheme.shells{i}.idx;
+		[colatitude, longitude] = cart2sphere( CONFIG.scheme.shells{i}.grad(:,1), CONFIG.scheme.shells{i}.grad(:,2), CONFIG.scheme.shells{i}.grad(:,3) );
 		Ylm_OUT{end+1} = createYlm( AUX.lmax, colatitude, longitude ); % matrix from SH to real space
 		row = row+500;
 	end
@@ -52,7 +45,7 @@ function KERNELS_ActiveAx_RotateAndSave( CONFIG, lmax )
 	% -----------------------------------------------------------------------------------
 	KERNELS = {};
 	KERNELS.d_par     = CONFIG.kernels.d;
-	KERNELS.nS        = scheme.nS;
+	KERNELS.nS        = CONFIG.scheme.nS;
 	KERNELS.wmr       = [];
 	KERNELS.wmr_radii = [];
 	KERNELS.wmr_norm  = [];
@@ -68,7 +61,7 @@ function KERNELS_ActiveAx_RotateAndSave( CONFIG, lmax )
 	for R = CONFIG.kernels.Rs
 		fprintf( '\t\t* R = %5.2f micrometers...', R );
 		TIME2 = tic();
-		KERNELS.wmr{end+1} = rotate_kernel( fullfile(OUTPUT_path,sprintf('Er_R=%05.2f.Bfloat',R)), scheme, AUX, idx_IN, idx_OUT, Ylm_OUT );
+		KERNELS.wmr{end+1} = rotate_kernel( fullfile(OUTPUT_path,sprintf('Er_R=%05.2f.Bfloat',R)), CONFIG.scheme, AUX, idx_IN, idx_OUT, Ylm_OUT );
 		KERNELS.wmr_radii(end+1) = R;
 		KERNELS.wmr_norm(end+1) = norm( KERNELS.wmr{end}(:,1,1) );
 		fprintf( ' [%.1f seconds]\n', toc(TIME2) );
@@ -79,7 +72,7 @@ function KERNELS_ActiveAx_RotateAndSave( CONFIG, lmax )
 	for ICVF = CONFIG.kernels.ICVFs
 		fprintf( '\t\t* ICVF = %.2f...', ICVF );
 		TIME2 = tic();
-		KERNELS.wmh{end+1} = rotate_kernel( fullfile(OUTPUT_path,sprintf('Eh_icvf=%05.2f.Bfloat',ICVF)), scheme, AUX, idx_IN, idx_OUT, Ylm_OUT );
+		KERNELS.wmh{end+1} = rotate_kernel( fullfile(OUTPUT_path,sprintf('Eh_icvf=%05.2f.Bfloat',ICVF)), CONFIG.scheme, AUX, idx_IN, idx_OUT, Ylm_OUT );
 		KERNELS.wmh_icvf(end+1) = ICVF;
 		KERNELS.wmh_norm(end+1) = norm( KERNELS.wmh{end}(:,1,1) );
 		fprintf( ' [%.1f seconds]\n', toc(TIME2) );
@@ -90,7 +83,7 @@ function KERNELS_ActiveAx_RotateAndSave( CONFIG, lmax )
 	for dISO = CONFIG.kernels.dISOs
 		fprintf( '\t\t* dISO = %5.2f ...', dISO );
 		TIME2 = tic();
-		KERNELS.iso{end+1} = resample_iso_kernel( fullfile(OUTPUT_path,sprintf('Ei_dIso=%05.2f.Bfloat',dISO)), scheme, AUX, idx_IN, idx_OUT, Ylm_OUT );
+		KERNELS.iso{end+1} = resample_iso_kernel( fullfile(OUTPUT_path,sprintf('Ei_dIso=%05.2f.Bfloat',dISO)), CONFIG.scheme, AUX, idx_IN, idx_OUT, Ylm_OUT );
 		KERNELS.iso_d(end+1) = dISO;
 		KERNELS.iso_norm(end+1) = norm( KERNELS.iso{end}(:,1,1) );
 		fprintf( ' [%.1f seconds]\n', toc(TIME2) );

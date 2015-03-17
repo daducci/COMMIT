@@ -12,11 +12,6 @@ function KERNELS_StickZeppelinBall_Generate( CONFIG )
 
 	fprintf( '\n-> Simulating high-resolution "StickZeppelinBall" kernels with Camino for protocol "%s":\n', CONFIG.protocol );
 	
-	% check if original scheme exists
-	if ~exist( CONFIG.schemeFilename, 'file' )
-		error( '[KERNELS_StickZeppelinBall_Generate] File "%s" not found', CONFIG.schemeFilename )
-	end
-
 	% check if high-resolution scheme has been created
 	[tmp,~,~] = fileparts( CONFIG.schemeFilename );
 	schemeHrFilename = fullfile(tmp,'..','kernels','protocol_HR.scheme');
