@@ -52,6 +52,6 @@ switch ( CONFIG.OPTIMIZATION.solver )
 end
 
 CONFIG.OPTIMIZATION.time = toc(ticID);
-fprintf( '   [ %.2f seconds ]\n', CONFIG.OPTIMIZATION.time );
+fprintf( '   [ %.0fh %.0fm %.0fs ]\n', floor(CONFIG.OPTIMIZATION.time/3600), floor(mod(CONFIG.OPTIMIZATION.time/60,60)), mod(CONFIG.OPTIMIZATION.time,60) )
 clear ticID
 
