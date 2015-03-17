@@ -24,8 +24,7 @@ function KERNELS_StickZeppelinBall_Generate( CONFIG )
 	[~,~,~] = mkdir( OUTPUT_path );
 	
 	% Simulate intra-cellular compartments
-	fprintf( '\t- intra-cellular (varying the radius)\n' );
-	fprintf( '\t\t* R = 0 micrometers\n' );
+	fprintf( '\t- intra-cellular\n' );
 	filename = fullfile(OUTPUT_path,sprintf('Er_R=%05.2f.Bfloat',0));
 	if exist( filename, 'file' ), delete( filename ); end
 	CMD = sprintf( '%s/datasynth -synthmodel compartment 1 STICK %E 0 0 -schemefile %s -voxels 1 -outputfile %s 2> /dev/null', CAMINO_path, CONFIG.kernels.d*1e-9, schemeHrFilename, filename );

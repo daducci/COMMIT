@@ -18,6 +18,7 @@ function KERNELS_CreateFolderForHighResolutionKernels( CONFIG )
 	% create a high-resolution version of it (to be used with Camino)
 	n = numel( CONFIG.scheme.shells );
 	schemeHR = zeros( 500*n, 7 );
+    bs       = zeros( 500*n, 1 );
 	grad500 = importdata( '500_dirs.txt' );
 	for i = 1:size(grad500,1)
 		grad500(i,:) = grad500(i,:) ./ norm( grad500(i,:) );
@@ -32,6 +33,7 @@ function KERNELS_CreateFolderForHighResolutionKernels( CONFIG )
 		schemeHR(row:row+500-1,5)   = CONFIG.scheme.shells{i}.Delta;
 		schemeHR(row:row+500-1,6)   = CONFIG.scheme.shells{i}.delta;
 		schemeHR(row:row+500-1,7)   = CONFIG.scheme.shells{i}.TE;
+        bs(row:row+500-1)           = CONFIG.scheme.shells{i}.b;
 		row = row + 500;
 	end
 	
@@ -39,7 +41,7 @@ function KERNELS_CreateFolderForHighResolutionKernels( CONFIG )
 	if CONFIG.scheme.version == 0
 		fprintf(fidCAMINO,'VERSION: BVECTOR\n');
 		for d = 1:size(schemeHR,1)
-			fprintf(fidCAMINO,'%15e %15e %15e %15e\n', schemeHR(d,1),schemeHR(d,2),schemeHR(d,3), CONFIG.scheme.shells{i}.b * 1E6 );
+			fprintf(fidCAMINO,'%15e %15e %15e %15e\n', schemeHR(d,1),schemeHR(d,2),schemeHR(d,3), bs(d) * 1E6 );
 		end
 	else
 		fprintf(fidCAMINO,'VERSION: STEJSKALTANNER\n');

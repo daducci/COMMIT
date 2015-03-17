@@ -166,7 +166,7 @@ end
 
 clear idx lut i
 
-fprintf( '\t\t[ OK ]\n' );
+fprintf( '            [ OK ]\n' );
 
 
 fprintf( '   [ %.2f seconds ]\n', toc(ticID) );
