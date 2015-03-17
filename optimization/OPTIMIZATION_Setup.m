@@ -39,17 +39,21 @@ clear Uidx tID tot iPrev C
 
 % extra-cellular segments
 % -----------------------
-tmp = (CONFIG.OPTIMIZATION.nTHREADS-1)*ones( DICTIONARY.EC.nE, 1, 'uint8' );
-for i = 1:CONFIG.OPTIMIZATION.nTHREADS
-    tmp( DICTIONARY.EC.v >= DICTIONARY.IC.v(THREADS.IC(i)+1) & DICTIONARY.EC.v <= DICTIONARY.IC.v(THREADS.IC(i+1)) ) = i-1;
-end
+if DICTIONARY.EC.nE > 0
+    tmp = (CONFIG.OPTIMIZATION.nTHREADS-1)*ones( DICTIONARY.EC.nE, 1, 'uint8' );
+    for i = 1:CONFIG.OPTIMIZATION.nTHREADS
+        tmp( DICTIONARY.EC.v >= DICTIONARY.IC.v(THREADS.IC(i)+1) & DICTIONARY.EC.v <= DICTIONARY.IC.v(THREADS.IC(i+1)) ) = i-1;
+    end
 
-% store only the pointers of the start of each thread's block 
-THREADS.EC = zeros( CONFIG.OPTIMIZATION.nTHREADS+1, 1, 'uint32' );
-for i = 0:CONFIG.OPTIMIZATION.nTHREADS-1
-    THREADS.EC(i+1) = find( tmp==i, 1, 'first' ) - 1;
+    % store only the pointers of the start of each thread's block 
+    THREADS.EC = zeros( CONFIG.OPTIMIZATION.nTHREADS+1, 1, 'uint32' );
+    for i = 0:CONFIG.OPTIMIZATION.nTHREADS-1
+        THREADS.EC(i+1) = find( tmp==i, 1, 'first' ) - 1;
+    end
+    THREADS.EC(end) = DICTIONARY.EC.nE;
+else
+    THREADS.EC = [];
 end
-THREADS.EC(end) = DICTIONARY.EC.nE;
 
 % isotropic segments
 % ------------------
@@ -94,21 +98,21 @@ if CONFIG.OPTIMIZATION.nTHREADS>1
 end
 
 % store only the pointers of the start of each thread's block 
-THREADS.ICt = tmp;%zeros( CONFIG.OPTIMIZATION.nTHREADS+1, 1, 'uint32' );
-% for i = 0:CONFIG.OPTIMIZATION.nTHREADS-1
-%     THREADS.ICt(i+1) = find( tmp==i, 1, 'first' ) - 1;
-% end
-% THREADS.ICt(end) = DICTIONARY.IC.n;
+THREADS.ICt = tmp;
 clear Uidx tID tot iPrev C i tmp
 
 % extra-cellular segments
 % -----------------------
-THREADS.ECt = zeros( CONFIG.OPTIMIZATION.nTHREADS+1, 1, 'uint32' );
-n =	floor(DICTIONARY.EC.nE/CONFIG.OPTIMIZATION.nTHREADS);
-for i = 1:CONFIG.OPTIMIZATION.nTHREADS-1
-    THREADS.ECt(i+1) = THREADS.ECt(i) + n;
+if DICTIONARY.EC.nE > 0
+    THREADS.ECt = zeros( CONFIG.OPTIMIZATION.nTHREADS+1, 1, 'uint32' );
+    n =	floor(DICTIONARY.EC.nE/CONFIG.OPTIMIZATION.nTHREADS);
+    for i = 1:CONFIG.OPTIMIZATION.nTHREADS-1
+        THREADS.ECt(i+1) = THREADS.ECt(i) + n;
+    end
+    THREADS.ECt(end) = DICTIONARY.EC.nE;
+else
+    THREADS.ECt = [];
 end
-THREADS.ECt(end) = DICTIONARY.EC.nE;
 
 % isotropic segments
 % ------------------
