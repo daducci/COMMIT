@@ -8,7 +8,7 @@ fprintf( '\n-> Loading and setup:\n' );
 fprintf( '\t* Loading data...\n' );
 niiSIGNAL = load_untouch_nii( CONFIG.dwiFilename );
 niiSIGNAL.img = single(niiSIGNAL.img);
-CONFIG.scheme = KERNELS_LoadScheme( CONFIG.schemeFilename, CONFIG.b0_thr );
+CONFIG.scheme = COMMIT_LoadScheme( CONFIG.schemeFilename, CONFIG.b0_thr );
 fprintf( '\t\t* dim    = %d x %d x %d x %d\n' , niiSIGNAL.hdr.dime.dim(2:5) );
 fprintf( '\t\t* pixdim = %.3f x %.3f x %.3f\n', niiSIGNAL.hdr.dime.pixdim(2:4) );
 if CONFIG.scheme.nS == niiSIGNAL.hdr.dime.dim(5)
@@ -60,5 +60,8 @@ niiSIGNAL.img = permute( niiSIGNAL.img, [4 1 2 3] );
 niiSIGNAL.hdr.dime.dim(2:5) = [ size(niiSIGNAL.img,1) size(niiSIGNAL.img,2) size(niiSIGNAL.img,3) size(niiSIGNAL.img,4) ];
 niiSIGNAL.hdr.dime.pixdim(2:5) = niiSIGNAL.hdr.dime.pixdim([5 2:4]);
 fprintf( ' [ %d x %d x %d x %d ]\n' , niiSIGNAL.hdr.dime.dim(2:5) );
+
+CONFIG.dim    = niiSIGNAL.hdr.dime.dim(3:5);
+CONFIG.pixdim = niiSIGNAL.hdr.dime.pixdim(3:5);
 
 fprintf( '   [ DONE ]\n' );

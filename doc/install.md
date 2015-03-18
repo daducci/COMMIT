@@ -49,11 +49,11 @@ Add the folder containing the source code of *COMMIT* to your `MATLAB PATH`.
 Before using *COMMIT*, you need to copy the file `COMMIT_Setup.txt` and rename it to `COMMIT_Setup.m`.
 Modify its content to set the paths to your specific needs:
 
-- `COMMIT_path` : path to the folder containing the source code of *COMMIT* (this repository). E.g. `/home/user/COMMIT/code`.
+- `COMMIT_code_path` : path to the folder containing the source code of *COMMIT* (this repository). E.g. `/home/user/COMMIT/code`.
 
 - `CAMINO_path` : path to the `bin` folder containing the executables of the Camino toolkit. E.g. `/home/user/camino/bin`.
 
-- `DATA_path` : path to the folder where you store all your datasets. E.g. `/home/user/COMMIT/data`. Then, the software assumes the folder structure is the following:
+- `COMMIT_data_path` : path to the folder where you store all your datasets. E.g. `/home/user/COMMIT/data`. Then, the software assumes the folder structure is the following:
     ```
     ├── data
         ├── Study_01                 --> all subjects acquired with protocol "Study_01"
