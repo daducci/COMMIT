@@ -4,7 +4,7 @@
 % Parameters
 % ----------
 % folder : string
-%   Path to the folder containing the output from trk2dictionary script
+%   Relative path to the folder containing the output of the trk2dictionary script
 %
 function COMMIT_LoadDictionary( folder )
     global CONFIG niiSIGNAL

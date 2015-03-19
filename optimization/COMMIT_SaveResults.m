@@ -25,7 +25,9 @@ function COMMIT_SaveResults( namePostfix )
     % =========================
     fprintf( '\t- configuration... ');
     save( fullfile(RESULTS_path,'CONFIG.mat'), 'CONFIG', '-v7' )
-    print( gcf, fullfile( RESULTS_path, sprintf('summary.png') ), '-dpng' );
+    if ( CONFIG.OPTIMIZATION.verbosity >= 2 )
+        print( gcf, fullfile( RESULTS_path, sprintf('solver_history.png') ), '-dpng' );
+    end
     fprintf( '[OK]\n');
 
 

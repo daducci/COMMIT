@@ -58,10 +58,11 @@ told = 1;
 beta = 0.9;
 qfval = prev_obj;
 
-maxNorm  = norm(y);
-objTimes = nan*ones(param.max_iter,1);
-xNorm0   = nan*ones(param.max_iter,1);
-
+if param.verbose>=1
+    maxNorm  = norm(y);
+    objTimes = nan*ones(param.max_iter,1);
+    xNorm0   = nan*ones(param.max_iter,1);
+end
 
 %Step size computation
 L = norm(A*grad)^2 / norm(grad)^2;
@@ -110,12 +111,12 @@ while 1
 
     % Global stopping criterion
     rel_obj  = abs(curr_obj - prev_obj)/curr_obj;
+    objTimes(iter) = sqrt(2*curr_obj);
+    xNorm0(iter) = nnz( sum(reshape( sol(1:A.nR*A.nF), A.nF, A.nR ),2) );
     if param.verbose >= 1
-        fprintf('%13.7e   %13.7e\n', sqrt(2*curr_obj), rel_obj);
-		if param.verbose >= 3
-			objTimes(iter) = sqrt(2*curr_obj);
-			xNorm0(iter) = nnz( sum(reshape( sol(1:A.nR*A.nF), A.nF, A.nR ),2) );
-			plotResult(A, sol, objTimes, xNorm0, iter, maxNorm )
+        fprintf('%13.7e   %13.7e\n', objTimes(iter), rel_obj);
+		if param.verbose >= 2
+			COMMIT_PlotSolverStatus(A, sol, objTimes, xNorm0, iter, maxNorm );
 		end
 	end
 
@@ -141,96 +142,19 @@ while 1
     prev_sol = sol;
     told = t;
     qfval = 0.5*norm(res)^2;
-
 end
 
 % Log
-if param.verbose>=1
-    % L1 norm
+if param.verbose >= 1
     fprintf('\n Solution found:\n');
     fprintf(' Final objective value: %e\n', curr_obj);
-
-    % Stopping criterion
     fprintf(' %i iterations\n', iter);
     fprintf(' Stopping criterion: %s \n\n', crit_BPDN);
+    
+    if param.verbose >= 2
+        COMMIT_PlotSolverStatus(A, sol, objTimes, xNorm0, iter, maxNorm );
+    end
 end
 
-end
 
-
-%================ PLOT ==================
-function plotResult(A, x, objTimes, xNorm0, iter, maxNorm )
-	sfigure(1); clf
-	subplot(3,1,1), hold on
-
-	% print IC coefficients
-	if A.nR>=1
-		idx = 1 : A.nF;
-		plot( idx, x(idx), '.', 'Color',[1 0 0] )
-	end
-	if A.nR>=2
-		idx = idx(end)+1 : idx(end)+A.nF;
-		plot( idx, x(idx), '.', 'Color',[.5 0 0] )
-	end
-	if A.nR>=3
-		idx = idx(end)+1 : idx(end)+A.nF;
-		plot( idx, x(idx), '.', 'Color',[1 0 0] )
-	end
-	if A.nR>=4
-		idx = idx(end)+1 : idx(end)+A.nF;
-		plot( idx, x(idx), '.', 'Color',[.5 0 0] )
-	end
-
-	% print EC coefficients
-	if A.nE > 0
-		if A.nT>=1
-			idx = A.nR*A.nF+1 : A.nR*A.nF+A.nE;
-			plot( idx, x(idx), '.', 'Color',[0 1 0] )
-		end
-		if A.nT>=2
-			idx = idx(end)+1 : idx(end)+A.nE;
-			plot( idx, x(idx), '.', 'Color',[0 .5 0] )
-		end
-		if A.nT>=3
-			idx = idx(end)+1 : idx(end)+A.nE;
-			plot( idx, x(idx), '.', 'Color',[0 1 0] )
-		end
-		if A.nT>=4
-			idx = idx(end)+1 : idx(end)+A.nE;
-			plot( idx, x(idx), '.', 'Color',[0 .5 0] )
-		end
-	end
-
-	% print CSF coefficients
-	if A.nI>=1
-		idx = idx(end)+1 : idx(end)+A.nV;
-		plot( idx, x(idx), '.', 'Color',[0 0 1] )
-	end
-	if A.nI>=2
-		idx = idx(end)+1 : idx(end)+A.nV;
-		plot( idx, x(idx), '.', 'Color',[0 0 .5] )
-	end
-	if A.nI>=3
-		idx = idx(end)+1 : idx(end)+A.nV;
-		plot( idx, x(idx), '.', 'Color',[0 0 1] )
-	end
-	if A.nI>=4
-		idx = idx(end)+1 : idx(end)+A.nV;
-		plot( idx, x(idx), '.', 'Color',[0 0 .5] )
-	end
-
-	grid on, box on, axis tight
-	title('x')
-
-	subplot(3,1,2), plot( objTimes )
-	axis([1 numel(objTimes) 0 maxNorm*1.02])
-	grid on, title( sprintf('|| Ax - y ||_2 = %.2f',objTimes(iter)) )
-
-	if A.nF > 0
-		subplot(3,1,3), plot( xNorm0 )
-		axis([1 numel(objTimes) 0 A.nF])
-		grid on, title( sprintf('|| x_{fibers} ||_0 = %d (%.1f%%)', xNorm0(iter),xNorm0(iter)/A.nF*100) )
-	end
-
-	drawnow
 end
