@@ -18,6 +18,7 @@ function COMMIT_SaveResults( namePostfix )
     fprintf( '\n-> Saving results to "%s/*":\n', RESULTS_path );
     RESULTS_path = fullfile( CONFIG.TRACKING_path, RESULTS_path );
     [~,~,~] = mkdir( RESULTS_path );
+    delete( fullfile(RESULTS_path,'*') );
 
 
     % Configuration and results
