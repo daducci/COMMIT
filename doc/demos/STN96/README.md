@@ -7,7 +7,12 @@ To model the signal in each voxel, *LiFE* considers only the restricted contribu
 
 In this demo we will show the **importance of using adequate multi-compartment models** to be able to effectively evaluate the evidence of a tractogram, i.e. set of fiber tracts.
 
-For more information, please refer to [this abstract](ISMRM_3148.pdf), that recently has been **specially selected for a power pitch presentation** (less than 3% of submitted papers) at the annual *International Society for Magnetic Resonance in Medicine* (ISMRM) meeting in Toronto (30/05-05/06 2015)!
+For more information, please refer to the following abstract (#3148):
+
+> **On evaluating the accuracy and biological plausibility of diffusion MRI tractograms**  
+> *David Romascano, Alessandro Dal Palú, Jean-Philippe Thiran, and Alessandro Daducci*
+
+that recently has been **specially selected for a power pitch presentation** (less than 3% of submitted papers) at the annual *International Society for Magnetic Resonance in Medicine* (ISMRM) meeting in Toronto (30/05-05/06 2015)!
  
 
 ## Download the data
