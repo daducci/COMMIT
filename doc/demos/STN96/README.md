@@ -12,7 +12,7 @@ For more information, please refer to the following abstract (#3148):
 > **On evaluating the accuracy and biological plausibility of diffusion MRI tractograms**  
 > *David Romascano, Alessandro Dal Palú, Jean-Philippe Thiran, and Alessandro Daducci*
 
-that has recently been **specially selected for a power pitch presentation** (less than 3% of submitted papers) at the annual *International Society for Magnetic Resonance in Medicine* (ISMRM) meeting in Toronto (30/05-05/06 2015)!
+that recently has been **specially selected for a power pitch presentation** (less than 3% of submitted papers) at the annual *International Society for Magnetic Resonance in Medicine* (ISMRM) meeting in Toronto (30/05-05/06 2015)!
  
 
 ## Download the data
@@ -43,7 +43,7 @@ trk2dictionary \
    -o STN96/scan1/Tracking/PROB/ \
    -c
 ```
-This will create the necessary data structure (`STN96/scan1/Tracking/PROB/dictionary_*`) containing all the details if the tracts.
+This will create the necessary data structure (`STN96/scan1/Tracking/PROB/dictionary_*`) containing all the details of the tracts.
 
 Please be sure to first compile the code in the `c++` folder and to have the resulting binaries (in particular `trk2dictionary`) in your path.
 NB: the output tractogram from *MrTrix* has been already converted to the format accepted by *COMMIT*, i.e. [TrackiVis format](http://www.trackvis.org/docs/?subsect=fileformat) with fiber coordinates (in mm) in image space, where the coordinate (0,0,0) corresponds to the corner of first voxel.
@@ -55,50 +55,41 @@ Start MATLAB.
 Setup and load the data:
 
 ```matlab
-clear, clc
+clearvars, clearvars -global, clc
 COMMIT_Setup
+COMMIT_PrecomputeRotationMatrices();
 
-CONFIG = COMMIT_Config( 'STN96', 'scan1' );
-CONFIG.doDemean	= false;
-DATA_Load
+COMMIT_SetSubject( 'STN96', 'scan1' );
+CONFIG.doDemean = false;
+COMMIT_LoadData
 ```
 
 Calculate the **kernels** corresponding to the different compartments. In this example, we use 1 kernel for intra-axonal compartment (i.e. Stick), 1 for extra-axonal space (i.e. Zeppelin) and 2 to model partial volume with gray matter and CSF:
 
 ```matlab
-CONFIG.kernels.namePostfix  = 'COMMIT';
-CONFIG.kernels.d            = 1.7;
-CONFIG.kernels.Rs           = [ 0 ];
-CONFIG.kernels.ICVFs        = [ 0.7 ];
-CONFIG.kernels.dISOs        = [ 3.0 1.7 ];
+COMMIT_SetModel( 'StickZeppelinBall' );
+CONFIG.model.Set( 1.7e-3, [0.7], [3.0 1.7]*1e-3 );
 
-KERNELS_CreateFolderForHighResolutionKernels( CONFIG );
-KERNELS_PrecomputeRotationMatrices();
-KERNELS_StickZeppelinBall_Generate( CONFIG );
-KERNELS_ActiveAx_RotateAndSave( CONFIG );
-
-KERNELS = KERNELS_Load( CONFIG );
-KERNELS_ProcessAtoms
+COMMIT_GenerateKernels( true );
+COMMIT_ResampleKernels();
 ```
 
-Compile the linear operators **A** and **At**:
+Load the *sparse data structure* that represents the linear operators **A** and **At**:
 
 ```matlab
-CONFIG.TRACKING_path		= fullfile(CONFIG.DATA_path,'Tracking','PROB');
-DICTIONARY_LoadSegments
-
-CONFIG.OPTIMIZATION.nTHREADS = 4;
-OPTIMIZATION_Setup
+COMMIT_LoadDictionary( 'Tracking/PROB' )
+COMMIT_SetThreads( 4 );
 ```
 
-**Solve** the inverse problem according to the  *COMMIT* model:
+**Solve** the inverse problem according to the *COMMIT* model:
 
 ```matlab
-OPTIMIZATION_Solve
-OPTIMIZATION_SaveResults
+COMMIT_SetSolver( 'NNLS' );
+COMMIT_Fit();
+COMMIT_SaveResults( 'COMMIT' );
 ```
 
-Result will be stored in `STN96/scan1/Tracking/PROB/Results_COMMIT/`.
+Result will be stored in `STN96/scan1/Tracking/PROB/Results_STICKZEPPELINBALL_COMMIT/`.
 
 
 ## Process data with LiFE
@@ -106,50 +97,41 @@ Result will be stored in `STN96/scan1/Tracking/PROB/Results_COMMIT/`.
 Setup and load the data; this time, however, we will apply the *demeaning procedure* used in *LiFE* to both data and kernels:
 
 ```matlab
-clear, clc
+clearvars, clearvars -global, clc
 COMMIT_Setup
+COMMIT_PrecomputeRotationMatrices();
 
-CONFIG = COMMIT_Config( 'STN96', 'scan1' );
-CONFIG.doDemean	= true;
-DATA_Load
+COMMIT_SetSubject( 'STN96', 'scan1' );
+CONFIG.doDemean = true;
+COMMIT_LoadData
 ```
 
 Calculate the **kernel** corresponding to the intra-cellular compartment (the only one considered in *LiFE*); in this example, thus, we use only 1 kernel for intra-axonal compartment (i.e. Stick):
 
 ```matlab
-CONFIG.kernels.namePostfix  = 'LIFE';
-CONFIG.kernels.d            = 1.7;
-CONFIG.kernels.Rs           = [ 0 ];
-CONFIG.kernels.ICVFs        = [  ];
-CONFIG.kernels.dISOs        = [  ];
+COMMIT_SetModel( 'StickZeppelinBall' );
+CONFIG.model.Set( 1.7e-3, [], [] );
 
-KERNELS_CreateFolderForHighResolutionKernels( CONFIG );
-KERNELS_PrecomputeRotationMatrices();
-KERNELS_StickZeppelinBall_Generate( CONFIG );
-KERNELS_ActiveAx_RotateAndSave( CONFIG );
-
-KERNELS = KERNELS_Load( CONFIG );
-KERNELS_ProcessAtoms
+COMMIT_GenerateKernels( true );
+COMMIT_ResampleKernels();
 ```
 
-Compile the linear operators **A** and **At**:
+Load the *sparse data structure* that represents the linear operators **A** and **At**:
 
 ```matlab
-CONFIG.TRACKING_path		= fullfile(CONFIG.DATA_path,'Tracking','PROB');
-DICTIONARY_LoadSegments
-
-CONFIG.OPTIMIZATION.nTHREADS = 4;
-OPTIMIZATION_Setup
+COMMIT_LoadDictionary( 'Tracking/PROB' )
+COMMIT_SetThreads( 4 );
 ```
 
 **Solve** the inverse problem according to the *LiFE* model:
 
 ```matlab
-OPTIMIZATION_Solve
-OPTIMIZATION_SaveResults
+COMMIT_SetSolver( 'NNLS' );
+COMMIT_Fit();
+COMMIT_SaveResults( 'LIFE' );
 ```
 
-Result will be stored in `STN96/scan1/Tracking/PROB/Results_LIFE/`.
+Result will be stored in `STN96/scan1/Tracking/PROB/Results_STICKZEPPELINBALL_LIFE/`.
 
 
 ## Compare the two models
@@ -161,8 +143,8 @@ It is important to note that as the two models actually work in different spaces
 We then load the *NRMSE* fit error of the two models, as follows:
 
 ```matlab
-niiERR_L = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_LIFE','fit_NRMSE.nii') );
-niiERR_C = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_COMMIT','fit_NRMSE.nii') );
+niiERR_L = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_STICKZEPPELINBALL_LIFE','fit_NRMSE.nii') );
+niiERR_C = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_STICKZEPPELINBALL_COMMIT','fit_NRMSE.nii') );
 ```
 
 Then we plot the fitting error with *LiFE* in a representative slice of the brain where two important fiber bundles cross (CST and CC):
@@ -171,7 +153,7 @@ Then we plot the fitting error with *LiFE* in a representative slice of the brai
 % plot the NRMSE of the LiFE model
 figure(1), clf, imagesc( rot90(squeeze(100*niiERR_L.img(:,70,:))), [0 100] )
 axis ij image off, cm = hot(256); cm(1,:) = 0; colormap(cm); colorbar
-yL = 100*niiERR_L.img( niiMASK.img>0 );
+yL = 100*niiERR_L.img( DICTIONARY.MASK>0 );
 title( sprintf('LiFE : %.1f%% +/- %.1f%%', mean(yL), std(yL) ))
 ```
 
@@ -185,7 +167,7 @@ We plot now the fitting error with *COMMIT*:
 % plot the NRMSE of the COMMIT model
 figure(2), clf, imagesc( rot90(squeeze(100*niiERR_C.img(:,70,:))), [0 100] )
 axis ij image off, cm = hot(256); cm(1,:) = 0; colormap(cm); colorbar
-yL = 100*niiERR_C.img( niiMASK.img>0 );
+yL = 100*niiERR_C.img( DICTIONARY.MASK>0 );
 title( sprintf('COMMIT : %.1f%% +/- %.1f%%', mean(yL), std(yL) ))
 ```
 
@@ -199,8 +181,8 @@ Now we can directly compare the *fitting error distributions* of the two models:
 % direct comparison of the NRMSE of LiFE and COMMIT
 figure(3), clf, hold on
 x = linspace(0,100,60);
-yL = hist( 100*niiERR_L.img(niiMASK.img>0), x ) / nnz(niiMASK.img>0);
-yC = hist( 100*niiERR_C.img(niiMASK.img>0), x ) / nnz(niiMASK.img>0);
+yL = hist( 100*niiERR_L.img(DICTIONARY.MASK>0), x ) / nnz(DICTIONARY.MASK>0);
+yC = hist( 100*niiERR_C.img(DICTIONARY.MASK>0), x ) / nnz(DICTIONARY.MASK>0);
 plot( x, yL, '- ', 'LineWidth', 3, 'Color',[.8 0 0] )
 plot( x, yC, '- ', 'LineWidth', 3, 'Color',[0 .8 0] )
 grid on, box on, axis tight
@@ -217,8 +199,8 @@ Also, we can directly compare their fitting errors *voxel-by-voxel* with the fol
 ```matlab
 % voxelwise comparison of the NRMSE of LiFE and COMMIT
 figure(4), clf, hold on
-yL = 100*niiERR_L.img( niiMASK.img>0 );
-yC = 100*niiERR_C.img( niiMASK.img>0 );
+yL = 100*niiERR_L.img( DICTIONARY.MASK>0 );
+yC = 100*niiERR_C.img( DICTIONARY.MASK>0 );
 plot( yL, yC, 'bx' )
 plot( [0 100], [0 100], 'k--', 'LineWidth', 2 )
 grid on, box on
@@ -241,45 +223,41 @@ No normalization is needed in this case and we can then use the *RMSE* (expresse
 To this aim, it is simply necessary to perform the following operations after processing the data with *LiFE*:
 
 ```matlab
-% reload the DWI data and DO NOT remove the mean
+% reload the DWI data and KERNELS (LUT) and DO NOT remove the mean
 CONFIG.doDemean	= false;
-DATA_Load
-
-% reload kernel LUT and, again, DO NOT remove the mean
-KERNELS_ActiveAx_RotateAndSave( CONFIG );
-KERNELS = KERNELS_Load( CONFIG );
-KERNELS_ProcessAtoms
+COMMIT_LoadData
+COMMIT_ResampleKernels();
 
 % recompute the error metrics
-OPTIMIZATION_SaveResults
+COMMIT_SaveResults( 'LIFE_2' );
 ```
 
-By doing this, both the measurements **y** and the signal **Ax** predicted by the *LiFE* model will be compared using the *NMSE* error metric to evaluate how well the *LiFE* model actually explains the measures diffusion MRI signal.
+By doing this, both the measurements **y** and the signal **Ax** predicted by the *LiFE* model will be compared using the *NMSE* error metric to evaluate how well the *LiFE* model actually explains the measured diffusion MRI signal.
 We then load the *RMSE* errors and compare the accuracy of the two models, as follows:
 
 ```matlab
-niiERR_L  = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_LIFE','fit_RMSE.nii') );
-niiERR_C  = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_COMMIT','fit_RMSE.nii') );
+niiERR_L  = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_STICKZEPPELINBALL_LIFE2','fit_RMSE.nii') );
+niiERR_C  = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_STICKZEPPELINBALL_COMMIT','fit_RMSE.nii') );
 
 % plot the RMSE of the LiFE model
 figure(5), clf, imagesc( rot90(squeeze(niiERR_L.img(:,70,:))), [0 200] )
 axis ij image off, cm = hot(256); cm(1,:) = 0; colormap(cm); colorbar
-yL = niiERR_L.img( niiMASK.img>0 );
+yL = niiERR_L.img( DICTIONARY.MASK>0 );
 title( sprintf('LiFE : %.1f +/- %.1f', mean(yL), std(yL) ))
 saveas(gcf,'RESULTS_Fig5.png')
 
 % plot the RMSE of the COMMIT model
 figure(6), clf, imagesc( rot90(squeeze(niiERR_C.img(:,70,:))), [0 200] )
 axis ij image off, cm = hot(256); cm(1,:) = 0; colormap(cm); colorbar
-yL = niiERR_C.img( niiMASK.img>0 );
+yL = niiERR_C.img( DICTIONARY.MASK>0 );
 title( sprintf('COMMIT : %.1f +/- %.1f', mean(yL), std(yL) ))
 saveas(gcf,'RESULTS_Fig6.png')
 
 % direct comparison of the RMSE of LiFE and COMMIT
 figure(7), clf, hold on
 x = linspace(0,300,100);
-yL = hist( niiERR_L.img(niiMASK.img>0), x ) / nnz(niiMASK.img>0);
-yC = hist( niiERR_C.img(niiMASK.img>0), x ) / nnz(niiMASK.img>0);
+yL = hist( niiERR_L.img(DICTIONARY.MASK>0), x ) / nnz(DICTIONARY.MASK>0);
+yC = hist( niiERR_C.img(DICTIONARY.MASK>0), x ) / nnz(DICTIONARY.MASK>0);
 plot( x, yL, '- ', 'LineWidth', 3, 'Color',[.8 0 0] )
 plot( x, yC, '- ', 'LineWidth', 3, 'Color',[0 .8 0] )
 grid on, box on, axis tight
@@ -291,8 +269,8 @@ saveas(gcf,'RESULTS_Fig7.png')
 
 % voxelwise comparison of the RMSE of LiFE and COMMIT
 figure(8), clf, hold on
-yL = niiERR_L.img( niiMASK.img>0 );
-yC = niiERR_C.img( niiMASK.img>0 );
+yL = niiERR_L.img( DICTIONARY.MASK>0 );
+yC = niiERR_C.img( DICTIONARY.MASK>0 );
 plot( yL, yC, 'bx' )
 plot( [0 260], [0 260], 'k--', 'LineWidth', 2 )
 grid on, box on
