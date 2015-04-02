@@ -1,0 +1,28 @@
+PROJECT( COMMIT_debugger )
+ADD_EXECUTABLE( ${PROJECT_NAME} main.cxx )
+
+
+########################  FIND PACKAGES USED  #######################################
+FIND_PACKAGE( BLITZ REQUIRED )
+FIND_PACKAGE( NIFTI REQUIRED )
+FIND_PACKAGE( OpenGL REQUIRED )
+FIND_PACKAGE( GLUT REQUIRED )
+
+
+############################  INCLUDE / LINK  #######################################
+INCLUDE_DIRECTORIES( ${BLITZ_INCLUDE_DIR} )
+INCLUDE_DIRECTORIES( ${NIFTI_INCLUDE_DIRS} )
+INCLUDE_DIRECTORIES( ${OPENGL_INCLUDE_DIR} )
+INCLUDE_DIRECTORIES( ${GLUT_INCLUDE_DIR} )
+
+TARGET_LINK_LIBRARIES( ${PROJECT_NAME}
+    ${BLITZ_LIBRARIES}
+    ${NIFTI_LIBRARIES}
+    ${OPENGL_LIBRARIES}
+    ${GLUT_LIBRARIES}
+)
+
+###################################  INSTALL  #######################################
+INSTALL( TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION "bin"
+)
