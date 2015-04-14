@@ -10,15 +10,6 @@
 // avoid to perform parameter checking each time
 #define DO_CHECK 1
 
-// number of THREADS
-#ifdef nTHREADS
-    #if (nTHREADS<1 || nTHREADS>32)
-     #error "nTHREADS" must be >= 1 and <= 32
-    #endif
-#else
-    #error "nTHREADS" parameter must be passed to the compiler as "-DnTHREADS=<value>"
-#endif
-
 // number of intra-axonal compartments (different RADII)
 #ifdef nIC
     #if (nIC<0 || nIC>4)
@@ -53,6 +44,7 @@ UINT32_T		*ICthreads, *ECthreads, *ISOthreads;
 UINT32_T		*ICf, *ICv, *ECv, *ISOv;
 UINT16_T		*ICo, *ECo;
 float			*ICl;
+int             nTHREADS;
 
 #if nIC>=1
 float *wmrSFP0;
@@ -104,7 +96,7 @@ void* computeProductBlock( void *ptr )
     double   x0, x1, x2, x3, w;
     double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3;
     double   *Yptr, *YptrEnd;
-    float   *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
+    float    *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
     UINT32_T *t_v, *t_vEnd, *t_f;
     UINT16_T *t_o;
     float    *t_l;
@@ -146,7 +138,7 @@ void* computeProductBlock( void *ptr )
         #endif
         )
         {
-            Yptr    = Y    + (*t_v);
+            Yptr    = Y    + nS * (*t_v);
             YptrEnd = Yptr + nS;
             w       = (double)(*t_l);
             offset  = nS * (*t_o);
@@ -225,7 +217,7 @@ void* computeProductBlock( void *ptr )
             #endif
           )
         {
-            Yptr    = Y    + (*t_v);
+            Yptr    = Y    + nS * (*t_v);
             YptrEnd = Yptr + nS;
             offset  = nS * (*t_o);
             SFP0ptr = wmhSFP0 + offset;
@@ -299,7 +291,7 @@ void* computeProductBlock( void *ptr )
             #endif
           )
         {
-            Yptr    = Y    + (*t_v);
+            Yptr    = Y    + nS * (*t_v);
             YptrEnd = Yptr + nS;
             SFP0ptr = isoSFP0;
             #if nISO>=2
@@ -554,13 +546,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mexErrMsgIdAndTxt("InvalidInput:THREADS", "'THREADS' must be a struct");
     #endif
 
+    tmp = mxGetField( prhs[3], 0, "n" );
+    #if DO_CHECK > 0
+    if( !mxIsDouble(tmp) || mxIsComplex(tmp) || mxGetNumberOfElements(tmp)!=1 )
+        mexErrMsgIdAndTxt("InvalidInput:THREADS.n","'THREADS.n' must be a real scalar");
+    #endif
+    nTHREADS = mxGetScalar( tmp );
+    #if DO_CHECK > 0
+    if (nTHREADS<1 || nTHREADS>32)
+        mexErrMsgIdAndTxt("InvalidInput:THREADS.n","'THREADS.n' must be >= 1 and <= 32");
+    #endif
+    
     tmp  = mxGetField( prhs[3], 0, "IC" );
     #if DO_CHECK > 0
     if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
         mexErrMsgIdAndTxt("InvalidInput:THREADS.IC","'THREADS.IC' must be a n*1 vector (uint32)");
     #endif
-     ICthreads = (UINT32_T*) mxGetData( tmp );
-
+    ICthreads = (UINT32_T*) mxGetData( tmp );
+ 
     tmp  = mxGetField( prhs[3], 0, "EC" );
     #if DO_CHECK > 0
     if ( mxGetNumberOfDimensions(tmp) != 2 || mxGetN(tmp) != 1 || !mxIsClass(tmp,"uint32") )
