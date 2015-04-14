@@ -26,6 +26,7 @@ if ( CONFIG.normalizeSignal )
 	fprintf( '\t* Normalizing to b0...' );
 	meanB0 = mean( niiSIGNAL.img(:,:,:,CONFIG.scheme.b0_idx), 4 );
 	idx = meanB0 < 1;
+    meanB0( idx ) = 1;
 	meanB0 = 1 ./ meanB0;
 	meanB0( idx ) = 0;
 	niiSIGNAL.img = niiSIGNAL.img .* repmat( meanB0, [1 1 1 niiSIGNAL.hdr.dime.dim(5)] );
