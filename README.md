@@ -14,6 +14,7 @@ These weights can be easily estimated by solving a convenient **global convex op
 - Very efficient: the core of the algorithm is implemented in C++ and using **multi-threading programming** for efficient parallel computation
 - **Low memory** consumption using optimized sparse data structures, e.g. it can easily run on a standard laptop with 8GB RAM a full-brain tractogram from the HCP data (1M fibers, 3 shells, 1.25 mm^3 resolution)
 - **Soon**: **GPU implementation** for even faster model fitting! Code is ready but it is currently in beta testing.
+- **Soon**: **Python implementation** in the [DIPY](http://www.dipy.org) library.
 
 ## How to cite COMMIT
 
