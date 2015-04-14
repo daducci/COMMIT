@@ -60,6 +60,7 @@ COMMIT_Setup
 COMMIT_PrecomputeRotationMatrices();
 
 COMMIT_SetSubject( 'STN96', 'scan1' );
+CONFIG.normalizeSignal = false;
 CONFIG.doDemean = false;
 COMMIT_LoadData
 ```
@@ -102,6 +103,7 @@ COMMIT_Setup
 COMMIT_PrecomputeRotationMatrices();
 
 COMMIT_SetSubject( 'STN96', 'scan1' );
+CONFIG.normalizeSignal = false;
 CONFIG.doDemean = true;
 COMMIT_LoadData
 ```
@@ -224,6 +226,7 @@ To this aim, it is simply necessary to perform the following operations after pr
 
 ```matlab
 % reload the DWI data and KERNELS (LUT) and DO NOT remove the mean
+CONFIG.normalizeSignal = false;
 CONFIG.doDemean	= false;
 COMMIT_LoadData
 COMMIT_ResampleKernels();
@@ -236,7 +239,7 @@ By doing this, both the measurements **y** and the signal **Ax** predicted by th
 We then load the *RMSE* errors and compare the accuracy of the two models, as follows:
 
 ```matlab
-niiERR_L  = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_STICKZEPPELINBALL_LIFE2','fit_RMSE.nii') );
+niiERR_L  = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_STICKZEPPELINBALL_LIFE_2','fit_RMSE.nii') );
 niiERR_C  = load_untouch_nii( fullfile('scan1','Tracking','PROB','Results_STICKZEPPELINBALL_COMMIT','fit_RMSE.nii') );
 
 % plot the RMSE of the LiFE model
@@ -244,14 +247,12 @@ figure(5), clf, imagesc( rot90(squeeze(niiERR_L.img(:,70,:))), [0 200] )
 axis ij image off, cm = hot(256); cm(1,:) = 0; colormap(cm); colorbar
 yL = niiERR_L.img( DICTIONARY.MASK>0 );
 title( sprintf('LiFE : %.1f +/- %.1f', mean(yL), std(yL) ))
-saveas(gcf,'RESULTS_Fig5.png')
 
 % plot the RMSE of the COMMIT model
 figure(6), clf, imagesc( rot90(squeeze(niiERR_C.img(:,70,:))), [0 200] )
 axis ij image off, cm = hot(256); cm(1,:) = 0; colormap(cm); colorbar
 yL = niiERR_C.img( DICTIONARY.MASK>0 );
 title( sprintf('COMMIT : %.1f +/- %.1f', mean(yL), std(yL) ))
-saveas(gcf,'RESULTS_Fig6.png')
 
 % direct comparison of the RMSE of LiFE and COMMIT
 figure(7), clf, hold on
@@ -265,7 +266,6 @@ xlabel( 'RMSE [raw signal units]' ), ylabel( 'percentage of voxels' )
 pbaspect([1 1 1])
 legend('LiFE','COMMIT')
 title('Error distributions')
-saveas(gcf,'RESULTS_Fig7.png')
 
 % voxelwise comparison of the RMSE of LiFE and COMMIT
 figure(8), clf, hold on
@@ -277,7 +277,6 @@ grid on, box on
 axis([0 260 0 260])
 xlabel( 'RMSE [raw signal units] with LiFE' ), ylabel( 'RMSE [raw signal units] with COMMIT' )
 title('Error scatterplot')
-saveas(gcf,'RESULTS_Fig8.png')
 ```
 
 ![RMSE for LiFE](https://github.com/daducci/COMMIT/blob/master/doc/demos/STN96/RESULTS_Fig5.png)
