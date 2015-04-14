@@ -2,7 +2,7 @@ function [ KRlm ] = COMMIT_RotateKernel( K, AUX, idx_IN, idx_OUT, isIsotropic )
 
     if ( isIsotropic == false )
         % fit SH and rotate kernel to 181*181 directions
-        KRlm = zeros( size(AUX.fit,1), 181, 181, 'single' );
+        KRlm = zeros( numel(idx_IN)*size(AUX.fit,1), 181, 181, 'single' );
         for ox = 1:181
         for oy = 1:181
             Ylm_rot = AUX.Ylm_rot{ ox, oy };
@@ -23,8 +23,7 @@ function [ KRlm ] = COMMIT_RotateKernel( K, AUX, idx_IN, idx_OUT, isIsotropic )
         end
     else
         % simply fit SH
-        KRlm = zeros( size(AUX.fit,1), 1, 1, 'single' );
-        Ylm_rot = AUX.Ylm_rot{ 1, 1 };
+        KRlm = zeros( numel(idx_IN)*size(AUX.fit,1), 1, 1, 'single' );
         for s = 1:numel(idx_IN)
             KRlm( idx_OUT{s}, 1, 1 ) = single( AUX.fit * K( idx_IN{s} ) );
         end

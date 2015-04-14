@@ -1,5 +1,5 @@
 %
-% Create the folder to simulate data with Camino at higher q-space resolution (500 directions per shell)
+% Create the high-resolution scheme used to simulate data at higher q-space resolution (500 directions per shell)
 %
 % Parameters
 % ----------
