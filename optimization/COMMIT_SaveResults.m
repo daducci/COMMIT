@@ -109,7 +109,7 @@ function COMMIT_SaveResults( namePostfix )
         tmp = zeros( DICTIONARY.nV, 1, 'single' );
         base = A.nF*A.nR + A.nE*A.nT;
         for s = 1:numel(DICTIONARY.ISO.v)
-            v = DICTIONARY.ISO.v(s)/KERNELS.nS + 1;
+            v = DICTIONARY.ISO.v(s) + 1;
             xx = xW(base+s : A.nV : base+A.nV*A.nI);
             tmp(v) = tmp(v) + sum(xx);
         end
@@ -125,7 +125,7 @@ function COMMIT_SaveResults( namePostfix )
         tmp  = zeros( DICTIONARY.nV, 1, 'single' );
         base = A.nF*A.nR;
         for s = 1:numel(DICTIONARY.EC.v)
-            v = DICTIONARY.EC.v(s)/KERNELS.nS + 1;
+            v = DICTIONARY.EC.v(s) + 1;
             xx = xW( base+s : A.nE : base+A.nE*A.nT );
             tmp(v) = tmp(v) + sum(xx);
         end
@@ -141,7 +141,7 @@ function COMMIT_SaveResults( namePostfix )
     tmp = zeros( DICTIONARY.nV, 1, 'single' );
     for s = 1:DICTIONARY.IC.n
         f = double(DICTIONARY.IC.fiber(s) + 1);
-        v = DICTIONARY.IC.v(s)/KERNELS.nS + 1;
+        v = DICTIONARY.IC.v(s) + 1;
         tmp(v) = tmp(v) + xx(f) * DICTIONARY.IC.len(s);
     end
     niiERR.img( DICTIONARY.MASK>0 ) = tmp;
