@@ -161,18 +161,12 @@ function COMMIT_LoadDictionary( folder )
     idx = find( DICTIONARY.MASK );
     lut = zeros( CONFIG.dim, 'uint32' );
     for i = 1:numel(idx)
-        lut( idx(i) ) = (i-1)*KERNELS.nS;
+        lut( idx(i) ) = i-1;
     end
 
-    for i = 1:numel(DICTIONARY.IC.v)
-        DICTIONARY.IC.v(i) = lut( DICTIONARY.IC.v(i)+1 );
-    end
-    for i = 1:numel(DICTIONARY.EC.v)
-        DICTIONARY.EC.v(i) = lut( DICTIONARY.EC.v(i)+1 );
-    end
-    for i = 1:numel(DICTIONARY.ISO.v)
-        DICTIONARY.ISO.v(i) = lut( DICTIONARY.ISO.v(i)+1 );
-    end
+    DICTIONARY.IC.v  = lut( DICTIONARY.IC.v+1 );
+    DICTIONARY.EC.v  = lut( DICTIONARY.EC.v+1 );
+    DICTIONARY.ISO.v = lut( DICTIONARY.ISO.v+1 );
 
     fprintf( '            [ OK ]\n' );
 
