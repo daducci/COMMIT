@@ -256,30 +256,14 @@ int main(int argc, char** argv)
     {
         PROGRESS.inc();
 
-        // read a fiber
-        pts = TRK_input.read( &fiber );
-
-        // compute length (in mm) to discard fibers too short
-        fiberLen = 0;
-        for(int i=0; i<(int)pts-1 ;i++)
-        {
-            P.x   = fiber(0,i+1) - fiber(0,i);
-            P.y   = fiber(1,i+1) - fiber(1,i);
-            P.z   = fiber(2,i+1) - fiber(2,i);
-            fiberLen += P.norm();
-        }
-        // if ( fiberLen < minFiberLen )
-            // continue;
-
         // process each segment separately and add them to the structure "FiberSegments"
+        pts = TRK_input.read( &fiber );
         fiberForwardModel( fiber, pts );
 
         // store data on file
         if ( FiberSegments.size() > 0 )
         {
             fiberLen = 0;
-            for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
-                fiberLen += it->second;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
@@ -290,9 +274,10 @@ int main(int argc, char** argv)
                 fwrite( &(it->first.oy), 1, 1, pDict_IC_oy );
                 fwrite( &(it->second),   4, 1, pDict_IC_len );
                 (*niiMASK.img)( (int)it->first.x, (int)it->first.y, (int)it->first.z ) += it->second;
+                fiberLen += it->second;
             }
-            totICSegments += FiberSegments.size();
             fwrite( &fiberLen,  1, 4, pDict_IC_trkLen );
+            totICSegments += FiberSegments.size();
             totFibers++;
         }
     }
@@ -424,7 +409,7 @@ int main(int argc, char** argv)
     /*=========================*/
     printf( "\n-> Saving voxel mask...\n" );
 
-    niiMASK.save( OUTPUT_path + "/dictionary_mask.nii" );
+    niiMASK.save( OUTPUT_path + "/dictionary_tdi.nii.gz" );
 
     printf( "   [ OK ]\n" );
 
