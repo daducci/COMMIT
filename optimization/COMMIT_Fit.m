@@ -24,5 +24,5 @@ function COMMIT_Fit( )
     end
 
     CONFIG.OPTIMIZATION.time = toc(ticID);
-    fprintf( '   [ %.0fh %.0fm %.0fs ]\n', floor(CONFIG.OPTIMIZATION.time/3600), floor(mod(CONFIG.OPTIMIZATION.time/60,60)), mod(CONFIG.OPTIMIZATION.time,60) )
+    fprintf( '%dh %02dm %02ds\n', floor(mod(CONFIG.OPTIMIZATION.time, [0, 3600, 60]) ./ [3600, 60, 1]) )
 end
