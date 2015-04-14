@@ -18,7 +18,7 @@ methods
         obj.id        = 'STICKZEPPELINBALL';
         obj.name      = 'Stick-Zeppelin-Ball';
         obj.dPar      = 1.7 * 1E-3;
-        obj.dISOs     = [2.0 3.0] * 1E-3;
+        obj.dISOs     = [1.7 3.0] * 1E-3;
         obj.IC_VFs    = [0.7];
         obj.bscale    = 1E6;
     end
