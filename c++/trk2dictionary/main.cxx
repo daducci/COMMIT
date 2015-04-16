@@ -409,7 +409,7 @@ int main(int argc, char** argv)
     /*=========================*/
     printf( "\n-> Saving voxel mask...\n" );
 
-    niiMASK.save( OUTPUT_path + "/dictionary_tdi.nii.gz" );
+    niiMASK.save( OUTPUT_path + "/dictionary_tdi.nii" );
 
     printf( "   [ OK ]\n" );
 

@@ -16,11 +16,11 @@ function COMMIT_LoadDictionary( folder )
     CONFIG.TRACKING_path = fullfile(CONFIG.DATA_path, folder);
 
     DICTIONARY = [];
-    if ~exist( fullfile(CONFIG.TRACKING_path,'dictionary_mask.nii'), 'file' )
+    if ~exist( fullfile(CONFIG.TRACKING_path,'dictionary_tdi.nii'), 'file' )
         error( 'Dictionary not found. Launch ''trk2dictionary'' script first!' );
     end
 
-    niiMASK = load_untouch_nii( fullfile(CONFIG.TRACKING_path,'dictionary_mask.nii') );
+    niiMASK = load_untouch_nii( fullfile(CONFIG.TRACKING_path,'dictionary_tdi.nii') );
     DICTIONARY.MASK = uint8(niiMASK.img > 0);
     clear niiMASK
 
