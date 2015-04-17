@@ -72,10 +72,10 @@ COMMIT_debugger \
 
 - `p`: show/hide the peaks
 - `x`, `y`, `z`: flip the peaks along each axis
-- `t`, 'T': decrease/increase the peaks threshold
+- `t`, `T`: decrease/increase the peaks threshold
 - `n`: normalize the length of the peaks
 - `w`, `W`: decrease/increase the line-width of the peaks/glyphs
 
 - `f`: show/hide the tracts
-- `c`, `C`: decreases/increases the slab region in which plotting the fibers
-- `space`: alternate between "crop fibers to slab around the planes" and "crop the fibers in the current voxel (yellow)"
+- `c`, `C`: decrease/increase the slab region in which plotting the fibers
+- `space`: alternate between "crop fibers to slab around the planes" and "crop fibers in the current voxel (yellow)"
