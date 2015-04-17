@@ -9,6 +9,8 @@
 
 Giver an input tractogram, and possibly a peaks file representing the major directions of the extra-celullar water pool in each voxel, it constructs the sparse data-structure that is needed to compute the matrix-vector multiplications **Ax** and **A'y**. The fibers and the extra-cellular directions can be estimated/construcuted with any tool of choice.
 
+### Synopsis
+
 ```bash
 trk2dictionary \
     -i <path/filename> \
@@ -36,9 +38,14 @@ trk2dictionary \
 
 ## COMMIT_debugger
 
-This tool allows to display all ingredients used in the COMMIT model in a common 3D space: DWI data (NIFTI format), its acquisition scheme (CAMINO format), extra-cellular directions (NIFTI file) and tractogram (TrackVis format).
+This tool allows one to display all ingredients used in the COMMIT model in a common 3D space: DWI data (NIFTI format), its acquisition scheme (CAMINO format), extra-cellular directions (NIFTI file) and tractogram (TrackVis format).
 
-**NB**: please note that this tools is released only for debugging purposes and it is very rudimental. For this reason, it is *not compiled by default*; to compile it, be sure to install/configure the OpengGL libraries for your platform, open the file `CMakeLists.txt` and uncomment the corresponding line, ie remove the '#' character from the line `#ADD_SUBDIRECTORY( COMMIT_debugger )`.
+
+![Application screenshot](https://github.com/daducci/COMMIT/blob/master/doc/COMMIT_debugger.jpg)
+
+**NB**: please note that this tools is released only for debugging purposes and it is very rudimental. For this reason, it is *not compiled by default*. To build it, be sure to install/configure the **OpengGL libraries** on your platform; then, open the file `CMakeLists.txt` and uncomment the corresponding line, ie remove the '#' character from the line `#ADD_SUBDIRECTORY( COMMIT_debugger )`.
+
+### Synopsis
 
 ```bash
 COMMIT_debugger \
@@ -52,7 +59,7 @@ COMMIT_debugger \
 - `peaks`: directions to be interpreted as the major directions of the *hindered* water pools in each voxel (NIFTI format).
 - `tracts`: tractogram to generate the *restricted* contributions of the tracts in each voxel.
 
-### Shortcuts 
+### Shortcuts
 
 - `1`, `2`, `3`: show/hide the x-, y-, z-plane, respectively. All plotting is performed on these planes.
 - `o`, `O`: decrease/increase the opacity of the three planes
