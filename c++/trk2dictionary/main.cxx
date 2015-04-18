@@ -147,9 +147,7 @@ int main(int argc, char** argv)
     pixdim.z 	= TRK_input.hdr.voxel_size[2];
     printf( "\t- %d x %d x %d\n",       dim.x,    dim.y,    dim.z );
     printf( "\t- %.4f x %.4f x %.4f\n", pixdim.x, pixdim.y, pixdim.z );
-    printf( "\t- %d fibers\n",     TRK_input.hdr.n_count );
-    printf( "\t- %d scalars\n",    TRK_input.hdr.n_scalars );
-    printf( "\t- %d properties\n", TRK_input.hdr.n_properties );
+    printf( "\t- %d fibers\n", TRK_input.hdr.n_count );
 
     fiberShiftXmm = fiberShift * pixdim.x;
     fiberShiftYmm = fiberShift * pixdim.y;
@@ -260,9 +258,9 @@ int main(int argc, char** argv)
         pts = TRK_input.read( &fiber );
         fiberForwardModel( fiber, pts );
 
-        // store data on file
         if ( FiberSegments.size() > 0 )
         {
+            // store data on file
             fiberLen = 0;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
@@ -372,12 +370,6 @@ int main(int argc, char** argv)
 
                         ec_seg.ox = (int)round(colatitude/M_PI*180.0);
                         ec_seg.oy = (int)round(longitude/M_PI*180.0);
-                        if ( ec_seg.ox<0 || ec_seg.ox>180 || ec_seg.oy < 0 || ec_seg.oy>180 )
-                        {
-                            COLOR_error( "segment orientation (ox,oy) out of bound" );
-                            return EXIT_FAILURE;
-                        }
-
                         fwrite( &ec_seg.x,   1, 1, pDict_EC_vx );
                         fwrite( &ec_seg.y,   1, 1, pDict_EC_vy );
                         fwrite( &ec_seg.z,   1, 1, pDict_EC_vz );
@@ -523,11 +515,6 @@ void segmentForwardModel( const VECTOR<double>& P1, const VECTOR<double>& P2 )
 
     key.set( vox.x, vox.y, vox.z, (int)round(colatitude/M_PI*180.0), (int)round(longitude/M_PI*180.0) );
     FiberSegments[key] += len;
-    if ( key.ox<0 || key.ox>180 || key.oy < 0 || key.oy>180 )
-    {
-        COLOR_error( "ox or oy out of LUT bound [0,180]" );
-        return;
-    }
 }
 
 
