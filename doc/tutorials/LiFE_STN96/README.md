@@ -45,7 +45,7 @@ trk2dictionary.run(
 ```
 This will create the necessary data structure (`STN96/scan1/Tracking/PROB/dictionary_*`) containing all the details of the tracts.
 
-NB: the output tractogram from *MrTrix* has been already converted to the format accepted by *COMMIT*, i.e. [TrackiVis format](http://www.trackvis.org/docs/?subsect=fileformat) with fiber coordinates (in mm) in image space, where the coordinate (0,0,0) corresponds to the corner of first voxel.
+NB: the output tractogram from *MrTrix* has been already converted to the format accepted by *COMMIT*, i.e. [TrackVis format](http://www.trackvis.org/docs/?subsect=fileformat) with fiber coordinates (in mm) in image space, where the coordinate (0,0,0) corresponds to the corner of first voxel.
 
 ## Process data with COMMIT
 
