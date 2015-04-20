@@ -9,12 +9,11 @@ These weights can be easily estimated by solving a convenient **global convex op
 
 ## Main features
 
-- Accepts and works with **any input tractogram** (i.e. set of fiber tracts)
-- Can easily implement and consider **any multi-compartment model** available in the literature: possibility to account for restricted, hindered as well as isotropic contributions into the signal forward model
-- Very efficient: the core of the algorithm is implemented in C++ and using **multi-threading programming** for efficient parallel computation
-- **Low memory** consumption using optimized sparse data structures, e.g. it can easily run on a standard laptop with 8GB RAM a full-brain tractogram from the HCP data (1M fibers, 3 shells, 1.25 mm^3 resolution)
-- **Soon**: **GPU implementation** for even faster model fitting! Code is ready but it is currently in beta testing.
-- **Soon**: **Python implementation** in the [DIPY](http://www.dipy.org) library.
+- Accepts and works with **any input tractogram** (i.e. set of fiber tracts).
+- Can easily implement and consider **any multi-compartment model** available in the literature: possibility to account for restricted, hindered as well as isotropic contributions into the signal forward model.
+- Very efficient: the core of the algorithm is implemented in C++ and using **multi-threading programming** for efficient parallel computation.
+- **Low memory** consumption using optimized sparse data structures, e.g. it can easily run on a standard laptop with 8GB RAM a full-brain tractogram from the HCP data (1M fibers, 3 shells, 1.25 mm^3 resolution).
+- **Soon**: **GPU implementation** for even faster model fitting.
 
 ## How to cite COMMIT
 
@@ -35,5 +34,5 @@ More information/documentation can be found in the [`doc`](doc/) folder.
 
 ## Getting started
 
-Tutorials/demos are provided in the [`doc/demos`](doc/demos/) folder to help you get started with the COMMIT framework.
+Tutorials are provided in the [`doc/tutorials`](doc/tutorials/) folder to help you get started with the COMMIT framework.
 
