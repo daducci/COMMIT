@@ -76,7 +76,7 @@ class Evaluation :
         self.niiDWI  = nibabel.load( os.path.join( self.CONFIG['DATA_path'], dwi_filename) )
         self.niiDWI_img = self.niiDWI.get_data().astype(np.float32)
         self.CONFIG['dim']    = self.niiDWI_img.shape[0:3]
-        self.CONFIG['pixdim'] = tuple( self.niiDWI.header['pixdim'][1:4] )
+        self.CONFIG['pixdim'] = tuple( self.niiDWI.get_header().get_zooms()[:3] )
         print '\t\t- dim    = %d x %d x %d x %d' % self.niiDWI_img.shape
         print '\t\t- pixdim = %.3f x %.3f x %.3f' % self.CONFIG['pixdim']
 
@@ -190,7 +190,7 @@ class Evaluation :
         nSH = (lmax+1)*(lmax+2)/2
         idx_IN  = []
         idx_OUT = []
-        for s in xrange( 0, len(self.scheme.shells) ) :
+        for s in xrange( len(self.scheme.shells) ) :
             idx_IN.append( range(500*s,500*(s+1)) )
             idx_OUT.append( range(nSH*s,nSH*(s+1)) )
 
@@ -225,7 +225,7 @@ class Evaluation :
         idx_OUT = np.zeros( self.scheme.dwi_count, dtype=np.int32 )
         Ylm_OUT = np.zeros( (self.scheme.dwi_count,nSH*len(self.scheme.shells)), dtype=np.float32 ) # matrix from SH to real space
         idx = 0
-        for s in xrange( 0, len(self.scheme.shells) ) :
+        for s in xrange( len(self.scheme.shells) ) :
             nS = len( self.scheme.shells[s]['idx'] )
             idx_OUT[ idx:idx+nS ] = self.scheme.shells[s]['idx']
             _, theta, phi = cart2sphere( self.scheme.shells[s]['grad'][:,0], self.scheme.shells[s]['grad'][:,1], self.scheme.shells[s]['grad'][:,2] )
@@ -695,8 +695,8 @@ class Evaluation :
         sys.stdout.flush()
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-        niiMAP.header['cal_min'] = 0
-        niiMAP.header['cal_max'] = tmp.max()
+        niiMAP.get_header()['cal_min'] = 0
+        niiMAP.get_header()['cal_max'] = tmp.max()
         nibabel.save( niiMAP, os.path.join(RESULTS_path,'fit_RMSE.nii.gz') )
         print ' [ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() )
 
@@ -708,8 +708,8 @@ class Evaluation :
         tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
         tmp[ idx ] = 0
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-        niiMAP.header['cal_min'] = 0
-        niiMAP.header['cal_max'] = 1
+        niiMAP.get_header()['cal_min'] = 0
+        niiMAP.get_header()['cal_max'] = 1
         nibabel.save( niiMAP, os.path.join(RESULTS_path,'fit_NRMSE.nii.gz') )
         print '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() )
 
@@ -791,9 +791,9 @@ def precompute_rotation_matrices( lmax = 12 ) :
 
     # auxiliary data to perform rotations
     AUX['const'] = np.zeros( AUX['fit'].shape[0], dtype=np.float64 )
-    AUX['idx_m0']   = np.zeros( AUX['fit'].shape[0], dtype=np.int32 )
+    AUX['idx_m0'] = np.zeros( AUX['fit'].shape[0], dtype=np.int32 )
     i = 0
-    for l in xrange(AUX['lmax']+1,2) :
+    for l in xrange(0,AUX['lmax']+1,2) :
         const  = np.sqrt(4.0*np.pi/(2.0*l+1.0))
         idx_m0 = (l*l + l + 2.0)/2.0 - 1
         for m in xrange(-l,l+1) :
