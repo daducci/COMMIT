@@ -89,9 +89,9 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         print '\t\t* filtering mask'
         niiMASK = nibabel.load( filename_mask )
         print '\t\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] )
-        print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.header['pixdim'][1], niiMASK.header['pixdim'][2], niiMASK.header['pixdim'][3] )
+        print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.get_header()['pixdim'][1], niiMASK.get_header()['pixdim'][2], niiMASK.get_header()['pixdim'][3] )
         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
-             abs(Px-niiMASK.header['pixdim'][1])>1e-3 or abs(Py-niiMASK.header['pixdim'][2])>1e-3 or abs(Pz-niiMASK.header['pixdim'][3])>1e-3 ) :
+             abs(Px-niiMASK.get_header()['pixdim'][1])>1e-3 or abs(Py-niiMASK.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiMASK.get_header()['pixdim'][3])>1e-3 ) :
             print '\t\t  [WARNING] WM dataset does not have the same geometry as the tractogram'
         niiMASK_img = np.ascontiguousarray( niiMASK.get_data().astype(np.float32) )
         ptrMASK  = &niiMASK_img[0,0,0]
@@ -107,11 +107,11 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         print '\t\t* EC orientations'
         niiPEAKS = nibabel.load( filename_peaks )
         print '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] )
-        print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.header['pixdim'][1], niiPEAKS.header['pixdim'][2], niiPEAKS.header['pixdim'][3] )
+        print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.get_header()['pixdim'][1], niiPEAKS.get_header()['pixdim'][2], niiPEAKS.get_header()['pixdim'][3] )
         print '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR
         print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )
         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
-             abs(Px-niiPEAKS.header['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.header['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.header['pixdim'][3])>1e-3 ) :
+             abs(Px-niiPEAKS.get_header()['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.get_header()['pixdim'][3])>1e-3 ) :
             print "\t\t  [WARNING] PEAKS dataset does not have the same geometry as the tractogram"
         if niiPEAKS.shape[3] % 3 :
             raise RuntimeError( 'PEAKS dataset must have 3*k volumes' )

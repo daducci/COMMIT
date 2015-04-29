@@ -1597,7 +1597,6 @@ static char __pyx_k_affine[] = "affine";
 static char __pyx_k_astype[] = "astype";
 static char __pyx_k_exists[] = "exists";
 static char __pyx_k_format[] = "format";
-static char __pyx_k_header[] = "header";
 static char __pyx_k_import[] = "__import__";
 static char __pyx_k_name_2[] = "__name__";
 static char __pyx_k_pixdim[] = "pixdim";
@@ -1628,6 +1627,7 @@ static char __pyx_k_1f_seconds[] = "   [ %.1f seconds ]";
 static char __pyx_k_IndexError[] = "IndexError";
 static char __pyx_k_ValueError[] = "ValueError";
 static char __pyx_k_flip_peaks[] = "flip_peaks";
+static char __pyx_k_get_header[] = "get_header";
 static char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
 static char __pyx_k_tractogram[] = "\t\t* tractogram";
 static char __pyx_k_voxel_size[] = "voxel_size";
@@ -1775,8 +1775,8 @@ static PyObject *__pyx_n_s_format;
 static PyObject *__pyx_n_s_fortran;
 static PyObject *__pyx_n_u_fortran;
 static PyObject *__pyx_n_s_get_data;
+static PyObject *__pyx_n_s_get_header;
 static PyObject *__pyx_kp_s_got_differing_extents_in_dimensi;
-static PyObject *__pyx_n_s_header;
 static PyObject *__pyx_n_s_id;
 static PyObject *__pyx_kp_s_ignoring_peaks_2f_MaxPeak;
 static PyObject *__pyx_n_s_import;
@@ -2408,7 +2408,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
  *         print '\t\t* filtering mask'
  *         niiMASK = nibabel.load( filename_mask )             # <<<<<<<<<<<<<<
  *         print '\t\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] )
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.header['pixdim'][1], niiMASK.header['pixdim'][2], niiMASK.header['pixdim'][3] )
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.get_header()['pixdim'][1], niiMASK.get_header()['pixdim'][2], niiMASK.get_header()['pixdim'][3] )
  */
     __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_nibabel); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 90; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
@@ -2447,7 +2447,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
  *         print '\t\t* filtering mask'
  *         niiMASK = nibabel.load( filename_mask )
  *         print '\t\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] )             # <<<<<<<<<<<<<<
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.header['pixdim'][1], niiMASK.header['pixdim'][2], niiMASK.header['pixdim'][3] )
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.get_header()['pixdim'][1], niiMASK.get_header()['pixdim'][2], niiMASK.get_header()['pixdim'][3] )
  *         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
  */
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_shape); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 91; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -2485,28 +2485,82 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
     /* "commit/trk2dictionary/trk2dictionary.pyx":92
  *         niiMASK = nibabel.load( filename_mask )
  *         print '\t\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] )
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.header['pixdim'][1], niiMASK.header['pixdim'][2], niiMASK.header['pixdim'][3] )             # <<<<<<<<<<<<<<
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.get_header()['pixdim'][1], niiMASK.get_header()['pixdim'][2], niiMASK.get_header()['pixdim'][3] )             # <<<<<<<<<<<<<<
  *         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
- *              abs(Px-niiMASK.header['pixdim'][1])>1e-3 or abs(Py-niiMASK.header['pixdim'][2])>1e-3 or abs(Pz-niiMASK.header['pixdim'][3])>1e-3 ) :
+ *              abs(Px-niiMASK.get_header()['pixdim'][1])>1e-3 or abs(Py-niiMASK.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiMASK.get_header()['pixdim'][3])>1e-3 ) :
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_header); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_get_header); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_1))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+      if (likely(__pyx_t_3)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_1, function);
+      }
+    }
+    if (__pyx_t_3) {
+      __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    } else {
+      __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_1 = PyObject_GetItem(__pyx_t_2, __pyx_n_s_pixdim); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_1, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_2 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_header); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_get_header); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_8 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_8 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_8)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_8);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    if (__pyx_t_8) {
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_8); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    } else {
+      __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = PyObject_GetItem(__pyx_t_1, __pyx_n_s_pixdim); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_3, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_header); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_get_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_11 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_8))) {
+      __pyx_t_11 = PyMethod_GET_SELF(__pyx_t_8);
+      if (likely(__pyx_t_11)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
+        __Pyx_INCREF(__pyx_t_11);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_8, function);
+      }
+    }
+    if (__pyx_t_11) {
+      __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_11); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    } else {
+      __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_8); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __pyx_t_8 = PyObject_GetItem(__pyx_t_3, __pyx_n_s_pixdim); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -2532,9 +2586,9 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
 
     /* "commit/trk2dictionary/trk2dictionary.pyx":93
  *         print '\t\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] )
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.header['pixdim'][1], niiMASK.header['pixdim'][2], niiMASK.header['pixdim'][3] )
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.get_header()['pixdim'][1], niiMASK.get_header()['pixdim'][2], niiMASK.get_header()['pixdim'][3] )
  *         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or             # <<<<<<<<<<<<<<
- *              abs(Px-niiMASK.header['pixdim'][1])>1e-3 or abs(Py-niiMASK.header['pixdim'][2])>1e-3 or abs(Pz-niiMASK.header['pixdim'][3])>1e-3 ) :
+ *              abs(Px-niiMASK.get_header()['pixdim'][1])>1e-3 or abs(Py-niiMASK.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiMASK.get_header()['pixdim'][3])>1e-3 ) :
  *             print '\t\t  [WARNING] WM dataset does not have the same geometry as the tractogram'
  */
     __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_shape); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -2587,14 +2641,32 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
     __pyx_L20_next_or:;
 
     /* "commit/trk2dictionary/trk2dictionary.pyx":94
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.header['pixdim'][1], niiMASK.header['pixdim'][2], niiMASK.header['pixdim'][3] )
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK.get_header()['pixdim'][1], niiMASK.get_header()['pixdim'][2], niiMASK.get_header()['pixdim'][3] )
  *         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
- *              abs(Px-niiMASK.header['pixdim'][1])>1e-3 or abs(Py-niiMASK.header['pixdim'][2])>1e-3 or abs(Pz-niiMASK.header['pixdim'][3])>1e-3 ) :             # <<<<<<<<<<<<<<
+ *              abs(Px-niiMASK.get_header()['pixdim'][1])>1e-3 or abs(Py-niiMASK.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiMASK.get_header()['pixdim'][3])>1e-3 ) :             # <<<<<<<<<<<<<<
  *             print '\t\t  [WARNING] WM dataset does not have the same geometry as the tractogram'
  *         niiMASK_img = np.ascontiguousarray( niiMASK.get_data().astype(np.float32) )
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_header); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_get_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_1 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_8))) {
+      __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_8);
+      if (likely(__pyx_t_1)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
+        __Pyx_INCREF(__pyx_t_1);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_8, function);
+      }
+    }
+    if (__pyx_t_1) {
+      __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    } else {
+      __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_8); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __pyx_t_8 = PyObject_GetItem(__pyx_t_3, __pyx_n_s_pixdim); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -2618,8 +2690,26 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
       goto __pyx_L17_bool_binop_done;
     }
     __pyx_L21_next_or:;
-    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_get_header); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_1 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_1)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_1);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    if (__pyx_t_1) {
+      __pyx_t_8 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    } else {
+      __pyx_t_8 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_8);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = PyObject_GetItem(__pyx_t_8, __pyx_n_s_pixdim); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -2643,8 +2733,26 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
       goto __pyx_L17_bool_binop_done;
     }
     __pyx_L22_next_or:;
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_header); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiMASK, __pyx_n_s_get_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_1 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_8))) {
+      __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_8);
+      if (likely(__pyx_t_1)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
+        __Pyx_INCREF(__pyx_t_1);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_8, function);
+      }
+    }
+    if (__pyx_t_1) {
+      __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    } else {
+      __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_8); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __pyx_t_8 = PyObject_GetItem(__pyx_t_3, __pyx_n_s_pixdim); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -2667,7 +2775,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
 
       /* "commit/trk2dictionary/trk2dictionary.pyx":95
  *         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
- *              abs(Px-niiMASK.header['pixdim'][1])>1e-3 or abs(Py-niiMASK.header['pixdim'][2])>1e-3 or abs(Pz-niiMASK.header['pixdim'][3])>1e-3 ) :
+ *              abs(Px-niiMASK.get_header()['pixdim'][1])>1e-3 or abs(Py-niiMASK.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiMASK.get_header()['pixdim'][3])>1e-3 ) :
  *             print '\t\t  [WARNING] WM dataset does not have the same geometry as the tractogram'             # <<<<<<<<<<<<<<
  *         niiMASK_img = np.ascontiguousarray( niiMASK.get_data().astype(np.float32) )
  *         ptrMASK  = &niiMASK_img[0,0,0]
@@ -2678,7 +2786,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
     __pyx_L16:;
 
     /* "commit/trk2dictionary/trk2dictionary.pyx":96
- *              abs(Px-niiMASK.header['pixdim'][1])>1e-3 or abs(Py-niiMASK.header['pixdim'][2])>1e-3 or abs(Pz-niiMASK.header['pixdim'][3])>1e-3 ) :
+ *              abs(Px-niiMASK.get_header()['pixdim'][1])>1e-3 or abs(Py-niiMASK.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiMASK.get_header()['pixdim'][3])>1e-3 ) :
  *             print '\t\t  [WARNING] WM dataset does not have the same geometry as the tractogram'
  *         niiMASK_img = np.ascontiguousarray( niiMASK.get_data().astype(np.float32) )             # <<<<<<<<<<<<<<
  *         ptrMASK  = &niiMASK_img[0,0,0]
@@ -2836,7 +2944,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
  *         print '\t\t* EC orientations'
  *         niiPEAKS = nibabel.load( filename_peaks )             # <<<<<<<<<<<<<<
  *         print '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] )
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.header['pixdim'][1], niiPEAKS.header['pixdim'][2], niiPEAKS.header['pixdim'][3] )
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.get_header()['pixdim'][1], niiPEAKS.get_header()['pixdim'][2], niiPEAKS.get_header()['pixdim'][3] )
  */
     __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_nibabel); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 108; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
@@ -2875,7 +2983,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
  *         print '\t\t* EC orientations'
  *         niiPEAKS = nibabel.load( filename_peaks )
  *         print '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] )             # <<<<<<<<<<<<<<
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.header['pixdim'][1], niiPEAKS.header['pixdim'][2], niiPEAKS.header['pixdim'][3] )
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.get_header()['pixdim'][1], niiPEAKS.get_header()['pixdim'][2], niiPEAKS.get_header()['pixdim'][3] )
  *         print '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR
  */
     __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_shape); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 109; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -2921,28 +3029,82 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
     /* "commit/trk2dictionary/trk2dictionary.pyx":110
  *         niiPEAKS = nibabel.load( filename_peaks )
  *         print '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] )
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.header['pixdim'][1], niiPEAKS.header['pixdim'][2], niiPEAKS.header['pixdim'][3] )             # <<<<<<<<<<<<<<
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.get_header()['pixdim'][1], niiPEAKS.get_header()['pixdim'][2], niiPEAKS.get_header()['pixdim'][3] )             # <<<<<<<<<<<<<<
  *         print '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR
  *         print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )
  */
-    __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_header); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_get_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_1 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_8))) {
+      __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_8);
+      if (likely(__pyx_t_1)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
+        __Pyx_INCREF(__pyx_t_1);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_8, function);
+      }
+    }
+    if (__pyx_t_1) {
+      __pyx_t_11 = __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_1); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    } else {
+      __pyx_t_11 = __Pyx_PyObject_CallNoArg(__pyx_t_8); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_11);
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __pyx_t_8 = PyObject_GetItem(__pyx_t_11, __pyx_n_s_pixdim); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __pyx_t_11 = __Pyx_GetItemInt(__pyx_t_8, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_11 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_get_header); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_1))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+      if (likely(__pyx_t_3)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_1, function);
+      }
+    }
+    if (__pyx_t_3) {
+      __pyx_t_8 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    } else {
+      __pyx_t_8 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_8);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_1 = PyObject_GetItem(__pyx_t_8, __pyx_n_s_pixdim); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __pyx_t_8 = __Pyx_GetItemInt(__pyx_t_1, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_header); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_get_header); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_13 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_13 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_13)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_13);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    if (__pyx_t_13) {
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_13); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+    } else {
+      __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = PyObject_GetItem(__pyx_t_1, __pyx_n_s_pixdim); if (unlikely(__pyx_t_3 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -2968,7 +3130,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
 
     /* "commit/trk2dictionary/trk2dictionary.pyx":111
  *         print '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] )
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.header['pixdim'][1], niiPEAKS.header['pixdim'][2], niiPEAKS.header['pixdim'][3] )
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.get_header()['pixdim'][1], niiPEAKS.get_header()['pixdim'][2], niiPEAKS.get_header()['pixdim'][3] )
  *         print '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR             # <<<<<<<<<<<<<<
  *         print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )
  *         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
@@ -2979,11 +3141,11 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
     /* "commit/trk2dictionary/trk2dictionary.pyx":112
- *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.header['pixdim'][1], niiPEAKS.header['pixdim'][2], niiPEAKS.header['pixdim'][3] )
+ *         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS.get_header()['pixdim'][1], niiPEAKS.get_header()['pixdim'][2], niiPEAKS.get_header()['pixdim'][3] )
  *         print '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR
  *         print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )             # <<<<<<<<<<<<<<
  *         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
- *              abs(Px-niiPEAKS.header['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.header['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.header['pixdim'][3])>1e-3 ) :
+ *              abs(Px-niiPEAKS.get_header()['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.get_header()['pixdim'][3])>1e-3 ) :
  */
     __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_flip_peaks, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_1 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_1);
@@ -3012,7 +3174,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
  *         print '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR
  *         print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )
  *         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or             # <<<<<<<<<<<<<<
- *              abs(Px-niiPEAKS.header['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.header['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.header['pixdim'][3])>1e-3 ) :
+ *              abs(Px-niiPEAKS.get_header()['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.get_header()['pixdim'][3])>1e-3 ) :
  *             print "\t\t  [WARNING] PEAKS dataset does not have the same geometry as the tractogram"
  */
     __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_shape); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 113; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -3067,12 +3229,30 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
     /* "commit/trk2dictionary/trk2dictionary.pyx":114
  *         print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )
  *         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
- *              abs(Px-niiPEAKS.header['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.header['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.header['pixdim'][3])>1e-3 ) :             # <<<<<<<<<<<<<<
+ *              abs(Px-niiPEAKS.get_header()['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.get_header()['pixdim'][3])>1e-3 ) :             # <<<<<<<<<<<<<<
  *             print "\t\t  [WARNING] PEAKS dataset does not have the same geometry as the tractogram"
  *         if niiPEAKS.shape[3] % 3 :
  */
-    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_get_header); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_11);
+    __pyx_t_3 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_11))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_11);
+      if (likely(__pyx_t_3)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_11);
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_11, function);
+      }
+    }
+    if (__pyx_t_3) {
+      __pyx_t_8 = __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_t_3); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    } else {
+      __pyx_t_8 = __Pyx_PyObject_CallNoArg(__pyx_t_11); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_8);
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __pyx_t_11 = PyObject_GetItem(__pyx_t_8, __pyx_n_s_pixdim); if (unlikely(__pyx_t_11 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -3096,8 +3276,26 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
       goto __pyx_L25_bool_binop_done;
     }
     __pyx_L29_next_or:;
-    __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_header); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_get_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_3 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_8))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_8);
+      if (likely(__pyx_t_3)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_8, function);
+      }
+    }
+    if (__pyx_t_3) {
+      __pyx_t_11 = __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_3); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    } else {
+      __pyx_t_11 = __Pyx_PyObject_CallNoArg(__pyx_t_8); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_11);
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __pyx_t_8 = PyObject_GetItem(__pyx_t_11, __pyx_n_s_pixdim); if (unlikely(__pyx_t_8 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
@@ -3121,8 +3319,26 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
       goto __pyx_L25_bool_binop_done;
     }
     __pyx_L30_next_or:;
-    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_header); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_niiPEAKS, __pyx_n_s_get_header); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_11);
+    __pyx_t_3 = NULL;
+    if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_11))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_11);
+      if (likely(__pyx_t_3)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_11);
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_11, function);
+      }
+    }
+    if (__pyx_t_3) {
+      __pyx_t_8 = __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_t_3); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    } else {
+      __pyx_t_8 = __Pyx_PyObject_CallNoArg(__pyx_t_11); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
     __Pyx_GOTREF(__pyx_t_8);
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __pyx_t_11 = PyObject_GetItem(__pyx_t_8, __pyx_n_s_pixdim); if (unlikely(__pyx_t_11 == NULL)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -3145,7 +3361,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
 
       /* "commit/trk2dictionary/trk2dictionary.pyx":115
  *         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
- *              abs(Px-niiPEAKS.header['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.header['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.header['pixdim'][3])>1e-3 ) :
+ *              abs(Px-niiPEAKS.get_header()['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.get_header()['pixdim'][3])>1e-3 ) :
  *             print "\t\t  [WARNING] PEAKS dataset does not have the same geometry as the tractogram"             # <<<<<<<<<<<<<<
  *         if niiPEAKS.shape[3] % 3 :
  *             raise RuntimeError( 'PEAKS dataset must have 3*k volumes' )
@@ -3156,7 +3372,7 @@ static PyObject *__pyx_f_6commit_14trk2dictionary_run(PyObject *__pyx_v_filename
     __pyx_L24:;
 
     /* "commit/trk2dictionary/trk2dictionary.pyx":116
- *              abs(Px-niiPEAKS.header['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.header['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.header['pixdim'][3])>1e-3 ) :
+ *              abs(Px-niiPEAKS.get_header()['pixdim'][1])>1e-3 or abs(Py-niiPEAKS.get_header()['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS.get_header()['pixdim'][3])>1e-3 ) :
  *             print "\t\t  [WARNING] PEAKS dataset does not have the same geometry as the tractogram"
  *         if niiPEAKS.shape[3] % 3 :             # <<<<<<<<<<<<<<
  *             raise RuntimeError( 'PEAKS dataset must have 3*k volumes' )
@@ -17552,8 +17768,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_fortran, __pyx_k_fortran, sizeof(__pyx_k_fortran), 0, 0, 1, 1},
   {&__pyx_n_u_fortran, __pyx_k_fortran, sizeof(__pyx_k_fortran), 0, 1, 0, 1},
   {&__pyx_n_s_get_data, __pyx_k_get_data, sizeof(__pyx_k_get_data), 0, 0, 1, 1},
+  {&__pyx_n_s_get_header, __pyx_k_get_header, sizeof(__pyx_k_get_header), 0, 0, 1, 1},
   {&__pyx_kp_s_got_differing_extents_in_dimensi, __pyx_k_got_differing_extents_in_dimensi, sizeof(__pyx_k_got_differing_extents_in_dimensi), 0, 0, 1, 0},
-  {&__pyx_n_s_header, __pyx_k_header, sizeof(__pyx_k_header), 0, 0, 1, 1},
   {&__pyx_n_s_id, __pyx_k_id, sizeof(__pyx_k_id), 0, 0, 1, 1},
   {&__pyx_kp_s_ignoring_peaks_2f_MaxPeak, __pyx_k_ignoring_peaks_2f_MaxPeak, sizeof(__pyx_k_ignoring_peaks_2f_MaxPeak), 0, 0, 1, 0},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
