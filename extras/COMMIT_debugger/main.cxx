@@ -4,6 +4,7 @@
 #include <VECTOR.h>
 #include <cmath>
 #include <regex>
+#include <cstdlib>
 
 #include <blitz/array.h>
 using namespace std;
@@ -105,11 +106,9 @@ int main(int argc, char** argv)
     // ----------------
     try
     {
-        while( fgets(line, 1000 , pFile) )
+        while( fgets(line, 1000, pFile) )
             if ( line[0]!='#' )
                 break;
-
-        strtok(line, "\n"); // remove newline
 
         std::regex reVersion("^VERSION: (.*)\\s*$");
         std::smatch reMatches;
@@ -144,9 +143,8 @@ int main(int argc, char** argv)
         std::smatch reMatches;
         int         Ns = 0;
         float       b;
-        while( fgets(line, 1000 , pFile) )
+        while( fgets(line, 1000, pFile) )
         {
-            strtok(line, "\n"); // remove newline
             if( std::regex_match(string(line), reMatches, reEMPTY) )
                 continue;   // skip empty lines
 
@@ -154,21 +152,20 @@ int main(int argc, char** argv)
             {
                 if ( !std::regex_match(string(line), reMatches, reVERSION0) )
                     throw "Wrong row format";
-                VECTOR<float> tmp( std::stof(reMatches[1].str().c_str()), std::stof(reMatches[2].str().c_str()), std::stof(reMatches[3].str().c_str()) );
+                VECTOR<float> tmp( std::atof(reMatches[1].str().c_str()), std::atof(reMatches[2].str().c_str()), std::atof(reMatches[3].str().c_str()) );
                 SCHEME_dirs.push_back( tmp );
-                b = std::stof(reMatches[4].str().c_str()); // in mm^2/s
+                b = std::atof(reMatches[4].str().c_str()); // in mm^2/s
                 SCHEME_b.push_back( b );
             }
             else
             {
                 if ( !std::regex_match(string(line), reMatches, reVERSION1) )
                     throw "Wrong row format";
-                VECTOR<float> tmp( std::stof(reMatches[1].str().c_str()), std::stof(reMatches[2].str().c_str()), std::stof(reMatches[3].str().c_str()) );
+                VECTOR<float> tmp( std::atof(reMatches[1].str().c_str()), std::atof(reMatches[2].str().c_str()), std::atof(reMatches[3].str().c_str()) );
                 SCHEME_dirs.push_back( tmp );
-                b = std::pow( 267.513e6 * std::stof(reMatches[4].str().c_str()) * std::stof(reMatches[6].str().c_str()), 2 ) * (std::stof(reMatches[5].str().c_str()) - std::stof(reMatches[6].str().c_str())/3.0) * 1e-6; // in mm^2/s
+                b = std::pow( 267.513e6 * std::atof(reMatches[4].str().c_str()) * std::atof(reMatches[6].str().c_str()), 2 ) * (std::atof(reMatches[5].str().c_str()) - std::atof(reMatches[6].str().c_str())/3.0) * 1e-6; // in mm^2/s
                 SCHEME_b.push_back( b );
             }
-
 
             if ( b<5 )
             {
@@ -321,7 +318,7 @@ int main(int argc, char** argv)
         niiPEAKS->hdr->qform_code != niiDWI->hdr->qform_code || niiPEAKS->hdr->pixdim[0] != niiDWI->hdr->pixdim[0] ||
         niiPEAKS->hdr->quatern_b != niiDWI->hdr->quatern_b || niiPEAKS->hdr->quatern_c != niiDWI->hdr->quatern_c || niiPEAKS->hdr->quatern_d != niiDWI->hdr->quatern_d ||
         niiPEAKS->hdr->qoffset_x != niiDWI->hdr->qoffset_x || niiPEAKS->hdr->qoffset_y != niiDWI->hdr->qoffset_y || niiPEAKS->hdr->qoffset_z != niiDWI->hdr->qoffset_z
-        )
+       )
     {
 
         COLOR_warning( "The GEOMETRY does not math that of DWI images", "\t" );
