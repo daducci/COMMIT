@@ -94,6 +94,7 @@ Setup and load the data; this time, however, we will apply the *demeaning proced
 
 ```python
 mit = commit.Evaluation( 'STN96', 'scan1' )
+mit.CONFIG['doNormalizeSignal'] = False
 mit.CONFIG['doDemean'] = True
 mit.load_data( 'DWI.nii', 'DWI.scheme' )
 ```
