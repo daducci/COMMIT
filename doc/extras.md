@@ -84,6 +84,9 @@ COMMIT_debugger \
 - `n`: normalize the length of the peaks
 - `w`, `W`: decrease/increase the line-width of the peaks/glyphs
 
+- `k`, `K`: decrease/increase the threshold for coloring the peaks depending on their norm (range is hard-coded to 0-20). If k=0, then the peaks are colored depending on their directions as usual.
+- `l`: change the colormap (lut) for the peaks
+
 - `f`: show/hide the tracts
 - `c`, `C`: decrease/increase the slab region in which plotting the fibers
 - `space`: alternate between "crop fibers to slab around the planes" and "crop fibers in the current voxel (yellow)"

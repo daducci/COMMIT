@@ -3,7 +3,6 @@
 
 #include <algorithm>
 
-
 #include "VECTOR.h"
 typedef VECTOR<GLint>		Vec3Di;
 typedef VECTOR<GLfloat>		Vec3Df;

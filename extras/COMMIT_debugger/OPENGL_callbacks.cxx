@@ -12,7 +12,6 @@
 #include "OPENGL_utils.h"
 using namespace OPENGL_utils;
 
-
 /* global variables */
 GLfloat			id[16], rot[16], rot1[16], rot2[16], rot3[16];
 Vec3Df			rotation, translation;
@@ -34,6 +33,7 @@ void PrintConfig()
     printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
     printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
     printf( "\t- PEAKS_width = %.1f\n", PEAKS_width );
+    printf( "\t- PEAKS_kolor = %.1f\n", PEAKS_kolor );
     printf( "\n" );
     printf( "\t- TRK_offset = [ %.1f %.1f %.1f]    (voxel-size units)\n", TRK_offset.x, TRK_offset.y, TRK_offset.z );
     printf( "\t- TRK_crop = %.1f  (voxel-size units)\n", TRK_crop );
@@ -68,8 +68,6 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
     bool doRedraw = true;
     GLint modif = glutGetModifiers();
     GLint ALT   = modif & GLUT_ACTIVE_ALT;
-    // GLint CTRL  = SHIFT & GLUT_ACTIVE_CTRL;
-    // GLint SHIFT = SHIFT & GLUT_ACTIVE_SHIFT;
 
     switch( key )
     {
@@ -106,6 +104,20 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 'f': TRK_show    = 1 - TRK_show;    break;
         case 's': GLYPHS_show = 1 - GLYPHS_show; break;
         case 'p': PEAKS_show  = 1 - PEAKS_show;  break;
+
+        case 'k': PEAKS_kolor = fmaxf(PEAKS_kolor - 0.1,  0.0); break;
+        case 'K': PEAKS_kolor = fminf(PEAKS_kolor + 0.1, 20.0); break;
+        case 'l':
+            PEAKS_lut   = (PEAKS_lut+1) % 5;
+            switch( PEAKS_lut )
+            {
+                case 0 : PEAKS_lut_ptr = &COLORMAPS::hot;    break;
+                case 1 : PEAKS_lut_ptr = &COLORMAPS::jet;    break;
+                case 2 : PEAKS_lut_ptr = &COLORMAPS::parula; break;
+                case 3 : PEAKS_lut_ptr = &COLORMAPS::hsv;    break;
+                case 4 : PEAKS_lut_ptr = &COLORMAPS::cool;   break;
+            }
+            break;
 
         case 'b': GLYPHS_b0_thr = fmaxf(0.0,GLYPHS_b0_thr-10.0); break;
         case 'B': GLYPHS_b0_thr = fminf(MAP_max,GLYPHS_b0_thr+10.0); break;
@@ -362,11 +374,10 @@ void GLUT__display( void )
         glLineWidth( PEAKS_width );
         glPointSize( PEAKS_width );
 
-        //
         glPushMatrix();
         glTranslatef(.5,.5,.5);
 
-        Vec3Df dir;
+        Vec3Df dir, col;
         int x,y,z,d;
         float norms[PEAKS_n], normMax, b0, w;
 
@@ -395,20 +406,31 @@ void GLUT__display( void )
                         if ( norms[d] < PEAKS_thr*normMax )
                             continue;
 
+                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
+                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
+                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+
                         if ( PEAKS_doNormalize )
                         {
-                            dir.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
-                            dir.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
-                            dir.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
                         }
                         else
                         {
-                            dir.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / normMax;
-                            dir.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / normMax;
-                            dir.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / normMax;
+                            dir.x = col.x * norms[d] / normMax;
+                            dir.y = col.y * norms[d] / normMax;
+                            dir.z = col.z * norms[d] / normMax;
                         }
 
-                        glColor3f( fabs(2.0*dir.x), fabs(2.0*dir.y), fabs(2.0*dir.z) );
+                        if ( PEAKS_kolor == 0 )
+                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
+                        else
+                        {
+                            int idx = fmin( round( 255.0*norms[d]/PEAKS_kolor ), 255.0 );
+                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
+                        }
+
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -464,20 +486,31 @@ void GLUT__display( void )
                         if ( norms[d] < normMax*PEAKS_thr )
                             continue;
 
+                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
+                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
+                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+
                         if ( PEAKS_doNormalize )
                         {
-                            dir.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
-                            dir.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
-                            dir.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
                         }
                         else
                         {
-                            dir.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / normMax;
-                            dir.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / normMax;
-                            dir.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / normMax;
+                            dir.x = col.x * norms[d] / normMax;
+                            dir.y = col.y * norms[d] / normMax;
+                            dir.z = col.z * norms[d] / normMax;
                         }
 
-                        glColor3f( fabs(2.0*dir.x), fabs(2.0*dir.y), fabs(2.0*dir.z) );
+                        if ( PEAKS_kolor == 0 )
+                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
+                        else
+                        {
+                            int idx = fmin( round( 255.0*norms[d]/PEAKS_kolor ), 255.0 );
+                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
+                        }
+
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -533,20 +566,32 @@ void GLUT__display( void )
                         if ( norms[d] < normMax*PEAKS_thr )
                             continue;
 
+                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
+                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
+                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+
                         if ( PEAKS_doNormalize )
                         {
-                            dir.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
-                            dir.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
-                            dir.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
                         }
                         else
                         {
-                            dir.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / normMax;
-                            dir.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / normMax;
-                            dir.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / normMax;
+                            dir.x = col.x * norms[d] / normMax;
+                            dir.y = col.y * norms[d] / normMax;
+                            dir.z = col.z * norms[d] / normMax;
                         }
 
-                        glColor3f( fabs(2.0*dir.x), fabs(2.0*dir.y), fabs(2.0*dir.z) );
+                        if ( PEAKS_kolor == 0 )
+                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
+                        else
+                        {
+                            int idx = fmin( round( 255.0*norms[d]/PEAKS_kolor ), 255.0 );
+                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
+                        }
+
+
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );

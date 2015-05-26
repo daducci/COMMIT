@@ -9,6 +9,8 @@
 #include <blitz/array.h>
 using namespace std;
 
+#include "colormaps.h"
+
 NIFTI*                   niiDWI;
 VECTOR<int>		         dim;
 VECTOR<float>	         pixdim;
@@ -35,6 +37,9 @@ float			         PEAKS_thr = 0.1;
 bool			         PEAKS_doNormalize = false;
 bool			         PEAKS_flip[3] = {false, false, false};
 int 			         PEAKS_swap = 0;
+float			         PEAKS_kolor = 0;
+int			             PEAKS_lut = 0;
+float                    (*PEAKS_lut_ptr)[256][3] = &COLORMAPS::hot;
 
 TrackVis 		         TRK_file;
 int				         TRK_skip;
