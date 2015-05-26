@@ -52,7 +52,11 @@ NB: the output tractogram from *MrTrix* has been already converted to the format
 Setup a *Microstructure Informed Tractography (mit)* experiment and load the data:
 
 ```python
+import commit
+commit.core.precompute_rotation_matrices()
+
 mit = commit.Evaluation( 'STN96', 'scan1' )
+mit.CONFIG['doNormalizeSignal'] = False
 mit.CONFIG['doDemean'] = False
 mit.load_data( 'DWI.nii', 'DWI.scheme' )
 ```
@@ -90,6 +94,7 @@ Setup and load the data; this time, however, we will apply the *demeaning proced
 
 ```python
 mit = commit.Evaluation( 'STN96', 'scan1' )
+mit.CONFIG['doNormalizeSignal'] = False
 mit.CONFIG['doDemean'] = True
 mit.load_data( 'DWI.nii', 'DWI.scheme' )
 ```
@@ -187,7 +192,7 @@ Now we can directly compare the *fitting error distributions* of the two models:
 # direct comparison of the NRMSE of LiFE and COMMIT
 pylab.figure(3,facecolor='white')
 pylab.clf()
-hold(True)
+pylab.hold(True)
 N = numpy.count_nonzero(niiMASK_img>0)
 hL, _ = numpy.histogram( yL, bins=60, range=(0,100), density=True )
 hC, _ = numpy.histogram( yC, bins=60, range=(0,100), density=True )
@@ -235,7 +240,6 @@ To this aim, it is simply necessary to perform the following operations after pr
 ```python
 # reload the DWI data and KERNELS (LUT) and DO NOT remove the mean
 mit.CONFIG['doDemean'] = False
-mit.CONFIG['doNormalizeSignal'] = False
 mit.load_data( 'DWI.nii', 'DWI.scheme' )
 mit.load_kernels()
 mit.build_operator()
@@ -279,7 +283,7 @@ pylab.title( 'COMMIT : %.1f +/- %.1f' % ( yC.mean(), yC.std() ) )
 # direct comparison of the RMSE of LiFE and COMMIT
 pylab.figure(7,facecolor='white')
 pylab.clf()
-hold(True)
+pylab.hold(True)
 N = numpy.count_nonzero(niiMASK_img>0)
 hL, _ = numpy.histogram( yL, bins=100, range=(0,300), density=True )
 hC, _ = numpy.histogram( yC, bins=100, range=(0,300), density=True )
