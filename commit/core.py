@@ -75,8 +75,9 @@ class Evaluation :
         self.CONFIG['dwi_filename']    = dwi_filename
         self.niiDWI  = nibabel.load( os.path.join( self.CONFIG['DATA_path'], dwi_filename) )
         self.niiDWI_img = self.niiDWI.get_data().astype(np.float32)
+        hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
         self.CONFIG['dim']    = self.niiDWI_img.shape[0:3]
-        self.CONFIG['pixdim'] = tuple( self.niiDWI.get_header().get_zooms()[:3] )
+        self.CONFIG['pixdim'] = tuple( hdr.get_zooms()[:3] )
         print '\t\t- dim    = %d x %d x %d x %d' % self.niiDWI_img.shape
         print '\t\t- pixdim = %.3f x %.3f x %.3f' % self.CONFIG['pixdim']
 
@@ -686,7 +687,9 @@ class Evaluation :
         print '\t* fitting errors:'
 
         niiMAP_img = np.zeros( self.CONFIG['dim'], dtype=np.float32 )
-        niiMAP = nibabel.Nifti1Image( niiMAP_img, self.niiDWI.affine )
+        affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
+        niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
+        niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
@@ -695,8 +698,8 @@ class Evaluation :
         sys.stdout.flush()
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-        niiMAP.get_header()['cal_min'] = 0
-        niiMAP.get_header()['cal_max'] = tmp.max()
+        niiMAP_hdr['cal_min'] = 0
+        niiMAP_hdr['cal_max'] = tmp.max()
         nibabel.save( niiMAP, os.path.join(RESULTS_path,'fit_RMSE.nii.gz') )
         print ' [ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() )
 
@@ -708,8 +711,8 @@ class Evaluation :
         tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
         tmp[ idx ] = 0
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-        niiMAP.get_header()['cal_min'] = 0
-        niiMAP.get_header()['cal_max'] = 1
+        niiMAP_hdr['cal_min'] = 0
+        niiMAP_hdr['cal_max'] = 1
         nibabel.save( niiMAP, os.path.join(RESULTS_path,'fit_NRMSE.nii.gz') )
         print '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() )
 
