@@ -64,9 +64,9 @@ float	                 GLYPHS_b0_thr;
 /*----------------------------------------------------------------------------------------------------------------------------------*/
 int main(int argc, char** argv)
 {
-    if ( argc<5 )
+    if ( argc<4 )
     {
-        COLOR_error( "USAGE: viewer <.nii DWI> <.scheme SCHEME> <.nii PEAKS> <.trk TRACTS>" );
+        COLOR_error( "USAGE: viewer <.nii DWI> <.scheme SCHEME> <.nii PEAKS> [.trk TRACTS]" );
         return EXIT_FAILURE;
     }
 
@@ -336,124 +336,131 @@ int main(int argc, char** argv)
     // ===================
     // Reading TRACTS file
     // ===================
-    COLOR_msg( "-> Reading 'TRK' dataset:", "\n" );
-
-    string TRK_filename = argv[4];
-    TRK_file = TrackVis();
-    if ( !TRK_file.open( TRK_filename ) )
+    if ( argc>4 )
     {
-        COLOR_error( "Unable to open the file", "\t" );
-        return false;
-    }
+        COLOR_msg( "-> Reading 'TRK' dataset:", "\n" );
 
-    printf("\tcount      : %d\n" , TRK_file.hdr.n_count );
-    printf("\tdim        : %d x %d x %d\n" , TRK_file.hdr.dim[0], TRK_file.hdr.dim[1], TRK_file.hdr.dim[2] );
-    printf("\tpixdim     : %.4f x %.4f x %.4f\n", TRK_file.hdr.voxel_size[0], TRK_file.hdr.voxel_size[1], TRK_file.hdr.voxel_size[2] );
-    printf("\tscalars    : %d\n" , TRK_file.hdr.n_scalars );
-    printf("\tproperties : %d\n" , TRK_file.hdr.n_properties );
-
-    if ( TRK_file.hdr.dim[0] != dim.x || TRK_file.hdr.dim[1] != dim.y || TRK_file.hdr.dim[2] != dim.z ||
-         abs(TRK_file.hdr.voxel_size[0]-pixdim.x) > 1e-4 || abs(TRK_file.hdr.voxel_size[1]-pixdim.y) > 1e-4 || abs(TRK_file.hdr.voxel_size[2]-pixdim.z) > 1e-4 )
-    {
-        COLOR_error( "The GEOMETRY does not math those of DWI images", "\t" );
-        return EXIT_FAILURE;
-    }
-
-    TRK_skip = ceil( TRK_file.hdr.n_count / 25000.0 );
-
-    // count how many points I need to store in memory
-    int N;
-    int n_s = TRK_file.hdr.n_scalars;
-    int n_p = TRK_file.hdr.n_properties;
-
-    int TractsRead = 0;
-    int CoordsRead = 0;
-    FILE* fp = TRK_file.getFilePtr();
-    fseek(fp, 1000, SEEK_SET);
-    for(int f=0; f < TRK_file.hdr.n_count ; f++)
-    {
-        if ( f%TRK_skip==0 )
+        string TRK_filename = argv[4];
+        TRK_file = TrackVis();
+        if ( !TRK_file.open( TRK_filename ) )
         {
-            fread( (char*)&N, 1, 4, fp );
-            fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
-            TractsRead++;
-            CoordsRead += N;
+            COLOR_error( "Unable to open the file", "\t" );
+            return false;
         }
-        else
+
+        printf("\tcount      : %d\n" , TRK_file.hdr.n_count );
+        printf("\tdim        : %d x %d x %d\n" , TRK_file.hdr.dim[0], TRK_file.hdr.dim[1], TRK_file.hdr.dim[2] );
+        printf("\tpixdim     : %.4f x %.4f x %.4f\n", TRK_file.hdr.voxel_size[0], TRK_file.hdr.voxel_size[1], TRK_file.hdr.voxel_size[2] );
+        printf("\tscalars    : %d\n" , TRK_file.hdr.n_scalars );
+        printf("\tproperties : %d\n" , TRK_file.hdr.n_properties );
+
+        if ( TRK_file.hdr.dim[0] != dim.x || TRK_file.hdr.dim[1] != dim.y || TRK_file.hdr.dim[2] != dim.z ||
+             abs(TRK_file.hdr.voxel_size[0]-pixdim.x) > 1e-4 || abs(TRK_file.hdr.voxel_size[1]-pixdim.y) > 1e-4 || abs(TRK_file.hdr.voxel_size[2]-pixdim.z) > 1e-4 )
         {
-            fread( (char*)&N, 1, 4, fp );
-            fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
+            COLOR_error( "The GEOMETRY does not math those of DWI images", "\t" );
+            return EXIT_FAILURE;
         }
-    }
-    printf("\tin memory  : %d (%d points)\n" , TractsRead, CoordsRead );
 
-    // create data structure for drawing the tracts
-    TRK_nTractsPlotted = TractsRead;
-    TRK_nPoints = new int[TRK_nTractsPlotted];
-    TRK_coords  = new float[3*CoordsRead];
-    TRK_colors  = new float[3*CoordsRead];
+        TRK_skip = ceil( TRK_file.hdr.n_count / 25000.0 );
 
-    float* ptr  = TRK_coords;
-    float* ptrc = TRK_colors;
-    float norm;
-    VECTOR<float> dir;
-    TractsRead = 0;
-    fseek(fp, 1000, SEEK_SET);
-    for(int f=0; f < TRK_file.hdr.n_count ; f++)
-    {
-        if ( f%TRK_skip==0 )
+        // count how many points I need to store in memory
+        int N;
+        int n_s = TRK_file.hdr.n_scalars;
+        int n_p = TRK_file.hdr.n_properties;
+
+        int TractsRead = 0;
+        int CoordsRead = 0;
+        FILE* fp = TRK_file.getFilePtr();
+        fseek(fp, 1000, SEEK_SET);
+        for(int f=0; f < TRK_file.hdr.n_count ; f++)
         {
-            fread( (char*)&N, 1, 4, fp );
-            TRK_nPoints[TractsRead] = N;
-
-            for(int i=0; i<N; i++)
+            if ( f%TRK_skip==0 )
             {
-                fread((char*)ptr, 1, 12, fp);
-                fseek( fp, n_s*4, SEEK_CUR );
-
-                // coordinates
-                ptr[0] /= pixdim.x;
-                ptr[1] /= pixdim.y;
-                ptr[2] /= pixdim.z;
-
-                // colors
-                if ( i > 0 )
-                {
-                    dir.x = *(ptr  ) - *(ptr-3);
-                    dir.y = *(ptr+1) - *(ptr-2);
-                    dir.z = *(ptr+2) - *(ptr-1);
-                    norm = dir.norm();
-                    ptrc[0] = abs( dir.x / norm );
-                    ptrc[1] = abs( dir.y / norm );
-                    ptrc[2] = abs( dir.z / norm );
-                }
-                else
-                {
-                    ptrc[0] = 0;
-                    ptrc[1] = 0;
-                    ptrc[2] = 0;
-                }
-
-                ptr  += 3;
-                ptrc += 3;
+                fread( (char*)&N, 1, 4, fp );
+                fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
+                TractsRead++;
+                CoordsRead += N;
             }
-            fseek( fp, n_p*4, SEEK_CUR );
-            TractsRead++;
+            else
+            {
+                fread( (char*)&N, 1, 4, fp );
+                fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
+            }
         }
-        else
+        printf("\tin memory  : %d (%d points)\n" , TractsRead, CoordsRead );
+
+        // create data structure for drawing the tracts
+        TRK_nTractsPlotted = TractsRead;
+        TRK_nPoints = new int[TRK_nTractsPlotted];
+        TRK_coords  = new float[3*CoordsRead];
+        TRK_colors  = new float[3*CoordsRead];
+
+        float* ptr  = TRK_coords;
+        float* ptrc = TRK_colors;
+        float norm;
+        VECTOR<float> dir;
+        TractsRead = 0;
+        fseek(fp, 1000, SEEK_SET);
+        for(int f=0; f < TRK_file.hdr.n_count ; f++)
         {
-            fread( (char*)&N, 1, 4, fp );
-            fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
+            if ( f%TRK_skip==0 )
+            {
+                fread( (char*)&N, 1, 4, fp );
+                TRK_nPoints[TractsRead] = N;
+
+                for(int i=0; i<N; i++)
+                {
+                    fread((char*)ptr, 1, 12, fp);
+                    fseek( fp, n_s*4, SEEK_CUR );
+
+                    // coordinates
+                    ptr[0] /= pixdim.x;
+                    ptr[1] /= pixdim.y;
+                    ptr[2] /= pixdim.z;
+
+                    // colors
+                    if ( i > 0 )
+                    {
+                        dir.x = *(ptr  ) - *(ptr-3);
+                        dir.y = *(ptr+1) - *(ptr-2);
+                        dir.z = *(ptr+2) - *(ptr-1);
+                        norm = dir.norm();
+                        ptrc[0] = abs( dir.x / norm );
+                        ptrc[1] = abs( dir.y / norm );
+                        ptrc[2] = abs( dir.z / norm );
+                    }
+                    else
+                    {
+                        ptrc[0] = 0;
+                        ptrc[1] = 0;
+                        ptrc[2] = 0;
+                    }
+
+                    ptr  += 3;
+                    ptrc += 3;
+                }
+                fseek( fp, n_p*4, SEEK_CUR );
+                TractsRead++;
+            }
+            else
+            {
+                fread( (char*)&N, 1, 4, fp );
+                fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
+            }
         }
+
+        COLOR_msg( "   [OK]" );
+        printf( "\n" );
+    }
+    else
+    {
+        // no fibers are passed and won't be showed
+        TRK_nTractsPlotted = 0;
     }
 
     TRK_offset.x = 0;
     TRK_offset.y = 0;
     TRK_offset.z = 0;
-
-    COLOR_msg( "   [OK]" );
-    printf( "\n" );
-
 
     // ============
     // SETUP OpenGL

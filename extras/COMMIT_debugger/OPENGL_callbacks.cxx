@@ -101,7 +101,10 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 'C': TRK_crop = fminf(max(dim.x,max(dim.y,dim.z)),TRK_crop+0.5); break;
         case ' ': TRK_crop_mode = 1 - TRK_crop_mode; break;
 
-        case 'f': TRK_show    = 1 - TRK_show;    break;
+        case 'f':
+            if ( TRK_nTractsPlotted > 0 )
+                TRK_show = 1 - TRK_show;
+            break;
         case 's': GLYPHS_show = 1 - GLYPHS_show; break;
         case 'p': PEAKS_show  = 1 - PEAKS_show;  break;
 
