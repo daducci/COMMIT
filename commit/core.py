@@ -492,6 +492,11 @@ class Evaluation :
                         t += 1
                         tot = 0
             self.THREADS['IC'][-1] = self.DICTIONARY['IC']['n']
+
+            # check if some threads are not assigned any segment
+            if np.count_nonzero( np.diff( self.THREADS['IC'].astype(np.int32) ) <= 0 ) :
+                self.THREADS = None
+                raise RuntimeError( 'Too many threads for the IC compartments to evaluate; try decreasing the number.' )
         else :
             self.THREADS['IC'] = None
 
@@ -500,6 +505,11 @@ class Evaluation :
             for i in xrange(n) :
                 self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
             self.THREADS['EC'][-1] = self.DICTIONARY['EC']['nE']
+
+            # check if some threads are not assigned any segment
+            if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
+                self.THREADS = None
+                raise RuntimeError( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
         else :
             self.THREADS['EC'] = None
 
@@ -508,6 +518,11 @@ class Evaluation :
             for i in xrange(n) :
                 self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
             self.THREADS['ISO'][-1] = self.DICTIONARY['nV']
+
+            # check if some threads are not assigned any segment
+            if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
+                self.THREADS = None
+                raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
         else :
             self.THREADS['ISO'] = None
 
@@ -549,6 +564,11 @@ class Evaluation :
             for i in xrange(1,n) :
                 self.THREADS['ECt'][i] = self.THREADS['ECt'][i-1] + N
             self.THREADS['ECt'][-1] = self.DICTIONARY['EC']['nE']
+
+            # check if some threads are not assigned any segment
+            if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
+                self.THREADS = None
+                raise RuntimeError( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
         else :
             self.THREADS['ECt'] = None
 
@@ -558,6 +578,11 @@ class Evaluation :
             for i in xrange(1,n) :
                 self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
             self.THREADS['ISOt'][-1] = self.DICTIONARY['nV']
+
+            # check if some threads are not assigned any segment
+            if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
+                self.THREADS = None
+                raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
         else :
             self.THREADS['ISOt'] = None
 
