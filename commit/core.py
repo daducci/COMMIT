@@ -13,11 +13,18 @@ import pyximport
 pyximport.install( reload_support=True )
 
 
+def setup( lmax = 12 ) :
+    """
+    General setup/initialization of the COMMIT framework.
+    """
+    amico.lut.precompute_rotation_matrices( lmax )
+
+
+"""
+Class to hold all the information (data and parameters) when performing an
+evaluation with the COMMIT framework.
+"""
 class Evaluation :
-    """
-    Class to hold all the information (data and parameters) when performing an
-    evaluation with the COMMIT framework.
-    """
 
     def __init__( self, study_path, subject ) :
         """
@@ -753,11 +760,3 @@ class Evaluation :
         print '   [ OK ]'
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )
-
-
-
-def precompute_rotation_matrices( lmax = 12 ) :
-    """
-    Shortcut to same-name function in AMICO
-    """
-    amico.lut.precompute_rotation_matrices( lmax )

@@ -71,7 +71,7 @@ Precompute the rotation matrices used internally by COMMIT to create the lookup-
 
 ```python
 import commit
-commit.lut.precompute_rotation_matrices()
+commit.core.setup()
 ```
 
 Now, load the data:

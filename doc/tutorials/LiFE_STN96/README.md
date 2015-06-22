@@ -53,7 +53,7 @@ Setup a *Microstructure Informed Tractography (mit)* experiment and load the dat
 
 ```python
 import commit
-commit.lut.precompute_rotation_matrices()
+commit.core.setup()
 
 mit = commit.Evaluation( 'STN96', 'scan1' )
 mit.CONFIG['doNormalizeSignal'] = False
