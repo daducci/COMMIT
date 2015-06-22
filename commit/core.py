@@ -6,9 +6,7 @@ import sys
 import os.path
 import nibabel
 import cPickle
-from dipy.data.fetcher import dipy_home
-from dipy.core.geometry import cart2sphere
-from dipy.reconst.shm import real_sym_sh_basis
+import commit.lut
 import commit.models
 import commit.solvers
 import pyximport
@@ -165,6 +163,10 @@ class Evaluation :
         if self.model is None :
             raise RuntimeError( 'Model not set; call "set_model()" method first.' )
 
+        # store some values for later use
+        self.CONFIG['lmax'] = lmax
+        self.model.nS = self.scheme.nS
+
         print '\n-> Simulating with "%s" model:' % self.model.name
 
         # check if kernels were already generated
@@ -180,20 +182,9 @@ class Evaluation :
             for f in glob.glob( os.path.join(self.CONFIG['ATOMS_path'],'*') ) :
                 os.remove( f )
 
-        # load precomputed rotation matrices
-        self.CONFIG['lmax'] = lmax
-        filename = os.path.join( dipy_home, 'COMMIT_aux_matrices_lmax=%d.pickle'%lmax )
-        if not os.path.exists( filename ) :
-            raise RuntimeError( 'Auxiliary matrices not found; call "precompute_rotation_matrices()" first.' )
-        aux = cPickle.load( open(filename,'rb') )
-
-        # calculate indices within structures
-        nSH = (lmax+1)*(lmax+2)/2
-        idx_IN  = []
-        idx_OUT = []
-        for s in xrange( len(self.scheme.shells) ) :
-            idx_IN.append( range(500*s,500*(s+1)) )
-            idx_OUT.append( range(nSH*s,nSH*(s+1)) )
+        # auxiliary data structures
+        aux = commit.lut.load_precomputed_rotation_matrices( lmax )
+        idx_IN, idx_OUT = commit.lut.aux_structures_generate( self.scheme, lmax )
 
         # Dispatch to the right handler for each model
         tic = time.time()
@@ -214,25 +205,8 @@ class Evaluation :
         tic = time.time()
         print '\n-> Resampling kernels for subject "%s":' % self.CONFIG['subject']
 
-        # load precomputed rotation matrices
-        lmax = self.CONFIG['lmax']
-        filename = os.path.join( dipy_home, 'COMMIT_aux_matrices_lmax=%d.pickle'%lmax )
-        if not os.path.exists( filename ) :
-            raise RuntimeError( 'Auxiliary matrices not found; call "precompute_rotation_matrices()" first.' )
-        aux = cPickle.load( open(filename,'rb') )
-
-        # calculate auxiliary structures
-        nSH = (lmax+1)*(lmax+2)/2
-        idx_OUT = np.zeros( self.scheme.dwi_count, dtype=np.int32 )
-        Ylm_OUT = np.zeros( (self.scheme.dwi_count,nSH*len(self.scheme.shells)), dtype=np.float32 ) # matrix from SH to real space
-        idx = 0
-        for s in xrange( len(self.scheme.shells) ) :
-            nS = len( self.scheme.shells[s]['idx'] )
-            idx_OUT[ idx:idx+nS ] = self.scheme.shells[s]['idx']
-            _, theta, phi = cart2sphere( self.scheme.shells[s]['grad'][:,0], self.scheme.shells[s]['grad'][:,1], self.scheme.shells[s]['grad'][:,2] )
-            tmp, _, _ = real_sym_sh_basis( lmax, theta, phi )
-            Ylm_OUT[ idx:idx+nS, nSH*s:nSH*(s+1) ] = tmp
-            idx += nS
+        # auxiliary data structures
+        idx_OUT, Ylm_OUT = commit.lut.aux_structures_resample( self.scheme, self.CONFIG['lmax'] )
 
         # Dispatch to the right handler for each model
         self.KERNELS = self.model.resample( self.CONFIG['ATOMS_path'], idx_OUT, Ylm_OUT )
@@ -779,143 +753,6 @@ class Evaluation :
         print '   [ OK ]'
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )
-
-
-def precompute_rotation_matrices( lmax = 12 ) :
-    """
-    Precompute the rotation matrices to rotate the high-resolution kernels (500 directions per shell)
-
-    Parameters
-    ----------
-    lmax : int
-        Maximum SH order to use for the rotation phase (default : 12)
-    """
-    filename = os.path.join( dipy_home, 'COMMIT_aux_matrices_lmax=%d.pickle'%lmax )
-    if os.path.isfile( filename ) :
-        return
-
-    print '\n-> Precomputing rotation matrices for l_max=%d:' % lmax
-    AUX = {}
-    AUX['lmax'] = lmax
-
-    # load file with 500 directions
-    grad = np.loadtxt( os.path.join(os.path.dirname(commit.__file__), '500_dirs.txt') )
-    for i in xrange(grad.shape[0]) :
-        grad[i,:] /= np.linalg.norm( grad[i,:] )
-        if grad[i,1] < 0 :
-            grad[i,:] = -grad[i,:] # to ensure they are in the spherical range [0,180]x[0,180]
-
-    # matrix to fit the SH coefficients
-    _, theta, phi = cart2sphere( grad[:,0], grad[:,1], grad[:,2] )
-    tmp, _, _ = real_sym_sh_basis( lmax, theta, phi )
-    AUX['fit'] = np.dot( np.linalg.pinv( np.dot(tmp.T,tmp) ), tmp.T )
-
-    # matrices to rotate the functions in SH space
-    AUX['Ylm_rot'] = np.zeros( (181,181), dtype=np.object )
-    for ox in xrange(181) :
-        for oy in xrange(181) :
-            tmp, _, _ = real_sym_sh_basis( lmax, ox/180.0*np.pi, oy/180.0*np.pi )
-            AUX['Ylm_rot'][ox,oy] = tmp
-
-    # auxiliary data to perform rotations
-    AUX['const'] = np.zeros( AUX['fit'].shape[0], dtype=np.float64 )
-    AUX['idx_m0'] = np.zeros( AUX['fit'].shape[0], dtype=np.int32 )
-    i = 0
-    for l in xrange(0,AUX['lmax']+1,2) :
-        const  = np.sqrt(4.0*np.pi/(2.0*l+1.0))
-        idx_m0 = (l*l + l + 2.0)/2.0 - 1
-        for m in xrange(-l,l+1) :
-            AUX['const'][i]  = const
-            AUX['idx_m0'][i] = idx_m0
-            i += 1
-
-
-    with open( filename, 'wb+' ) as fid :
-        cPickle.dump( AUX, fid, protocol=2 )
-
-    print '   [ DONE ]'
-
-
-def rotate_kernel( K, AUX, idx_IN, idx_OUT, is_isotropic ) :
-    """
-    Rotate a spherical function.
-
-    Parameters
-    ----------
-    K : numpy.ndarray
-        Spherical function (in signal space) to rotate
-    AUX : dictionary
-        Auxiliary data structures needed to rotate functions in SH space
-    idx_IN : list of list
-        Index of samples in input kernel (K) belonging to each shell
-    idx_OUT : list of list
-        Index of samples in output kernel (K) belonging to each shell
-    is_isotropic : boolean
-        Indentifies whether K is an isotropic function or not
-
-    Returns
-    -------
-    KRlm = numpy.array
-        Spherical function (in SH space) rotated to 181x181 directions distributed
-        on a hemisphere
-    """
-
-    # project kernel K to SH space
-    Klm = []
-    for s in xrange(len(idx_IN)) :
-        Klm.append( np.dot( AUX['fit'], K[ idx_IN[s] ] ) )
-
-    n = len(idx_IN)*AUX['fit'].shape[0]
-
-    if is_isotropic == False :
-        # fit SH and rotate kernel to 181*181 directions
-        KRlm = np.zeros( (181,181,n), dtype=np.float32 )
-        for ox in xrange(181) :
-            for oy in xrange(181) :
-                Ylm_rot = AUX['Ylm_rot'][ox,oy]
-                for s in xrange(len(idx_IN)) :
-                    KRlm[ox,oy,idx_OUT[s]] = AUX['const'] * Klm[s][AUX['idx_m0']] * Ylm_rot
-    else :
-        # simply fit SH
-        KRlm = np.zeros( n, dtype=np.float32 )
-        for s in xrange(len(idx_IN)) :
-            KRlm[idx_OUT[s]] = Klm[s].astype(np.float32)
-
-    return KRlm
-
-
-def resample_kernel( KRlm, nS, idx_out, Ylm_out, is_isotropic ) :
-    """
-    Resample a spherical function
-
-    Parameters
-    ----------
-    KRlm : numpy.array
-        Rotated spherical functions (in SH space) to project
-    nS : integer
-        Number of samples in the subject's acquisition scheme
-    idx_out : list of list
-        Index of samples in output kernel
-    Ylm_out : numpy.array
-        Matrix to project back all shells from SH space to signal space (of the subject)
-    is_isotropic : boolean
-        Indentifies whether Klm is an isotropic function or not
-
-    Returns
-    -------
-    KR = numpy.array
-        Rotated spherical functions projected to signal space of the subject
-    """
-    if is_isotropic == False :
-        KR = np.ones( (181,181,nS), dtype=np.float32 )
-        for ox in xrange(181) :
-            for oy in xrange(181) :
-                KR[ox,oy,idx_out] = np.dot( Ylm_out, KRlm[ox,oy,:] ).astype(np.float32)
-    else :
-        KR = np.ones( nS, dtype=np.float32 )
-        KR[idx_out] = np.dot( Ylm_out, KRlm ).astype(np.float32)
-    return KR
-
 
 
 class Scheme :

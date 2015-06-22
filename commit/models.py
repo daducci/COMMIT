@@ -4,7 +4,7 @@ from os import remove
 import sys
 import subprocess
 import tempfile
-import commit.core
+import commit.lut
 from dipy.core.gradients import gradient_table
 from dipy.sims.voxel import single_tensor
 
@@ -43,9 +43,6 @@ class StickZeppelinBall :
     def generate( self, out_path, scheme, aux, idx_in, idx_out ) :
         print '\t* 1 stick, %d extra-cellular and %d isotropic' % ( len(self.ICVFs), len(self.d_ISOs) )
 
-        # store the number of samples in the original scheme
-        self.nS = scheme.nS
-
         # create an high-resolution version of the scheme
         scheme_high = scheme.create_high_resolution( b_scale=1 )
         gtab = gradient_table( scheme_high.b, scheme_high.raw[:,0:3] )
@@ -54,7 +51,7 @@ class StickZeppelinBall :
         print '\t* A_001...',
         sys.stdout.flush()
         signal = single_tensor( gtab, evals=[0, 0, self.d_par] )
-        lm = commit.core.rotate_kernel( signal, aux, idx_in, idx_out, False )
+        lm = commit.lut.rotate_kernel( signal, aux, idx_in, idx_out, False )
         np.save( pjoin( out_path, 'A_001.npy' ), lm )
         print '[ OK ]'
 
@@ -64,7 +61,7 @@ class StickZeppelinBall :
             print '\t* A_%03d...' % idx,
             sys.stdout.flush()
             signal = single_tensor( gtab, evals=[d, d, self.d_par] )
-            lm = commit.core.rotate_kernel( signal, aux, idx_in, idx_out, False )
+            lm = commit.lut.rotate_kernel( signal, aux, idx_in, idx_out, False )
             np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
             idx += 1
             print '[ OK ]'
@@ -74,7 +71,7 @@ class StickZeppelinBall :
             print '\t* A_%03d...' % idx,
             sys.stdout.flush()
             signal = single_tensor( gtab, evals=[d, d, d] )
-            lm = commit.core.rotate_kernel( signal, aux, idx_in, idx_out, True )
+            lm = commit.lut.rotate_kernel( signal, aux, idx_in, idx_out, True )
             np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
             idx += 1
             print '[ OK ]'
@@ -91,7 +88,7 @@ class StickZeppelinBall :
         print '\t* A_001...',
         sys.stdout.flush()
         lm = np.load( pjoin( in_path, 'A_001.npy' ) )
-        KERNELS['wmr'][0,...] = commit.core.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+        KERNELS['wmr'][0,...] = commit.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
         print '[ OK ]'
 
         # Zeppelin(s)
@@ -100,7 +97,7 @@ class StickZeppelinBall :
             print '\t* A_%03d...' % idx,
             sys.stdout.flush()
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
-            KERNELS['wmh'][i,...] = commit.core.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            KERNELS['wmh'][i,...] = commit.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
             idx += 1
             print '[ OK ]'
 
@@ -109,7 +106,7 @@ class StickZeppelinBall :
             print '\t* A_%03d...' % idx,
             sys.stdout.flush()
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
-            KERNELS['iso'][i,...] = commit.core.resample_kernel( lm, self.nS, idx_out, Ylm_out, True )
+            KERNELS['iso'][i,...] = commit.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, True )
             idx += 1
             print '[ OK ]'
 
@@ -163,9 +160,6 @@ class CylinderZeppelinBall :
 
         print '\t* %d restricted, %d hindered and %d isotropic' % ( len(self.Rs), len(self.ICVFs), len(self.d_ISOs) )
 
-        # store the number of samples in the original scheme
-        self.nS = scheme.nS
-
         # create a high-resolution scheme to pass to 'datasynth'
         scheme_high = scheme.create_high_resolution( b_scale=1E6 )
         filename_scheme = pjoin( out_path, 'scheme.txt' )
@@ -188,7 +182,7 @@ class CylinderZeppelinBall :
             if exists( filename_signal ) :
                 remove( filename_signal )
 
-            lm = commit.core.rotate_kernel( signal, aux, idx_in, idx_out, False )
+            lm = commit.lut.rotate_kernel( signal, aux, idx_in, idx_out, False )
             np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
             idx += 1
             print '[ OK ]'
@@ -206,7 +200,7 @@ class CylinderZeppelinBall :
             if exists( filename_signal ) :
                 remove( filename_signal )
 
-            lm = commit.core.rotate_kernel( signal, aux, idx_in, idx_out, False )
+            lm = commit.lut.rotate_kernel( signal, aux, idx_in, idx_out, False )
             np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
             idx += 1
             print '[ OK ]'
@@ -224,7 +218,7 @@ class CylinderZeppelinBall :
             if exists( filename_signal ) :
                 remove( filename_signal )
 
-            lm = commit.core.rotate_kernel( signal, aux, idx_in, idx_out, True )
+            lm = commit.lut.rotate_kernel( signal, aux, idx_in, idx_out, True )
             np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
             idx += 1
             print '[ OK ]'
@@ -243,7 +237,7 @@ class CylinderZeppelinBall :
             print '\t* A_%03d...' % idx,
             sys.stdout.flush()
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
-            KERNELS['wmr'][i,...] = commit.core.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            KERNELS['wmr'][i,...] = commit.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
             idx += 1
             print '[ OK ]'
 
@@ -252,7 +246,7 @@ class CylinderZeppelinBall :
             print '\t* A_%03d...' % idx,
             sys.stdout.flush()
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
-            KERNELS['wmh'][i,...] = commit.core.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            KERNELS['wmh'][i,...] = commit.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
             idx += 1
             print '[ OK ]'
 
@@ -261,7 +255,7 @@ class CylinderZeppelinBall :
             print '\t* A_%03d...' % idx,
             sys.stdout.flush()
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
-            KERNELS['iso'][i,...] = commit.core.resample_kernel( lm, self.nS, idx_out, Ylm_out, True )
+            KERNELS['iso'][i,...] = commit.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, True )
             idx += 1
             print '[ OK ]'
 
