@@ -69,7 +69,6 @@ def load_precomputed_rotation_matrices( lmax = 12 ) :
     lmax : int
         Maximum SH order to use for the rotation phase (default : 12)
     """
-
     filename = os.path.join( dipy_home, 'COMMIT_aux_matrices_lmax=%d.pickle'%lmax )
     if not os.path.exists( filename ) :
         raise RuntimeError( 'Auxiliary matrices not found; call "lut.precompute_rotation_matrices()" first.' )
@@ -94,7 +93,6 @@ def aux_structures_generate( scheme, lmax = 12 ) :
     idx_OUT : numpy array
         Indices of the SH corresponding to each shell
     """
-
     nSH = (lmax+1)*(lmax+2)/2
     idx_IN  = []
     idx_OUT = []
@@ -122,7 +120,6 @@ def aux_structures_resample( scheme, lmax = 12 ) :
     Ylm_OUT : numpy array
         Operator to transform each shell from Spherical harmonics to original signal space
     """
-
     nSH = (lmax+1)*(lmax+2)/2
     idx_OUT = np.zeros( scheme.dwi_count, dtype=np.int32 )
     Ylm_OUT = np.zeros( (scheme.dwi_count,nSH*len(scheme.shells)), dtype=np.float32 ) # matrix from SH to real space
@@ -160,7 +157,6 @@ def rotate_kernel( K, AUX, idx_IN, idx_OUT, is_isotropic ) :
         Spherical function (in SH space) rotated to 181x181 directions distributed
         on a hemisphere
     """
-
     # project kernel K to SH space
     Klm = []
     for s in xrange(len(idx_IN)) :
