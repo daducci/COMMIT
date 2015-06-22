@@ -5,10 +5,10 @@ import sys
 import os.path
 import nibabel
 import cPickle
-import commit.scheme
-import commit.lut
 import commit.models
 import commit.solvers
+import amico.scheme
+import amico.lut
 import pyximport
 pyximport.install( reload_support=True )
 
@@ -82,7 +82,7 @@ class Evaluation :
         print '\t* Acquisition scheme...'
         self.CONFIG['scheme_filename'] = scheme_filename
         self.CONFIG['b0_thr'] = b0_thr
-        self.scheme = commit.scheme.Scheme( os.path.join( self.CONFIG['DATA_path'], scheme_filename), b0_thr )
+        self.scheme = amico.scheme.Scheme( os.path.join( self.CONFIG['DATA_path'], scheme_filename), b0_thr )
         print '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) )
         print '\t\t- %d @ b=0' % ( self.scheme.b0_count ),
         for i in xrange(len(self.scheme.shells)) :
@@ -183,8 +183,8 @@ class Evaluation :
                 os.remove( f )
 
         # auxiliary data structures
-        aux = commit.lut.load_precomputed_rotation_matrices( lmax )
-        idx_IN, idx_OUT = commit.lut.aux_structures_generate( self.scheme, lmax )
+        aux = amico.lut.load_precomputed_rotation_matrices( lmax )
+        idx_IN, idx_OUT = amico.lut.aux_structures_generate( self.scheme, lmax )
 
         # Dispatch to the right handler for each model
         tic = time.time()
@@ -206,7 +206,7 @@ class Evaluation :
         print '\n-> Resampling kernels for subject "%s":' % self.CONFIG['subject']
 
         # auxiliary data structures
-        idx_OUT, Ylm_OUT = commit.lut.aux_structures_resample( self.scheme, self.CONFIG['lmax'] )
+        idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.CONFIG['lmax'] )
 
         # Dispatch to the right handler for each model
         self.KERNELS = self.model.resample( self.CONFIG['ATOMS_path'], idx_OUT, Ylm_OUT )
@@ -753,3 +753,11 @@ class Evaluation :
         print '   [ OK ]'
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )
+
+
+
+def precompute_rotation_matrices( lmax = 12 ) :
+    """
+    Shortcut to same-name function in AMICO
+    """
+    amico.lut.precompute_rotation_matrices( lmax )

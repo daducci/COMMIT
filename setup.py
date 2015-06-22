@@ -25,7 +25,6 @@ setup(
     ext_modules = [ ext ],
     packages=['commit','commit.operator'],
     package_data={
-        'commit':["500_dirs.txt"],
         'commit.operator':["*.*"], # needed by pyximport to compile at runtime
     },
 )
