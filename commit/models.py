@@ -1,10 +1,10 @@
 import numpy as np
 from os.path import exists, join as pjoin
 from os import remove
-import sys
 import subprocess
 import tempfile
 import amico.lut
+from amico.progressbar import ProgressBar
 from dipy.core.gradients import gradient_table
 from dipy.sims.voxel import single_tensor
 
@@ -47,34 +47,28 @@ class StickZeppelinBall :
         scheme_high = amico.lut.create_high_resolution_scheme( scheme, b_scale=1 )
         gtab = gradient_table( scheme_high.b, scheme_high.raw[:,0:3] )
 
+        nATOMS = 1 + len(self.ICVFs) + len(self.d_ISOs)
+        progress = ProgressBar( n=nATOMS, prefix="   ", erase=True )
+
         # Stick
-        print '\t* A_001...',
-        sys.stdout.flush()
         signal = single_tensor( gtab, evals=[0, 0, self.d_par] )
         lm = amico.lut.rotate_kernel( signal, aux, idx_in, idx_out, False )
         np.save( pjoin( out_path, 'A_001.npy' ), lm )
-        print '[ OK ]'
+        progress.update()
 
         # Zeppelin(s)
-        idx = 2
         for d in [ self.d_par*(1.0-ICVF) for ICVF in self.ICVFs] :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
             signal = single_tensor( gtab, evals=[d, d, self.d_par] )
             lm = amico.lut.rotate_kernel( signal, aux, idx_in, idx_out, False )
-            np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
-            idx += 1
-            print '[ OK ]'
+            np.save( pjoin( out_path, 'A_%03d.npy'%progress.i ), lm )
+            progress.update()
 
         # Ball(s)
         for d in self.d_ISOs :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
             signal = single_tensor( gtab, evals=[d, d, d] )
             lm = amico.lut.rotate_kernel( signal, aux, idx_in, idx_out, True )
-            np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
-            idx += 1
-            print '[ OK ]'
+            np.save( pjoin( out_path, 'A_%03d.npy'%progress.i ), lm )
+            progress.update()
 
 
     def resample( self, in_path, idx_out, Ylm_out ) :
@@ -84,31 +78,25 @@ class StickZeppelinBall :
         KERNELS['wmh']   = np.zeros( (len(self.ICVFs),181,181,self.nS), dtype=np.float32 )
         KERNELS['iso']   = np.zeros( (len(self.d_ISOs),self.nS), dtype=np.float32 )
 
+        nATOMS = 1 + len(self.ICVFs) + len(self.d_ISOs)
+        progress = ProgressBar( n=nATOMS, prefix="   ", erase=True )
+
         # Stick
-        print '\t* A_001...',
-        sys.stdout.flush()
         lm = np.load( pjoin( in_path, 'A_001.npy' ) )
         KERNELS['wmr'][0,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
-        print '[ OK ]'
+        progress.update()
 
         # Zeppelin(s)
-        idx = 2
         for i in xrange(len(self.ICVFs)) :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
-            lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
+            lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
             KERNELS['wmh'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
-            idx += 1
-            print '[ OK ]'
+            progress.update()
 
         # Ball(s)
         for i in xrange(len(self.d_ISOs)) :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
-            lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
+            lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
             KERNELS['iso'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, True )
-            idx += 1
-            print '[ OK ]'
+            progress.update()
 
         return KERNELS
 
@@ -168,12 +156,11 @@ class CylinderZeppelinBall :
         # temporary file where to store "datasynth" output
         filename_signal = pjoin( tempfile._get_default_tempdir(), next(tempfile._get_candidate_names())+'.Bfloat' )
 
-        # Cylinder(s)
-        idx = 1
-        for R in self.Rs :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
+        nATOMS = len(self.Rs) + len(self.ICVFs) + len(self.d_ISOs)
+        progress = ProgressBar( n=nATOMS, prefix="   ", erase=True )
 
+        # Cylinder(s)
+        for R in self.Rs :
             CMD = 'datasynth -synthmodel compartment 1 CYLINDERGPD %E 0 0 %E -schemefile %s -voxels 1 -outputfile %s 2> /dev/null' % ( self.d_par*1E-6, R, filename_scheme, filename_signal )
             subprocess.call( CMD, shell=True )
             if not exists( filename_signal ) :
@@ -183,15 +170,11 @@ class CylinderZeppelinBall :
                 remove( filename_signal )
 
             lm = amico.lut.rotate_kernel( signal, aux, idx_in, idx_out, False )
-            np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
-            idx += 1
-            print '[ OK ]'
+            np.save( pjoin( out_path, 'A_%03d.npy'%progress.i ), lm )
+            progress.update()
 
         # Zeppelin(s)
         for d in [ self.d_par*(1.0-ICVF) for ICVF in self.ICVFs] :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
-
             CMD = 'datasynth -synthmodel compartment 1 ZEPPELIN %E 0 0 %E -schemefile %s -voxels 1 -outputfile %s 2> /dev/null' % ( self.d_par*1E-6, d*1e-6, filename_scheme, filename_signal )
             subprocess.call( CMD, shell=True )
             if not exists( filename_signal ) :
@@ -201,15 +184,11 @@ class CylinderZeppelinBall :
                 remove( filename_signal )
 
             lm = amico.lut.rotate_kernel( signal, aux, idx_in, idx_out, False )
-            np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
-            idx += 1
-            print '[ OK ]'
+            np.save( pjoin( out_path, 'A_%03d.npy'%progress.i ), lm )
+            progress.update()
 
         # Ball(s)
         for d in self.d_ISOs :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
-
             CMD = 'datasynth -synthmodel compartment 1 BALL %E -schemefile %s -voxels 1 -outputfile %s 2> /dev/null' % ( d*1e-6, filename_scheme, filename_signal )
             subprocess.call( CMD, shell=True )
             if not exists( filename_signal ) :
@@ -219,9 +198,8 @@ class CylinderZeppelinBall :
                 remove( filename_signal )
 
             lm = amico.lut.rotate_kernel( signal, aux, idx_in, idx_out, True )
-            np.save( pjoin( out_path, 'A_%03d.npy'%idx ), lm )
-            idx += 1
-            print '[ OK ]'
+            np.save( pjoin( out_path, 'A_%03d.npy'%progress.i ), lm )
+            progress.update()
 
 
     def resample( self, in_path, idx_out, Ylm_out ) :
@@ -231,32 +209,25 @@ class CylinderZeppelinBall :
         KERNELS['wmh']   = np.zeros( (len(self.ICVFs),181,181,self.nS), dtype=np.float32 )
         KERNELS['iso']   = np.zeros( (len(self.d_ISOs),self.nS), dtype=np.float32 )
 
+        nATOMS = len(self.Rs) + len(self.ICVFs) + len(self.d_ISOs)
+        progress = ProgressBar( n=nATOMS, prefix="   ", erase=True )
+
         # Cylinder(s)
-        idx = 1
         for i in xrange(len(self.Rs)) :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
-            lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
+            lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
             KERNELS['wmr'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
-            idx += 1
-            print '[ OK ]'
+            progress.update()
 
         # Zeppelin(s)
         for i in xrange(len(self.ICVFs)) :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
-            lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
+            lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
             KERNELS['wmh'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
-            idx += 1
-            print '[ OK ]'
+            progress.update()
 
         # Ball
         for i in xrange(len(self.d_ISOs)) :
-            print '\t* A_%03d...' % idx,
-            sys.stdout.flush()
-            lm = np.load( pjoin( in_path, 'A_%03d.npy'%idx ) )
+            lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
             KERNELS['iso'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, True )
-            idx += 1
-            print '[ OK ]'
+            progress.update()
 
         return KERNELS
