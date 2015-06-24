@@ -83,13 +83,15 @@ class StickZeppelinBall :
 
         # Stick
         lm = np.load( pjoin( in_path, 'A_001.npy' ) )
-        KERNELS['wmr'][0,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+        s = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+        KERNELS['wmr'][0,...] = np.transpose(s, (1,2,0))
         progress.update()
 
         # Zeppelin(s)
         for i in xrange(len(self.ICVFs)) :
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
-            KERNELS['wmh'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            s = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            KERNELS['wmh'][i,...] = np.transpose(s, (1,2,0))
             progress.update()
 
         # Ball(s)
@@ -215,13 +217,15 @@ class CylinderZeppelinBall :
         # Cylinder(s)
         for i in xrange(len(self.Rs)) :
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
-            KERNELS['wmr'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            s = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            KERNELS['wmr'][i,...] = np.transpose(s, (1,2,0))
             progress.update()
 
         # Zeppelin(s)
         for i in xrange(len(self.ICVFs)) :
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
-            KERNELS['wmh'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            s = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            KERNELS['wmh'][i,...] = np.transpose(s, (1,2,0))
             progress.update()
 
         # Ball
