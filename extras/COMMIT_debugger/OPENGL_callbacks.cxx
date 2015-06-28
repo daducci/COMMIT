@@ -108,8 +108,8 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 's': GLYPHS_show = 1 - GLYPHS_show; break;
         case 'p': PEAKS_show  = 1 - PEAKS_show;  break;
 
-        case 'k': PEAKS_kolor = fmaxf(PEAKS_kolor - 0.1,  0.0); break;
-        case 'K': PEAKS_kolor = fminf(PEAKS_kolor + 0.1, 20.0); break;
+        case 'k': PEAKS_kolor = fmaxf(PEAKS_kolor - 0.5,  0.0); break;
+        case 'K': PEAKS_kolor = fminf(PEAKS_kolor + 0.5, 20.0); break;
         case 'l':
             PEAKS_lut   = (PEAKS_lut+1) % 5;
             switch( PEAKS_lut )
