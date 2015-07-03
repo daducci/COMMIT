@@ -15,21 +15,17 @@ pyximport.install( reload_support=True )
 
 
 def setup( lmax = 12 ) :
-    """
-    General setup/initialization of the COMMIT framework.
-    """
+    """General setup/initialization of the COMMIT framework."""
     amico.lut.precompute_rotation_matrices( lmax )
 
 
-"""
-Class to hold all the information (data and parameters) when performing an
-evaluation with the COMMIT framework.
-"""
 class Evaluation :
+    """Class to hold all the information (data and parameters) when performing an
+    evaluation with the COMMIT framework.
+    """
 
     def __init__( self, study_path, subject ) :
-        """
-        Setup the data structure with default values.
+        """Setup the data structures with default values.
 
         Parameters
         ----------
@@ -67,8 +63,7 @@ class Evaluation :
 
 
     def load_data( self, dwi_filename = 'DWI.nii', scheme_filename = 'DWI.scheme', b0_thr = 0 ) :
-        """
-        Load the diffusion signal and its corresponding acquisition scheme.
+        """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
         ----------
@@ -144,8 +139,7 @@ class Evaluation :
 
 
     def set_model( self, model_name ) :
-        """
-        Set the model to use to describe the signal contributions in each voxel.
+        """Set the model to use to describe the signal contributions in each voxel.
 
         Parameters
         ----------
@@ -162,8 +156,7 @@ class Evaluation :
 
 
     def generate_kernels( self, regenerate = False, lmax = 12 ) :
-        """
-        Generate the high-resolution response functions for each compartment.
+        """Generate the high-resolution response functions for each compartment.
         Dispatch to the proper function, depending on the model.
 
         Parameters
@@ -182,7 +175,7 @@ class Evaluation :
         self.set_config('lmax', lmax)
         self.model.scheme = self.scheme
 
-        print '\n-> Simulating with "%s" model:' % self.model.description
+        print '\n-> Simulating with "%s" model:' % self.model.name
 
         # check if kernels were already generated
         tmp = glob.glob( pjoin(self.get_config('ATOMS_path'),'A_*.npy') )
@@ -208,8 +201,7 @@ class Evaluation :
 
 
     def load_kernels( self ) :
-        """
-        Load rotated kernels and project to the specific gradient scheme of this subject.
+        """Load rotated kernels and project to the specific gradient scheme of this subject.
         Dispatch to the proper function, depending on the model.
         """
         if self.model is None :
@@ -218,7 +210,7 @@ class Evaluation :
             raise RuntimeError( 'Scheme not loaded; call "load_data()" first.' )
 
         tic = time.time()
-        print '\n-> Resampling kernels for subject "%s":' % self.get_config('subject')
+        print '\n-> Resampling LUT for subject "%s":' % self.get_config('subject')
 
         # auxiliary data structures
         idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
@@ -291,8 +283,7 @@ class Evaluation :
 
 
     def load_dictionary( self, path ) :
-        """
-        Load the sparse structure previously created with "trk2dictionary" script.
+        """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
         ----------
@@ -434,8 +425,7 @@ class Evaluation :
 
 
     def set_threads( self, n = None ) :
-        """
-        Set the number of threads to use for the matrix-vector operations with A and A'.
+        """Set the number of threads to use for the matrix-vector operations with A and A'.
 
         Parameters
         ----------
@@ -527,10 +517,7 @@ class Evaluation :
                 idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind='mergesort' )
                 C = np.bincount( self.DICTIONARY['IC']['fiber'] )
 
-                t = 0
-                tot = 0
-                i1 = 0
-                i2 = 0
+                t = tot = i1 = i2 = 0
                 N = np.floor(self.DICTIONARY['IC']['n']/n)
                 for i in xrange(C.size) :
                     i2 += C[i]
@@ -581,8 +568,7 @@ class Evaluation :
 
 
     def build_operator( self ) :
-        """
-        Compile/build the operator for computing the matrix-vector multiplications by A and A'
+        """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
             the data is changed in self.DICTIONARY, self.KERNELS or self.THREADS.
@@ -613,8 +599,7 @@ class Evaluation :
 
 
     def fit( self, tol_fun = 1e-3, max_iter = 100, verbose = 1 ) :
-        """
-        Fit the model to the data.
+        """Fit the model to the data.
 
         Parameters
         ----------
@@ -651,8 +636,7 @@ class Evaluation :
 
 
     def save_results( self, path_suffix = None ) :
-        """
-        Save the output (coefficients, errors, maps etc).
+        """Save the output (coefficients, errors, maps etc).
 
         Parameters
         ----------
