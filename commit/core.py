@@ -661,7 +661,7 @@ class Evaluation :
         else :
             for f in glob.glob( pjoin(RESULTS_path,'*') ) :
                 remove( f )
-        self.get_config('RESULTS_path', RESULTS_path)
+        self.set_config('RESULTS_path', RESULTS_path)
 
         # Configuration and results
         print '\t* configuration and results...',
