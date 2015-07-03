@@ -2,7 +2,8 @@ import numpy as np
 import time
 import glob
 import sys
-import os.path
+from os import makedirs, remove
+from os.path import exists, join as pjoin
 import nibabel
 import cPickle
 import commit.models
@@ -48,14 +49,21 @@ class Evaluation :
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
-        self.CONFIG['study_path'] = study_path
-        self.CONFIG['subject']    = subject
-        self.CONFIG['DATA_path']  = os.path.join( study_path, subject )
+        self.set_config('study_path', study_path)
+        self.set_config('subject', subject)
+        self.set_config('DATA_path', pjoin( study_path, subject ))
 
-        self.CONFIG['doNormalizeSignal']  = True
-        self.CONFIG['doMergeB0']	      = True
-        self.CONFIG['doNormalizeKernels'] = True
-        self.CONFIG['doDemean']		      = False
+        self.set_config('doNormalizeSignal', True)
+        self.set_config('doMergeB0', True)
+        self.set_config('doNormalizeKernels', True)
+        self.set_config('doDemean', False)
+
+
+    def set_config( self, key, value ) :
+        self.CONFIG[ key ] = value
+
+    def get_config( self, key ) :
+        return self.CONFIG.get( key )
 
 
     def load_data( self, dwi_filename = 'DWI.nii', scheme_filename = 'DWI.scheme', b0_thr = 0 ) :
@@ -77,19 +85,19 @@ class Evaluation :
         print '\n-> Loading data:'
 
         print '\t* DWI signal...'
-        self.CONFIG['dwi_filename']    = dwi_filename
-        self.niiDWI  = nibabel.load( os.path.join( self.CONFIG['DATA_path'], dwi_filename) )
+        self.set_config('dwi_filename', dwi_filename)
+        self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = self.niiDWI.get_data().astype(np.float32)
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
-        self.CONFIG['dim']    = self.niiDWI_img.shape[0:3]
-        self.CONFIG['pixdim'] = tuple( hdr.get_zooms()[:3] )
+        self.set_config('dim', self.niiDWI_img.shape[0:3])
+        self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
         print '\t\t- dim    = %d x %d x %d x %d' % self.niiDWI_img.shape
-        print '\t\t- pixdim = %.3f x %.3f x %.3f' % self.CONFIG['pixdim']
+        print '\t\t- pixdim = %.3f x %.3f x %.3f' % self.get_config('pixdim')
 
         print '\t* Acquisition scheme...'
-        self.CONFIG['scheme_filename'] = scheme_filename
-        self.CONFIG['b0_thr'] = b0_thr
-        self.scheme = amico.scheme.Scheme( os.path.join( self.CONFIG['DATA_path'], scheme_filename), b0_thr )
+        self.set_config('scheme_filename', scheme_filename)
+        self.set_config('b0_thr', b0_thr)
+        self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
         print '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) )
         print '\t\t- %d @ b=0' % ( self.scheme.b0_count ),
         for i in xrange(len(self.scheme.shells)) :
@@ -105,7 +113,7 @@ class Evaluation :
         tic = time.time()
         print '\n-> Preprocessing:'
 
-        if self.CONFIG['doNormalizeSignal'] :
+        if self.get_config('doNormalizeSignal') :
             print '\t* Normalizing to b0...',
             sys.stdout.flush()
             mean = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
@@ -117,7 +125,7 @@ class Evaluation :
                 self.niiDWI_img[:,:,:,i] *= mean
             print '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() )
 
-        if self.CONFIG['doMergeB0'] :
+        if self.get_config('doMergeB0') :
             print '\t* Merging multiple b0 volume(s)...',
             mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
             self.niiDWI_img = np.concatenate( (self.niiDWI_img[:,:,:,self.scheme.dwi_idx], mean), axis=3 )
@@ -125,7 +133,7 @@ class Evaluation :
             print '\t* Keeping all b0 volume(s)...',
         print '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape
 
-        if self.CONFIG['doDemean'] :
+        if self.get_config('doDemean') :
             print '\t* Demeaning signal...',
             sys.stdout.flush()
             mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
@@ -150,7 +158,7 @@ class Evaluation :
         else :
             raise ValueError( 'Model "%s" not recognized' % model_name )
 
-        self.CONFIG['ATOMS_path'] = os.path.join( self.CONFIG['study_path'], 'kernels', self.model.id )
+        self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
 
     def generate_kernels( self, regenerate = False, lmax = 12 ) :
@@ -171,23 +179,23 @@ class Evaluation :
             raise RuntimeError( 'Model not set; call "set_model()" method first.' )
 
         # store some values for later use
-        self.CONFIG['lmax'] = lmax
-        self.model.nS = self.scheme.nS
+        self.set_config('lmax', lmax)
+        self.model.scheme = self.scheme
 
-        print '\n-> Simulating with "%s" model:' % self.model.name
+        print '\n-> Simulating with "%s" model:' % self.model.description
 
         # check if kernels were already generated
-        tmp = glob.glob( os.path.join(self.CONFIG['ATOMS_path'],'A_*.npy') )
+        tmp = glob.glob( pjoin(self.get_config('ATOMS_path'),'A_*.npy') )
         if len(tmp)>0 and not regenerate :
             print '   [ Kernels already computed. Call "generate_kernels( regenerate=True )" to force regeneration. ]'
             return
 
         # create folder or delete existing files (if any)
-        if not os.path.exists( self.CONFIG['ATOMS_path'] ) :
-            os.makedirs( self.CONFIG['ATOMS_path'] )
+        if not exists( self.get_config('ATOMS_path') ) :
+            makedirs( self.get_config('ATOMS_path') )
         else :
-            for f in glob.glob( os.path.join(self.CONFIG['ATOMS_path'],'*') ) :
-                os.remove( f )
+            for f in glob.glob( pjoin(self.get_config('ATOMS_path'),'*') ) :
+                remove( f )
 
         # auxiliary data structures
         aux = amico.lut.load_precomputed_rotation_matrices( lmax )
@@ -195,7 +203,7 @@ class Evaluation :
 
         # Dispatch to the right handler for each model
         tic = time.time()
-        self.model.generate( self.CONFIG['ATOMS_path'], self.scheme, aux, idx_IN, idx_OUT )
+        self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT )
         print '   [ %.1f seconds ]' % ( time.time() - tic )
 
 
@@ -210,19 +218,19 @@ class Evaluation :
             raise RuntimeError( 'Scheme not loaded; call "load_data()" first.' )
 
         tic = time.time()
-        print '\n-> Resampling kernels for subject "%s":' % self.CONFIG['subject']
+        print '\n-> Resampling kernels for subject "%s":' % self.get_config('subject')
 
         # auxiliary data structures
-        idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.CONFIG['lmax'] )
+        idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
 
         # Dispatch to the right handler for each model
-        self.KERNELS = self.model.resample( self.CONFIG['ATOMS_path'], idx_OUT, Ylm_OUT )
+        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
 
         # Remove multiple b0(s)
-        if self.CONFIG['doMergeB0'] :
+        if self.get_config('doMergeB0') :
             print '\t* Merging multiple b0 volume(s)...',
             ones = np.expand_dims( np.ones(self.KERNELS['wmr'].shape[0:3],dtype=np.float32), axis=3 )
             self.KERNELS['wmr'] = np.concatenate( (self.KERNELS['wmr'][:,:,:,self.scheme.dwi_idx], ones), axis=3 )
@@ -241,7 +249,7 @@ class Evaluation :
         print '[ OK ]'
 
         # De-mean kernels
-        if self.CONFIG['doDemean'] :
+        if self.get_config('doDemean') :
             print '\t* Demeaning signal...',
             for j in xrange(181) :
                 for k in xrange(181) :
@@ -255,7 +263,7 @@ class Evaluation :
             print '[ OK ]'
 
         # Normalize atoms
-        if self.CONFIG['doNormalizeKernels'] :
+        if self.get_config('doNormalizeKernels') :
             print '\t* Normalizing...',
 
             self.KERNELS['wmr_norm'] = np.zeros( nIC )
@@ -298,11 +306,11 @@ class Evaluation :
         print '\n-> Loading the dictionary:'
         self.DICTIONARY = {}
 
-        self.CONFIG['TRACKING_path'] = os.path.join(self.CONFIG['DATA_path'],path)
-        mask_filename = os.path.join(self.CONFIG['TRACKING_path'],'dictionary_tdi.nii')
-        if not os.path.exists( mask_filename ) :
+        self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
+        mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_tdi.nii')
+        if not exists( mask_filename ) :
             mask_filename += '.gz'
-            if not os.path.exists( mask_filename ) :
+            if not exists( mask_filename ) :
                 raise RuntimeError( 'Dictionary not found. Execute ''trk2dictionary'' script first.' );
 
         niiMASK = nibabel.load( mask_filename )
@@ -315,26 +323,26 @@ class Evaluation :
 
         self.DICTIONARY['IC'] = {}
 
-        self.DICTIONARY['IC']['trkLen'] = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_IC_trkLen.dict'), dtype=np.float32 )
+        self.DICTIONARY['IC']['trkLen'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_trkLen.dict'), dtype=np.float32 )
         self.DICTIONARY['IC']['nF'] = self.DICTIONARY['IC']['trkLen'].size
 
-        self.DICTIONARY['IC']['fiber'] = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_IC_f.dict'), dtype=np.uint32 )
+        self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
         self.DICTIONARY['IC']['n'] = self.DICTIONARY['IC']['fiber'].size
 
-        vx = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_IC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
-        vy = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_IC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
-        vz = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_IC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
-        self.DICTIONARY['IC']['v'] = vx + self.CONFIG['dim'][0] * ( vy + self.CONFIG['dim'][1] * vz )
+        vx = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
+        vy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
+        vz = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
+        self.DICTIONARY['IC']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
         del vx, vy, vz
 
-        ox = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_IC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
-        oy = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_IC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
+        ox = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
+        oy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
         self.DICTIONARY['IC']['o'] = oy + 181*ox
         del ox, oy
 
-        self.DICTIONARY['IC']['len'] = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_IC_len.dict'), dtype=np.float32 )
+        self.DICTIONARY['IC']['len'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
 
-        if self.CONFIG['doNormalizeKernels'] :
+        if self.get_config('doNormalizeKernels') :
             # divide the length of each segment by the fiber length so that all the columns of the libear operator will have same length
             # NB: it works in conjunction with the normalization of the kernels
             sl = self.DICTIONARY['IC']['len']
@@ -360,16 +368,16 @@ class Evaluation :
 
         self.DICTIONARY['EC'] = {}
 
-        vx = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_EC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
-        vy = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_EC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
-        vz = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_EC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
-        self.DICTIONARY['EC']['v'] = vx + self.CONFIG['dim'][0] * ( vy + self.CONFIG['dim'][1] * vz )
+        vx = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
+        vy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
+        vz = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
+        self.DICTIONARY['EC']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
         del vx, vy, vz
 
         self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
-        ox = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_EC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
-        oy = np.fromfile( os.path.join(self.CONFIG['TRACKING_path'],'dictionary_EC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
+        ox = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
+        oy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
         self.DICTIONARY['EC']['o'] = oy + 181*ox
         del ox, oy
 
@@ -394,7 +402,7 @@ class Evaluation :
         vx = vx.astype(np.int32)
         vy = vy.astype(np.int32)
         vz = vz.astype(np.int32)
-        self.DICTIONARY['ISO']['v'] = vx + self.CONFIG['dim'][0] * ( vy + self.CONFIG['dim'][1] * vz )
+        self.DICTIONARY['ISO']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
         del vx, vy, vz
 
         # reorder the segments based on the "v" field
@@ -413,7 +421,7 @@ class Evaluation :
         idx = self.DICTIONARY['MASK'].ravel(order='F').nonzero()[0]
         self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] = np.unravel_index( idx, self.DICTIONARY['MASK'].shape, order='F' )
 
-        lut = np.zeros( self.CONFIG['dim'], dtype=np.uint32 ).ravel()
+        lut = np.zeros( self.get_config('dim'), dtype=np.uint32 ).ravel()
         for i in xrange(idx.size) :
             lut[ idx[i] ] = i
         self.DICTIONARY['IC'][ 'v'] = lut[ self.DICTIONARY['IC'][ 'v'] ]
@@ -656,20 +664,20 @@ class Evaluation :
 
         RESULTS_path = 'Results_' + self.model.id
         if path_suffix :
-            self.CONFIG['path_suffix'] = path_suffix
+            self.set_config('path_suffix', path_suffix)
             RESULTS_path = RESULTS_path +'_'+ path_suffix
 
         print '\n-> Saving results to "%s/*":' % RESULTS_path
         tic = time.time()
 
         # create folder or delete existing files (if any)
-        RESULTS_path = os.path.join( self.CONFIG['TRACKING_path'], RESULTS_path )
-        if not os.path.exists( RESULTS_path ) :
-            os.makedirs( RESULTS_path )
+        RESULTS_path = pjoin( self.get_config('TRACKING_path'), RESULTS_path )
+        if not exists( RESULTS_path ) :
+            makedirs( RESULTS_path )
         else :
-            for f in glob.glob( os.path.join(RESULTS_path,'*') ) :
-                os.remove( f )
-        self.CONFIG['RESULTS_path'] = RESULTS_path
+            for f in glob.glob( pjoin(RESULTS_path,'*') ) :
+                remove( f )
+        self.get_config('RESULTS_path', RESULTS_path)
 
         # Configuration and results
         print '\t* configuration and results...',
@@ -677,7 +685,7 @@ class Evaluation :
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
-        if self.CONFIG['doNormalizeKernels'] :
+        if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
             norm1 = np.tile(self.KERNELS['wmr_norm'],nF)
             norm2 = np.tile(self.KERNELS['wmh_norm'],nE)
@@ -685,14 +693,14 @@ class Evaluation :
             x = self.x / np.hstack( (norm1,norm2,norm3) )
         else :
             x = self.x
-        with open( os.path.join(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
+        with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
             cPickle.dump( [self.CONFIG, x], fid, protocol=2 )
         print '[ OK ]'
 
         # Map of wovelwise errors
         print '\t* fitting errors:'
 
-        niiMAP_img = np.zeros( self.CONFIG['dim'], dtype=np.float32 )
+        niiMAP_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
@@ -706,7 +714,7 @@ class Evaluation :
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
         niiMAP_hdr['cal_min'] = 0
         niiMAP_hdr['cal_max'] = tmp.max()
-        nibabel.save( niiMAP, os.path.join(RESULTS_path,'fit_RMSE.nii.gz') )
+        nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
         print ' [ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() )
 
         print '\t\t- NRMSE...',
@@ -719,7 +727,7 @@ class Evaluation :
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
         niiMAP_hdr['cal_min'] = 0
         niiMAP_hdr['cal_max'] = 1
-        nibabel.save( niiMAP, os.path.join(RESULTS_path,'fit_NRMSE.nii.gz') )
+        nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
         print '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() )
 
         # Map of compartment contributions
@@ -735,7 +743,7 @@ class Evaluation :
                 weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
             ).astype(np.float32)
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, os.path.join(RESULTS_path,'compartment_IC.nii.gz') )
+        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         print '[ OK ]'
 
         print '\t\t- extra-axonal',
@@ -746,7 +754,7 @@ class Evaluation :
             tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, os.path.join(RESULTS_path,'compartment_EC.nii.gz') )
+        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_EC.nii.gz') )
         print '[ OK ]'
 
         print '\t\t- isotropic',
@@ -756,7 +764,7 @@ class Evaluation :
             offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
             xv = x[offset:].reshape( (-1,nV) ).sum( axis=0 )
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, os.path.join(RESULTS_path,'compartment_ISO.nii.gz') )
+        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
         print '   [ OK ]'
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )

@@ -27,8 +27,8 @@ class StickZeppelinBall :
     """
 
     def __init__( self ) :
-        self.id     = 'StickZeppelinBall'
-        self.name   = 'Stick-Zeppelin-Ball'
+        self.id          = 'StickZeppelinBall'
+        self.description = 'Stick-Zeppelin-Ball'
         self.d_par  = 1.7E-3              # Parallel diffusivity [mm^2/s]
         self.ICVFs  = [ 0.7 ]             # Intra-cellular volume fraction(s) [0..1]
         self.d_ISOs = [ 1.7E-3, 3.0E-3 ]  # Isotropic diffusivitie(s) [mm^2/s]
@@ -40,11 +40,11 @@ class StickZeppelinBall :
         self.d_ISOs = d_ISOs
 
 
-    def generate( self, out_path, scheme, aux, idx_in, idx_out ) :
+    def generate( self, out_path, aux, idx_in, idx_out ) :
         print '\t* 1 stick, %d extra-cellular and %d isotropic' % ( len(self.ICVFs), len(self.d_ISOs) )
 
         # create an high-resolution version of the scheme
-        scheme_high = amico.lut.create_high_resolution_scheme( scheme, b_scale=1 )
+        scheme_high = amico.lut.create_high_resolution_scheme( self.scheme, b_scale=1 )
         gtab = gradient_table( scheme_high.b, scheme_high.raw[:,0:3] )
 
         nATOMS = 1 + len(self.ICVFs) + len(self.d_ISOs)
@@ -74,30 +74,30 @@ class StickZeppelinBall :
     def resample( self, in_path, idx_out, Ylm_out ) :
         KERNELS = {}
         KERNELS['model'] = self.id
-        KERNELS['wmr']   = np.zeros( (1,181,181,self.nS), dtype=np.float32 )
-        KERNELS['wmh']   = np.zeros( (len(self.ICVFs),181,181,self.nS), dtype=np.float32 )
-        KERNELS['iso']   = np.zeros( (len(self.d_ISOs),self.nS), dtype=np.float32 )
+        KERNELS['wmr']   = np.zeros( (1,181,181,self.scheme.nS), dtype=np.float32 )
+        KERNELS['wmh']   = np.zeros( (len(self.ICVFs),181,181,self.scheme.nS), dtype=np.float32 )
+        KERNELS['iso']   = np.zeros( (len(self.d_ISOs),self.scheme.nS), dtype=np.float32 )
 
         nATOMS = 1 + len(self.ICVFs) + len(self.d_ISOs)
         progress = ProgressBar( n=nATOMS, prefix="   ", erase=True )
 
         # Stick
         lm = np.load( pjoin( in_path, 'A_001.npy' ) )
-        s = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+        s = amico.lut.resample_kernel( lm, self.scheme.nS, idx_out, Ylm_out, False )
         KERNELS['wmr'][0,...] = np.transpose(s, (1,2,0))
         progress.update()
 
         # Zeppelin(s)
         for i in xrange(len(self.ICVFs)) :
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
-            s = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            s = amico.lut.resample_kernel( lm, self.scheme.nS, idx_out, Ylm_out, False )
             KERNELS['wmh'][i,...] = np.transpose(s, (1,2,0))
             progress.update()
 
         # Ball(s)
         for i in xrange(len(self.d_ISOs)) :
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
-            KERNELS['iso'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, True )
+            KERNELS['iso'][i,...] = amico.lut.resample_kernel( lm, self.scheme.nS, idx_out, Ylm_out, True )
             progress.update()
 
         return KERNELS
@@ -129,8 +129,8 @@ class CylinderZeppelinBall :
     """
 
     def __init__( self ) :
-        self.id     = 'CylinderZeppelinBall'
-        self.name   = 'Cylinder-Zeppelin-Ball'
+        self.id          = 'CylinderZeppelinBall'
+        self.description = 'Cylinder-Zeppelin-Ball'
         self.d_par  = 1.7E-3              # Parallel diffusivity [mm^2/s]
         self.Rs     = [ 4E-6, 16E-6 ]     # Radii of the axons [micrometers]
         self.ICVFs  = [ 0.7 ]             # Intra-cellular volume fraction(s) [0..1]
@@ -144,14 +144,14 @@ class CylinderZeppelinBall :
         self.d_ISOs = d_ISOs
 
 
-    def generate( self, out_path, scheme, aux, idx_in, idx_out ) :
-        if scheme.version != 1 :
+    def generate( self, out_path, aux, idx_in, idx_out ) :
+        if self.scheme.version != 1 :
             raise RuntimeError( 'This model requires a "VERSION: STEJSKALTANNER" scheme.' )
 
         print '\t* %d restricted, %d hindered and %d isotropic' % ( len(self.Rs), len(self.ICVFs), len(self.d_ISOs) )
 
         # create a high-resolution scheme to pass to 'datasynth'
-        scheme_high = amico.lut.create_high_resolution_scheme( scheme, b_scale=1E6 )
+        scheme_high = amico.lut.create_high_resolution_scheme( self.scheme, b_scale=1E6 )
         filename_scheme = pjoin( out_path, 'scheme.txt' )
         np.savetxt( filename_scheme, scheme_high.raw, fmt='%15.8e', delimiter=' ', header='VERSION: STEJSKALTANNER', comments='' )
 
@@ -207,9 +207,9 @@ class CylinderZeppelinBall :
     def resample( self, in_path, idx_out, Ylm_out ) :
         KERNELS = {}
         KERNELS['model'] = self.id
-        KERNELS['wmr']   = np.zeros( (len(self.Rs),181,181,self.nS), dtype=np.float32 )
-        KERNELS['wmh']   = np.zeros( (len(self.ICVFs),181,181,self.nS), dtype=np.float32 )
-        KERNELS['iso']   = np.zeros( (len(self.d_ISOs),self.nS), dtype=np.float32 )
+        KERNELS['wmr']   = np.zeros( (len(self.Rs),181,181,self.scheme.nS), dtype=np.float32 )
+        KERNELS['wmh']   = np.zeros( (len(self.ICVFs),181,181,self.scheme.nS), dtype=np.float32 )
+        KERNELS['iso']   = np.zeros( (len(self.d_ISOs),self.scheme.nS), dtype=np.float32 )
 
         nATOMS = len(self.Rs) + len(self.ICVFs) + len(self.d_ISOs)
         progress = ProgressBar( n=nATOMS, prefix="   ", erase=True )
@@ -217,21 +217,21 @@ class CylinderZeppelinBall :
         # Cylinder(s)
         for i in xrange(len(self.Rs)) :
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
-            s = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            s = amico.lut.resample_kernel( lm, self.scheme.nS, idx_out, Ylm_out, False )
             KERNELS['wmr'][i,...] = np.transpose(s, (1,2,0))
             progress.update()
 
         # Zeppelin(s)
         for i in xrange(len(self.ICVFs)) :
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
-            s = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, False )
+            s = amico.lut.resample_kernel( lm, self.scheme.nS, idx_out, Ylm_out, False )
             KERNELS['wmh'][i,...] = np.transpose(s, (1,2,0))
             progress.update()
 
-        # Ball
+        # Ball(s)
         for i in xrange(len(self.d_ISOs)) :
             lm = np.load( pjoin( in_path, 'A_%03d.npy'%progress.i ) )
-            KERNELS['iso'][i,...] = amico.lut.resample_kernel( lm, self.nS, idx_out, Ylm_out, True )
+            KERNELS['iso'][i,...] = amico.lut.resample_kernel( lm, self.scheme.nS, idx_out, Ylm_out, True )
             progress.update()
 
         return KERNELS
