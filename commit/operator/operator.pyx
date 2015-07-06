@@ -29,10 +29,9 @@ cdef extern void COMMIT_At(
 
 
 cdef class LinearOperator :
-    """
-    This class is a wrapper to the C code for performing marix-vector multiplications
+    """This class is a wrapper to the C code for performing marix-vector multiplications
     with the COMMIT linear operator A. The multiplications are done using C code
-    that uses information from the DICITONARY, KERNELS and THREADS data structures.
+    that uses information from the DICTIONARY, KERNELS and THREADS data structures.
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n
     cdef public int adjoint, n1, n2
@@ -63,9 +62,7 @@ cdef class LinearOperator :
 
 
     def __init__( self, DICTIONARY, KERNELS, THREADS ) :
-        """
-        Set the pointers to the data structures used by the C code
-        """
+        """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
         self.THREADS    = THREADS
@@ -132,28 +129,23 @@ cdef class LinearOperator :
 
     @property
     def T( self ) :
-        """
-        Transpose of the explicit matrix.
-        """
+        """Transpose of the explicit matrix."""
         C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
         C.adjoint = 1 - C.adjoint
         return C
 
+
     @property
     def shape( self ) :
-        """
-        Size of the explicit matrix.
-        """
+        """Size of the explicit matrix."""
         if not self.adjoint :
             return ( self.n1, self.n2 )
         else :
             return ( self.n2, self.n1 )
 
 
-
     def dot( self, double [::1] v_in  ):
-        """
-        Wrapper to C code for efficiently performing the matrix-vector multiplications.
+        """Wrapper to C code for efficiently performing the matrix-vector multiplications.
 
         Parameters
         ----------
@@ -175,24 +167,24 @@ cdef class LinearOperator :
 
         # Call the cython function to read the memory pointers
         if not self.adjoint :
-                # DIRECT PRODUCT A*x
-                with nogil :
-                    COMMIT_A(
-                        self.nF, self.n, self.nE, self.nV, self.nS,
-                        &v_in[0], &v_out[0],
-                        self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
-                        self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                        self.ICthreads, self.ECthreads, self.ISOthreads
-                    )
+            # DIRECT PRODUCT A*x
+            with nogil :
+                COMMIT_A(
+                    self.nF, self.n, self.nE, self.nV, self.nS,
+                    &v_in[0], &v_out[0],
+                    self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
+                    self.LUT_IC, self.LUT_EC, self.LUT_ISO,
+                    self.ICthreads, self.ECthreads, self.ISOthreads
+                )
         else :
-                # INVERSE PRODUCT A'*y
-                with nogil :
-                    COMMIT_At(
-                        self.nF, self.n, self.nE, self.nV, self.nS,
-                        &v_in[0], &v_out[0],
-                        self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
-                        self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                        self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
-                    )
+            # INVERSE PRODUCT A'*y
+            with nogil :
+                COMMIT_At(
+                    self.nF, self.n, self.nE, self.nV, self.nS,
+                    &v_in[0], &v_out[0],
+                    self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
+                    self.LUT_IC, self.LUT_EC, self.LUT_ISO,
+                    self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
+                )
 
         return v_out

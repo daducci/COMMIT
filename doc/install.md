@@ -11,6 +11,11 @@ Please install and configure all these packages by following the guidelines on t
 > COMMIT was **succesfully tested** on:  
   - OSX 10.10, [Anaconda](http://docs.continuum.io/anaconda/) Python distribution and DIPY 0.9.0dev.
 
+### AMICO
+
+COMMIT shares the code for the generation/rotation of the response-function lookup tables with [AMICO](https://github.com/daducci/AMICO). Please install AMICO following the instructions [here](https://github.com/daducci/AMICO).
+
+> NB: in order to use COMMIT, it is only necessary to install the Python code; no additional modules (e.g. SPAMS and NODDI) are required.
 
 ### Camino toolkit
 

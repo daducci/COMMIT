@@ -19,8 +19,7 @@ cdef extern from "trk2dictionary_c.cpp":
 
 
 cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False] ):
-    """
-    Perform the conversion of a tractoram to the sparse data-structure internally
+    """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
 

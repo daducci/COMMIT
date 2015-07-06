@@ -2,8 +2,7 @@ import numpy as np
 import sys
 
 def nnls( y, A, At = None, tol_fun = 1e-4, max_iter = 100, verbose = 1, x0 = None ) :
-    """
-    Solve non negative least squares problem of the following form:
+    """Solve non negative least squares problem of the following form:
 
        min 0.5*||y-A x||_2^2 s.t. x >= 0
 
@@ -129,6 +128,6 @@ def nnls( y, A, At = None, tol_fun = 1e-4, max_iter = 100, verbose = 1, x0 = Non
         qfval = 0.5 * np.linalg.norm(res)**2
 
     if verbose >= 1 :
-        print "\t[ Stopping criterion: %s]" % criterion
+        print "\t< Stopping criterion: %s >" % criterion
 
     return x
