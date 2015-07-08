@@ -766,20 +766,22 @@ void GLUT__display( void )
     /* ====================== */
     /* Draw the CURRENT VOXEL */
     /* ====================== */
-    glPushMatrix();
-    glTranslatef( VOXEL.x+0.5, VOXEL.y+0.5, VOXEL.z+0.5 );
+    if ( showAxes )
+    {
+        glPushMatrix();
+        glTranslatef( VOXEL.x+0.5, VOXEL.y+0.5, VOXEL.z+0.5 );
 
-    glEnable( GL_BLEND );
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-    glLineWidth(1);
-    glColor4f( 1,1,0,1 );
-    glutWireCube( 1 );
-    glColor4f( 1,1,0,0.25 );
-    glutSolidCube( 1 );
-    glDisable( GL_BLEND );
+        glEnable( GL_BLEND );
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        glLineWidth(1);
+        glColor4f( 1,1,0,1 );
+        glutWireCube( 1 );
+        glColor4f( 1,1,0,0.25 );
+        glutSolidCube( 1 );
+        glDisable( GL_BLEND );
 
-    glPopMatrix();
-
+        glPopMatrix();
+    }
 
     glPopMatrix();
     glutSwapBuffers();
