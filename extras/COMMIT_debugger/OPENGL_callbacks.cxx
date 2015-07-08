@@ -24,6 +24,8 @@ float ScreenX = 800, ScreenY = 600;
 
 void PrintConfig()
 {
+    if ( !showHelp )
+        return;
     printf( "=======================\n     CONFIGURATION     \n=======================\n" );
     printf( "\t- showPLANE = [ %d, %d, %d ]\n", showPlane[0], showPlane[1], showPlane[2] );
     printf( "\t- MAP_range = [ %.1f ... %.1f]\n", MAP_min_view, MAP_max_view );
@@ -33,7 +35,7 @@ void PrintConfig()
     printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
     printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
     printf( "\t- PEAKS_width = %.1f\n", PEAKS_width );
-    printf( "\t- PEAKS_kolor = %.1f\n", PEAKS_kolor );
+    printf( "\t- PEAKS_kolor = [ %.1f, %.1f ]\n", PEAKS_kolor_l, PEAKS_kolor_u );
     printf( "\n" );
     printf( "\t- TRK_offset = [ %.1f %.1f %.1f]    (voxel-size units)\n", TRK_offset.x, TRK_offset.y, TRK_offset.z );
     printf( "\t- TRK_crop = %.1f  (voxel-size units)\n", TRK_crop );
@@ -71,9 +73,13 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
 
     switch( key )
     {
+        case 'h': showHelp = 1 - showHelp; break;
+
         case '1': showPlane[0] = 1 - showPlane[0]; break;
         case '2': showPlane[1] = 1 - showPlane[1]; break;
         case '3': showPlane[2] = 1 - showPlane[2]; break;
+
+        case '0': showAxes = 1 - showAxes; break;
 
         case 'x': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
         case 'y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
@@ -108,8 +114,10 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 's': GLYPHS_show = 1 - GLYPHS_show; break;
         case 'p': PEAKS_show  = 1 - PEAKS_show;  break;
 
-        case 'k': PEAKS_kolor = fmaxf(PEAKS_kolor - 0.5,  0.0); break;
-        case 'K': PEAKS_kolor = fminf(PEAKS_kolor + 0.5, 20.0); break;
+        case 'j': PEAKS_kolor_l = fmaxf(PEAKS_kolor_l - 0.5,  0.0); break;
+        case 'J': PEAKS_kolor_l = fminf(PEAKS_kolor_l + 0.5, PEAKS_kolor_u); break;
+        case 'k': PEAKS_kolor_u = fmaxf(PEAKS_kolor_u - 0.5, PEAKS_kolor_l); break;
+        case 'K': PEAKS_kolor_u = fminf(PEAKS_kolor_u + 0.5, 20.0); break;
         case 'l':
             PEAKS_lut   = (PEAKS_lut+1) % 5;
             switch( PEAKS_lut )
@@ -128,7 +136,7 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 'r':
             translation.x	= translation.y = 0;
             rotation.x		= rotation.y = rotation.z = 0;
-            zoom			= 200;
+            zoom			= 0;
             OPENGL_utils::identity( rot );
             break;
 
@@ -192,7 +200,8 @@ void GLUT__specialkey( GLint key, GLint x, GLint y )
                 VOXEL.z++;
             break;
 
-        default: 					doRedraw = false;
+        default:
+            doRedraw = false;
     }
 
     // check the bounds
@@ -307,13 +316,15 @@ void GLUT__display( void )
     /* ============= */
     /* Draw the AXES */
     /* ============= */
-    glLineWidth(2);
-    glBegin(GL_LINES);
-        glColor4f( 1,0,0,1); glVertex3f( 0,0,0 ); glVertex3f( 10,  0,  0 );
-        glColor4f( 0,1,0,1); glVertex3f( 0,0,0 ); glVertex3f(  0, 10,  0 );
-        glColor4f( 0,0,1,1); glVertex3f( 0,0,0 ); glVertex3f(  0,  0, 10 );
-    glEnd();
-
+    if ( showAxes )
+    {
+        glLineWidth(2);
+        glBegin(GL_LINES);
+            glColor4f( 1,0,0,1); glVertex3f( 0,0,0 ); glVertex3f( 10,  0,  0 );
+            glColor4f( 0,1,0,1); glVertex3f( 0,0,0 ); glVertex3f(  0, 10,  0 );
+            glColor4f( 0,0,1,1); glVertex3f( 0,0,0 ); glVertex3f(  0,  0, 10 );
+        glEnd();
+    }
 
     /* =============== */
     /* Draw the TRACTS */
@@ -426,11 +437,11 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor == 0 )
+                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
                             glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
                         else
                         {
-                            int idx = fmin( round( 255.0*norms[d]/PEAKS_kolor ), 255.0 );
+                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
                             glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
                         }
 
@@ -506,11 +517,11 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor == 0 )
+                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
                             glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
                         else
                         {
-                            int idx = fmin( round( 255.0*norms[d]/PEAKS_kolor ), 255.0 );
+                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
                             glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
                         }
 
@@ -586,14 +597,13 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor == 0 )
+                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
                             glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
                         else
                         {
-                            int idx = fmin( round( 255.0*norms[d]/PEAKS_kolor ), 255.0 );
+                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
                             glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
                         }
-
 
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
@@ -791,14 +801,14 @@ void OpenGL_init( int argc, char** argv )
     gluPerspective(40.0f, (GLfloat)ScreenX / (GLfloat)ScreenY, 10.0f,1000.0f);
     glMatrixMode(GL_MODELVIEW);
     gluLookAt(
-        0.0, 0.0, 120.0,
+        0.0, 0.0, max(dim.x,dim.y) * (GLfloat)ScreenX / (GLfloat)ScreenY,
         0.0, 0.0, 0.0,
         0.0, 1.0, 0.0
     );
 
     translation.x	= translation.y = 0;
     rotation.x		= rotation.y = rotation.z = 0;
-    zoom			= 200;
+    zoom			= 0;
     OPENGL_utils::identity( rot );
     OPENGL_utils::identity( id );
 

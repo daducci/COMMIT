@@ -26,19 +26,22 @@ vector< vector<int> >    SCHEME_shells_idx;
 blitz::Array<float,3>    MAP;
 VECTOR<int>		         VOXEL;
 float                    MAP_min, MAP_min_view, MAP_max, MAP_max_view;
-float 			         MAP_opacity = 0.8;
+float 			         MAP_opacity = 0.1;//0.8;
 bool			         showPlane[3] = { false, false, true };
+bool                     showAxes = false;
+bool			         showHelp = false;
 
 NIFTI*                   niiPEAKS;
 int				         PEAKS_n;
-bool			         PEAKS_show = false;
+bool			         PEAKS_show = true;
 int				         PEAKS_width = 2;
 float			         PEAKS_thr = 0.1;
-bool			         PEAKS_doNormalize = false;
+bool			         PEAKS_doNormalize = true;
 bool			         PEAKS_flip[3] = {false, false, false};
 int 			         PEAKS_swap = 0;
-float			         PEAKS_kolor = 0;
-int			             PEAKS_lut = 0;
+float			         PEAKS_kolor_l = 2.0;
+float			         PEAKS_kolor_u = 7.0;
+int			             PEAKS_lut = 1;//0;
 float                    (*PEAKS_lut_ptr)[256][3] = &COLORMAPS::hot;
 
 TrackVis 		         TRK_file;
@@ -270,7 +273,7 @@ int main(int argc, char** argv)
     // ==============================
     COLOR_msg( "-> Preparing 'GLYPHS' visualization:", "\n" );
 
-    int s = SCHEME_shells_b.size()-1; // extract last shell ([FIXME] possibility to choose)
+    int s = 0;//SCHEME_shells_b.size()-1; // extract last shell ([FIXME] possibility to choose)
     for(int i=0; i < SCHEME_shells_idx[s].size() ;i++)
     {
         int idx = SCHEME_shells_idx[s][i];
