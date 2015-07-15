@@ -5,7 +5,7 @@
 #include <cmath>
 #include <regex>
 #include <cstdlib>
-
+#include "tclap/CmdLine.h"
 #include <blitz/array.h>
 using namespace std;
 
@@ -67,11 +67,22 @@ float	                 GLYPHS_b0_thr;
 /*----------------------------------------------------------------------------------------------------------------------------------*/
 int main(int argc, char** argv)
 {
-    if ( argc<4 )
-    {
-        COLOR_error( "USAGE: viewer <.nii DWI> <.scheme SCHEME> <.nii PEAKS> [.trk TRACTS]" );
-        return EXIT_FAILURE;
-    }
+    TCLAP::CmdLine cmd("Bla bla bla", ' ', "1.0");
+
+    TCLAP::UnlabeledValueArg<string> argDWI(    "dwi","Filename of the DWI dataset [nifti]", true, "", "DWI", cmd );
+    TCLAP::UnlabeledValueArg<string> argSCHEME( "scheme","Filename of the scheme file [text]", true, "", "scheme", cmd );
+    TCLAP::UnlabeledValueArg<string> argPEAKS(  "peaks","Filename of the PEAKS dataset [nifti]", true, "", "peaks", cmd );
+    TCLAP::ValueArg<string>          argTRK(    "f", "trk", "Filename of the fibers dataset [trk]", false, "", "fibers", cmd );
+    TCLAP::ValueArg<string>          argMAP(    "m", "map", "Filename of background map [nifti]", false, "", "map", cmd );
+
+    try	{ cmd.parse( argc, argv ); }
+    catch (TCLAP::ArgException &e) { cerr << "error: " << e.error() << " for arg " << e.argId() << endl; }
+
+    string DWI_filename( argDWI.getValue() );
+    string SCHEME_filename( argSCHEME.getValue() );
+    string PEAKS_filename( argPEAKS.getValue() );
+    string TRK_filename( argTRK.getValue() );
+    string MAP_filename( argMAP.getValue() );
 
 
     // ===================
@@ -79,7 +90,6 @@ int main(int argc, char** argv)
     // ===================
     COLOR_msg( "-> Reading 'DWI' dataset:", "\n" );
 
-    string DWI_filename = argv[1];
     niiDWI = new NIFTI;
     niiDWI->open( DWI_filename, true );
     if ( !niiDWI->isValid() )
@@ -107,7 +117,6 @@ int main(int argc, char** argv)
     COLOR_msg( "-> Reading 'SCHEME' file:", "\n" );
 
     char line[1000];
-    string SCHEME_filename = argv[2];
     FILE* pFile = fopen( SCHEME_filename.c_str(), "rt" );
 
     // read the version
@@ -228,19 +237,40 @@ int main(int argc, char** argv)
     // =======================
     // Creating BACKGROUND map
     // =======================
-    COLOR_msg( "-> Preparing 'B0' map:", "\n" );
-
+    COLOR_msg( "-> Preparing 'BACKGROUND' map:", "\n" );
     MAP.resize(dim.x,dim.y,dim.z);
-    if ( SCHEME_idxB0.size() > 0 )
+    if ( !MAP_filename.empty() )
     {
-        FLOAT32 MIN = (*niiDWI->img)(0,0,0,SCHEME_idxB0[0]);
+        printf( "\tdata   : reading from file\n" );
+        NIFTI* niiMAP = new NIFTI;
+        niiMAP->open( MAP_filename, true );
+        if ( !niiMAP->isValid() )
+        {
+            COLOR_error( "Unable to open the file", "\t" );
+            return EXIT_FAILURE;
+        }
+
+        printf( "\tdim    : %d x %d x %d x %d\n" , niiMAP->hdr->dim[1],    niiMAP->hdr->dim[2],    niiMAP->hdr->dim[3], niiMAP->hdr->dim[4] );
+        printf( "\tpixdim : %.4f x %.4f x %.4f\n", niiMAP->hdr->pixdim[1], niiMAP->hdr->pixdim[2], niiMAP->hdr->pixdim[3] );
+
+        if ( niiMAP->hdr->dim[1] != dim.x || niiMAP->hdr->dim[2] != dim.y || niiMAP->hdr->dim[3] != dim.z )
+        {
+            COLOR_error( "The DIMENSIONS do not math those of DWI images", "\t" );
+            return EXIT_FAILURE;
+        }
+        if ( abs(niiMAP->hdr->pixdim[1]-pixdim.x) > 1e-4 || abs(niiMAP->hdr->pixdim[2]-pixdim.y) > 1e-4 || abs(niiMAP->hdr->pixdim[3]-pixdim.z) > 1e-4 )
+        {
+            COLOR_warning( "The VOXEL SIZE does not math that of DWI images", "\t" );
+        }
+
+        FLOAT32 MIN = 0;//(*niiMAP->img)(0,0,0);
         FLOAT32 MAX = MIN;
 
         for(int i=0; i<dim.x ;i++)
         for(int j=0; j<dim.y ;j++)
         for(int k=0; k<dim.z ;k++)
         {
-            MAP(i,j,k) = (*niiDWI->img)(i,j,k,SCHEME_idxB0[0]);
+            MAP(i,j,k) = (*niiMAP->img)(i,j,k);
             if ( MAP(i,j,k) > MAX )
                 MAX = MAP(i,j,k);
             if ( MAP(i,j,k) < MIN )
@@ -260,12 +290,43 @@ int main(int argc, char** argv)
     }
     else
     {
-        MAP = 0;
-        MAP_min	= MAP_min_view = 0;
-        MAP_max	= MAP_max_view = 1;
-        COLOR_msg( "   [no b0 found]" );
-    }
+        printf( "\tdata   : averaging b0 images\n" );
 
+        if ( SCHEME_idxB0.size() > 0 )
+        {
+            FLOAT32 MIN = (*niiDWI->img)(0,0,0,SCHEME_idxB0[0]);
+            FLOAT32 MAX = MIN;
+
+            for(int i=0; i<dim.x ;i++)
+            for(int j=0; j<dim.y ;j++)
+            for(int k=0; k<dim.z ;k++)
+            {
+                MAP(i,j,k) = (*niiDWI->img)(i,j,k,SCHEME_idxB0[0]);
+                if ( MAP(i,j,k) > MAX )
+                    MAX = MAP(i,j,k);
+                if ( MAP(i,j,k) < MIN )
+                    MIN = MAP(i,j,k);
+            }
+            if ( MAX - MIN <= 0 )
+            {
+                COLOR_error( "The dynamic range is zero", "\t" );
+                return EXIT_FAILURE;
+            }
+            MAP_min	= MIN;
+            MAP_min_view = 0;
+            MAP_max	= MAP_max_view = MAX;
+
+            printf( "\tvalues : [%.2e ... %.2e]\n", MAP_min, MAP_max );
+            COLOR_msg( "   [OK]" );
+        }
+        else
+        {
+            MAP = 0;
+            MAP_min	= MAP_min_view = 0;
+            MAP_max	= MAP_max_view = 1;
+            COLOR_msg( "   [no b0 found]" );
+        }
+    }
 
 
     // ==============================
@@ -293,7 +354,6 @@ int main(int argc, char** argv)
     // ==================
     COLOR_msg( "-> Reading 'PEAKS' dataset:", "\n" );
 
-    string PEAKS_filename = argv[3];
     niiPEAKS = new NIFTI;
     niiPEAKS->open( PEAKS_filename, true );
     if ( !niiPEAKS->isValid() )
@@ -339,11 +399,10 @@ int main(int argc, char** argv)
     // ===================
     // Reading TRACTS file
     // ===================
-    if ( argc>4 )
+    if ( !TRK_filename.empty() )
     {
         COLOR_msg( "-> Reading 'TRK' dataset:", "\n" );
 
-        string TRK_filename = argv[4];
         TRK_file = TrackVis();
         if ( !TRK_file.open( TRK_filename ) )
         {
