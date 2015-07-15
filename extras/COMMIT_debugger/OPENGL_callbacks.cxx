@@ -681,14 +681,17 @@ void GLUT__display( void )
                 glEnd();
             }
             // colored frame
-            glColor3f(1,0,0);
-            glBegin(GL_LINE_STRIP);
-                glVertex3f(x,0,0);
-                glVertex3f(x,dim.y,0);
-                glVertex3f(x,dim.y,dim.z);
-                glVertex3f(x,0,dim.z);
-                glVertex3f(x,0,0);
-            glEnd();
+            if ( showAxes )
+            {
+                glColor3f(1,0,0);
+                glBegin(GL_LINE_STRIP);
+                    glVertex3f(x,0,0);
+                    glVertex3f(x,dim.y,0);
+                    glVertex3f(x,dim.y,dim.z);
+                    glVertex3f(x,0,dim.z);
+                    glVertex3f(x,0,0);
+                glEnd();
+            }
 
             glPopMatrix();
         }
@@ -713,14 +716,17 @@ void GLUT__display( void )
                 glEnd();
             }
             // colored frame
-            glColor3f(0,1,0);
-            glBegin(GL_LINE_STRIP);
-                glVertex3f(0,y,0);
-                glVertex3f(dim.x,y,0);
-                glVertex3f(dim.x,y,dim.z);
-                glVertex3f(0,y,dim.z);
-                glVertex3f(0,y,0);
-            glEnd();
+            if ( showAxes )
+            {
+                glColor3f(0,1,0);
+                glBegin(GL_LINE_STRIP);
+                    glVertex3f(0,y,0);
+                    glVertex3f(dim.x,y,0);
+                    glVertex3f(dim.x,y,dim.z);
+                    glVertex3f(0,y,dim.z);
+                    glVertex3f(0,y,0);
+                glEnd();
+            }
 
             glPopMatrix();
         }
@@ -746,14 +752,17 @@ void GLUT__display( void )
             }
 
             // colored frame
-            glColor3f(0,0,1);
-            glBegin(GL_LINE_STRIP);
-                glVertex3f(0,0,z);
-                glVertex3f(dim.x,0,z);
-                glVertex3f(dim.x,dim.y,z);
-                glVertex3f(0,dim.y,z);
-                glVertex3f(0,0,z);
-            glEnd();
+            if ( showAxes )
+            {
+                glColor3f(0,0,1);
+                glBegin(GL_LINE_STRIP);
+                    glVertex3f(0,0,z);
+                    glVertex3f(dim.x,0,z);
+                    glVertex3f(dim.x,dim.y,z);
+                    glVertex3f(0,dim.y,z);
+                    glVertex3f(0,0,z);
+                glEnd();
+            }
 
             glPopMatrix();
         }
