@@ -41,7 +41,7 @@ bool			         PEAKS_flip[3] = {false, false, false};
 int 			         PEAKS_swap = 0;
 float			         PEAKS_kolor_l = 2.0;
 float			         PEAKS_kolor_u = 7.0;
-int			             PEAKS_lut = 1;//0;
+int			             PEAKS_lut = 0;
 float                    (*PEAKS_lut_ptr)[256][3] = &COLORMAPS::hot;
 
 TrackVis 		         TRK_file;

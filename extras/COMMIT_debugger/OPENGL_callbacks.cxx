@@ -95,7 +95,7 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 'n': PEAKS_doNormalize = 1 - PEAKS_doNormalize; break;
 
         case 'w': PEAKS_width = max(1,PEAKS_width-1); break;
-        case 'W': PEAKS_width = min(5,PEAKS_width+1); break;
+        case 'W': PEAKS_width = min(15,PEAKS_width+1); break;
 
         case 'o': MAP_opacity = fmaxf(0.0,MAP_opacity-0.1); break;
         case 'O': MAP_opacity = fminf(1.0,MAP_opacity+0.1); break;
@@ -119,15 +119,16 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 'k': PEAKS_kolor_u = fmaxf(PEAKS_kolor_u - 0.5, PEAKS_kolor_l); break;
         case 'K': PEAKS_kolor_u = fminf(PEAKS_kolor_u + 0.5, 20.0); break;
         case 'l':
-            PEAKS_lut   = (PEAKS_lut+1) % 6;
+            PEAKS_lut   = (PEAKS_lut+1) % 7;
             switch( PEAKS_lut )
             {
-                case 0 : PEAKS_lut_ptr = &COLORMAPS::hot;    break;
-                case 1 : PEAKS_lut_ptr = &COLORMAPS::jet;    break;
-                case 2 : PEAKS_lut_ptr = &COLORMAPS::parula; break;
-                case 3 : PEAKS_lut_ptr = &COLORMAPS::hsv;    break;
-                case 4 : PEAKS_lut_ptr = &COLORMAPS::polar;  break;
-                case 5 : PEAKS_lut_ptr = &COLORMAPS::dawn;   break;
+                case 0 : PEAKS_lut_ptr = &COLORMAPS::hot;        break;
+                case 1 : PEAKS_lut_ptr = &COLORMAPS::parula;     break;
+                case 2 : PEAKS_lut_ptr = &COLORMAPS::greenToRed; break;
+                case 3 : PEAKS_lut_ptr = &COLORMAPS::polar;      break;
+                case 4 : PEAKS_lut_ptr = &COLORMAPS::dawn;       break;
+                case 5 : PEAKS_lut_ptr = &COLORMAPS::gnuplot;    break;
+                case 6 : PEAKS_lut_ptr = &COLORMAPS::rainbow;    break;
             }
             break;
 
