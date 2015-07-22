@@ -60,12 +60,14 @@ COMMIT_debugger \
     <dwi> \
     <scheme> \
     <peaks> \
-    <tracts>
+    [-f <tracts>] \
+    [-m <map>]
 ```
 
 - `dwi`, `scheme`: DWI data and corresponding scheme file. Only the signal from the outer shell is plotted.
 - `peaks`: directions to be interpreted as the major directions of the *hindered* water pools in each voxel.
 - `tracts`: tractogram to generate the *restricted* contributions of the tracts in each voxel.
+- `map`: background map; default is the average b0 computed from the data.
 
 ### Shortcuts
 
@@ -75,6 +77,7 @@ COMMIT_debugger \
 - `r`: reset the view to its inital settings
 
 - `s`: show/hide the DWI signal
+- `S`: change shell to display
 - `X`, `Y`, `Z`: flip the signal glyphs along each axis
 - `b`, `B`: change the portion of voxels where to plot the glyphs
 

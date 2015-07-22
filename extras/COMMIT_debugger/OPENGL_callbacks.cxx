@@ -32,16 +32,18 @@ void PrintConfig()
     printf( "\t- MAP_opacity = %.1f\n", MAP_opacity );
     printf( "\n" );
     printf( "\t- PEAKS_doNormalize = %s\n", PEAKS_doNormalize?"true":"false" );
-    printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
     printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
+    printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
     printf( "\t- PEAKS_width = %.1f\n", PEAKS_width );
     printf( "\t- PEAKS_kolor = [ %.1f, %.1f ]\n", PEAKS_kolor_l, PEAKS_kolor_u );
+    printf( "\t- PEAKS_lut = %d\n", PEAKS_lut );
     printf( "\n" );
     printf( "\t- TRK_offset = [ %.1f %.1f %.1f]    (voxel-size units)\n", TRK_offset.x, TRK_offset.y, TRK_offset.z );
     printf( "\t- TRK_crop = %.1f  (voxel-size units)\n", TRK_crop );
     printf( "\n" );
-    printf( "\t- GLYPHS_b0_thr = %.1f\n", GLYPHS_b0_thr );
+    printf( "\t- GLYPHS_shell = %d (b=%.1f)\n", GLYPHS_shell, SCHEME_shells_b[GLYPHS_shell] );
     printf( "\t- GLYPHS_flip = [ %d, %d, %d ]\n", GLYPHS_flip[0], GLYPHS_flip[1], GLYPHS_flip[2] );
+    printf( "\t- GLYPHS_b0_thr = %.1f\n", GLYPHS_b0_thr );
     printf( "\n" );
 }
 
@@ -85,9 +87,9 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 'y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
         case 'z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
 
-        case 'X': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < GLYPHS_dirs.size() ;d++) GLYPHS_dirs[d].x *= -1; break;
-        case 'Y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < GLYPHS_dirs.size() ;d++) GLYPHS_dirs[d].y *= -1; break;
-        case 'Z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < GLYPHS_dirs.size() ;d++) GLYPHS_dirs[d].z *= -1; break;
+        case 'X': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].x *= -1; break;
+        case 'Y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].y *= -1; break;
+        case 'Z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].z *= -1; break;
 
         case 't': PEAKS_thr = fmaxf(PEAKS_thr - 0.1, 0.0); break;
         case 'T': PEAKS_thr = fminf(PEAKS_thr + 0.1, 1.0); break;
@@ -107,13 +109,12 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
         case 'C': TRK_crop = fminf(max(dim.x,max(dim.y,dim.z)),TRK_crop+0.5); break;
         case ' ': TRK_crop_mode = 1 - TRK_crop_mode; break;
 
-        case 'f':
-            if ( TRK_nTractsPlotted > 0 )
-                TRK_show = 1 - TRK_show;
-            break;
-        case 's': GLYPHS_show = 1 - GLYPHS_show; break;
-        case 'p': PEAKS_show  = 1 - PEAKS_show;  break;
+        case 'f': if ( TRK_nTractsPlotted > 0 ) TRK_show = 1 - TRK_show; break;
 
+        case 's': GLYPHS_show = 1 - GLYPHS_show; break;
+        case 'S': GLYPHS_shell = (GLYPHS_shell+1) % SCHEME_shells_idx.size(); break;
+
+        case 'p': PEAKS_show  = 1 - PEAKS_show;  break;
         case 'j': PEAKS_kolor_l = fmaxf(PEAKS_kolor_l - 0.5,  0.0); break;
         case 'J': PEAKS_kolor_l = fminf(PEAKS_kolor_l + 0.5, PEAKS_kolor_u); break;
         case 'k': PEAKS_kolor_u = fmaxf(PEAKS_kolor_u - 0.5, PEAKS_kolor_l); break;
@@ -394,7 +395,7 @@ void GLUT__display( void )
         glTranslatef(.5,.5,.5);
 
         Vec3Df dir, col;
-        int x,y,z,d;
+        int x,y,z,d,idx;
         float norms[PEAKS_n], normMax, b0, w;
 
         // plane YZ
@@ -459,12 +460,13 @@ void GLUT__display( void )
                     if ( b0 > GLYPHS_b0_thr )
                     {
                         glBegin(GL_POINTS);
-                        for(d=0; d < GLYPHS_dirs.size() ;d++)
+                        for(d=0; d < SCHEME_shells_idx[GLYPHS_shell].size() ;d++)
                         {
-                            w = (float)(*niiDWI->img)(x,y,z,GLYPHS_idx[d]) / b0;
-                            dir.x = 0.5 * w * GLYPHS_dirs[d].x;
-                            dir.y = 0.5 * w * GLYPHS_dirs[d].y;
-                            dir.z = 0.5 * w * GLYPHS_dirs[d].z;
+                            idx = SCHEME_shells_idx[GLYPHS_shell][d];
+                            w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
+                            dir.x = w * SCHEME_dirs[idx].x;
+                            dir.y = w * SCHEME_dirs[idx].y;
+                            dir.z = w * SCHEME_dirs[idx].z;
 
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );
@@ -533,18 +535,20 @@ void GLUT__display( void )
                         glEnd();
                     }
                 }
+
                 if ( GLYPHS_show )
                 {
                     b0 = (*niiDWI->img)(x,y,z,SCHEME_idxB0[0]);
                     if ( b0 > GLYPHS_b0_thr )
                     {
                         glBegin(GL_POINTS);
-                        for(d=0; d < GLYPHS_dirs.size() ;d++)
+                        for(d=0; d < SCHEME_shells_idx[GLYPHS_shell].size() ;d++)
                         {
-                            w = (float)(*niiDWI->img)(x,y,z,GLYPHS_idx[d]) / b0;
-                            dir.x = 0.5 * w * GLYPHS_dirs[d].x;
-                            dir.y = 0.5 * w * GLYPHS_dirs[d].y;
-                            dir.z = 0.5 * w * GLYPHS_dirs[d].z;
+                            idx = SCHEME_shells_idx[GLYPHS_shell][d];
+                            w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
+                            dir.x = w * SCHEME_dirs[idx].x;
+                            dir.y = w * SCHEME_dirs[idx].y;
+                            dir.z = w * SCHEME_dirs[idx].z;
 
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );
@@ -620,12 +624,13 @@ void GLUT__display( void )
                     if ( b0 > GLYPHS_b0_thr )
                     {
                         glBegin(GL_POINTS);
-                        for(d=0; d < GLYPHS_dirs.size() ;d++)
+                        for(d=0; d < SCHEME_shells_idx[GLYPHS_shell].size() ;d++)
                         {
-                            w = (float)(*niiDWI->img)(x,y,z,GLYPHS_idx[d]) / b0;
-                            dir.x = 0.5 * w * GLYPHS_dirs[d].x;
-                            dir.y = 0.5 * w * GLYPHS_dirs[d].y;
-                            dir.z = 0.5 * w * GLYPHS_dirs[d].z;
+                            idx = SCHEME_shells_idx[GLYPHS_shell][d];
+                            w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
+                            dir.x = w * SCHEME_dirs[idx].x;
+                            dir.y = w * SCHEME_dirs[idx].y;
+                            dir.z = w * SCHEME_dirs[idx].z;
 
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );

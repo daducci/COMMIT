@@ -35,12 +35,11 @@ NIFTI*                   niiPEAKS;
 int				         PEAKS_n;
 bool			         PEAKS_show = true;
 int				         PEAKS_width = 2;
-float			         PEAKS_thr = 0.1;
+float			         PEAKS_thr = 0;
 bool			         PEAKS_doNormalize = true;
 bool			         PEAKS_flip[3] = {false, false, false};
-int 			         PEAKS_swap = 0;
-float			         PEAKS_kolor_l = 2.0;
-float			         PEAKS_kolor_u = 7.0;
+float			         PEAKS_kolor_l = 0.0;
+float			         PEAKS_kolor_u = 0.0;
 int			             PEAKS_lut = 0;
 float                    (*PEAKS_lut_ptr)[256][3] = &COLORMAPS::hot;
 
@@ -56,10 +55,9 @@ bool 			         TRK_show = false;
 VECTOR<float> 	         TRK_offset;
 
 bool 			         GLYPHS_show = false;
+int                      GLYPHS_shell = 0;
 bool			         GLYPHS_flip[3] = {false, false, false};
-vector< VECTOR<float> >  GLYPHS_dirs;
-vector< int >	         GLYPHS_idx;
-float	                 GLYPHS_b0_thr;
+float	                 GLYPHS_b0_thr = 50.0;
 
 #include "OPENGL_callbacks.cxx"
 
@@ -74,7 +72,6 @@ int main(int argc, char** argv)
     TCLAP::UnlabeledValueArg<string> argPEAKS(  "peaks","Filename of the PEAKS dataset [nifti]", true, "", "peaks", cmd );
     TCLAP::ValueArg<string>          argTRK(    "f", "trk", "Filename of the fibers dataset [trk]", false, "", "fibers", cmd );
     TCLAP::ValueArg<string>          argMAP(    "m", "map", "Filename of background map [nifti]", false, "", "map", cmd );
-    TCLAP::ValueArg<int>             argSHELL(  "s", "shell", "Shell to use for plotting the signal [1..n]", false, 1, "shell", cmd );
 
     try	{ cmd.parse( argc, argv ); }
     catch (TCLAP::ArgException &e) { cerr << "error: " << e.error() << " for arg " << e.argId() << endl; }
@@ -84,7 +81,6 @@ int main(int argc, char** argv)
     string PEAKS_filename( argPEAKS.getValue() );
     string TRK_filename( argTRK.getValue() );
     string MAP_filename( argMAP.getValue() );
-    int    SHELL_number( argSHELL.getValue() );
 
 
     // ===================
@@ -172,6 +168,7 @@ int main(int argc, char** argv)
                 if ( !std::regex_match(string(line), reMatches, reVERSION0) )
                     throw "Wrong row format";
                 VECTOR<float> tmp( std::atof(reMatches[1].str().c_str()), std::atof(reMatches[2].str().c_str()), std::atof(reMatches[3].str().c_str()) );
+                tmp.Normalize();
                 SCHEME_dirs.push_back( tmp );
                 b = std::atof(reMatches[4].str().c_str()); // in mm^2/s
                 SCHEME_b.push_back( b );
@@ -181,6 +178,7 @@ int main(int argc, char** argv)
                 if ( !std::regex_match(string(line), reMatches, reVERSION1) )
                     throw "Wrong row format";
                 VECTOR<float> tmp( std::atof(reMatches[1].str().c_str()), std::atof(reMatches[2].str().c_str()), std::atof(reMatches[3].str().c_str()) );
+                tmp.Normalize();
                 SCHEME_dirs.push_back( tmp );
                 b = std::pow( 267.513e6 * std::atof(reMatches[4].str().c_str()) * std::atof(reMatches[6].str().c_str()), 2 ) * (std::atof(reMatches[5].str().c_str()) - std::atof(reMatches[6].str().c_str())/3.0) * 1e-6; // in mm^2/s
                 SCHEME_b.push_back( b );
@@ -329,32 +327,6 @@ int main(int argc, char** argv)
             COLOR_msg( "   [no b0 found]" );
         }
     }
-
-
-    // ==============================
-    // Preparing GLYPHS visualization
-    // ==============================
-    COLOR_msg( "-> Preparing 'GLYPHS' visualization:", "\n" );
-
-    int s = SHELL_number - 1;
-    if ( s<0 or s>=SCHEME_shells_b.size() )
-    {
-        COLOR_error( "Wrong shell number", "\t" );
-        return EXIT_FAILURE;
-    }
-
-    for(int i=0; i < SCHEME_shells_idx[s].size() ;i++)
-    {
-        int idx = SCHEME_shells_idx[s][i];
-        GLYPHS_dirs.push_back( SCHEME_dirs[idx] );
-        GLYPHS_idx.push_back( idx );
-    }
-    GLYPHS_b0_thr = 50.0;
-    printf( "\tscheme    : %d dirs from %d^ shell (b=%.1f)\n", GLYPHS_dirs.size(), s+1, SCHEME_shells_b[s] );
-    printf( "\tb0_thr    : %.1f\n", GLYPHS_b0_thr );
-
-    COLOR_msg( "   [OK]" );
-
 
 
     // ==================
