@@ -74,6 +74,7 @@ int main(int argc, char** argv)
     TCLAP::UnlabeledValueArg<string> argPEAKS(  "peaks","Filename of the PEAKS dataset [nifti]", true, "", "peaks", cmd );
     TCLAP::ValueArg<string>          argTRK(    "f", "trk", "Filename of the fibers dataset [trk]", false, "", "fibers", cmd );
     TCLAP::ValueArg<string>          argMAP(    "m", "map", "Filename of background map [nifti]", false, "", "map", cmd );
+    TCLAP::ValueArg<int>             argSHELL(  "s", "shell", "Shell to use for plotting the signal [1..n]", false, 1, "shell", cmd );
 
     try	{ cmd.parse( argc, argv ); }
     catch (TCLAP::ArgException &e) { cerr << "error: " << e.error() << " for arg " << e.argId() << endl; }
@@ -83,6 +84,7 @@ int main(int argc, char** argv)
     string PEAKS_filename( argPEAKS.getValue() );
     string TRK_filename( argTRK.getValue() );
     string MAP_filename( argMAP.getValue() );
+    int    SHELL_number( argSHELL.getValue() );
 
 
     // ===================
@@ -334,7 +336,13 @@ int main(int argc, char** argv)
     // ==============================
     COLOR_msg( "-> Preparing 'GLYPHS' visualization:", "\n" );
 
-    int s = 0;//SCHEME_shells_b.size()-1; // extract last shell ([FIXME] possibility to choose)
+    int s = SHELL_number - 1;
+    if ( s<0 or s>=SCHEME_shells_b.size() )
+    {
+        COLOR_error( "Wrong shell number", "\t" );
+        return EXIT_FAILURE;
+    }
+
     for(int i=0; i < SCHEME_shells_idx[s].size() ;i++)
     {
         int idx = SCHEME_shells_idx[s][i];
