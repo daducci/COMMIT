@@ -298,7 +298,7 @@ class Evaluation :
         self.DICTIONARY = {}
 
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
-        mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_tdi.nii')
+        mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_mask.nii')
         if not exists( mask_filename ) :
             mask_filename += '.gz'
             if not exists( mask_filename ) :
