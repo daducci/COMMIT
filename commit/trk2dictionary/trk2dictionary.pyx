@@ -37,7 +37,9 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         of peaks in each voxel. (default : no extra-cellular contributions)
 
     filename_mask : string
-        Path to a binary mask to use to restrict the analysis to specific areas.
+        Path to a binary mask to restrict the analysis to specific areas. Segments
+        outside this mask are discarded. If not specified, the mask is created from
+        all voxels crossed by tracts.
 
     do_intersect : boolean
         If True then fiber segments that intersect voxel boundaries are splitted (default).
@@ -92,7 +94,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK_hdr['pixdim'][1], niiMASK_hdr['pixdim'][2], niiMASK_hdr['pixdim'][3] )
         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
              abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
-            print '\t\t  [WARNING] WM dataset does not have the same geometry as the tractogram'
+            print '\t\t  [WARNING] dataset does not have the same geometry as the tractogram'
         niiMASK_img = np.ascontiguousarray( niiMASK.get_data().astype(np.float32) )
         ptrMASK  = &niiMASK_img[0,0,0]
     else :
@@ -103,6 +105,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     cdef float* ptrPEAKS
     cdef float [:, :, :, ::1] niiPEAKS_img
     cdef int Np
+    cdef float [:, :, ::1] niiTDI_img = np.ascontiguousarray( np.zeros((Nx,Ny,Nz),dtype=np.float32) )
+    cdef float* ptrTDI  = &niiTDI_img[0,0,0]
     if filename_peaks is not None :
         print '\t\t* EC orientations'
         niiPEAKS = nibabel.load( filename_peaks )
@@ -113,7 +117,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )
         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
              abs(Px-niiPEAKS_hdr['pixdim'][1])>1e-3 or abs(Py-niiPEAKS_hdr['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS_hdr['pixdim'][3])>1e-3 ) :
-            print "\t\t  [WARNING] PEAKS dataset does not have the same geometry as the tractogram"
+            print "\t\t  [WARNING] dataset does not have the same geometry as the tractogram"
         if niiPEAKS.shape[3] % 3 :
             raise RuntimeError( 'PEAKS dataset must have 3*k volumes' )
         if vf_THR < 0 or vf_THR > 1 :
@@ -131,11 +135,6 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     if not exists( path_out ):
         makedirs( path_out )
 
-
-    # create TDI mask
-    cdef float [:, :, ::1] niiTDI_img = np.ascontiguousarray( np.zeros((Nx,Ny,Nz),dtype=np.float32) )
-    cdef float* ptrTDI  = &niiTDI_img[0,0,0]
-
     # calling actual C code
     ret = trk2dictionary( filename_trk,
         trk_hdr['dim'][0], trk_hdr['dim'][1], trk_hdr['dim'][2],
@@ -148,9 +147,16 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         return None
     print '   [ %.1f seconds ]' % ( time.time() - tic )
 
-    # save TDI map
+    # save TDI and MASK maps
     affine = None
-    if ptrPEAKS != NULL :
+    if filename_peaks is not None :
         affine = niiPEAKS.affine if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_affine()
+
     niiTDI = nibabel.Nifti1Image( niiTDI_img, affine )
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
+
+    if filename_mask is not None :
+        niiMASK = nibabel.Nifti1Image( niiMASK_img, affine )
+    else :
+        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), affine )
+    nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )

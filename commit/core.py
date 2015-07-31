@@ -282,13 +282,19 @@ class Evaluation :
         print '   [ %.1f seconds ]' % ( time.time() - tic )
 
 
-    def load_dictionary( self, path ) :
+    def load_dictionary( self, path, use_mask = False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
         ----------
         path : string
             Folder containing the output of the trk2dictionary script (relative to subject path)
+        use_mask : boolean
+            If False (default) the optimization will be conducted only on the voxels actually
+            traversed by tracts. If True, the mask specified in trk2dictionary
+            (i.e. "filename_mask" paramater) will be used instead.
+            NB: if no mask was specified in trk2dictionary, the "tdi" and
+            "mask" masks are equivalent and this parameter is not influent.
         """
         if self.niiDWI is None :
             raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
@@ -296,14 +302,15 @@ class Evaluation :
         tic = time.time()
         print '\n-> Loading the dictionary:'
         self.DICTIONARY = {}
-
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
-        mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_tdi.nii')
+
+        # load mask
+        self.set_config('dictionary_mask', 'mask' if use_mask else 'tdi' )
+        mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_%s.nii'%self.get_config('dictionary_mask'))
         if not exists( mask_filename ) :
             mask_filename += '.gz'
             if not exists( mask_filename ) :
                 raise RuntimeError( 'Dictionary not found. Execute ''trk2dictionary'' script first.' );
-
         niiMASK = nibabel.load( mask_filename )
         self.DICTIONARY['MASK'] = (niiMASK.get_data() > 0).astype(np.uint8)
 
