@@ -671,9 +671,9 @@ class Evaluation :
         nV = self.DICTIONARY['nV']
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
-            norm1 = np.tile(self.KERNELS['wmr_norm'],nF)
-            norm2 = np.tile(self.KERNELS['wmh_norm'],nE)
-            norm3 = np.tile(self.KERNELS['iso_norm'],nV)
+            norm1 = np.tile(self.KERNELS['wmr_norm'],(nF,1)).T.ravel()
+            norm2 = np.tile(self.KERNELS['wmh_norm'],(nE,1)).T.ravel()
+            norm3 = np.tile(self.KERNELS['iso_norm'],(nV,1)).T.ravel()
             x = self.x / np.hstack( (norm1,norm2,norm3) )
         else :
             x = self.x
