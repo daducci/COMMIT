@@ -28,12 +28,19 @@ Please follow the corresponding [documentation](http://cmic.cs.ucl.ac.uk/camino/
 Open the system shell, go to the folder where you downloaded this repository and run:
 
 ```bash
-python setup.py build --force
-python setup.py install
+pip install .
 ```
 
 COMMIT is now available in your Python interpreter and can be imported as usual:
 
 ```python
 import commit
+```
+
+### Uninstall COMMIT
+
+Open the system shell and run:
+
+```bash
+pip uninstall commit
 ```
