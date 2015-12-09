@@ -157,7 +157,7 @@ int main(int argc, char** argv)
         std::regex  reEMPTY( "^\\s*$" );
         std::smatch reMatches;
         int         Ns = 0;
-        float       b;
+        float       x, y, z, b, G, D, d;
         while( fgets(line, 1000, pFile) )
         {
             if( std::regex_match(string(line), reMatches, reEMPTY) )
@@ -167,24 +167,33 @@ int main(int argc, char** argv)
             {
                 if ( !std::regex_match(string(line), reMatches, reVERSION0) )
                     throw "Wrong row format";
-                VECTOR<float> tmp( std::atof(reMatches[1].str().c_str()), std::atof(reMatches[2].str().c_str()), std::atof(reMatches[3].str().c_str()) );
+                x = std::atof( reMatches[1].str().c_str() );
+                y = std::atof( reMatches[2].str().c_str() );
+                z = std::atof( reMatches[3].str().c_str() );
+                b = std::atof( reMatches[4].str().c_str() ); // in mm^2/s
+                VECTOR<float> tmp( x, y, z );
                 tmp.Normalize();
                 SCHEME_dirs.push_back( tmp );
-                b = std::atof(reMatches[4].str().c_str()); // in mm^2/s
                 SCHEME_b.push_back( b );
             }
             else
             {
                 if ( !std::regex_match(string(line), reMatches, reVERSION1) )
                     throw "Wrong row format";
-                VECTOR<float> tmp( std::atof(reMatches[1].str().c_str()), std::atof(reMatches[2].str().c_str()), std::atof(reMatches[3].str().c_str()) );
+                x = std::atof( reMatches[1].str().c_str() );
+                y = std::atof( reMatches[2].str().c_str() );
+                z = std::atof( reMatches[3].str().c_str() );
+                G = std::atof( reMatches[4].str().c_str() );
+                D = std::atof( reMatches[5].str().c_str() );
+                d = std::atof( reMatches[6].str().c_str() );
+                VECTOR<float> tmp( x, y, z );
                 tmp.Normalize();
                 SCHEME_dirs.push_back( tmp );
-                b = std::pow( 267.513e6 * std::atof(reMatches[4].str().c_str()) * std::atof(reMatches[6].str().c_str()), 2 ) * (std::atof(reMatches[5].str().c_str()) - std::atof(reMatches[6].str().c_str())/3.0) * 1e-6; // in mm^2/s
+                b = std::pow( 267.513e6*G*d, 2 ) * (D-d/3.0) * 1e-6; // in mm^2/s
                 SCHEME_b.push_back( b );
             }
 
-            if ( b<5 )
+            if ( b<5.0 )
             {
                 SCHEME_idxB0.push_back( Ns );
             }
