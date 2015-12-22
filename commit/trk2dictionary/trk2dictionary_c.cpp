@@ -57,19 +57,19 @@ float*          ptrMASK;
 unsigned int    nPointsToSkip;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
-float           minSegLen;
+float           minFiberLen, minSegLen;
 
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts );
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2 );
-unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
+unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np, float & len_mm );
 
 
 // =========================
 // Function called by CYTHON
 // =========================
 int trk2dictionary(
-    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shift, int points_to_skip, float min_seg_len,
+    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shift, int points_to_skip, float min_fiber_len, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c
 )
@@ -105,6 +105,7 @@ int trk2dictionary(
     fiberShiftZmm = fiber_shift * pixdim.z;
     ptrMASK       = _ptrMASK;
     doIntersect   = c > 0;
+    minFiberLen   = min_fiber_len;
     minSegLen     = min_seg_len;
 
     // open files
@@ -129,9 +130,15 @@ int trk2dictionary(
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
-        N = read_fiber( fpTRK, fiber, n_scalars, n_properties );
-        fiberForwardModel( fiber, N );
+        N = read_fiber( fpTRK, fiber, n_scalars, n_properties, fiberLen );
+        if ( fiberLen <= minFiberLen )
+        {
+            kept = 0;
+            fwrite( &kept, 1, 1, pDict_trkKept );
+            continue;
+        }
 
+        fiberForwardModel( fiber, N );
         kept = 0;
         if ( FiberSegments.size() > 0 )
         {
@@ -445,11 +452,12 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
 
 
 // Read a fiber from file
-unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
+unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np, float & len_mm )
 {
+    static float x, y, z;
+    len_mm = 0.0;
     int N;
     fread((char*)&N, 1, 4, fp);
-
     if ( N >= MAX_FIB_LEN || N <= 0 )
         return 0;
 
@@ -461,6 +469,13 @@ unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
         fiber[1][i] = tmp[1];
         fiber[2][i] = tmp[2];
         fseek(fp,4*ns,SEEK_CUR);
+        if ( i > 0)
+        {
+            x = fiber[0][i] - fiber[0][i-1];
+            y = fiber[1][i] - fiber[1][i-1];
+            z = fiber[2][i] - fiber[2][i-1];
+            len_mm += sqrt( x*x + y*y + z*z );
+        }
     }
     fseek(fp,4*np,SEEK_CUR);
 
