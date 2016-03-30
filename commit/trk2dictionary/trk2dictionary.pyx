@@ -61,6 +61,9 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     min_seg_len : float
         Discard segments <= than this length in mm (default : 1e-3 )
+
+    gen_trk : boolean
+        If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
     """
     tic = time.time()
     print '\n-> Creating the dictionary from tractogram:'
