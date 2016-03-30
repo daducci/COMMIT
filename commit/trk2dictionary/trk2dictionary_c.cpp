@@ -44,7 +44,7 @@ class segInVoxKey
     }
     bool const operator <(const segInVoxKey& o) const
     {
-        return ( z<o.z) || ( z==o.z && y<o.y) || ( z==o.z && y==o.y && x<o.x);
+        return (z<o.z) || (z==o.z && y<o.y) || (z==o.z && y==o.y && x<o.x);
     }
 };
 
@@ -57,6 +57,7 @@ float*          ptrMASK;
 unsigned int    nPointsToSkip;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
+float           minSegLen;
 
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts );
@@ -68,7 +69,7 @@ unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 // Function called by CYTHON
 // =========================
 int trk2dictionary(
-    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shift, int points_to_skip,
+    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shift, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c
 )
@@ -78,15 +79,17 @@ int trk2dictionary(
     /*=========================*/
     float          fiber[3][MAX_FIB_LEN];
     float          fiberNorm;
+    float          fiberLen;
     unsigned int   N, totICSegments = 0, totFibers = 0;
+    unsigned char  kept;
     Vector<double> P;
     std::string    filename;
     std::string    OUTPUT_path(path_out);
     std::map<segKey,float>::iterator it;
 
-	std::map<segInVoxKey,float> FiberNorm;
-	std::map<segInVoxKey,float>::iterator itNorm;
-	segInVoxKey         inVoxKey;
+    std::map<segInVoxKey,float> FiberNorm;
+    std::map<segInVoxKey,float>::iterator itNorm;
+    segInVoxKey         inVoxKey;
 
     printf( "\t* Exporting IC compartments:\n" );
 
@@ -103,10 +106,11 @@ int trk2dictionary(
     fiberShiftZmm = fiber_shift * pixdim.z;
     ptrMASK       = _ptrMASK;
     doIntersect   = c > 0;
+    minSegLen     = min_seg_len;
 
     // open files
-    filename = OUTPUT_path+"/dictionary_IC_trkNorm.dict";   FILE* pDict_IC_trkNorm = fopen(filename.c_str(),"wb");
-    if ( !pDict_IC_trkNorm )
+    filename = OUTPUT_path+"/dictionary_TRK_norm.dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");
+    if ( !pDict_TRK_norm )
     {
         printf( "\n[trk2dictionary] Unable to create output files" );
         return 0;
@@ -118,6 +122,8 @@ int trk2dictionary(
     filename = OUTPUT_path+"/dictionary_IC_ox.dict";       FILE* pDict_IC_ox     = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_oy.dict";       FILE* pDict_IC_oy     = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len    = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_len.dict";      FILE* pDict_TRK_len    = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_kept.dict";     FILE* pDict_TRK_kept   = fopen(filename.c_str(),"wb");
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
@@ -128,10 +134,12 @@ int trk2dictionary(
         N = read_fiber( fpTRK, fiber, n_scalars, n_properties );
         fiberForwardModel( fiber, N );
 
+        kept = 0;
         if ( FiberSegments.size() > 0 )
         {
-            // store data to files
+            // add segments to files
             fiberNorm = 0;
+			fiberLen = 0;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
@@ -142,24 +150,28 @@ int trk2dictionary(
                 fwrite( &(it->first.oy), 1, 1, pDict_IC_oy );
                 fwrite( &(it->second),   4, 1, pDict_IC_len );
                 ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
-				inVoxKey.set( it->first.x, it->first.y, it->first.z );
-				FiberNorm[inVoxKey] += it->second;
+                inVoxKey.set( it->first.x, it->first.y, it->first.z );
+                FiberNorm[inVoxKey] += it->second;
+				fiberLen += it->second;
             }
-			for (itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
+            for (itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
             {
-				fiberNorm += pow(itNorm->second,2);
-			}
-			fiberNorm = sqrt(fiberNorm);
-			FiberNorm.clear();
-            fwrite( &fiberNorm,  1, 4, pDict_IC_trkNorm );
+                fiberNorm += pow(itNorm->second,2);
+            }
+            fiberNorm = sqrt(fiberNorm);
+            FiberNorm.clear();
+            fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
+			fwrite( &fiberLen,  1, 4, pDict_TRK_len );
             totICSegments += FiberSegments.size();
             totFibers++;
+            kept = 1;
         }
+        fwrite( &kept, 1, 1, pDict_TRK_kept );
     }
     PROGRESS.close();
 
     fclose( fpTRK );
-    fclose( pDict_IC_trkNorm );
+    fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
     fclose( pDict_IC_vx );
     fclose( pDict_IC_vy );
@@ -167,8 +179,10 @@ int trk2dictionary(
     fclose( pDict_IC_ox );
     fclose( pDict_IC_oy );
     fclose( pDict_IC_len );
+	fclose( pDict_TRK_len );
+    fclose( pDict_TRK_kept );
 
-    printf("\t  [ %d fibers, %d segments ]\n", totFibers, totICSegments );
+    printf("\t  [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
 
 
     /*=========================*/
@@ -298,7 +312,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts )
             while( 1 )
             {
                 len = sqrt( pow(S2.x-S1.x,2) + pow(S2.y-S1.y,2) + pow(S2.z-S1.z,2) ); // in mm
-                if ( len < 1e-3 )
+                if ( len <= minSegLen )
                     break;
 
                 // compute AABB of the first point (in mm)
@@ -353,7 +367,8 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2 )
 
     // length of segment
     len = dir.norm();
-    if ( len<1e-4 ) return; // in mm
+    if ( len <= minSegLen )
+        return;
     dir.Normalize();
 
     // voxel of the segment is the centroid

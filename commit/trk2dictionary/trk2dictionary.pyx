@@ -12,13 +12,13 @@ import time
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
-        char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shift, int points_to_skip,
+        char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shift, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False] ):
+cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
@@ -58,19 +58,26 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     flip_peaks : list of three boolean
         If necessary, flips peak orientations along each axis (default : no flipping).
+
+    min_seg_len : float
+        Discard segments <= than this length in mm (default : 1e-3 )
     """
     tic = time.time()
     print '\n-> Creating the dictionary from tractogram:'
     print '\t* Segment position = %s' % ( 'COMPUTE INTERSECTIONS' if do_intersect else 'CENTROID' )
     print '\t* Fiber shift      = %.3f (voxel-size units)' % fiber_shift
     print '\t* Points to skip   = %d' % points_to_skip
+    print '\t* Min segment len  = %.2e' % min_seg_len
+
+    if min_seg_len < 0 :
+        raise RuntimeError( 'min_seg_len must be >= 0' )
 
     print '\t* Loading data:'
 
     # fiber-tracts from .trk
     print '\t\t* tractogram'
     try :
-        _, trk_hdr = nibabel.trackvis.read( filename_trk, as_generator=True )
+        fib, trk_hdr = nibabel.trackvis.read( filename_trk )
     except :
         raise IOError( 'Track file not found' )
     Nx = trk_hdr['dim'][0]
@@ -139,13 +146,23 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     ret = trk2dictionary( filename_trk,
         trk_hdr['dim'][0], trk_hdr['dim'][1], trk_hdr['dim'][2],
         trk_hdr['voxel_size'][0], trk_hdr['voxel_size'][1], trk_hdr['voxel_size'][2],
-        trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shift, points_to_skip,
+        trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shift, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0 );
     if ret == 0 :
         print '   [ DICTIONARY not generated ]'
         return None
     print '   [ %.1f seconds ]' % ( time.time() - tic )
+
+    # create new TRK with only fibers in the WM mask
+    print '\t* generate tractogram: %s' % gen_trk
+    if gen_trk :
+        fibKept = []
+        file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )        
+        for i in range(trk_hdr['n_count']):
+            if file_kept[i]: 
+                fibKept.append( (fib[i][0],None, None) )
+        nibabel.trackvis.write( join(path_out,'dictionary_TRK_fibers.trk'), fibKept, trk_hdr )
 
     # save TDI and MASK maps
     affine = None

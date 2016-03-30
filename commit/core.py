@@ -321,8 +321,10 @@ class Evaluation :
 
         self.DICTIONARY['IC'] = {}
 
-        self.DICTIONARY['IC']['trkNorm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_trkNorm.dict'), dtype=np.float32 )
-        self.DICTIONARY['IC']['nF'] = self.DICTIONARY['IC']['trkNorm'].size
+        self.DICTIONARY['TRK'] = {}
+
+        self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
+        self.DICTIONARY['IC']['nF'] = self.DICTIONARY['TRK']['norm'].size
 
         self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
         self.DICTIONARY['IC']['n'] = self.DICTIONARY['IC']['fiber'].size
@@ -340,11 +342,13 @@ class Evaluation :
 
         self.DICTIONARY['IC']['len'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
 
+        self.DICTIONARY['TRK']['len'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
+
         if self.get_config('doNormalizeKernels') :
             # divide the length of each segment by the fiber length so that all the columns of the libear operator will have same length
             # NB: it works in conjunction with the normalization of the kernels
             sl = self.DICTIONARY['IC']['len']
-            tl = self.DICTIONARY['IC']['trkNorm']
+            tl = self.DICTIONARY['TRK']['norm']
             f  = self.DICTIONARY['IC']['fiber']
             for s in xrange(self.DICTIONARY['IC']['n']) :
                 sl[s] /= tl[ f[s] ]
