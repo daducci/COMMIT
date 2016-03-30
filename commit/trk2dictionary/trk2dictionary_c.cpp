@@ -28,9 +28,23 @@ class segKey
     {
         return oy<o.oy || (oy==o.oy && ox<o.ox) || (oy==o.oy && ox==o.ox && z<o.z) || (oy==o.oy && ox==o.ox && z==o.z && y<o.y) || (oy==o.oy && ox==o.ox && z==o.z && y==o.y && x<o.x);
     }
-    bool const operator ==(const segKey& o) const
+};
+
+class segInVoxKey
+{
+    public:
+    unsigned char x, y, z;
+    segInVoxKey(){}
+
+    void set(unsigned char _x, unsigned char _y, unsigned char _z)
     {
-        return oy<o.oy && ox==o.ox && z==o.z && y==o.y && x==o.x;
+        x  = _x;
+        y  = _y;
+        z  = _z;
+    }
+    bool const operator <(const segInVoxKey& o) const
+    {
+        return ( z<o.z) || ( z==o.z && y<o.y) || ( z==o.z && y==o.y && x<o.x);
     }
 };
 
@@ -63,12 +77,16 @@ int trk2dictionary(
     /*     IC compartments     */
     /*=========================*/
     float          fiber[3][MAX_FIB_LEN];
-    float          fiberLen;
+    float          fiberNorm;
     unsigned int   N, totICSegments = 0, totFibers = 0;
     Vector<double> P;
     std::string    filename;
     std::string    OUTPUT_path(path_out);
     std::map<segKey,float>::iterator it;
+
+	std::map<segInVoxKey,float> FiberNorm;
+	std::map<segInVoxKey,float>::iterator itNorm;
+	segInVoxKey         inVoxKey;
 
     printf( "\t* Exporting IC compartments:\n" );
 
@@ -87,8 +105,8 @@ int trk2dictionary(
     doIntersect   = c > 0;
 
     // open files
-    filename = OUTPUT_path+"/dictionary_IC_trkLen.dict";   FILE* pDict_IC_trkLen = fopen(filename.c_str(),"wb");
-    if ( !pDict_IC_trkLen )
+    filename = OUTPUT_path+"/dictionary_IC_trkNorm.dict";   FILE* pDict_IC_trkNorm = fopen(filename.c_str(),"wb");
+    if ( !pDict_IC_trkNorm )
     {
         printf( "\n[trk2dictionary] Unable to create output files" );
         return 0;
@@ -113,7 +131,7 @@ int trk2dictionary(
         if ( FiberSegments.size() > 0 )
         {
             // store data to files
-            fiberLen = 0;
+            fiberNorm = 0;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
@@ -124,9 +142,16 @@ int trk2dictionary(
                 fwrite( &(it->first.oy), 1, 1, pDict_IC_oy );
                 fwrite( &(it->second),   4, 1, pDict_IC_len );
                 ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
-                fiberLen += it->second;
+				inVoxKey.set( it->first.x, it->first.y, it->first.z );
+				FiberNorm[inVoxKey] += it->second;
             }
-            fwrite( &fiberLen,  1, 4, pDict_IC_trkLen );
+			for (itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
+            {
+				fiberNorm += pow(itNorm->second,2);
+			}
+			fiberNorm = sqrt(fiberNorm);
+			FiberNorm.clear();
+            fwrite( &fiberNorm,  1, 4, pDict_IC_trkNorm );
             totICSegments += FiberSegments.size();
             totFibers++;
         }
@@ -134,7 +159,7 @@ int trk2dictionary(
     PROGRESS.close();
 
     fclose( fpTRK );
-    fclose( pDict_IC_trkLen );
+    fclose( pDict_IC_trkNorm );
     fclose( pDict_IC_f );
     fclose( pDict_IC_vx );
     fclose( pDict_IC_vy );
