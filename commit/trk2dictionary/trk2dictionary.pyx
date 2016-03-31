@@ -18,7 +18,7 @@ cdef extern from "trk2dictionary_c.cpp":
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False], min_seg_len = 1e-3 ):
+cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
@@ -61,6 +61,9 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     min_seg_len : float
         Discard segments <= than this length in mm (default : 1e-3 )
+
+    gen_trk : boolean
+        If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
     """
     tic = time.time()
     print '\n-> Creating the dictionary from tractogram:'
@@ -77,7 +80,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     # fiber-tracts from .trk
     print '\t\t* tractogram'
     try :
-        _, trk_hdr = nibabel.trackvis.read( filename_trk, as_generator=True )
+        fib, trk_hdr = nibabel.trackvis.read( filename_trk )
     except :
         raise IOError( 'Track file not found' )
     Nx = trk_hdr['dim'][0]
@@ -153,6 +156,16 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         print '   [ DICTIONARY not generated ]'
         return None
     print '   [ %.1f seconds ]' % ( time.time() - tic )
+
+    # create new TRK with only fibers in the WM mask
+    print '\t* generate tractogram: %s' % gen_trk
+    if gen_trk :
+        fibKept = []
+        file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )        
+        for i in range(trk_hdr['n_count']):
+            if file_kept[i]: 
+                fibKept.append( (fib[i][0],None, None) )
+        nibabel.trackvis.write( join(path_out,'dictionary_TRK_fibers.trk'), fibKept, trk_hdr )
 
     # save TDI and MASK maps
     affine = None
