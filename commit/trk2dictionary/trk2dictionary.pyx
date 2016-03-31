@@ -80,7 +80,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     # fiber-tracts from .trk
     print '\t\t* tractogram'
     try :
-        fib, trk_hdr = nibabel.trackvis.read( filename_trk )
+        _, trk_hdr = nibabel.trackvis.read( filename_trk, as_generator=True )
     except :
         raise IOError( 'Track file not found' )
     Nx = trk_hdr['dim'][0]
@@ -155,17 +155,21 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     if ret == 0 :
         print '   [ DICTIONARY not generated ]'
         return None
-    print '   [ %.1f seconds ]' % ( time.time() - tic )
 
     # create new TRK with only fibers in the WM mask
-    print '\t* generate tractogram: %s' % gen_trk
     if gen_trk :
+        print '\t* Generate tractogram: '
+        fib, _ = nibabel.trackvis.read( filename_trk, as_generator=True )
         fibKept = []
-        file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )        
-        for i in range(trk_hdr['n_count']):
-            if file_kept[i]: 
-                fibKept.append( (fib[i][0],None, None) )
+        file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
+        ind = 0
+        for f in fib:
+            if file_kept[ind]: 
+                fibKept.append( (f[0],None, None) )
+            ind = ind+1
         nibabel.trackvis.write( join(path_out,'dictionary_TRK_fibers.trk'), fibKept, trk_hdr )
+        print '\t  [ %d fibers kept ]' % ind
+    print '   [ %.1f seconds ]' % ( time.time() - tic )
 
     # save TDI and MASK maps
     affine = None
