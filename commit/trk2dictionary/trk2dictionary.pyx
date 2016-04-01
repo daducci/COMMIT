@@ -80,7 +80,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     # fiber-tracts from .trk
     print '\t\t* tractogram'
     try :
-        _, trk_hdr = nibabel.trackvis.read( filename_trk, as_generator=True )
+        _, trk_hdr = nibabel.trackvis.read( filename_trk )
     except :
         raise IOError( 'Track file not found' )
     Nx = trk_hdr['dim'][0]
