@@ -158,7 +158,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     # create new TRK with only fibers in the WM mask
     if gen_trk :
-        print '\t* Generate tractogram: '
+        print '\t* Generate tractogram matching the dictionary: '
         fib, _ = nibabel.trackvis.read( filename_trk, as_generator=True )
         fibKept = []
         file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
