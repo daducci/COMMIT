@@ -78,7 +78,7 @@ int trk2dictionary(
     /*     IC compartments     */
     /*=========================*/
     float          fiber[3][MAX_FIB_LEN];
-    float          fiberNorm;
+    float          fiberNorm, fiberLen;
     unsigned int   N, totICSegments = 0, totFibers = 0;
     unsigned char  kept;
     Vector<double> P;
@@ -108,8 +108,8 @@ int trk2dictionary(
     minSegLen     = min_seg_len;
 
     // open files
-    filename = OUTPUT_path+"/dictionary_IC_trkNorm.dict";   FILE* pDict_IC_trkNorm = fopen(filename.c_str(),"wb");
-    if ( !pDict_IC_trkNorm )
+    filename = OUTPUT_path+"/dictionary_TRK_norm.dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");
+    if ( !pDict_TRK_norm )
     {
         printf( "\n[trk2dictionary] Unable to create output files" );
         return 0;
@@ -121,7 +121,8 @@ int trk2dictionary(
     filename = OUTPUT_path+"/dictionary_IC_ox.dict";       FILE* pDict_IC_ox     = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_oy.dict";       FILE* pDict_IC_oy     = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len    = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_trkKept.dict";     FILE* pDict_trkKept   = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len   = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept  = fopen(filename.c_str(),"wb");
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
@@ -137,6 +138,7 @@ int trk2dictionary(
         {
             // add segments to files
             fiberNorm = 0;
+			fiberLen = 0;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
@@ -149,6 +151,7 @@ int trk2dictionary(
                 ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
                 inVoxKey.set( it->first.x, it->first.y, it->first.z );
                 FiberNorm[inVoxKey] += it->second;
+				fiberLen += it->second;
             }
             for (itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
             {
@@ -156,17 +159,18 @@ int trk2dictionary(
             }
             fiberNorm = sqrt(fiberNorm);
             FiberNorm.clear();
-            fwrite( &fiberNorm,  1, 4, pDict_IC_trkNorm ); // actual length considered in optimization
+            fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
+			fwrite( &fiberLen,  1, 4, pDict_TRK_len );
             totICSegments += FiberSegments.size();
             totFibers++;
             kept = 1;
         }
-        fwrite( &kept, 1, 1, pDict_trkKept );
+        fwrite( &kept, 1, 1, pDict_TRK_kept );
     }
     PROGRESS.close();
 
     fclose( fpTRK );
-    fclose( pDict_IC_trkNorm );
+    fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
     fclose( pDict_IC_vx );
     fclose( pDict_IC_vy );
@@ -174,7 +178,8 @@ int trk2dictionary(
     fclose( pDict_IC_ox );
     fclose( pDict_IC_oy );
     fclose( pDict_IC_len );
-    fclose( pDict_trkKept );
+    fclose( pDict_TRK_len );
+    fclose( pDict_TRK_kept );
 
     printf("\t  [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
 
