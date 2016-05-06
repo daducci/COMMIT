@@ -682,16 +682,22 @@ class Evaluation :
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
+        # x is the x of the original problem
+        # self.x is the x preconditioned
+        # x_map is the x used to generate the intra-cellular, extra-cellular and isotropic maps (not divided by norm of the fiber)
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
             norm1 = np.tile(self.KERNELS['wmr_norm'],(nF,1)).T.ravel()
             norm2 = np.tile(self.KERNELS['wmh_norm'],(nE,1)).T.ravel()
             norm3 = np.tile(self.KERNELS['iso_norm'],(nV,1)).T.ravel()
-            x = self.x / np.hstack( (norm1,norm2,norm3) )
+            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm']).T.ravel()
+            x_map = self.x / np.hstack( (norm1,norm2,norm3) )
+            x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
+            x_map = self.x
             x = self.x
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-            cPickle.dump( [self.CONFIG, x], fid, protocol=2 )
+            cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
         print '[ OK ]'
 
         # Map of wovelwise errors
@@ -735,7 +741,7 @@ class Evaluation :
         niiMAP_img[:] = 0
         if len(self.KERNELS['wmr']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = x[:offset].reshape( (-1,nF) ).sum( axis=0 )
+            tmp = x_map[:offset].reshape( (-1,nF) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
                 weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
             ).astype(np.float32)
@@ -748,7 +754,7 @@ class Evaluation :
         niiMAP_img[:] = 0
         if len(self.KERNELS['wmh']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
+            tmp = x_map[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_EC.nii.gz') )
@@ -759,7 +765,7 @@ class Evaluation :
         niiMAP_img[:] = 0
         if len(self.KERNELS['iso']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-            xv = x[offset:].reshape( (-1,nV) ).sum( axis=0 )
+            xv = x_map[offset:].reshape( (-1,nV) ).sum( axis=0 )
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
         print '   [ OK ]'
