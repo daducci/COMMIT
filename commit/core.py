@@ -633,6 +633,9 @@ class Evaluation :
             raise RuntimeError( 'Threads not set; call "set_threads()" first.' )
         if self.A is None :
             raise RuntimeError( 'Operator not built; call "build_operator()" first.' )
+        if x0 is not None :
+            if x0.shape[0] != self.A.shape[1] :
+                raise RuntimeError( 'x0: dimension do not match' )
 
         self.CONFIG['optimization'] = {}
         self.CONFIG['optimization']['tol_fun']  = tol_fun
