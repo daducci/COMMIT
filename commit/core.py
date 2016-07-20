@@ -611,7 +611,7 @@ class Evaluation :
         print '   [ %.1f seconds ]' % ( time.time() - tic )
 
 
-    def fit( self, tol_fun = 1e-3, max_iter = 100, verbose = 1 ) :
+    def fit( self, tol_fun = 1e-3, max_iter = 100, verbose = 1, x0 = None ) :
         """Fit the model to the data.
 
         Parameters
@@ -633,6 +633,9 @@ class Evaluation :
             raise RuntimeError( 'Threads not set; call "set_threads()" first.' )
         if self.A is None :
             raise RuntimeError( 'Operator not built; call "build_operator()" first.' )
+        if x0 is not None :
+            if x0.shape[0] != self.A.shape[1] :
+                raise RuntimeError( 'x0: dimension do not match' )
 
         self.CONFIG['optimization'] = {}
         self.CONFIG['optimization']['tol_fun']  = tol_fun
@@ -643,7 +646,7 @@ class Evaluation :
         t = time.time()
         print '\n-> Fit model using "nnls":'
         Y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        self.x = commit.solvers.nnls( Y, self.A, tol_fun=tol_fun, max_iter=max_iter, verbose=verbose )
+        self.x = commit.solvers.nnls( Y, self.A, tol_fun=tol_fun, max_iter=max_iter, verbose=verbose, x0=x0 )
         self.CONFIG['optimization']['fit_time'] = time.time()-t
         print '   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) )
 
