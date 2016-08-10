@@ -12,13 +12,13 @@ import time
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
-        char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shift, int points_to_skip, float min_seg_len,
+        char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
+cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shiftX = 0, fiber_shiftY = 0, fiber_shiftZ = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
@@ -68,7 +68,9 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     tic = time.time()
     print '\n-> Creating the dictionary from tractogram:'
     print '\t* Segment position = %s' % ( 'COMPUTE INTERSECTIONS' if do_intersect else 'CENTROID' )
-    print '\t* Fiber shift      = %.3f (voxel-size units)' % fiber_shift
+    print '\t* Fiber shift X    = %.3f (voxel-size units)' % fiber_shiftX
+    print '\t* Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY
+    print '\t* Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ
     print '\t* Points to skip   = %d' % points_to_skip
     print '\t* Min segment len  = %.2e' % min_seg_len
 
@@ -149,7 +151,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     ret = trk2dictionary( filename_trk,
         trk_hdr['dim'][0], trk_hdr['dim'][1], trk_hdr['dim'][2],
         trk_hdr['voxel_size'][0], trk_hdr['voxel_size'][1], trk_hdr['voxel_size'][2],
-        trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shift, points_to_skip, min_seg_len,
+        trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0 );
     if ret == 0 :
