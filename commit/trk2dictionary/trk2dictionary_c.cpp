@@ -69,7 +69,7 @@ unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 // Function called by CYTHON
 // =========================
 int trk2dictionary(
-    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shift, int points_to_skip, float min_seg_len,
+    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, 		float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c
 )
@@ -100,9 +100,9 @@ int trk2dictionary(
     dim.Set( Nx, Ny, Nz );
     pixdim.Set( Px, Py, Pz );
     nPointsToSkip = points_to_skip;
-    fiberShiftXmm = fiber_shift * pixdim.x; // shift in mm for the coordinates
-    fiberShiftYmm = fiber_shift * pixdim.y;
-    fiberShiftZmm = fiber_shift * pixdim.z;
+    fiberShiftXmm = fiber_shiftX * pixdim.x; // shift in mm for the coordinates
+    fiberShiftYmm = fiber_shiftY * pixdim.y;
+    fiberShiftZmm = fiber_shiftZ * pixdim.z;
     ptrMASK       = _ptrMASK;
     doIntersect   = c > 0;
     minSegLen     = min_seg_len;
