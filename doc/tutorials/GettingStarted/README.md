@@ -35,7 +35,9 @@ The output should be something like this:
 ```
 -> Creating the dictionary from tractogram:
 	* Segment position = COMPUTE INTERSECTIONS
-	* Fiber shift      = 0.500 (voxel-size units)
+	* Fiber shift X    = 0.500 (voxel-size units)
+	* Fiber shift Y    = 0.500 (voxel-size units)
+	* Fiber shift Z    = 0.500 (voxel-size units)
 	* Points to skip   = 0
 	* Loading data:
 		* tractogram
