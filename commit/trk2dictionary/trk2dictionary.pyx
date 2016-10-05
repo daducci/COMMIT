@@ -18,7 +18,7 @@ cdef extern from "trk2dictionary_c.cpp":
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shiftX = 0, fiber_shiftY = 0, fiber_shiftZ = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
+cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, fiber_shiftX = 0, fiber_shiftY = 0, fiber_shiftZ = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
@@ -46,9 +46,28 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         If False then the centroid of the segment is used as its voxel position.
 
     fiber_shift : float
-        If necessary, apply a translation to fiber coordinates (default : 0) to account
+        If necessary, apply a translation to fiber coordinates in X, Y, Z directions (default : 0) to account
         for differences between the reference system of the tracking algorithm and COMMIT.
         The value is specified in voxel units, eg 0.5 translates by half voxel.
+        Do noth use if you are using fiber_shiftX or fiber_shiftY or fiber_shiftZ.
+
+    fiber_shiftX : float
+        If necessary, apply a translation to fiber coordinates in X direction (default : 0) to account
+        for differences between the reference system of the tracking algorithm and COMMIT.
+        The value is specified in voxel units, eg 0.5 translates by half voxel.
+        Do noth use if you are using fiber_shift.
+
+    fiber_shifY : float
+        If necessary, apply a translation to fiber coordinates in Y direction (default : 0) to account
+        for differences between the reference system of the tracking algorithm and COMMIT.
+        The value is specified in voxel units, eg 0.5 translates by half voxel.
+        Do noth use if you are using fiber_shift.
+
+    fiber_shiftZ : float
+        If necessary, apply a translation to fiber coordinates in Z direction (default : 0) to account
+        for differences between the reference system of the tracking algorithm and COMMIT.
+        The value is specified in voxel units, eg 0.5 translates by half voxel.
+        Do noth use if you are using fiber_shift.
 
     points_to_skip : integer
         If necessary, discard first points at beginning/end of a fiber (default : 0).
@@ -65,6 +84,15 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     gen_trk : boolean
         If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
     """
+    # check conflicts of fiber_shift
+    if (fiber_shift != 0 and fiber_shiftX != 0) or (fiber_shift != 0 and fiber_shiftY != 0) or (fiber_shift != 0 and fiber_shiftZ != 0) :
+        raise RuntimeError( 'Conflict of fiber_shift. Use fiber_shift or fiber_shiftX, fiber_shiftY, fiber_shiftZ. Do not use both.' )
+
+    if fiber_shift != 0 and fiber_shiftX == 0 and fiber_shiftY == 0 and fiber_shiftZ == 0 :
+        fiber_shiftX = fiber_shift
+        fiber_shiftY = fiber_shift
+        fiber_shiftZ = fiber_shift
+
     tic = time.time()
     print '\n-> Creating the dictionary from tractogram:'
     print '\t* Segment position = %s' % ( 'COMPUTE INTERSECTIONS' if do_intersect else 'CENTROID' )
