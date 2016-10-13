@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 
-def nnls( y, A, At = None, tol_fun = 1e-4, max_iter = 100, verbose = 1, x0 = None ) :
+def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose = 1, x0 = None ) :
     """Solve non negative least squares problem of the following form:
 
        min 0.5*||y-A x||_2^2 s.t. x >= 0
@@ -66,6 +66,10 @@ def nnls( y, A, At = None, tol_fun = 1e-4, max_iter = 100, verbose = 1, x0 = Non
     mu = 1.9 / L
 
     # Main loop
+    if verbose >= 1 :
+        print "      |   Cost function    Abs error      Rel error        Abs x          Rel x"
+        print "------|----------------------------------------------------------------------------"
+
     while True :
         if verbose >= 1 :
             print "%4d  |" % iter,
@@ -101,12 +105,24 @@ def nnls( y, A, At = None, tol_fun = 1e-4, max_iter = 100, verbose = 1, x0 = Non
             curr_obj = 0.5 * np.linalg.norm(res)**2
 
         # Global stopping criterion
-        rel_obj  = np.abs(curr_obj - prev_obj) / curr_obj
+        abs_obj = np.abs(curr_obj - prev_obj)
+        rel_obj = abs_obj / curr_obj
+        abs_x   = np.linalg.norm(x - prev_x)
+        rel_x   = abs_x / np.linalg.norm(x)
         if verbose >= 1 :
-            print "  %13.7e  %13.7e" % ( np.sqrt(2.0*curr_obj), rel_obj )
+            print "  %13.7e  %13.7e  %13.7e  %13.7e  %13.7e" % ( np.sqrt(2.0*curr_obj), abs_obj, rel_obj, abs_x, rel_x )
 
-        if rel_obj < tol_fun :
+        if abs_obj < np.finfo(float).eps :
+            criterion = "ABS_OBJ"
+            break
+        elif rel_obj < tol_fun :
             criterion = "REL_OBJ"
+            break
+        elif abs_x < np.finfo(float).eps :
+            criterion = "ABS_X"
+            break
+        elif rel_x < tol_x :
+            criterion = "REL_X"
             break
         elif iter >= max_iter :
             criterion = "MAX_IT"
