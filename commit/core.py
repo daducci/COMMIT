@@ -112,7 +112,7 @@ class Evaluation :
             print '\t* Normalizing to b0...',
             sys.stdout.flush()
             mean = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
-            idx = mean < 1
+            idx = mean <= 0
             mean[ idx ] = 1
             mean = 1 / mean
             mean[ idx ] = 0
