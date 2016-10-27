@@ -690,9 +690,9 @@ class Evaluation :
         # x_map is the x used to generate the intra-cellular, extra-cellular and isotropic maps (not divided by norm of the fiber)
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
-            norm1 = np.repeat(self.KERNELS['wmr_norm'],(nF))
-            norm2 = np.repeat(self.KERNELS['wmh_norm'],(nE))
-            norm3 = np.repeat(self.KERNELS['iso_norm'],(nV))
+            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
+            norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
+            norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
             norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
             x_map = self.x / np.hstack( (norm1,norm2,norm3) )
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
