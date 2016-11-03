@@ -123,7 +123,7 @@ class Evaluation :
         if self.get_config('doMergeB0') :
             print '\t* Merging multiple b0 volume(s)...',
             mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
-            self.niiDWI_img = np.concatenate( (mean,self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
+            self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
         else :
             print '\t* Keeping all b0 volume(s)...',
         print '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape
@@ -237,7 +237,6 @@ class Evaluation :
                     for i in xrange(nIC) :
                         self.KERNELS['wmr'][i,j,k,:] -= self.KERNELS['wmr'][i,j,k,:].mean()
                     for i in xrange(nEC) :
-                        print nEC
                         self.KERNELS['wmh'][i,j,k,:] -= self.KERNELS['wmh'][i,j,k,:].mean()
             for i in xrange(nISO) :
                 self.KERNELS['iso'][i] -= self.KERNELS['iso'][i].mean()
