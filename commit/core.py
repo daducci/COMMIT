@@ -123,7 +123,7 @@ class Evaluation :
         if self.get_config('doMergeB0') :
             print '\t* Merging multiple b0 volume(s)...',
             mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
-            self.niiDWI_img = np.concatenate( (self.niiDWI_img[:,:,:,self.scheme.dwi_idx], mean), axis=3 )
+            self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
         else :
             print '\t* Keeping all b0 volume(s)...',
         print '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape
@@ -216,22 +216,11 @@ class Evaluation :
         idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
 
         # Dispatch to the right handler for each model
-        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT )
+        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0') )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
 
-        # Remove multiple b0(s)
-        if self.get_config('doMergeB0') :
-            print '\t* Merging multiple b0 volume(s)...',
-            ones = np.expand_dims( np.ones(self.KERNELS['wmr'].shape[0:3],dtype=np.float32), axis=3 )
-            self.KERNELS['wmr'] = np.concatenate( (self.KERNELS['wmr'][:,:,:,self.scheme.dwi_idx], ones), axis=3 )
-            ones = np.expand_dims( np.ones(self.KERNELS['wmh'].shape[0:3],dtype=np.float32), axis=3 )
-            self.KERNELS['wmh'] = np.concatenate( (self.KERNELS['wmh'][:,:,:,self.scheme.dwi_idx], ones), axis=3 )
-            ones = np.expand_dims( np.ones(self.KERNELS['iso'].shape[0:1],dtype=np.float32), axis=1 )
-            self.KERNELS['iso'] = np.concatenate( (self.KERNELS['iso'][:,self.scheme.dwi_idx], ones), axis=1 )
-        else :
-            print '\t* Keeping all b0 volume(s)...',
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
@@ -248,7 +237,6 @@ class Evaluation :
                     for i in xrange(nIC) :
                         self.KERNELS['wmr'][i,j,k,:] -= self.KERNELS['wmr'][i,j,k,:].mean()
                     for i in xrange(nEC) :
-                        print nEC
                         self.KERNELS['wmh'][i,j,k,:] -= self.KERNELS['wmh'][i,j,k,:].mean()
             for i in xrange(nISO) :
                 self.KERNELS['iso'][i] -= self.KERNELS['iso'][i].mean()
