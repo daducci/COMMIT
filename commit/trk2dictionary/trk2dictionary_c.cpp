@@ -12,10 +12,11 @@
 class segKey
 {
     public:
-    unsigned char x, y, z, ox, oy;
+    unsigned short x, y, z;
+    unsigned char ox, oy;
     segKey(){}
 
-    void set(unsigned char _x, unsigned char _y, unsigned char _z, unsigned char _ox, unsigned char _oy)
+    void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned char _ox, unsigned char _oy)
     {
         x  = _x;
         y  = _y;
@@ -33,10 +34,10 @@ class segKey
 class segInVoxKey
 {
     public:
-    unsigned char x, y, z;
+    unsigned short x, y, z;
     segInVoxKey(){}
 
-    void set(unsigned char _x, unsigned char _y, unsigned char _z)
+    void set(unsigned short _x, unsigned short _y, unsigned short _z)
     {
         x  = _x;
         y  = _y;
@@ -138,7 +139,7 @@ int trk2dictionary(
         {
             // add segments to files
             fiberNorm = 0;
-			fiberLen = 0;
+            fiberLen = 0;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
@@ -151,7 +152,7 @@ int trk2dictionary(
                 ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
                 inVoxKey.set( it->first.x, it->first.y, it->first.z );
                 FiberNorm[inVoxKey] += it->second;
-				fiberLen += it->second;
+                fiberLen += it->second;
             }
             for (itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
             {
@@ -160,7 +161,7 @@ int trk2dictionary(
             fiberNorm = sqrt(fiberNorm);
             FiberNorm.clear();
             fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
-			fwrite( &fiberLen,  1, 4, pDict_TRK_len );
+            fwrite( &fiberLen,  1, 4, pDict_TRK_len );
             totICSegments += FiberSegments.size();
             totFibers++;
             kept = 1;
