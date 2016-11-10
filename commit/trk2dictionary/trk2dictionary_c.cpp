@@ -143,9 +143,9 @@ int trk2dictionary(
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
-                fwrite( &(it->first.x),  1, 1, pDict_IC_vx );
-                fwrite( &(it->first.y),  1, 1, pDict_IC_vy );
-                fwrite( &(it->first.z),  1, 1, pDict_IC_vz );
+                fwrite( &(it->first.x),  2, 1, pDict_IC_vx );
+                fwrite( &(it->first.y),  2, 1, pDict_IC_vy );
+                fwrite( &(it->first.z),  2, 1, pDict_IC_vz );
                 fwrite( &(it->first.ox), 1, 1, pDict_IC_ox );
                 fwrite( &(it->first.oy), 1, 1, pDict_IC_oy );
                 fwrite( &(it->second),   4, 1, pDict_IC_len );
