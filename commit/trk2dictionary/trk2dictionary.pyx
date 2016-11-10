@@ -38,8 +38,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     filename_mask : string
         Path to a binary mask to restrict the analysis to specific areas. Segments
-        outside this mask are discarded. If not specified, the mask is created from
-        all voxels crossed by tracts.
+        outside this mask are discarded. If not specified (default), the mask is created from
+        all voxels intersected by the tracts.
 
     do_intersect : boolean
         If True then fiber segments that intersect voxel boundaries are splitted (default).
@@ -67,7 +67,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
     """
 
-    # check conflicts of fiber_shift       
+    # check conflicts of fiber_shift
     if np.isscalar(fiber_shift) :
         fiber_shiftX = fiber_shift
         fiber_shiftY = fiber_shift
@@ -108,6 +108,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     print '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz )
     print '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz )
     print '\t\t\t- %d fibers' % trk_hdr['n_count']
+    if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
+        raise RuntimeError( 'The max dim size is 2^16 voxels' )
 
     # white-matter mask
     cdef float* ptrMASK
@@ -180,7 +182,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
         ind = 0
         for f in fib:
-            if file_kept[ind]: 
+            if file_kept[ind]:
                 fibKept.append( (f[0],None, None) )
             ind = ind+1
         nibabel.trackvis.write( join(path_out,'dictionary_TRK_fibers.trk'), fibKept, trk_hdr )
@@ -188,9 +190,12 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     print '   [ %.1f seconds ]' % ( time.time() - tic )
 
     # save TDI and MASK maps
-    affine = None
-    if filename_peaks is not None :
+    if filename_mask is not None :
+        affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()
+    elif filename_peaks is not None :
         affine = niiPEAKS.affine if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_affine()
+    else :
+        affine = np.diag( [Px, Py, Pz, 1] )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img, affine )
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )

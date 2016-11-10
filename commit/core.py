@@ -322,9 +322,9 @@ class Evaluation :
 
         self.DICTIONARY['IC']['n'] = self.DICTIONARY['IC']['fiber'].size
 
-        vx = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
-        vy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
-        vz = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
+        vx = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vx.dict'), dtype=np.uint16 ).astype(np.uint32)
+        vy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vy.dict'), dtype=np.uint16 ).astype(np.uint32)
+        vz = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vz.dict'), dtype=np.uint16 ).astype(np.uint32)
         self.DICTIONARY['IC']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
         del vx, vy, vz
 
