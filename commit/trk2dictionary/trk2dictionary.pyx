@@ -108,7 +108,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     print '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz )
     print '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz )
     print '\t\t\t- %d fibers' % trk_hdr['n_count']
-    if Nx > 255 or Nz > 255 or Nz > 255 :
+    if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         raise RuntimeError( 'The max dim size is 2^16 voxels' )
 
     # white-matter mask
