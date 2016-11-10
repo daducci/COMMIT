@@ -190,9 +190,12 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     print '   [ %.1f seconds ]' % ( time.time() - tic )
 
     # save TDI and MASK maps
-    affine = None
-    if filename_peaks is not None :
+    if filename_mask is not None :
+        affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()
+    elif filename_peaks is not None :
         affine = niiPEAKS.affine if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_affine()
+    else :
+        affine = np.diag( [Px, Py, Pz, 1] )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img, affine )
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
