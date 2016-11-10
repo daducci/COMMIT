@@ -38,8 +38,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     filename_mask : string
         Path to a binary mask to restrict the analysis to specific areas. Segments
-        outside this mask are discarded. If not specified, the mask is created from
-        all voxels crossed by tracts.
+        outside this mask are discarded. If not specified (default), the mask is created from
+        all voxels intersected by the tracts.
 
     do_intersect : boolean
         If True then fiber segments that intersect voxel boundaries are splitted (default).
