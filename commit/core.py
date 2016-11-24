@@ -102,6 +102,9 @@ class Evaluation :
         if self.scheme.nS != self.niiDWI_img.shape[3] :
             raise ValueError( 'Scheme does not match with DWI data' )
 
+        if self.scheme.dwi_count == 0 :
+            raise ValueError( 'There are no DWI volumes in the data' )
+
         print '   [ %.1f seconds ]' % ( time.time() - tic )
 
         # Preprocessing
@@ -109,21 +112,27 @@ class Evaluation :
         print '\n-> Preprocessing:'
 
         if self.get_config('doNormalizeSignal') :
-            print '\t* Normalizing to b0...',
-            sys.stdout.flush()
-            mean = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
-            idx = mean <= 0
-            mean[ idx ] = 1
-            mean = 1 / mean
-            mean[ idx ] = 0
-            for i in xrange(self.scheme.nS) :
-                self.niiDWI_img[:,:,:,i] *= mean
+            if self.scheme.b0_count > 0 :
+                print '\t* Normalizing to b0...',
+                sys.stdout.flush()
+                mean = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
+                idx = mean <= 0
+                mean[ idx ] = 1
+                mean = 1 / mean
+                mean[ idx ] = 0
+                for i in xrange(self.scheme.nS) :
+                    self.niiDWI_img[:,:,:,i] *= mean
+            else :
+                print '\t* There are no b0 volume(s) for normalization...',
             print '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() )
 
         if self.get_config('doMergeB0') :
-            print '\t* Merging multiple b0 volume(s)...',
-            mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
-            self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
+            if self.scheme.b0_count > 1 :
+                print '\t* Merging multiple b0 volume(s)...',
+                mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
+                self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
+            else :
+                print '\t* There are no multiple b0 volume(s) to be merged...',
         else :
             print '\t* Keeping all b0 volume(s)...',
         print '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape
