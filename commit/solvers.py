@@ -1,6 +1,9 @@
 import numpy as np
 import sys
 
+eps = np.finfo(float).eps
+
+
 def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose = 1, x0 = None ) :
     """Solve non negative least squares problem of the following form:
 
@@ -22,6 +25,11 @@ def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose
     tol_fun : double, optional (default: 1e-4).
         Minimum relative change of the objective value. The algorithm stops if:
                | f(x(t)) - f(x(t-1)) | / f(x(t)) < tol_fun,
+        where x(t) is the estimate of the solution at iteration t.
+
+    tol_x : double, optional (default: 1e-9).
+        Minimum relative change of the solution x. The algorithm stops if:
+               || x(t) - x(t-1) || / || x(t) || < tol_x,
         where x(t) is the estimate of the solution at iteration t.
 
     max_iter : integer, optional (default: 100).
@@ -67,8 +75,8 @@ def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose
 
     # Main loop
     if verbose >= 1 :
-        print "      |   Cost function    Abs error      Rel error        Abs x          Rel x"
-        print "------|----------------------------------------------------------------------------"
+        print "      |     ||Ax-y||     |  Cost function    Abs error      Rel error    |     Abs x          Rel x"
+        print "------|------------------|-----------------------------------------------|------------------------------"
 
     while True :
         if verbose >= 1 :
@@ -108,17 +116,17 @@ def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose
         abs_obj = np.abs(curr_obj - prev_obj)
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
-        rel_x   = abs_x / np.linalg.norm(x)
+        rel_x   = abs_x / ( np.linalg.norm(x) + eps )
         if verbose >= 1 :
-            print "  %13.7e  %13.7e  %13.7e  %13.7e  %13.7e" % ( np.sqrt(2.0*curr_obj), abs_obj, rel_obj, abs_x, rel_x )
+            print "  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( np.sqrt(2.0*curr_obj), curr_obj, abs_obj, rel_obj, abs_x, rel_x )
 
-        if abs_obj < np.finfo(float).eps :
+        if abs_obj < eps :
             criterion = "ABS_OBJ"
             break
         elif rel_obj < tol_fun :
             criterion = "REL_OBJ"
             break
-        elif abs_x < np.finfo(float).eps :
+        elif abs_x < eps :
             criterion = "ABS_X"
             break
         elif rel_x < tol_x :
@@ -144,6 +152,6 @@ def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose
         qfval = 0.5 * np.linalg.norm(res)**2
 
     if verbose >= 1 :
-        print "\t< Stopping criterion: %s >" % criterion
+        print "< Stopping criterion: %s >" % criterion
 
     return x
