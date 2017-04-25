@@ -84,6 +84,8 @@ class Evaluation :
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = self.niiDWI.get_data().astype(np.float32)
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
+        if hdr['dim'][0] == 3:
+            self.niiDWI_img = np.expand_dims(self.niiDWI_img,3)
         self.set_config('dim', self.niiDWI_img.shape[0:3])
         self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
         print '\t\t- dim    = %d x %d x %d x %d' % self.niiDWI_img.shape
@@ -126,15 +128,13 @@ class Evaluation :
                 print '\t* There are no b0 volume(s) for normalization...',
             print '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() )
 
-        if self.get_config('doMergeB0') :
-            if self.scheme.b0_count > 1 :
+        if self.scheme.b0_count > 1 :
+            if self.get_config('doMergeB0') :
                 print '\t* Merging multiple b0 volume(s)...',
                 mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                 self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
             else :
-                print '\t* There are no multiple b0 volume(s) to be merged...',
-        else :
-            print '\t* Keeping all b0 volume(s)...',
+                print '\t* Keeping all b0 volume(s)...',
         print '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape
 
         if self.get_config('doDemean') :
