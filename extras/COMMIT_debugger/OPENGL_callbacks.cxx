@@ -32,6 +32,7 @@ void PrintConfig()
     printf( "\t- MAP_opacity = %.1f\n", MAP_opacity );
     printf( "\n" );
     printf( "\t- PEAKS_doNormalize = %s\n", PEAKS_doNormalize?"true":"false" );
+    printf( "\t- PEAKS_use_affine = %s\n", PEAKS_use_affine?"true":"false" );
     printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
     printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
     printf( "\t- PEAKS_width = %.1f\n", PEAKS_width );
@@ -83,6 +84,7 @@ void GLUT__keyboard( unsigned char key, GLint x, GLint y )
 
         case '0': showAxes = 1 - showAxes; break;
 
+        case 'a': PEAKS_use_affine = 1 - PEAKS_use_affine;  break;
         case 'x': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
         case 'y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
         case 'z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
@@ -410,9 +412,21 @@ void GLUT__display( void )
                     normMax = 0;
                     for(d=0; d<PEAKS_n; d++)
                     {
-                        dir.x = (*niiPEAKS->img)(x,y,z,3*d+0);
-                        dir.y = (*niiPEAKS->img)(x,y,z,3*d+1);
-                        dir.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        col.x = (*niiPEAKS->img)(x,y,z,3*d+0); // use "col" as tmp variable
+                        col.y = (*niiPEAKS->img)(x,y,z,3*d+1);
+                        col.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        if ( PEAKS_use_affine )
+                        {
+                            dir.x = col.x * ((float*)PEAKS_affine)[0] + col.y * ((float*)PEAKS_affine)[1] + col.z * ((float*)PEAKS_affine)[2];
+                            dir.y = col.x * ((float*)PEAKS_affine)[3] + col.y * ((float*)PEAKS_affine)[4] + col.z * ((float*)PEAKS_affine)[5];
+                            dir.z = col.x * ((float*)PEAKS_affine)[6] + col.y * ((float*)PEAKS_affine)[7] + col.z * ((float*)PEAKS_affine)[8];
+                        }
+                        else
+                        {
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
+                        }
                         norms[d] = dir.norm();
                         if ( norms[d] > normMax )
                             normMax = norms[d];
@@ -423,9 +437,24 @@ void GLUT__display( void )
                         if ( norms[d] < PEAKS_thr*normMax )
                             continue;
 
-                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
-                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
-                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+                        col.x = (*niiPEAKS->img)(x,y,z,3*d+0); // use "col" as tmp variable
+                        col.y = (*niiPEAKS->img)(x,y,z,3*d+1);
+                        col.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        if ( PEAKS_use_affine )
+                        {
+                            dir.x = col.x * ((float*)PEAKS_affine)[0] + col.y * ((float*)PEAKS_affine)[1] + col.z * ((float*)PEAKS_affine)[2];
+                            dir.y = col.x * ((float*)PEAKS_affine)[3] + col.y * ((float*)PEAKS_affine)[4] + col.z * ((float*)PEAKS_affine)[5];
+                            dir.z = col.x * ((float*)PEAKS_affine)[6] + col.y * ((float*)PEAKS_affine)[7] + col.z * ((float*)PEAKS_affine)[8];
+                        }
+                        else
+                        {
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
+                        }
+                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * dir.x / norms[d];
+                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * dir.y / norms[d];
+                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * dir.z / norms[d];
 
                         if ( PEAKS_doNormalize )
                         {
@@ -491,9 +520,21 @@ void GLUT__display( void )
                     normMax = 0;
                     for(d=0; d<PEAKS_n; d++)
                     {
-                        dir.x = (*niiPEAKS->img)(x,y,z,3*d+0);
-                        dir.y = (*niiPEAKS->img)(x,y,z,3*d+1);
-                        dir.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        col.x = (*niiPEAKS->img)(x,y,z,3*d+0); // use "col" as tmp variable
+                        col.y = (*niiPEAKS->img)(x,y,z,3*d+1);
+                        col.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        if ( PEAKS_use_affine )
+                        {
+                            dir.x = col.x * ((float*)PEAKS_affine)[0] + col.y * ((float*)PEAKS_affine)[1] + col.z * ((float*)PEAKS_affine)[2];
+                            dir.y = col.x * ((float*)PEAKS_affine)[3] + col.y * ((float*)PEAKS_affine)[4] + col.z * ((float*)PEAKS_affine)[5];
+                            dir.z = col.x * ((float*)PEAKS_affine)[6] + col.y * ((float*)PEAKS_affine)[7] + col.z * ((float*)PEAKS_affine)[8];
+                        }
+                        else
+                        {
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
+                        }
                         norms[d] = dir.norm();
                         if ( norms[d] > normMax )
                             normMax = norms[d];
@@ -504,9 +545,24 @@ void GLUT__display( void )
                         if ( norms[d] < normMax*PEAKS_thr )
                             continue;
 
-                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
-                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
-                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+                        col.x = (*niiPEAKS->img)(x,y,z,3*d+0); // use "col" as tmp variable
+                        col.y = (*niiPEAKS->img)(x,y,z,3*d+1);
+                        col.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        if ( PEAKS_use_affine )
+                        {
+                            dir.x = col.x * ((float*)PEAKS_affine)[0] + col.y * ((float*)PEAKS_affine)[1] + col.z * ((float*)PEAKS_affine)[2];
+                            dir.y = col.x * ((float*)PEAKS_affine)[3] + col.y * ((float*)PEAKS_affine)[4] + col.z * ((float*)PEAKS_affine)[5];
+                            dir.z = col.x * ((float*)PEAKS_affine)[6] + col.y * ((float*)PEAKS_affine)[7] + col.z * ((float*)PEAKS_affine)[8];
+                        }
+                        else
+                        {
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
+                        }
+                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * dir.x / norms[d];
+                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * dir.y / norms[d];
+                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * dir.z / norms[d];
 
                         if ( PEAKS_doNormalize )
                         {
@@ -573,9 +629,21 @@ void GLUT__display( void )
                     normMax = 0;
                     for(d=0; d<PEAKS_n; d++)
                     {
-                        dir.x = (*niiPEAKS->img)(x,y,z,3*d+0);
-                        dir.y = (*niiPEAKS->img)(x,y,z,3*d+1);
-                        dir.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        col.x = (*niiPEAKS->img)(x,y,z,3*d+0); // use "col" as tmp variable
+                        col.y = (*niiPEAKS->img)(x,y,z,3*d+1);
+                        col.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        if ( PEAKS_use_affine )
+                        {
+                            dir.x = col.x * ((float*)PEAKS_affine)[0] + col.y * ((float*)PEAKS_affine)[1] + col.z * ((float*)PEAKS_affine)[2];
+                            dir.y = col.x * ((float*)PEAKS_affine)[3] + col.y * ((float*)PEAKS_affine)[4] + col.z * ((float*)PEAKS_affine)[5];
+                            dir.z = col.x * ((float*)PEAKS_affine)[6] + col.y * ((float*)PEAKS_affine)[7] + col.z * ((float*)PEAKS_affine)[8];
+                        }
+                        else
+                        {
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
+                        }
                         norms[d] = dir.norm();
                         if ( norms[d] > normMax )
                             normMax = norms[d];
@@ -586,9 +654,24 @@ void GLUT__display( void )
                         if ( norms[d] < normMax*PEAKS_thr )
                             continue;
 
-                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+0) / norms[d];
-                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+1) / norms[d];
-                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * (*niiPEAKS->img)(x,y,z,3*d+2) / norms[d];
+                        col.x = (*niiPEAKS->img)(x,y,z,3*d+0); // use "col" as tmp variable
+                        col.y = (*niiPEAKS->img)(x,y,z,3*d+1);
+                        col.z = (*niiPEAKS->img)(x,y,z,3*d+2);
+                        if ( PEAKS_use_affine )
+                        {
+                            dir.x = col.x * ((float*)PEAKS_affine)[0] + col.y * ((float*)PEAKS_affine)[1] + col.z * ((float*)PEAKS_affine)[2];
+                            dir.y = col.x * ((float*)PEAKS_affine)[3] + col.y * ((float*)PEAKS_affine)[4] + col.z * ((float*)PEAKS_affine)[5];
+                            dir.z = col.x * ((float*)PEAKS_affine)[6] + col.y * ((float*)PEAKS_affine)[7] + col.z * ((float*)PEAKS_affine)[8];
+                        }
+                        else
+                        {
+                            dir.x = col.x;
+                            dir.y = col.y;
+                            dir.z = col.z;
+                        }
+                        col.x = 0.5 * (PEAKS_flip[0]?-1:1) * dir.x / norms[d];
+                        col.y = 0.5 * (PEAKS_flip[1]?-1:1) * dir.y / norms[d];
+                        col.z = 0.5 * (PEAKS_flip[2]?-1:1) * dir.z / norms[d];
 
                         if ( PEAKS_doNormalize )
                         {

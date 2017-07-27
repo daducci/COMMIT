@@ -42,6 +42,8 @@ float			         PEAKS_kolor_l = 0.0;
 float			         PEAKS_kolor_u = 0.0;
 int			             PEAKS_lut = 0;
 float                    (*PEAKS_lut_ptr)[256][3] = &COLORMAPS::hot;
+bool			         PEAKS_use_affine = false;
+float                    PEAKS_affine[3][3];
 
 TrackVis 		         TRK_file;
 int				         TRK_skip;
@@ -103,7 +105,25 @@ int main(int argc, char** argv)
     pixdim.z = niiDWI->hdr->pixdim[3];
     printf( "\tdim    : %d x %d x %d x %d\n", dim.x, dim.y, dim.z, niiDWI->hdr->dim[4] );
     printf( "\tpixdim : %.4f x %.4f x %.4f\n", 	pixdim.x, pixdim.y, pixdim.z );
-    printf( "\tqform  : '%s', quaternion = ( %f %f %f ), offset = ( %f %f %f ), qfac = %f\n", nifti_xform_string( niiDWI->hdr->qform_code ), niiDWI->hdr->quatern_b, niiDWI->hdr->quatern_c, niiDWI->hdr->quatern_d, niiDWI->hdr->qoffset_x, niiDWI->hdr->qoffset_y, niiDWI->hdr->qoffset_z, niiDWI->hdr->pixdim[0] );
+    printf( "\tsform  : '%s'\n", nifti_xform_string( niiDWI->hdr->sform_code ) );
+    mat44 DWI_sform = niiDWI->hdr->sto_xyz;
+    for(int i=0; i<3 ;i++)
+    {
+        printf( "\t\t| " );
+        for(int j=0; j<4 ;j++)
+            printf( "%9.4f ", DWI_sform.m[i][j] );
+        printf( "|\n" );
+    }
+    printf( "\tqform  : '%s'\n", nifti_xform_string( niiDWI->hdr->qform_code ) );
+    mat44 DWI_qform = niiDWI->hdr->qto_xyz;
+    for(int i=0; i<3 ;i++)
+    {
+        printf( "\t\t| " );
+        for(int j=0; j<4 ;j++)
+            printf( "%9.4f ", DWI_qform.m[i][j] );
+        printf( "|\n" );
+    }
+
 
     COLOR_msg( "   [OK]" );
 
@@ -220,7 +240,7 @@ int main(int argc, char** argv)
     printf( "\tgradients : %d\n", SCHEME_b.size() );
     if ( niiDWI->hdr->dim[4] != SCHEME_b.size() )
     {
-        COLOR_error( "The scheme does not math the DWI dataset", "\t" );
+        COLOR_error( "The scheme does not match the DWI dataset", "\t" );
         return EXIT_FAILURE;
     }
 
@@ -264,12 +284,12 @@ int main(int argc, char** argv)
 
         if ( niiMAP->hdr->dim[1] != dim.x || niiMAP->hdr->dim[2] != dim.y || niiMAP->hdr->dim[3] != dim.z )
         {
-            COLOR_error( "The DIMENSIONS do not math those of DWI images", "\t" );
+            COLOR_error( "The DIMENSIONS do not match those of DWI images", "\t" );
             return EXIT_FAILURE;
         }
         if ( abs(niiMAP->hdr->pixdim[1]-pixdim.x) > 1e-4 || abs(niiMAP->hdr->pixdim[2]-pixdim.y) > 1e-4 || abs(niiMAP->hdr->pixdim[3]-pixdim.z) > 1e-4 )
         {
-            COLOR_warning( "The VOXEL SIZE does not math that of DWI images", "\t" );
+            COLOR_warning( "The VOXEL SIZE does not match that of DWI images", "\t" );
         }
 
         FLOAT32 MIN = 0;//(*niiMAP->img)(0,0,0);
@@ -353,7 +373,24 @@ int main(int argc, char** argv)
 
     printf( "\tdim    : %d x %d x %d x %d\n" , niiPEAKS->hdr->dim[1],    niiPEAKS->hdr->dim[2],    niiPEAKS->hdr->dim[3], niiPEAKS->hdr->dim[4] );
     printf( "\tpixdim : %.4f x %.4f x %.4f\n", niiPEAKS->hdr->pixdim[1], niiPEAKS->hdr->pixdim[2], niiPEAKS->hdr->pixdim[3] );
-    printf( "\tqform  : '%s', quaternion = ( %f %f %f ), offset = ( %f %f %f ), qfac = %f\n", nifti_xform_string( niiPEAKS->hdr->qform_code ), niiPEAKS->hdr->quatern_b, niiPEAKS->hdr->quatern_c, niiPEAKS->hdr->quatern_d, niiPEAKS->hdr->qoffset_x, niiPEAKS->hdr->qoffset_y, niiPEAKS->hdr->qoffset_z, niiDWI->hdr->pixdim[0] );
+    printf( "\tsform  : '%s'\n", nifti_xform_string( niiPEAKS->hdr->sform_code ) );
+    mat44 PEAKS_sform = niiPEAKS->hdr->sto_xyz;
+    for(int i=0; i<3 ;i++)
+    {
+        printf( "\t\t| " );
+        for(int j=0; j<4 ;j++)
+            printf( "%9.4f ", PEAKS_sform.m[i][j] );
+        printf( "|\n" );
+    }
+    printf( "\tqform  : '%s'\n", nifti_xform_string( niiPEAKS->hdr->qform_code ) );
+    mat44 PEAKS_qform = niiPEAKS->hdr->qto_xyz;
+    for(int i=0; i<3 ;i++)
+    {
+        printf( "\t\t| " );
+        for(int j=0; j<4 ;j++)
+            printf( "%9.4f ", PEAKS_qform.m[i][j] );
+        printf( "|\n" );
+    }
 
     if ( niiPEAKS->hdr->dim[0] != 4 || niiPEAKS->hdr->dim[4]%3 != 0 )
     {
@@ -364,21 +401,43 @@ int main(int argc, char** argv)
 
     if ( niiPEAKS->hdr->dim[1] != dim.x || niiPEAKS->hdr->dim[2] != dim.y || niiPEAKS->hdr->dim[3] != dim.z )
     {
-        COLOR_error( "The DIMENSIONS do not math those of DWI images", "\t" );
+        COLOR_error( "The DIMENSIONS do not match those of DWI images", "\t" );
         return EXIT_FAILURE;
     }
     if ( abs(niiPEAKS->hdr->pixdim[1]-pixdim.x) > 1e-4 || abs(niiPEAKS->hdr->pixdim[2]-pixdim.y) > 1e-4 || abs(niiPEAKS->hdr->pixdim[3]-pixdim.z) > 1e-4 )
     {
-        COLOR_warning( "The VOXEL SIZE does not math that of DWI images", "\t" );
+        COLOR_warning( "The VOXEL SIZE does not match that of DWI images", "\t" );
     }
     if (
-        niiPEAKS->hdr->qform_code != niiDWI->hdr->qform_code || niiPEAKS->hdr->pixdim[0] != niiDWI->hdr->pixdim[0] ||
+        niiPEAKS->hdr->sform_code != niiDWI->hdr->sform_code || niiPEAKS->hdr->qform_code != niiDWI->hdr->qform_code || niiPEAKS->hdr->pixdim[0] != niiDWI->hdr->pixdim[0] ||
         niiPEAKS->hdr->quatern_b != niiDWI->hdr->quatern_b || niiPEAKS->hdr->quatern_c != niiDWI->hdr->quatern_c || niiPEAKS->hdr->quatern_d != niiDWI->hdr->quatern_d ||
         niiPEAKS->hdr->qoffset_x != niiDWI->hdr->qoffset_x || niiPEAKS->hdr->qoffset_y != niiDWI->hdr->qoffset_y || niiPEAKS->hdr->qoffset_z != niiDWI->hdr->qoffset_z
        )
     {
 
-        COLOR_warning( "The GEOMETRY does not math that of DWI images", "\t" );
+        COLOR_warning( "The GEOMETRY does not match that of DWI images", "\t" );
+    }
+
+    // Read the affine matrix to rotate the vectors
+    // NB: we need the inverse, but in this case inv=transpose
+    if ( niiPEAKS->hdr->sform_code != 0 )
+    {
+        for(int i=0; i<3 ;i++)
+        for(int j=0; j<3 ;j++)
+            PEAKS_affine[i][j] = PEAKS_sform.m[j][i];
+    }
+    else if ( niiPEAKS->hdr->qform_code != 0 )
+    {
+        for(int i=0; i<3 ;i++)
+        for(int j=0; j<3 ;j++)
+            PEAKS_affine[i][j] = PEAKS_qform.m[j][i];
+    }
+    else {
+        for(int i=0; i<3 ;i++)
+        for(int j=0; j<3 ;j++)
+            PEAKS_affine[i][j] = 0;
+        for(int i=0; i<3 ;i++)
+            PEAKS_affine[i][i] = 1;
     }
 
     COLOR_msg( "   [OK]" );
@@ -408,7 +467,7 @@ int main(int argc, char** argv)
         if ( TRK_file.hdr.dim[0] != dim.x || TRK_file.hdr.dim[1] != dim.y || TRK_file.hdr.dim[2] != dim.z ||
              abs(TRK_file.hdr.voxel_size[0]-pixdim.x) > 1e-4 || abs(TRK_file.hdr.voxel_size[1]-pixdim.y) > 1e-4 || abs(TRK_file.hdr.voxel_size[2]-pixdim.z) > 1e-4 )
         {
-            COLOR_error( "The GEOMETRY does not math those of DWI images", "\t" );
+            COLOR_error( "The GEOMETRY does not match those of DWI images", "\t" );
             return EXIT_FAILURE;
         }
 

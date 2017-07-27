@@ -10,7 +10,11 @@ A **companion scheme file** defines all the information about the diffusion acqu
 - as a *Nx4 matrix*, where the first three columns are the gradient directions and the fourth contains their b-value (*s/mm^2*).
 - as a *Nx7 matrix*, where the first three columns are the gradient directions and the remaining four define the gradient strength (*T/m*), big delta (*s*), small delta (*s*) and echo time (*s*), respectively.
 
-The scheme files follow the [Camino conventions](http://cmic.cs.ucl.ac.uk/camino/index.php?n=Docs.SchemeFiles); here, the header line (eg. `VERSION: BVECTOR`) can be omitted.
+The scheme files follow the [Camino file structure](http://cmic.cs.ucl.ac.uk/camino/index.php?n=Docs.SchemeFiles); here, the header line (eg. `VERSION: BVECTOR`) can be omitted. The gradient directions are assumed to be in voxel-coordinates and the affine transformation of the DWI data will not be taken into account.
+
+# Peak orientations
+
+If an extra-cellular compartment is used in the forward-model, a peak-file has to be provided containing the orientations of the additional compartment. By default, the vectors will be interpreted in voxel-coordinate system. However, if the peak orientation was stored in world-coordinate system (e.g. using `sh2peaks` in [MRtrix](http://www.mrtrix.org)), an additional flag (`peaks_use_affine = True`) in `trk2dictionary` in order to apply the affine transformation from the header of the peak file. The correct orientation of the peaks can be determined in the [COMMIT_debugger](extras.md) switching between the two possibilities pressing `a`.  
 
 # Acquisition protocol
 
@@ -36,4 +40,3 @@ Usually, all subjects belonging to the same study are acquired with the *same ac
 ```
 
 For data following this convention, the internal LUT are generated only once for the acquisition scheme of the study and then, for each subject, they are simply projected back very efficiently from the SH space to the specific subject space. In all other cases, the LUT must be regenerated each time.
-

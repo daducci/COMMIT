@@ -82,6 +82,7 @@ COMMIT_debugger \
 - `b`, `B`: change the portion of voxels where to plot the glyphs
 
 - `p`: show/hide the peaks
+- `a`: do/don't use the affine transformation
 - `x`, `y`, `z`: flip the peaks along each axis
 - `t`, `T`: decrease/increase the peaks threshold
 - `n`: normalize the length of the peaks
