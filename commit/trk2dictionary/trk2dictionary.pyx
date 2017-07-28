@@ -162,7 +162,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
         # affine matrix to rotate gradien directions (if required)
         if peaks_use_affine :
-            affine = np.ascontiguousarray( niiPEAKS.affine[:3,:3] ).T
+            affine = np.ascontiguousarray( niiPEAKS.affine[:3,:3].T )
         else :
             affine = np.ascontiguousarray( np.eye(3) )
         ptrAFFINE = &affine[0,0]
