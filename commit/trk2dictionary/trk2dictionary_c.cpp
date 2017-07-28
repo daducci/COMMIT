@@ -72,7 +72,7 @@ unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 int trk2dictionary(
     char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, 		float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* _ptrMASK, float* ptrTDI, char* path_out, int c
+    float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE
 )
 {
     /*=========================*/
@@ -240,11 +240,18 @@ int trk2dictionary(
                     {
                         if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
 
-                        // store this orientation (invert axes if needed)
+                        // get the orientation of the current peak
                         ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
-                        dir.x = ECix * ptr[0];
-                        dir.y = ECiy * ptr[1];
-                        dir.z = ECiz * ptr[2];
+
+                        // multiply by the affine matrix
+                        dir.x = ptr[0] * ptrAFFINE[0] + ptr[1] * ptrAFFINE[1] + ptr[2] * ptrAFFINE[2];
+                        dir.y = ptr[0] * ptrAFFINE[3] + ptr[1] * ptrAFFINE[4] + ptr[2] * ptrAFFINE[5];
+                        dir.z = ptr[0] * ptrAFFINE[6] + ptr[1] * ptrAFFINE[7] + ptr[2] * ptrAFFINE[8];
+
+                        // flip axes if requested
+                        dir.x *= ECix;
+                        dir.y *= ECiy;
+                        dir.z *= ECiz;
                         if ( dir.y < 0 )
                         {
                             // ensure to be in the right hemisphere (the one where kernels were pre-computed)

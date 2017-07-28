@@ -14,11 +14,11 @@ cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
         char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-        float* _ptrMASK, float* ptrTDI, char* path_out, int c
+        float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
+cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
@@ -56,6 +56,9 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     vf_THR : float
         Discard peaks smaller than vf_THR * max peak (default : 0.1).
+
+    peaks_use_affine : boolean
+        Whether to rotate the peaks according to the affine matrix (default : False).
 
     flip_peaks : list of three boolean
         If necessary, flips peak orientations along each axis (default : no flipping).
@@ -135,6 +138,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     cdef int Np
     cdef float [:, :, ::1] niiTDI_img = np.ascontiguousarray( np.zeros((Nx,Ny,Nz),dtype=np.float32) )
     cdef float* ptrTDI  = &niiTDI_img[0,0,0]
+    cdef double [:, ::1] affine
+    cdef double* ptrAFFINE
     if filename_peaks is not None :
         print '\t\t* EC orientations'
         niiPEAKS = nibabel.load( filename_peaks )
@@ -142,6 +147,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         print '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] )
         print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS_hdr['pixdim'][1], niiPEAKS_hdr['pixdim'][2], niiPEAKS_hdr['pixdim'][3] )
         print '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR
+        print '\t\t\t- %susing affine matrix' % ( "" if peaks_use_affine else "not " )
         print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )
         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
              abs(Px-niiPEAKS_hdr['pixdim'][1])>1e-3 or abs(Py-niiPEAKS_hdr['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS_hdr['pixdim'][3])>1e-3 ) :
@@ -153,10 +159,18 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         niiPEAKS_img = np.ascontiguousarray( niiPEAKS.get_data().astype(np.float32) )
         ptrPEAKS = &niiPEAKS_img[0,0,0,0]
         Np = niiPEAKS.shape[3]/3
+
+        # affine matrix to rotate gradien directions (if required)
+        if peaks_use_affine :
+            affine = np.ascontiguousarray( niiPEAKS.affine[:3,:3].T )
+        else :
+            affine = np.ascontiguousarray( np.eye(3) )
+        ptrAFFINE = &affine[0,0]
     else :
         print '\t\t* no dataset specified for EC compartments'
         Np = 0
         ptrPEAKS = NULL
+        ptrAFFINE = NULL
 
     # output path
     print '\t\t* output written to "%s"' % path_out
@@ -169,7 +183,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         trk_hdr['voxel_size'][0], trk_hdr['voxel_size'][1], trk_hdr['voxel_size'][2],
         trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
-        ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0 );
+        ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE );
     if ret == 0 :
         print '   [ DICTIONARY not generated ]'
         return None
