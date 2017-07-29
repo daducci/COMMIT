@@ -120,13 +120,13 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         smoothingWeights[i] = np.exp( -smoothingRadii[i]**2 / (2.0*smoothing_sigma**2) )
 
     if nSmoothingRadii == 1 :
-        print '\t* Smooth fibers = False'
+        print '\t* Not smooth fibers'
     else :
         print '\t* Smooth fibers :'
         print '\t\t- sigma = %.3f' % smoothing_sigma
         print '\t\t- radii =   [',
         for i in xrange( 1, smoothingRadii.size ) :
-            print '%.2f' % smoothingRadii[i],
+            print '%.3f' % smoothingRadii[i],
         print ']'
         print '\t\t- samples = [',
         for i in xrange( 1, smoothingSamples.size ) :
