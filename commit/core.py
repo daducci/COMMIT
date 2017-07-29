@@ -83,9 +83,9 @@ class Evaluation :
         self.set_config('dwi_filename', dwi_filename)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = self.niiDWI.get_data().astype(np.float32)
+        if self.niiDWI_img.ndim ==3 :
+            self.niiDWI_img = np.expand_dims( self.niiDWI_img, axis=3 )
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
-        if hdr['dim'][0] == 3:
-            self.niiDWI_img = np.expand_dims(self.niiDWI_img,3)
         self.set_config('dim', self.niiDWI_img.shape[0:3])
         self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
         print '\t\t- dim    = %d x %d x %d x %d' % self.niiDWI_img.shape
