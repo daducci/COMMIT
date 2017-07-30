@@ -135,7 +135,7 @@ class Evaluation :
                 self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
             else :
                 print '\t* Keeping all b0 volume(s)...',
-        print '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape
+            print '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape
 
         if self.get_config('doDemean') :
             print '\t* Demeaning signal...',
