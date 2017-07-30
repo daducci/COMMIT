@@ -5,9 +5,18 @@ import numpy
 
 # Cython extension to create the sparse data structure from a tractogram
 # for the computation of matrix-vector multiplications
-ext = Extension(
+ext1 = Extension(
     name='commit.trk2dictionary',
     sources=['commit/trk2dictionary/trk2dictionary.pyx'],
+    include_dirs=[numpy.get_include()],
+    extra_compile_args=['-w'],
+    extra_link_args=[],
+    language='c++',
+)
+
+ext2 = Extension(
+    name='commit.core',
+    sources=['commit/core.pyx'],
     include_dirs=[numpy.get_include()],
     extra_compile_args=['-w'],
     extra_link_args=[],
@@ -22,7 +31,7 @@ setup(
     author_email='alessandro.daducci@gmail.com',
     url='https://github.com/daducci/COMMIT',
     cmdclass = {'build_ext':build_ext},
-    ext_modules = [ ext ],
+    ext_modules = [ ext1, ext2 ],
     packages=['commit','commit.operator'],
     package_data={
         'commit.operator':["*.*"], # needed by pyximport to compile at runtime
