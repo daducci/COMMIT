@@ -69,10 +69,16 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         If necessary, flips peak orientations along each axis (default : no flipping).
 
     min_seg_len : float
-        Discard segments <= than this length in mm (default : 1e-3 )
+        Discard segments <= than this length in mm (default : 1e-3)
 
     gen_trk : boolean
         If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
+    blur_radii : list of float
+        Translate each segment to given radii to assign a broader fiber contribution (default : [])
+    blur_samples : list of integer
+        Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
+    blur_sigma
+        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)
     """
 
     # check conflicts of fiber_shift
