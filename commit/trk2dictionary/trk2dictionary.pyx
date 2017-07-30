@@ -14,11 +14,16 @@ cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
         char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-        float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE
+        float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True, fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False, flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True ):
+cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True,
+    fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
+    flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
+    blur_radii = [], blur_samples = [], blur_sigma = 1.0
+    ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
@@ -64,10 +69,16 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         If necessary, flips peak orientations along each axis (default : no flipping).
 
     min_seg_len : float
-        Discard segments <= than this length in mm (default : 1e-3 )
+        Discard segments <= than this length in mm (default : 1e-3)
 
     gen_trk : boolean
         If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
+    blur_radii : list of float
+        Translate each segment to given radii to assign a broader fiber contribution (default : [])
+    blur_samples : list of integer
+        Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
+    blur_sigma
+        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)
     """
 
     # check conflicts of fiber_shift
@@ -91,8 +102,55 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     print '\t* Points to skip   = %d' % points_to_skip
     print '\t* Min segment len  = %.2e' % min_seg_len
 
+    # check blur params
+    cdef :
+        double [:] blurRadii
+        int [:] blurSamples
+        double [:] blurWeights
+        double* ptrBlurRadii
+        int* ptrBlurSamples
+        double* ptrBlurWeights
+        int nBlurRadii
+
+    if len(blur_radii) != len(blur_samples) :
+        raise RuntimeError( 'number of radii and samples must match' )
+
+    # convert to numpy arrays (add fake radius for original segment)
+    nBlurRadii = len(blur_radii)+1
+    blurRadii = np.array( [0.0]+blur_radii, np.double )
+    blurSamples = np.array( [1]+blur_samples, np.int32 )
+
+    # compute weights for gaussian damping
+    blurWeights = np.empty_like( blurRadii )
+    for i in xrange(nBlurRadii):
+        blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
+
+    if nBlurRadii == 1 :
+        print '\t* Do not blur fibers'
+    else :
+        print '\t* Blur fibers :'
+        print '\t\t- sigma = %.3f' % blur_sigma
+        print '\t\t- radii =   [',
+        for i in xrange( 1, blurRadii.size ) :
+            print '%.3f' % blurRadii[i],
+        print ']'
+        print '\t\t- samples = [',
+        for i in xrange( 1, blurSamples.size ) :
+            print '%5d' % blurSamples[i],
+        print ']'
+        print '\t\t- weights = [',
+        for i in xrange( 1, blurWeights.size ) :
+            print '%.3f' % blurWeights[i],
+        print ']'
+
+    ptrBlurRadii   = &blurRadii[0]
+    ptrBlurSamples = &blurSamples[0]
+    ptrBlurWeights = &blurWeights[0]
+
+    # minimum segment length
     if min_seg_len < 0 :
         raise RuntimeError( 'min_seg_len must be >= 0' )
+
 
     print '\t* Loading data:'
 
@@ -183,7 +241,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         trk_hdr['voxel_size'][0], trk_hdr['voxel_size'][1], trk_hdr['voxel_size'][2],
         trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
-        ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE );
+        ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
+        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights );
     if ret == 0 :
         print '   [ DICTIONARY not generated ]'
         return None
