@@ -81,7 +81,7 @@ int trk2dictionary(
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-    int nSmoothingRadii, double smoothingSigma, double* ptrSmoothingRadii, int* ptrSmoothingSamples, double* ptrSmoothingWeights
+    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
 )
 {
     /*=========================*/
@@ -120,13 +120,13 @@ int trk2dictionary(
     radii.clear();
     sectors.clear();
     weights.clear();
-    for(int i=0; i<nSmoothingRadii ;i++)
+    for(int i=0; i<nBlurRadii ;i++)
     {
-        radii.push_back( ptrSmoothingRadii[i] );
-        sectors.push_back( ptrSmoothingSamples[i] );
-        weights.push_back( ptrSmoothingWeights[i] );
+        radii.push_back( ptrBlurRadii[i] );
+        sectors.push_back( ptrBlurSamples[i] );
+        weights.push_back( ptrBlurWeights[i] );
     }
-    radiusSigma = smoothingSigma;
+    radiusSigma = blurSigma;
 
     // open files
     filename = OUTPUT_path+"/dictionary_TRK_norm.dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");

@@ -15,14 +15,14 @@ cdef extern from "trk2dictionary_c.cpp":
         char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-        int nSmoothingRadii, double smoothingSigma, double* ptrSmoothingRadii, int* ptrSmoothingSamples, double* ptrSmoothingWeights
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
     ) nogil
 
 
 cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True,
     fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
     flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
-    smoothing_radii = [], smoothing_samples = [], smoothing_sigma = 1.0
+    blur_radii = [], blur_samples = [], blur_sigma = 1.0
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -96,50 +96,50 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     print '\t* Points to skip   = %d' % points_to_skip
     print '\t* Min segment len  = %.2e' % min_seg_len
 
-    # check smoothing params
+    # check blur params
     cdef :
-        double [:] smoothingRadii
-        int [:] smoothingSamples
-        double [:] smoothingWeights
-        double* ptrSmoothingRadii
-        int* ptrSmoothingSamples
-        double* ptrSmoothingWeights
-        int nSmoothingRadii
+        double [:] blurRadii
+        int [:] blurSamples
+        double [:] blurWeights
+        double* ptrBlurRadii
+        int* ptrBlurSamples
+        double* ptrBlurWeights
+        int nBlurRadii
 
-    if len(smoothing_radii) != len(smoothing_samples) :
+    if len(blur_radii) != len(blur_samples) :
         raise RuntimeError( 'number of radii and samples must match' )
 
     # convert to numpy arrays (add fake radius for original segment)
-    nSmoothingRadii = len(smoothing_radii)+1
-    smoothingRadii = np.array( [0.0]+smoothing_radii, np.double )
-    smoothingSamples = np.array( [1]+smoothing_samples, np.int32 )
+    nBlurRadii = len(blur_radii)+1
+    blurRadii = np.array( [0.0]+blur_radii, np.double )
+    blurSamples = np.array( [1]+blur_samples, np.int32 )
 
     # compute weights for gaussian damping
-    smoothingWeights = np.empty_like( smoothingRadii )
-    for i in xrange(nSmoothingRadii):
-        smoothingWeights[i] = np.exp( -smoothingRadii[i]**2 / (2.0*smoothing_sigma**2) )
+    blurWeights = np.empty_like( blurRadii )
+    for i in xrange(nBlurRadii):
+        blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
 
-    if nSmoothingRadii == 1 :
-        print '\t* Not smooth fibers'
+    if nBlurRadii == 1 :
+        print '\t* Do not blur fibers'
     else :
-        print '\t* Smooth fibers :'
-        print '\t\t- sigma = %.3f' % smoothing_sigma
+        print '\t* Blur fibers :'
+        print '\t\t- sigma = %.3f' % blur_sigma
         print '\t\t- radii =   [',
-        for i in xrange( 1, smoothingRadii.size ) :
-            print '%.3f' % smoothingRadii[i],
+        for i in xrange( 1, blurRadii.size ) :
+            print '%.3f' % blurRadii[i],
         print ']'
         print '\t\t- samples = [',
-        for i in xrange( 1, smoothingSamples.size ) :
-            print '%5d' % smoothingSamples[i],
+        for i in xrange( 1, blurSamples.size ) :
+            print '%5d' % blurSamples[i],
         print ']'
         print '\t\t- weights = [',
-        for i in xrange( 1, smoothingWeights.size ) :
-            print '%.3f' % smoothingWeights[i],
+        for i in xrange( 1, blurWeights.size ) :
+            print '%.3f' % blurWeights[i],
         print ']'
 
-    ptrSmoothingRadii   = &smoothingRadii[0]
-    ptrSmoothingSamples = &smoothingSamples[0]
-    ptrSmoothingWeights = &smoothingWeights[0]
+    ptrBlurRadii   = &blurRadii[0]
+    ptrBlurSamples = &blurSamples[0]
+    ptrBlurWeights = &blurWeights[0]
 
     # minimum segment length
     if min_seg_len < 0 :
@@ -236,7 +236,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nSmoothingRadii, smoothing_sigma, ptrSmoothingRadii, ptrSmoothingSamples, ptrSmoothingWeights );
+        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights );
     if ret == 0 :
         print '   [ DICTIONARY not generated ]'
         return None
