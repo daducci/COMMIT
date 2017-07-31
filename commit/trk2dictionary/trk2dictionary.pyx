@@ -6,7 +6,7 @@ import numpy as np
 cimport numpy as np
 import nibabel
 from os.path import join, exists
-from os import makedirs
+from os import makedirs, remove
 import time
 
 # Interface to actual C code
@@ -278,3 +278,51 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     else :
         niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), affine )
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
+
+
+cpdef convert_old_dictionary( path ):
+    """Perform the conversion of the files representing a dictionary, i.e. dictionary_*.dict,
+    from the old format to the new one, where the files *_{vx,vy,vz}.dict are replaced
+    by a single file *_v.dict (same for the files *_{ox,oy}.dict).
+
+    Parameters
+    ----------
+    path : string
+        Path to the folder containing the dictionary_*.dict files.
+    """
+    if not exists( join(path,'dictionary_IC_vx.dict') ):
+        raise RuntimeError( 'Folder does not contain dictionary files in the old format' )
+
+    niiTDI = nibabel.load( join(path,'dictionary_tdi.nii.gz') )
+    Nx, Ny, Nz = niiTDI.shape[:3]
+    x = np.fromfile( join(path,'dictionary_IC_vx.dict'), dtype=np.uint16 ).astype(np.uint32)
+    y = np.fromfile( join(path,'dictionary_IC_vy.dict'), dtype=np.uint16 ).astype(np.uint32)
+    z = np.fromfile( join(path,'dictionary_IC_vz.dict'), dtype=np.uint16 ).astype(np.uint32)
+    v = x + Nx * ( y + Ny * z )
+    v.tofile( join(path,'dictionary_IC_v.dict') )
+    remove( join(path,'dictionary_IC_vx.dict') )
+    remove( join(path,'dictionary_IC_vy.dict') )
+    remove( join(path,'dictionary_IC_vz.dict') )
+
+    x = np.fromfile( join(path,'dictionary_EC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
+    y = np.fromfile( join(path,'dictionary_EC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
+    z = np.fromfile( join(path,'dictionary_EC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
+    v = x + Nx * ( y + Ny * z )
+    v.tofile( join(path,'dictionary_EC_v.dict') )
+    remove( join(path,'dictionary_EC_vx.dict') )
+    remove( join(path,'dictionary_EC_vy.dict') )
+    remove( join(path,'dictionary_EC_vz.dict') )
+
+    x = np.fromfile( join(path,'dictionary_IC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
+    y = np.fromfile( join(path,'dictionary_IC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
+    v = y + 181 * x
+    v.tofile( join(path,'dictionary_IC_o.dict') )
+    remove( join(path,'dictionary_IC_ox.dict') )
+    remove( join(path,'dictionary_IC_oy.dict') )
+
+    x = np.fromfile( join(path,'dictionary_EC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
+    y = np.fromfile( join(path,'dictionary_EC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
+    v = y + 181 * x
+    v.tofile( join(path,'dictionary_EC_o.dict') )
+    remove( join(path,'dictionary_EC_ox.dict') )
+    remove( join(path,'dictionary_EC_oy.dict') )
