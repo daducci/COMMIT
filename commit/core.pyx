@@ -334,43 +334,17 @@ cdef class Evaluation :
         print '\t* segments from the tracts...',
         sys.stdout.flush()
 
-        self.DICTIONARY['IC'] = {}
-
         self.DICTIONARY['TRK'] = {}
-
         self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
+        self.DICTIONARY['TRK']['len']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
 
-        self.DICTIONARY['IC']['nF'] = self.DICTIONARY['TRK']['norm'].size
-
+        self.DICTIONARY['IC'] = {}
         self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
-
-        self.DICTIONARY['IC']['n'] = self.DICTIONARY['IC']['fiber'].size
-
-        vx = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vx.dict'), dtype=np.uint16 ).astype(np.uint32)
-        vy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vy.dict'), dtype=np.uint16 ).astype(np.uint32)
-        vz = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_vz.dict'), dtype=np.uint16 ).astype(np.uint32)
-        self.DICTIONARY['IC']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
-        del vx, vy, vz
-
-        ox = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
-        oy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
-        self.DICTIONARY['IC']['o'] = oy + 181*ox
-        del ox, oy
-
-        self.DICTIONARY['IC']['len'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
-
-        self.DICTIONARY['TRK']['len'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
-
-        cdef :
-            np.float32_t [:] sl = self.DICTIONARY['IC']['len']
-            np.float32_t [:] tl = self.DICTIONARY['TRK']['norm']
-            np.uint32_t  [:] f  = self.DICTIONARY['IC']['fiber']
-            int s
-        if self.get_config('doNormalizeKernels') :
-            # divide the length of each segment by the fiber length so that all the columns of the libear operator will have same length
-            # NB: it works in conjunction with the normalization of the kernels
-            for s in xrange(self.DICTIONARY['IC']['n']) :
-                sl[s] /= tl[ f[s] ]
+        self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
+        self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
+        self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
+        self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
+        self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
 
         # reorder the segments based on the "v" field
         idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
@@ -380,6 +354,17 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
         del idx
 
+        # divide the length of each segment by the fiber length so that all the columns of the libear operator will have same length
+        # NB: it works in conjunction with the normalization of the kernels
+        cdef :
+            np.float32_t [:] sl = self.DICTIONARY['IC']['len']
+            np.float32_t [:] tl = self.DICTIONARY['TRK']['norm']
+            np.uint32_t  [:] f  = self.DICTIONARY['IC']['fiber']
+            int s
+        if self.get_config('doNormalizeKernels') :
+            for s in xrange(self.DICTIONARY['IC']['n']) :
+                sl[s] /= tl[ f[s] ]
+
         print '[ %d fibers and %d segments ]' % ( self.DICTIONARY['IC']['nF'], self.DICTIONARY['IC']['n'] )
 
         # segments from the peaks
@@ -388,19 +373,9 @@ cdef class Evaluation :
         sys.stdout.flush()
 
         self.DICTIONARY['EC'] = {}
-
-        vx = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
-        vy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
-        vz = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
-        self.DICTIONARY['EC']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
-        del vx, vy, vz
-
+        self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
+        self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
         self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
-
-        ox = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
-        oy = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
-        self.DICTIONARY['EC']['o'] = oy + 181*ox
-        del ox, oy
 
         # reorder the segments based on the "v" field
         idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )

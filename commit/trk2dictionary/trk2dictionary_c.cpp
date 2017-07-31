@@ -89,7 +89,8 @@ int trk2dictionary(
     /*=========================*/
     float          fiber[3][MAX_FIB_LEN];
     float          fiberNorm, fiberLen;
-    unsigned int   N, totICSegments = 0, totFibers = 0;
+    unsigned int   N, totICSegments = 0, totFibers = 0, v;
+    unsigned short o;
     unsigned char  kept;
     Vector<double> P;
     std::string    filename;
@@ -136,11 +137,8 @@ int trk2dictionary(
         return 0;
     }
     filename = OUTPUT_path+"/dictionary_IC_f.dict";        FILE* pDict_IC_f      = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_vx.dict";       FILE* pDict_IC_vx     = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_vy.dict";       FILE* pDict_IC_vy     = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_vz.dict";       FILE* pDict_IC_vz     = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_ox.dict";       FILE* pDict_IC_ox     = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_oy.dict";       FILE* pDict_IC_oy     = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_v.dict";        FILE* pDict_IC_v      = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_o.dict";        FILE* pDict_IC_o      = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len    = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len   = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept  = fopen(filename.c_str(),"wb");
@@ -162,12 +160,12 @@ int trk2dictionary(
             fiberLen = 0;
             for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
             {
+                // NB: plese note inverted ordering for 'v'
+                v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
+                o = it->first.oy + 181 * it->first.x;
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
-                fwrite( &(it->first.x),  2, 1, pDict_IC_vx );
-                fwrite( &(it->first.y),  2, 1, pDict_IC_vy );
-                fwrite( &(it->first.z),  2, 1, pDict_IC_vz );
-                fwrite( &(it->first.ox), 1, 1, pDict_IC_ox );
-                fwrite( &(it->first.oy), 1, 1, pDict_IC_oy );
+                fwrite( &v,              4, 1, pDict_IC_v );
+                fwrite( &o,              2, 1, pDict_IC_o );
                 fwrite( &(it->second),   4, 1, pDict_IC_len );
                 ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
                 inVoxKey.set( it->first.x, it->first.y, it->first.z );
@@ -181,7 +179,7 @@ int trk2dictionary(
             fiberNorm = sqrt(fiberNorm);
             FiberNorm.clear();
             fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
-            fwrite( &fiberLen,  1, 4, pDict_TRK_len );
+            fwrite( &fiberLen,   1, 4, pDict_TRK_len );
             totICSegments += FiberSegments.size();
             totFibers++;
             kept = 1;
@@ -193,11 +191,8 @@ int trk2dictionary(
     fclose( fpTRK );
     fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
-    fclose( pDict_IC_vx );
-    fclose( pDict_IC_vy );
-    fclose( pDict_IC_vz );
-    fclose( pDict_IC_ox );
-    fclose( pDict_IC_oy );
+    fclose( pDict_IC_v );
+    fclose( pDict_IC_o );
     fclose( pDict_IC_len );
     fclose( pDict_TRK_len );
     fclose( pDict_TRK_kept );
@@ -212,11 +207,8 @@ int trk2dictionary(
 
     printf( "\t* Exporting EC compartments:\n" );
 
-    filename = OUTPUT_path+"/dictionary_EC_vx.dict";       FILE* pDict_EC_vx  = fopen( filename.c_str(),   "wb" );
-    filename = OUTPUT_path+"/dictionary_EC_vy.dict";       FILE* pDict_EC_vy  = fopen( filename.c_str(),   "wb" );
-    filename = OUTPUT_path+"/dictionary_EC_vz.dict";       FILE* pDict_EC_vz  = fopen( filename.c_str(),   "wb" );
-    filename = OUTPUT_path+"/dictionary_EC_ox.dict";       FILE* pDict_EC_ox  = fopen( filename.c_str(),   "wb" );
-    filename = OUTPUT_path+"/dictionary_EC_oy.dict";       FILE* pDict_EC_oy  = fopen( filename.c_str(),   "wb" );
+    filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v   = fopen( filename.c_str(),   "wb" );
+    filename = OUTPUT_path+"/dictionary_EC_o.dict";        FILE* pDict_EC_o   = fopen( filename.c_str(),   "wb" );
 
     if ( ptrPEAKS != NULL )
     {
@@ -283,11 +275,11 @@ int trk2dictionary(
                         longitude  = atan2( dir.y, dir.x );
                         ec_seg.ox = (int)round(colatitude/M_PI*180.0);
                         ec_seg.oy = (int)round(longitude/M_PI*180.0);
-                        fwrite( &ec_seg.x,   1, 1, pDict_EC_vx );
-                        fwrite( &ec_seg.y,   1, 1, pDict_EC_vy );
-                        fwrite( &ec_seg.z,   1, 1, pDict_EC_vz );
-                        fwrite( &ec_seg.ox,  1, 1, pDict_EC_ox );
-                        fwrite( &ec_seg.oy,  1, 1, pDict_EC_oy );
+
+                        v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
+                        o = ec_seg.oy + 181 * ec_seg.ox;
+                        fwrite( &v, 4, 1, pDict_EC_v );
+                        fwrite( &o, 2, 1, pDict_EC_o );
                         totECSegments++;
                         atLeastOne = 1;
                     }
@@ -299,11 +291,8 @@ int trk2dictionary(
         PROGRESS.close();
     }
 
-    fclose( pDict_EC_vx );
-    fclose( pDict_EC_vy );
-    fclose( pDict_EC_vz );
-    fclose( pDict_EC_ox );
-    fclose( pDict_EC_oy );
+    fclose( pDict_EC_v );
+    fclose( pDict_EC_o );
 
     printf("\t  [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 
