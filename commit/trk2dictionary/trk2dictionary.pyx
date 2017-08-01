@@ -259,7 +259,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
                 fibKept.append( (f[0],None, None) )
             ind = ind+1
         nibabel.trackvis.write( join(path_out,'dictionary_TRK_fibers.trk'), fibKept, trk_hdr )
-        print '\t  [ %d fibers kept ]' % ind
+        print '\t  [ %d fibers kept ]' % np.count_nonzero( file_kept )
     print '   [ %.1f seconds ]' % ( time.time() - tic )
 
     # save TDI and MASK maps
