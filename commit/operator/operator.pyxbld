@@ -1,6 +1,7 @@
 import numpy
 from os import utime
 from os.path import dirname, join
+from distutils.extension import Extension
 
 # pass parameters to the compiler at runtime
 # [TODO] find a way to avoid using this fake module
@@ -18,12 +19,14 @@ def make_ext(modname, pyxfilename):
        raise RuntimeError( 'config.nISO must be in the range [0..20]' )
 
     # Force recompilation
+    if config.model=="VolumeFractions" :
+        filename = "operator_noLUT.c"
+    else :
+        filename = "operator_withLUT.c"
     path = dirname(pyxfilename)
-    utime( join(path,'operator_c.c'), None)
-
-    from distutils.extension import Extension
+    utime( join(path,filename), None)
     return Extension(name=modname,
-                     sources=[pyxfilename,join(path,'operator_c.c')],
+                     sources=[pyxfilename,join(path,filename)],
                      include_dirs=[numpy.get_include()],
                      define_macros = [('nTHREADS',config.nTHREADS), ('nIC',config.nIC), ('nEC',config.nEC), ('nISO',config.nISO)],
                      extra_compile_args=['-w', '-O3', '-Ofast'],

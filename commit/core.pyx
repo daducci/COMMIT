@@ -596,6 +596,7 @@ cdef class Evaluation :
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
         config.nTHREADS = self.THREADS['n']
+        config.model    = self.model.id
         config.nIC      = self.KERNELS['wmr'].shape[0]
         config.nEC      = self.KERNELS['wmh'].shape[0]
         config.nISO     = self.KERNELS['iso'].shape[0]
