@@ -663,7 +663,7 @@ cdef class Evaluation :
         RESULTS_path = 'Results_' + self.model.id
         if path_suffix :
             self.set_config('path_suffix', path_suffix)
-            RESULTS_path = RESULTS_path +'_'+ path_suffix
+            RESULTS_path = RESULTS_path + path_suffix
 
         print '\n-> Saving results to "%s/*":' % RESULTS_path
         tic = time.time()
