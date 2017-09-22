@@ -685,14 +685,12 @@ cdef class Evaluation :
         nV = self.DICTIONARY['nV']
         # x is the x of the original problem
         # self.x is the x preconditioned
-        # x_map is the x used to generate the intra-cellular, extra-cellular and isotropic maps (not divided by norm of the fiber)
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
             norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
-            x_map = self.x / np.hstack( (norm1,norm2,norm3) )
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x_map = self.x
@@ -742,9 +740,9 @@ cdef class Evaluation :
         niiMAP_img[:] = 0
         if len(self.KERNELS['wmr']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = x_map[:offset].reshape( (-1,nF) ).sum( axis=0 )
+            tmp = x[:offset].reshape( (-1,nF) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
-                weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
+                weights=tmp[ self.DICTIONARY['IC']['fiber'] ]
             ).astype(np.float32)
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_IC.nii.gz') )
@@ -755,7 +753,7 @@ cdef class Evaluation :
         niiMAP_img[:] = 0
         if len(self.KERNELS['wmh']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = x_map[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
+            tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_EC.nii.gz') )
@@ -766,7 +764,7 @@ cdef class Evaluation :
         niiMAP_img[:] = 0
         if len(self.KERNELS['iso']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-            xv = x_map[offset:].reshape( (-1,nV) ).sum( axis=0 )
+            xv = x[offset:].reshape( (-1,nV) ).sum( axis=0 )
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
         print '   [ OK ]'
