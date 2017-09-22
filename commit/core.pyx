@@ -737,36 +737,41 @@ cdef class Evaluation :
 
         print '\t\t- intra-axonal',
         sys.stdout.flush()
-        niiMAP_img[:] = 0
+        niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmr']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
             tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
                 weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
             ).astype(np.float32)
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_IC.nii.gz') )
+            niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print '[ OK ]'
 
         print '\t\t- extra-axonal',
         sys.stdout.flush()
-        niiMAP_img[:] = 0
+        niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmh']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
             tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_EC.nii.gz') )
+            niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print '[ OK ]'
 
         print '\t\t- isotropic',
         sys.stdout.flush()
-        niiMAP_img[:] = 0
+        niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
             xv = x[offset:].reshape( (-1,nV) ).sum( axis=0 )
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
+            niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print '   [ OK ]'
+
+        niiIC = nibabel.Nifti1Image( niiIC_img / ( niiIC_img + niiEC_img + niiISO_img ), affine )
+        niiEC = nibabel.Nifti1Image( niiEC_img / ( niiIC_img + niiEC_img + niiISO_img ), affine )
+        niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img ), affine )
+        nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
+        nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
+        nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
+
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )
