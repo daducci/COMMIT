@@ -683,6 +683,7 @@ cdef class Evaluation :
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
+        norm_fib = np.ones( nF )
         # x is the x of the original problem
         # self.x is the x preconditioned
         if self.get_config('doNormalizeKernels') :
@@ -739,9 +740,9 @@ cdef class Evaluation :
         niiMAP_img[:] = 0
         if len(self.KERNELS['wmr']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = x[:offset].reshape( (-1,nF) ).sum( axis=0 )
+            tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
-                weights=tmp[ self.DICTIONARY['IC']['fiber'] ]
+                weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
             ).astype(np.float32)
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_IC.nii.gz') )
