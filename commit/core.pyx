@@ -693,7 +693,6 @@ cdef class Evaluation :
             norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
-            x_map = self.x
             x = self.x
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
             cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
