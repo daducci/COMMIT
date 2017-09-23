@@ -702,7 +702,7 @@ cdef class Evaluation :
         # Map of wovelwise errors
         print '\t* fitting errors:'
 
-        not_NaN = np.zeros( self.get_config('dim'), dtype=np.float32 ) % avoid division by 0
+        not_NaN = np.zeros( self.get_config('dim'), dtype=np.float32 ) # avoid division by 0
 
         niiMAP_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
