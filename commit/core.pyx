@@ -742,7 +742,7 @@ cdef class Evaluation :
         niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmr']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib ).sum( axis=0 )
+            tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
                 weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
             ).astype(np.float32)
