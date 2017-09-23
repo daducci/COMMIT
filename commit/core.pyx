@@ -702,6 +702,8 @@ cdef class Evaluation :
         # Map of wovelwise errors
         print '\t* fitting errors:'
 
+        not_NaN = np.zeros( self.get_config('dim'), dtype=np.float32 ) % avoid division by 0
+
         niiMAP_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
@@ -766,9 +768,9 @@ cdef class Evaluation :
             niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print '   [ OK ]'
 
-        niiIC = nibabel.Nifti1Image( niiIC_img / ( niiIC_img + niiEC_img + niiISO_img ), affine )
-        niiEC = nibabel.Nifti1Image( niiEC_img / ( niiIC_img + niiEC_img + niiISO_img ), affine )
-        niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img ), affine )
+        niiIC = nibabel.Nifti1Image( niiIC_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+        niiEC = nibabel.Nifti1Image( niiEC_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+        niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
