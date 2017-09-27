@@ -68,6 +68,8 @@ cdef class Evaluation :
         self.set_config('doMergeB0', False)
         self.set_config('doNormalizeKernels', True)
         self.set_config('doDemean', False)
+        self.set_config('doNormalizeMaps', True)
+
 
 
     def set_config( self, key, value ) :
@@ -768,9 +770,15 @@ cdef class Evaluation :
             niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print '   [ OK ]'
 
-        niiIC = nibabel.Nifti1Image( niiIC_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
-        niiEC = nibabel.Nifti1Image( niiEC_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
-        niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+        if self.get_config('doNormalizeMaps') :
+                niiIC = nibabel.Nifti1Image( niiIC_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+                niiEC = nibabel.Nifti1Image( niiEC_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+                niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+        else:
+                niiIC = nibabel.Nifti1Image( niiIC_img, affine )
+                niiEC = nibabel.Nifti1Image( niiEC_img, affine )
+                niiISO = nibabel.Nifti1Image( niiISO_img, affine )
+
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
