@@ -68,7 +68,7 @@ cdef class Evaluation :
         self.set_config('doMergeB0', False)
         self.set_config('doNormalizeKernels', True)
         self.set_config('doDemean', False)
-        self.set_config('doNormalizeMaps', True)
+        self.set_config('doNormalizeMaps', False)
 
 
 
