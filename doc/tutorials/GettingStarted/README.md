@@ -191,7 +191,7 @@ NB: the *number of threads* is automatically set to the maximum number of cores 
 To fit the model (`Stick-Zeppelin-Ball` in this case) to the data, simply run:
 
 ```python
-mit.fit()
+mit.fit( tol_fun = 1e-3, max_iter = 200 )
 ```
 
 The optimization progress is displayed by default:
