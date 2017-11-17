@@ -26,7 +26,7 @@ trk2dictionary.run(
     filename_peaks = 'LausanneTwoShell/peaks.nii.gz',
     filename_mask  = 'LausanneTwoShell/WM.nii.gz',
     fiber_shift    = 0.5,
-    flip_peaks     = [True, True, False]
+    peaks_use_affine = True
 )
 ```
 
@@ -62,10 +62,9 @@ The output should be something like this:
 
 Please note that, in this particular example, in order to have all the data in the same reference system we had to:
 
-- flip the x- and y-axis of the peaks;
 - apply a translation of half voxel to the fibers.
 
-![Flipping in the data](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/GettingStarted/debugger_screenshot.jpg)
+![Flipping in the data](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/GettingStarted/debugger_screenshot2.jpg)
 
 ## Load the diffusion data
 
@@ -113,7 +112,12 @@ Setup the parameters of the model and **generate the lookup-tables**:
 
 ```python
 mit.set_model( 'StickZeppelinBall' )
-mit.model.set( 1.7E-3, [ 0.7 ], [ 1.7E-3, 3.0E-3 ] )
+
+d_par = 1.7E-3                          # Parallel diffusivity [mm^2/s]
+ICVFs = [ 0.7 ]                         # Intra-cellular volume fraction(s) [0..1]
+d_ISOs = [ 1.7E-3, 3.0E-3 ]             # Isotropic diffusivitie(s) [mm^2/s]
+
+mit.model.set( d_par, ICVFs, d_ISOs )
 mit.generate_kernels( regenerate=True )
 mit.load_kernels()
 ```
@@ -187,24 +191,26 @@ NB: the *number of threads* is automatically set to the maximum number of cores 
 To fit the model (`Stick-Zeppelin-Ball` in this case) to the data, simply run:
 
 ```python
-mit.fit()
+mit.fit( tol_fun = 1e-3, max_iter = 200 )
 ```
 
 The optimization progress is displayed by default:
 
 ```
 -> Fit model using "nnls":
-   1  |   3.3985977e+02  6.8133149e+00
-   2  |   2.4060680e+02  9.9518750e-01
-   3  |   1.9803782e+02  4.7611278e-01
+|     ||Ax-y||     |  Cost function    Abs error      Rel error    |     Abs x          Rel x
+------|------------------|-----------------------------------------------|------------------------------
+1  |   7.5552614e+02  |  2.8540987e+05  4.0602923e+05  1.4226180e+00  |  5.4262515e+01  1.0000000e+00
+2  |   6.7997468e+02  |  2.3118278e+05  5.4227093e+04  2.3456372e-01  |  1.6229691e+01  2.6520302e-01
+3  |   6.2490484e+02  |  1.9525303e+05  3.5929749e+04  1.8401635e-01  |  1.4457099e+01  2.0335528e-01
 ...
 ...
 ...
-  59  |   1.2456123e+02  1.0564753e-03
-  60  |   1.2449745e+02  1.0248108e-03
-  61  |   1.2443554e+02  9.9522544e-04
-	[ Stopping criterion: REL_OBJ]
-   [ 00h 03m 42s ]
+137  |   1.4197542e+02  |  1.0078510e+04  1.0588051e+01  1.0505571e-03  |  1.5019784e+00  4.0796383e-03
+138  |   1.4190279e+02  |  1.0068201e+04  1.0309090e+01  1.0239257e-03  |  1.4936457e+00  4.0495040e-03
+139  |   1.4183213e+02  |  1.0058177e+04  1.0024696e+01  9.9667126e-04  |  1.4848343e+00  4.0182480e-03
+< Stopping criterion: REL_OBJ >
+[ 00h 07m 04s ]
 ```
 
 where the columns report, respectively, the *iteration number*, the *cost function* and its *relative change*.
@@ -223,8 +229,8 @@ As shown in the output, the results are saved in the folder `Results_StickZeppel
 -> Saving results to "Results_StickZeppelinBall/*":
 	* configuration and results... [ OK ]
 	* fitting errors:
-		- RMSE...  [ 0.055 +/- 0.014 ]
-		- NRMSE... [ 0.131 +/- 0.037 ]
+		- RMSE...  [ 0.059 +/- 0.018 ]
+		- NRMSE... [ 0.117 +/- 0.037 ]
 	* voxelwise contributions:
 		- intra-axonal [ OK ]
 		- extra-axonal [ OK ]
