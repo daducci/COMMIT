@@ -103,7 +103,7 @@ int trk2dictionary(
 
     printf( "\t* Exporting IC compartments:\n" );
 
-    FILE* fpTRK = fopen(strTRKfilename,"r+b");
+    FILE* fpTRK = fopen(strTRKfilename,"rb");
     if (fpTRK == NULL) return 0;
     fseek(fpTRK,1000,SEEK_SET);
 
