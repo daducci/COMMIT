@@ -10,7 +10,7 @@ import sys
 from os import makedirs, remove
 from os.path import exists, join as pjoin
 import nibabel
-import pickle
+import cPickle
 import commit.models
 import commit.solvers
 import amico.scheme
@@ -784,6 +784,6 @@ cdef class Evaluation :
         print '   [ OK ]'
 
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-            pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+            cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )
