@@ -68,6 +68,8 @@ cdef class Evaluation :
         self.set_config('doMergeB0', False)
         self.set_config('doNormalizeKernels', True)
         self.set_config('doDemean', False)
+        self.set_config('doNormalizeMaps', False)
+
 
 
     def set_config( self, key, value ) :
@@ -690,19 +692,17 @@ cdef class Evaluation :
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
+        norm_fib = np.ones( nF )
         # x is the x of the original problem
         # self.x is the x preconditioned
-        # x_map is the x used to generate the intra-cellular, extra-cellular and isotropic maps (not divided by norm of the fiber)
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
             norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
-            x_map = self.x / np.hstack( (norm1,norm2,norm3) )
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
-            x_map = self.x
             x = self.x
 
         np.savetxt( pjoin(RESULTS_path,'weights.txt'), x, fmt='%.4f' )
@@ -710,6 +710,8 @@ cdef class Evaluation :
 
         # Map of wovelwise errors
         print '\t* fitting errors:'
+
+        not_NaN = np.ones( self.get_config('dim'), dtype=np.float32 ) * 1e-16 # avoid division by 0
 
         niiMAP_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
@@ -751,39 +753,49 @@ cdef class Evaluation :
 
         print '\t\t- intra-axonal',
         sys.stdout.flush()
-        niiMAP_img[:] = 0
+        niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmr']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = x_map[:offset].reshape( (-1,nF) ).sum( axis=0 )
+            tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
                 weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
             ).astype(np.float32)
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_IC.nii.gz') )
+            niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print '[ OK ]'
 
         print '\t\t- extra-axonal',
         sys.stdout.flush()
-        niiMAP_img[:] = 0
+        niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmh']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = x_map[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
+            tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_EC.nii.gz') )
+            niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print '[ OK ]'
 
         print '\t\t- isotropic',
         sys.stdout.flush()
-        niiMAP_img[:] = 0
+        niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-            xv = x_map[offset:].reshape( (-1,nV) ).sum( axis=0 )
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-        nibabel.save( niiMAP, pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
+            xv = x[offset:].reshape( (-1,nV) ).sum( axis=0 )
+            niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print '   [ OK ]'
 
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
             cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+
+        if self.get_config('doNormalizeMaps') :
+                niiIC = nibabel.Nifti1Image( niiIC_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+                niiEC = nibabel.Nifti1Image( niiEC_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+                niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + not_NaN), affine )
+        else:
+                niiIC = nibabel.Nifti1Image( niiIC_img, affine )
+                niiEC = nibabel.Nifti1Image( niiEC_img, affine )
+                niiISO = nibabel.Nifti1Image( niiISO_img, affine )
+
+        nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
+        nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
+        nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )
