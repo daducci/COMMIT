@@ -646,8 +646,15 @@ cdef class Evaluation :
         t = time.time()
         print '\n-> Fit model using "nnls":'
         Y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        self.x = commit.solvers.nnls( Y, self.A, tol_fun=tol_fun, max_iter=max_iter, verbose=verbose, x0=x0 )
-        self.CONFIG['optimization']['fit_time'] = time.time()-t
+        self.x, OPT_det = commit.solvers.nnls( Y, self.A, tol_fun=tol_fun, max_iter=max_iter, verbose=verbose, x0=x0 )
+        self.CONFIG['optimization']['fit_time'] = round(time.time()-t, 3)
+        self.CONFIG['optimization']['||Ax-y||'] = OPT_det['||Ax-y||']
+        self.CONFIG['optimization']['Cost function'] = OPT_det['Cost function']
+        self.CONFIG['optimization']['Error abs'] = OPT_det['Abs error']
+        self.CONFIG['optimization']['Error rel'] = OPT_det['Rel error']
+        self.CONFIG['optimization']['x abs'] = OPT_det['Abs x']
+        self.CONFIG['optimization']['x rel'] = OPT_det['Rel x']
+        self.CONFIG['optimization']['iteration'] = OPT_det['iteration']
         print '   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) )
 
 
@@ -697,8 +704,8 @@ cdef class Evaluation :
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
-        with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-            cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+
+        np.savetxt( pjoin(RESULTS_path,'weights.txt'), x, fmt='%.4f' )
         print '[ OK ]'
 
         # Map of wovelwise errors
@@ -722,6 +729,9 @@ cdef class Evaluation :
         niiMAP_hdr['cal_max'] = tmp.max()
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
         print ' [ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() )
+        self.CONFIG['map'] = {}
+        self.CONFIG['map']['RMSE mean'] = round(tmp.mean(), 3)
+        self.CONFIG['map']['RMSE std'] = round(tmp.std(), 3)
 
         print '\t\t- NRMSE...',
         sys.stdout.flush()
@@ -735,6 +745,8 @@ cdef class Evaluation :
         niiMAP_hdr['cal_max'] = 1
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
         print '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() )
+        self.CONFIG['map']['NRMSE mean'] = round(tmp.mean(), 3)
+        self.CONFIG['map']['NRMSE std'] = round(tmp.std(), 3)
 
         # Map of compartment contributions
         print '\t* voxelwise contributions:'
@@ -783,5 +795,7 @@ cdef class Evaluation :
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
+        with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
+            cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )
