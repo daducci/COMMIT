@@ -163,4 +163,4 @@ def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose
     CONFIG['Rel x'] = round(rel_x, 5)
     CONFIG['iteration'] = iter
 
-    return x
+    return x, CONFIG
