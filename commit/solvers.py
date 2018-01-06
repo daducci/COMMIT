@@ -52,6 +52,7 @@ def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose
     E-mail: rafael.carrillo@epfl.ch
     """
     # Initialization
+    CONFIG = {}
     if At is None :
         At = A.T
 
@@ -153,5 +154,13 @@ def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose
 
     if verbose >= 1 :
         print "< Stopping criterion: %s >" % criterion
+
+    CONFIG['||Ax-y||'] = round(np.sqrt(2.0*curr_obj), 5)
+    CONFIG['Cost function'] = round(curr_obj, 5)
+    CONFIG['Abs error'] = round(abs_obj, 5)
+    CONFIG['Rel error'] = round(rel_obj, 5)
+    CONFIG['Abs x'] = round(abs_x, 5)
+    CONFIG['Rel x'] = round(rel_x, 5)
+    CONFIG['iteration'] = iter
 
     return x
