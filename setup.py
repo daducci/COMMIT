@@ -23,6 +23,15 @@ ext2 = Extension(
     language='c++',
 )
 
+ext3 = Extension(
+    name='commit.proximals',
+    sources=['commit/proximals.pyx'],
+    include_dirs=[numpy.get_include()],
+    extra_compile_args=['-w'],
+    extra_link_args=[],
+    language='c++',
+)
+
 setup(
     name='commit',
     version='1.0',
@@ -31,7 +40,7 @@ setup(
     author_email='alessandro.daducci@gmail.com',
     url='https://github.com/daducci/COMMIT',
     cmdclass = {'build_ext':build_ext},
-    ext_modules = [ ext1, ext2 ],
+    ext_modules = [ ext1, ext2, ext3 ],
     packages=['commit','commit.operator'],
     package_data={
         'commit.operator':["*.*"], # needed by pyximport to compile at runtime
