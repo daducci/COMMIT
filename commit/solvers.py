@@ -601,5 +601,6 @@ def  fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     opt_details['abs x'] = abs_x
     opt_details['rel x'] = rel_x
     opt_details['iteration'] = iter
-
+    opt_details['stopping criterion'] = criterion
+    
     return x, opt_details
