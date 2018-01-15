@@ -1,4 +1,3 @@
-# cython: profile=False
 cimport cython
 import numpy as np
 cimport numpy as np
@@ -9,10 +8,27 @@ import sys
 @cython.wraparound(False)
 @cython.profile(False)
 
-## Regularisers for NNLSL1
-# Proximal
-cpdef prox_nnl1(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
+## Regularisers for NNLSLp
+#####  #####   ####  #    # # #    #   ##   #       ####
+#    # #    # #    #  #  #  # ##  ##  #  #  #      #
+#    # #    # #    #   ##   # # ## # #    # #       ####
+#####  #####  #    #   ##   # #    # ###### #           #
+#      #   #  #    #  #  #  # #    # #    # #      #    #
+#      #    #  ####  #    # # #    # #    # ######  ####
+cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int compartment_size):
+    cdef:
+        np.ndarray[np.float64_t] v
+        size_t i
+    v = x.copy()
+    for i in range(compartment_start, compartment_size):
+        if v[i] < 0.0:
+            v[i] = 0.0
+    return v
+
+cpdef soft_thresholding(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
     """
+    Proximal of L1 norm
+
     Author: Matteo Frigo - athena @ Inria
     """
     # NB: this preserves non-negativity
@@ -25,6 +41,24 @@ cpdef prox_nnl1(np.ndarray[np.float64_t] x, double lam, int compartment_start, i
             v[i] = 0.0
         else:
             v[i] -= lam
+    return v
+
+cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
+    """
+    Proximal of L2 norm
+
+    Author: Matteo Frigo - athena @ Inria
+    """
+    # NB: this preserves non-negativity
+    cdef:
+        np.float64_t xn
+        np.ndarray[np.float64_t] v
+        size_t i
+    v = x.copy()
+    xn = sqrt(sum(v[compartment_start:compartment_size]**2))
+    if xn > lam
+        for i in range(compartment_start, compartment_size):
+            v[i] = v[i]/xn*lam
     return v
 
 
