@@ -8,7 +8,6 @@ import sys
 @cython.wraparound(False)
 @cython.profile(False)
 
-## Regularisers for NNLSLp
 #####  #####   ####  #    # # #    #   ##   #       ####
 #    # #    # #    #  #  #  # ##  ##  #  #  #      #
 #    # #    # #    #   ##   # # ## # #    # #       ####
@@ -16,6 +15,11 @@ import sys
 #      #   #  #    #  #  #  # #    # #    # #      #    #
 #      #    #  ####  #    # # #    # #    # ######  ####
 cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int compartment_size):
+    """
+    POCS for the first orthant (non-negativity)
+
+    Author: Matteo Frigo - athena @ Inria
+    """
     cdef:
         np.ndarray[np.float64_t] v
         size_t i
@@ -61,9 +65,6 @@ cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compar
             v[i] = v[i]/xn*lam
     return v
 
-
-## Regularisers for HNNLS
-# Penalty term
 cpdef omega_hierarchical(np.ndarray[np.float64_t] v, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n) :
     """
     Author: Matteo Frigo - athena @ Inria
@@ -89,7 +90,6 @@ cpdef omega_hierarchical(np.ndarray[np.float64_t] v, np.ndarray[object] subtree,
                 tmp += weight[k] * max( v[idx] )
     return lam*tmp
 
-# Proximal operator of the penalty term
 cpdef prox_hierarchical( np.ndarray[np.float64_t] x, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n ) :
     """
     Author: Matteo Frigo - athena @ Inria
