@@ -621,7 +621,7 @@ cdef class Evaluation :
             raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
         return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
-    def fit( self, solver='nnls', tol_fun = 1e-3, tol_x = 1e-6, max_iter = 100, verbose = 1, x0 = None, regularisation = {} ) :
+    def fit( self, tol_fun = 1e-3, tol_x = 1e-6, max_iter = 100, verbose = 1, x0 = None, regularisation = None ) :
         """Fit the model to the data.
 
         Parameters
@@ -643,41 +643,29 @@ cdef class Evaluation :
             raise RuntimeError( 'Threads not set; call "set_threads()" first.' )
         if self.A is None :
             raise RuntimeError( 'Operator not built; call "build_operator()" first.' )
+
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
                 raise RuntimeError( 'x0: dimension do not match' )
+        if regularisation is None :
+            regularisation = commit.solvers.init_regularisation(self)
 
-        self.CONFIG['optimization'] = {}
-        self.CONFIG['optimization']['solver']   = solver
-        self.CONFIG['optimization']['tol_fun']  = tol_fun
-        self.CONFIG['optimization']['tol_x']  = tol_x
-        self.CONFIG['optimization']['max_iter'] = max_iter
-        self.CONFIG['optimization']['verbose']  = verbose
+        self.CONFIG['optimization']                   = {}
+        self.CONFIG['optimization']['tol_fun']        = tol_fun
+        self.CONFIG['optimization']['tol_x']          = tol_x
+        self.CONFIG['optimization']['max_iter']       = max_iter
+        self.CONFIG['optimization']['verbose']        = verbose
         self.CONFIG['optimization']['regularisation'] = regularisation
 
         # run solver
         t = time.time()
-        print '\n-> Fit model using "%s":' % solver
-        Y = self.get_y()
+        print '\n-> Fit model'
 
-        if solver == "nnls" :
-            self.x = commit.solvers.nnls( Y, self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose)
-        elif solver == "nnlsl1" :
-            if regularisation is {} or regularisation is None:
-                raise RuntimeError( 'Regularisation structure not properly defined. Check the documentation of commit.solvers.nnlsl1 .' )
-            self.x = commit.solvers.nnlsl1( Y, self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, regularisation=regularisation)
-        elif solver == "gnnls" :
-            if regularisation is {} or regularisation is None:
-                raise RuntimeError( 'Regularisation structure not properly defined. Check the documentation of commit.solvers.gnnls .' )
-            self.x = commit.solvers.gnnls( Y, self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, regularisation = regularisation)
-        elif solver == "hnnls":
-            if regularisation is {} or regularisation is None:
-                raise RuntimeError( 'Regularisation structure not properly defined. Check the documentation of commit.solvers.hnnls .' )
-            self.x = commit.solvers.hnnls( Y, self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, regularisation = regularisation)
-        else :
-            raise RuntimeError( 'Solver "%s" not recognized' % solver )
+        self.x, opt_details = commit.solvers.solver(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation)
 
+        self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
+
         print '   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) )
 
 

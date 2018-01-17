@@ -3,69 +3,71 @@ from math import sqrt
 import sys
 eps = np.finfo(float).eps
 
-   ##   #    # #    # # #      #   ##   #####  #   #
-  #  #  #    #  #  #  # #      #  #  #  #    #  # #
- #    # #    #   ##   # #      # #    # #    #   #
- ###### #    #   ##   # #      # ###### #####    #
- #    # #    #  #  #  # #      # #    # #   #    #
- #    #  ####  #    # # ###### # #    # #    #   #
-from commit.proximals import non_negativity,
-                             omega_hierarchical,
-                             prox_hierarchical,
+from commit.proximals import (non_negativity,
+                             omega_group_sparsity,
+                             prox_group_sparsity,
                              soft_thresholding,
-                             projection_onto_l2_ball
-hierarchical = -1
+                             projection_onto_l2_ball)
+group_sparsity = -1
 non_negative = 0
 norm1 = 1
 norm2 = 2
-list_regnorms = [hierarchical, non_negative, norm1, norm2]
+list_regnorms = [group_sparsity, non_negative, norm1, norm2]
+list_group_sparsity_norms = [2, np.inf]
 
-def init_regularisation(commit_evaluation = None,
+def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
-                        structureIC = None, weightsIC = None,
-                        group_is_ordered = False
+                        structureIC = None, weightsIC = None, group_norm = 2,
+                        group_is_ordered = False,
                         lambdas = (.0,.0,.0) ):
-    if commit_evaluation is None:
-        raise ValueError('commit.Evaluation object expected but not found')
 
     regularisation = {}
 
     regularisation['startIC']  = 0
-    regularisation['sizeIC']   = int( commit_evaluation.DICTIONARY['IC']['nF']*len(commit_evaluation.model.ICVFs) )
+    regularisation['sizeIC']   = int( commit_evaluation.DICTIONARY['IC']['nF'])#*len(commit_evaluation.model.ICVFs) )
     regularisation['startEC']  = int( regularisation['sizeIC'] )
     regularisation['sizeEC']   = int( commit_evaluation.DICTIONARY['EC']['nE'] )
     regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
-    regularisation['sizeISO']  = int( commit_evaluation.DICTIONARY['nV']*len(commit_evaluation.model.d_ISOs) )
+    regularisation['sizeISO']  = int( commit_evaluation.DICTIONARY['nV'])#*len(commit_evaluation.model.d_ISOs) )
 
-    regularisation['normIC']  = regIC
-    regularisation['normEC']  = regEC
-    regularisation['normISO'] = regISO
+    regularisation['normIC']  = regnorms[0]
+    regularisation['normEC']  = regnorms[1]
+    regularisation['normISO'] = regnorms[2]
 
     regularisation['lambdaIC']  = lambdas[0]
     regularisation['lambdaEC']  = lambdas[1]
     regularisation['lambdaISO'] = lambdas[2]
 
     # Solver-specific fields
-    regularisation['group_is_ordered'] = group_is_ordered
+    regularisation['group_is_ordered'] = group_is_ordered  # This option will be deprecated in future release
     regularisation['structureIC']      = structureIC
     regularisation['weightsIC']        = weightsIC
+    regularisation['group_norm']       = group_norm
 
     return regularisation
 
 
 def regularisation2omegaprox(regularisation):
-    lambdaIC  = regularisation.get('lambdaIC')
-    lambdaEC  = regularisation.get('lambdaEC')
-    lambdaISO = regularisation.get('lambdaISO')
+    lambdaIC  = float(regularisation.get('lambdaIC'))
+    lambdaEC  = float(regularisation.get('lambdaEC'))
+    lambdaISO = float(regularisation.get('lambdaISO'))
+    if lambdaIC < 0.0 or lambdaEC < 0.0 or lambdaISO < 0.0:
+        raise ValueError('Negative regularisation parameters are not allowed')
 
     normIC  = regularisation.get('normIC')
     normEC  = regularisation.get('normEC')
     normISO = regularisation.get('normISO')
+    if not normIC in list_regnorms:
+        raise ValueError('normIC must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
+    if not normEC in list_regnorms:
+        raise ValueError('normEC must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
+    if not normISO in list_regnorms:
+        raise ValueError('normISO must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
 
     ## NNLS case
-    if (lambdaIC == 0.0 and lambdaEC == 0.0 and lambdaISO = 0.0) or (normIC == 0 and normEC == 0 and normISO == 0):
+    if (lambdaIC == 0.0 and lambdaEC == 0.0 and lambdaISO == 0.0) or (normIC == non_negative and normEC == non_negative and normISO == non_negative):
         omega = lambda x: 0.0
-        prox  = lambda x: non_negativity(x)
+        prox  = lambda x: non_negativity(x, 0, len(x))
         return omega, prox
 
     ## All other cases
@@ -73,105 +75,92 @@ def regularisation2omegaprox(regularisation):
     # Intracellular Compartment
     startIC = regularisation.get('startIC')
     sizeIC  = regularisation.get('sizeIC')
-    if lambdaIC > 0.0:
-        if normIC == norm2:
-            omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
-            proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
-        elif normIC == norm1:
-            omegaIC = lambda x: lambdaIC * sum( x[startIC:sizeIC] )
-            proxIC  = lambda x: soft_thresholding(x, lambdaIC, startIC, sizeIC)
-        elif normIC == non_negative:
-            omegaIC = lambda x: 0.0
-            proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
-        elif normIC == hierarchical:
-            weightsIC   = regularisation.get('weightsIC')
-            structureIC = regularisation.get('structureIC')
-            if regularisation.get('group_is_ordered'): # make the list-like structure suitable for the solver
-                raise DeprecationWarning('The ordered group structure will be deprecated. Consider using the structureIC field for defining the group structure.')
-                bundles = np.cumsum(np.insert(sizeIC,0,0))
-                structureIC = np.array([range(bundles[k],bundles[k+1]) for k in range(0,len(bundles)-1)])
-                regularisation['structureIC'] = structureIC
-                del bundles
-
-            if len(structureIC) != len(weightsIC):
-                raise ValueError('Number of groups and weights do not coincide.')
-
-            omegaIC = lambda x: omega_hierarchical( x, structureIC, weightsIC, lambdaIC, normIC )
-            proxIC  = lambda x: prox_hierarchical( x, structureIC, weightsIC, lambdaIC, normIC )
-        else:
-            raise ValueError('Type of regularisation for IC compartment not recognized.')
-    else:
+    if lambdaIC == 0.0:
         omegaIC = lambda x: 0.0
         proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
+    elif normIC == norm2:
+        omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
+        proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
+    elif normIC == norm1:
+        omegaIC = lambda x: lambdaIC * sum( x[startIC:sizeIC] )
+        proxIC  = lambda x: soft_thresholding(x, lambdaIC, startIC, sizeIC)
+    elif normIC == non_negative:
+        omegaIC = lambda x: 0.0
+        proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
+    elif normIC == group_sparsity:
+        weightsIC   = regularisation.get('weightsIC')
+        structureIC = regularisation.get('structureIC')
+        if regularisation.get('group_is_ordered'): # This option will be deprecated in future release
+            raise DeprecationWarning('The ordered group structure will be deprecated. Consider using the structureIC field for defining the group structure.')
+            bundles = np.cumsum(np.insert(sizeIC,0,0))
+            structureIC = np.array([range(bundles[k],bundles[k+1]) for k in range(0,len(bundles)-1)])
+            regularisation['structureIC'] = structureIC
+            del bundles
+        if not len(structureIC) == len(weightsIC):
+            raise ValueError('Number of groups and weights do not coincide.')
+        group_norm = regularisation.get('group_norm')
+        if not group_norm in list_group_sparsity_norms:
+            raise ValueError('Wrong norm in the structured sparsity term. Choose between %s.' % str(list_group_sparsity_norms))
+
+        omegaIC = lambda x: omega_group_sparsity( x, structureIC, weightsIC, lambdaIC, normIC )
+        proxIC  = lambda x:  prox_group_sparsity( x, structureIC, weightsIC, lambdaIC, normIC )
+    else:
+        raise ValueError('Type of regularisation for IC compartment not recognized.')
+
 
     # Extracellular Compartment
-    if lambdaEC > 0.0:
-        if normEC == norm2:
-            omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:sizeEC])
-            proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
-        elif normEC == norm1:
-            omegaEC = lambda x: lambdaEC * sum( x[startEC:sizeEC] )
-            proxEC  = lambda x: soft_thresholding(x, lambdaEC, startEC, sizeEC)
-        elif normEC == non_negative:
-            omegaEC = lambda x: 0.0
-            proxEC  = lambda x: non_negativity(x, startEC, sizeEC)
-        else:
-            raise ValueError('Type of regularisation for EC compartment not recognized.')
-    else:
+    startEC = regularisation.get('startEC')
+    sizeEC  = regularisation.get('sizeEC')
+    if lambdaEC == 0.0:
         omegaEC = lambda x: 0.0
         proxEC  = lambda x: non_negativity(x, startEC, sizeEC)
+    elif normEC == norm2:
+        omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:sizeEC])
+        proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
+    elif normEC == norm1:
+        omegaEC = lambda x: lambdaEC * sum( x[startEC:sizeEC] )
+        proxEC  = lambda x: soft_thresholding(x, lambdaEC, startEC, sizeEC)
+    elif normEC == non_negative:
+        omegaEC = lambda x: 0.0
+        proxEC  = lambda x: non_negativity(x, startEC, sizeEC)
+    else:
+        raise ValueError('Type of regularisation for EC compartment not recognized.')
 
     # Isotropic Compartment
+    startISO = regularisation.get('startISO')
+    sizeISO  = regularisation.get('sizeISO')
     if lambdaISO == 0.0:
-        normISO = non_negative
         omegaISO = lambda x: 0.0
         proxISO  = lambda x: non_negativity(x, startISO, sizeISO)
-
-    if normISO not in list_regnorms:
+    elif normISO == norm2:
+        omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:sizeISO])
+        proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
+    elif normISO == norm1:
+        omegaISO = lambda x: lambdaISO * sum( x[startISO:sizeISO] )
+        proxISO  = lambda x: soft_thresholding(x, lambdaISO, startISO, sizeISO)
+    elif normISO == non_negative:
+        omegaISO = lambda x: 0.0
+        proxISO  = lambda x: non_negativity(x, startISO, sizeISO)
+    else:
         raise ValueError('Type of regularisation for ISO compartment not recognized.')
-    elif lambdaISO > 0.0:
-        if normISO == norm2:
-            omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:sizeISO])
-            proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
-        elif normISO == norm1:
-            omegaISO = lambda x: lambdaISO * sum( x[startISO:sizeISO] )
-            proxISO  = lambda x: soft_thresholding(x, lambdaISO, startISO, sizeISO)
-        elif normISO == non_negative:
-            omegaISO = lambda x: 0.0
-            proxISO  = lambda x: non_negativity(x, startISO, sizeISO)
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
-    prox  = lambda x: proxIC(x)  + proxEC(x)  + proxISO(x)
+    prox = lambda x: proxIC(proxEC(proxISO(x)))
 
     return omega, prox
 
-## # Solver wrapper
-  #####  ####### #       #     # ####### ######
- #     # #     # #       #     # #       #     #
- #       #     # #       #     # #       #     #
-  #####  #     # #       #     # #####   ######
-       # #     # #        #   #  #       #   #
- #     # #     # #         # #   #       #    #
-  #####  ####### #######    #    ####### #     #
 def solver(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
-    if regularisation==None:
+    if regularisation is None:
         omega = lambda x: 0.0
-        prox  = lambda x: non_negativity(x)
+        prox  = lambda x: non_negativity(x, 0, len(x))
     else:
         omega, prox = regularisation2omegaprox(regularisation)
 
-    if x0 = None:
-        x0 = np.zeros(A.shape[1])
+    if x0 is None:
+        x0 = np.ones(A.shape[1])
 
-    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal)
+    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox)
 
-## # Splitting methods
- ###### #  ####  #####   ##
- #      # #        #    #  #
- #####  #  ####    #   #    #
- #      #      #   #   ######
- #      # #    #   #   #    #
- #      #  ####    #   #    #
 def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     """
     Solve the regularised least squares problem
@@ -188,7 +177,6 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         [1] Beck & Teboulle - `A Fast Iterative Shrinkage Thresholding
             Algorithm for Linear Inverse Problems`
     """
-
 
     # Initialization
     res = -y.copy()
@@ -298,12 +286,12 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
 
     opt_details = {}
     opt_details['residual'] = res_norm
-    opt_details['cost function'] = curr_obj
-    opt_details['abs cost'] = abs_obj
-    opt_details['rel cost'] = rel_obj
-    opt_details['abs x'] = abs_x
-    opt_details['rel x'] = rel_x
+    opt_details['cost_function'] = curr_obj
+    opt_details['abs_cost'] = abs_obj
+    opt_details['rel_cost'] = rel_obj
+    opt_details['abs_x'] = abs_x
+    opt_details['rel _x'] = rel_x
     opt_details['iterations'] = iter
-    opt_details['stopping criterion'] = criterion
+    opt_details['stopping_criterion'] = criterion
 
     return x, opt_details
