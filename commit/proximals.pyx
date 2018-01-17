@@ -60,12 +60,12 @@ cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compar
         size_t i
     v = x.copy()
     xn = sqrt(sum(v[compartment_start:compartment_size]**2))
-    if xn > lam
+    if xn > lam:
         for i in range(compartment_start, compartment_size):
             v[i] = v[i]/xn*lam
     return v
 
-cpdef omega_hierarchical(np.ndarray[np.float64_t] v, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n) :
+cpdef omega_group_sparsity(np.ndarray[np.float64_t] v, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n) :
     """
     Author: Matteo Frigo - athena @ Inria
     References:
@@ -90,7 +90,7 @@ cpdef omega_hierarchical(np.ndarray[np.float64_t] v, np.ndarray[object] subtree,
                 tmp += weight[k] * max( v[idx] )
     return lam*tmp
 
-cpdef prox_hierarchical( np.ndarray[np.float64_t] x, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n ) :
+cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n ) :
     """
     Author: Matteo Frigo - athena @ Inria
     References:
