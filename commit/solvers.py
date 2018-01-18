@@ -12,15 +12,101 @@ group_sparsity = -1
 non_negative = 0
 norm1 = 1
 norm2 = 2
+norminf = np.inf
 list_regnorms = [group_sparsity, non_negative, norm1, norm2]
-list_group_sparsity_norms = [2, np.inf]
+list_group_sparsity_norms = [norm2, norminf]
 
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
                         structureIC = None, weightsIC = None, group_norm = 2,
                         group_is_ordered = False,
                         lambdas = (.0,.0,.0) ):
+    """
+    Initialise the data structure that defines Omega in
 
+        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+
+
+    Input
+    -----
+    commit_evaluation - commit.Evaluation object :
+        dictionary and model have to be loaded beforehand.
+
+
+    regnorms - tuple :
+        this sets the penalty term to be used for each compartment.
+            Default = (non_negative,non_negative,non_negative).
+
+            regnorms[0] corresponds to the Intracellular compartment
+            regnorms[1] corresponds to the Extracellular compartment
+            regnorms[2] corresponds to the Isotropic compartment
+
+            Each regnorms[k] must be one of commit.solvers.
+                                {group_sparsity, non_negative, norm1, norm2}.
+
+            commit.solvers.group_sparsity considers both the non-overlapping
+                and the hierarchical group sparsity (see [1]). This option is
+                allowed only in the IC compartment. The mathematical formulation
+                of this term is
+                $\Omega(x) = \lambda \sum_{g\in G} w_g |x_g|
+
+            commit.solvers.non_negative puts a non negativity constraint on the
+                coefficients corresponding to the compartment. This is the
+                default option for each compartment
+
+            commit.solvers.norm1 penalises with the 1-norm of the coefficients
+                corresponding to the compartment.
+
+            commit.solvers.norm2 penalises with the 2-norm of the coefficients
+                corresponding to the compartment.
+
+
+    structureIC - np.array(list(list)) :
+        group structure for the IC compartment.
+            This field is necessary only if regterm[0]=commit.solver.group_sparsity.
+            Example:
+                structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]])
+
+                that is equivalent to
+                            [0,1,2,3,4,5]        [6]
+                              /       \
+                        [0,2,5]       [1,3,4]
+                which has two non overlapping groups, one of which is the union
+                of two other non-overlapping groups.
+
+
+    weightsIC - np.array(np.float64) :
+        this defines the weights associated to each group of structure IC.
+
+
+    group_norm - number :
+        norm type for the commit.solver.group_sparsity penalisation of the IC compartment.
+            Default: group_norm = commit.solver.norm2
+            To be chosen among commit.solver.{norm2,norminf}.
+
+    group_is_ordered - boolean :
+        True if the streamlines are ordered group-wise, False otherwise.
+            Defauls: False
+            This option is given for back compatibility with older and internal
+            version of the package that required an ordered version of the input
+            tractogram.
+            If you use QuickBundles(X) to define the group structure you
+            shouldn't take care of this option.
+
+            Note: this option will be deprecated in future release and gives a warning.
+
+    lambdas - tuple :
+        regularisation parameter for each compartment.
+            Default: lambdas = (0.0, 0.0, 0.0)
+            The lambdas correspond to the onse described in the mathematical
+            formulation of the regularisation term
+            $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
+    Notes
+    -----
+    Author: Matteo Frigo - athena @ inria
+    References:
+        [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
+    """
     regularisation = {}
 
     regularisation['startIC']  = 0
@@ -34,9 +120,9 @@ def init_regularisation(commit_evaluation,
     regularisation['normEC']  = regnorms[1]
     regularisation['normISO'] = regnorms[2]
 
-    regularisation['lambdaIC']  = lambdas[0]
-    regularisation['lambdaEC']  = lambdas[1]
-    regularisation['lambdaISO'] = lambdas[2]
+    regularisation['lambdaIC']  = float( lambdas[0] )
+    regularisation['lambdaEC']  = float( lambdas[1] )
+    regularisation['lambdaISO'] = float( lambdas[2] )
 
     # Solver-specific fields
     regularisation['group_is_ordered'] = group_is_ordered  # This option will be deprecated in future release
@@ -71,7 +157,6 @@ def regularisation2omegaprox(regularisation):
         return omega, prox
 
     ## All other cases
-    #
     # Intracellular Compartment
     startIC = regularisation.get('startIC')
     sizeIC  = regularisation.get('sizeIC')
@@ -145,11 +230,25 @@ def regularisation2omegaprox(regularisation):
         raise ValueError('Type of regularisation for ISO compartment not recognized.')
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
-    prox = lambda x: proxIC(proxEC(proxISO(x)))
+    prox = lambda x: non_negative(proxIC(proxEC(proxISO(x)))) # non negativity is redunduntly forced
 
     return omega, prox
 
-def solver(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
+def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
+    """
+    Solve the regularised least squares problem
+
+        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+
+    with the Omega described by 'regularisation'.
+
+    Check the documentation of commit.solvers.init_regularisation to see how to
+    solve a specific problem.
+
+    Notes
+    -----
+    Author: Matteo Frigo - athena @ inria
+    """
     if regularisation is None:
         omega = lambda x: 0.0
         prox  = lambda x: non_negativity(x, 0, len(x))
@@ -169,9 +268,12 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
 
     with the FISTA algorithm described in [1].
 
+    The penalty term and its proximal operator must be defined in such a way
+    that they already contain the regularisation parameter.
+
     Notes
     -----
-    Author: Matteo Frigo - athena @ INRIA
+    Author: Matteo Frigo - athena @ inria
     Acknowledgment: Rafael Carrillo - lts5 @ EPFL
     References:
         [1] Beck & Teboulle - `A Fast Iterative Shrinkage Thresholding

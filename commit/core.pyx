@@ -632,6 +632,13 @@ cdef class Evaluation :
             Maximum number of iterations (default : 100)
         verbose : integer
             Level of verbosity: 0=no print, 1=print progress (default : 1)
+        x0 : np.array
+            Initial guess for the solution of the problem (default : None)
+        regularisation : commit.solvers.init_regularisation object
+            Python dictionary that describes the wanted regularisation term.
+            Check the documentation of commit.solvers.init_regularisation to see
+            how to properly define the wanted mathematical formulation
+            ( default : None )
         """
         if self.niiDWI is None :
             raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
@@ -646,7 +653,7 @@ cdef class Evaluation :
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
-                raise RuntimeError( 'x0: dimension do not match' )
+                raise RuntimeError( 'x0: dimension does not match the number of columns of the dictionary.' )
         if regularisation is None :
             regularisation = commit.solvers.init_regularisation(self)
 
@@ -661,7 +668,7 @@ cdef class Evaluation :
         t = time.time()
         print '\n-> Fit model'
 
-        self.x, opt_details = commit.solvers.solver(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation)
+        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
