@@ -676,13 +676,24 @@ cdef class Evaluation :
         print '   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) )
 
 
-    def save_results( self, path_suffix = None ) :
+    def save_results( self, path_suffix = None, save_pickle = True, save_txt = False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
         ----------
         path_suffix : string
             Text to be appended to "Results" to create the output path (default : None)
+        save_pickle : boolean
+            Save everything in a pickle file containing the following list L:
+                L[0]: dictionary with all the configuration details
+                L[1]: np.array obtained through the optimisation process with the normalised kernels
+                L[2]: np.array renormalisation of L[1]
+            (default : True)
+        save_txt : boolean
+            Save three txt files containing the coefficients related to each
+            compartment and a pickle file containing the dictionary with all
+            the configuration details.
+            (default : False)
         """
         if self.x is None :
             raise RuntimeError( 'Model not fitted to the data; call "fit()" first.' )
@@ -705,8 +716,8 @@ cdef class Evaluation :
         self.set_config('RESULTS_path', RESULTS_path)
 
         # Configuration and results
-        print '\t* configuration and results...',
-        sys.stdout.flush()
+        print '\t* configuration and results:'
+
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
@@ -722,9 +733,22 @@ cdef class Evaluation :
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
-        with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-            cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
-        print '[ OK ]'
+        if save_pickle:
+            print '\t\t- pickle... ',
+            sys.stdout.flush()
+            with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
+                cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+            print '[ OK ]'
+        if save_txt:
+            print '\t\t- txt... ',
+            sys.stdout.flush()
+            np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[0:nF])
+            np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[nF:nF+nE])
+            np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[(nF+nE):])
+            with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
+                cPickle.dump( self.CONFIG, fid, protocol=2 )
+            print '[ OK ]'
+
 
         # Map of wovelwise errors
         print '\t* fitting errors:'
