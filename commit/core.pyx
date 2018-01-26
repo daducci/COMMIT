@@ -676,20 +676,20 @@ cdef class Evaluation :
         print '   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) )
 
 
-    def save_results( self, path_suffix = None, save_pickle = True, save_txt = False ) :
+    def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
         ----------
         path_suffix : string
             Text to be appended to "Results" to create the output path (default : None)
-        save_pickle : boolean
+        save_opt_details : boolean
             Save everything in a pickle file containing the following list L:
                 L[0]: dictionary with all the configuration details
                 L[1]: np.array obtained through the optimisation process with the normalised kernels
                 L[2]: np.array renormalisation of L[1]
             (default : True)
-        save_txt : boolean
+        save_coeff : boolean
             Save three txt files containing the coefficients related to each
             compartment and a pickle file containing the dictionary with all
             the configuration details.
@@ -733,13 +733,13 @@ cdef class Evaluation :
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
-        if save_pickle:
+        if save_opt_details:
             print '\t\t- pickle... ',
             sys.stdout.flush()
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
                 cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
             print '[ OK ]'
-        if save_txt:
+        if save_coeff:
             print '\t\t- txt... ',
             sys.stdout.flush()
             np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[0:nF])
