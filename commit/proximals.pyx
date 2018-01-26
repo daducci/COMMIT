@@ -8,12 +8,6 @@ import sys
 @cython.wraparound(False)
 @cython.profile(False)
 
-#####  #####   ####  #    # # #    #   ##   #       ####
-#    # #    # #    #  #  #  # ##  ##  #  #  #      #
-#    # #    # #    #   ##   # # ## # #    # #       ####
-#####  #####  #    #   ##   # #    # ###### #           #
-#      #   #  #    #  #  #  # #    # #    # #      #    #
-#      #    #  ####  #    # # #    # #    # ######  ####
 cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int compartment_size):
     """
     POCS for the first orthant (non-negativity)
