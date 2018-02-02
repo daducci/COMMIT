@@ -11,8 +11,6 @@ import sys
 cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int compartment_size):
     """
     POCS for the first orthant (non-negativity)
-
-    Author: Matteo Frigo - athena @ Inria
     """
     cdef:
         np.ndarray[np.float64_t] v
@@ -26,8 +24,6 @@ cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int comp
 cpdef soft_thresholding(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
     """
     Proximal of L1 norm
-
-    Author: Matteo Frigo - athena @ Inria
     """
     # NB: this preserves non-negativity
     cdef:
@@ -44,8 +40,6 @@ cpdef soft_thresholding(np.ndarray[np.float64_t] x, double lam, int compartment_
 cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
     """
     Proximal of L2 norm
-
-    Author: Matteo Frigo - athena @ Inria
     """
     # NB: this preserves non-negativity
     cdef:
@@ -61,7 +55,6 @@ cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compar
 
 cpdef omega_group_sparsity(np.ndarray[np.float64_t] v, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n) :
     """
-    Author: Matteo Frigo - athena @ Inria
     References:
         [1] Jenatton et al. - `Proximal Methods for Hierarchical Sparse Coding`
     """
@@ -86,7 +79,6 @@ cpdef omega_group_sparsity(np.ndarray[np.float64_t] v, np.ndarray[object] subtre
 
 cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n ) :
     """
-    Author: Matteo Frigo - athena @ Inria
     References:
         [1] Jenatton et al. - `Proximal Methods for Hierarchical Sparse Coding`
     """

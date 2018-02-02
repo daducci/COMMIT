@@ -1,3 +1,7 @@
+"""
+This structure is based on the previous work of Rafael Carrillo and was
+supported by the LTS5 laboratory at EPFL, Lausanne.
+"""
 import numpy as np
 from math import sqrt
 import sys
@@ -101,9 +105,8 @@ def init_regularisation(commit_evaluation,
             The lambdas correspond to the onse described in the mathematical
             formulation of the regularisation term
             $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
-    Notes
-    -----
-    Author: Matteo Frigo - athena @ inria
+
+
     References:
         [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
     """
@@ -244,10 +247,6 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
 
     Check the documentation of commit.solvers.init_regularisation to see how to
     solve a specific problem.
-
-    Notes
-    -----
-    Author: Matteo Frigo - athena @ inria
     """
     if regularisation is None:
         omega = lambda x: 0.0
@@ -271,10 +270,6 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     The penalty term and its proximal operator must be defined in such a way
     that they already contain the regularisation parameter.
 
-    Notes
-    -----
-    Author: Matteo Frigo - athena @ inria
-    Acknowledgment: Rafael Carrillo - lts5 @ EPFL
     References:
         [1] Beck & Teboulle - `A Fast Iterative Shrinkage Thresholding
             Algorithm for Linear Inverse Problems`
