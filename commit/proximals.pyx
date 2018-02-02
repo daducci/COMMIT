@@ -1,3 +1,9 @@
+"""
+Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
+
+This structure is based on the previous work of Rafael Carrillo and was
+supported by the LTS5 laboratory at EPFL, Lausanne.
+"""
 cimport cython
 import numpy as np
 cimport numpy as np
