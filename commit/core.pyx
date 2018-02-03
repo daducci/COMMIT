@@ -610,8 +610,18 @@ cdef class Evaluation :
 
         print '   [ %.1f seconds ]' % ( time.time() - tic )
 
+    def get_y( self ):
+        """
+        Returns a numpy array that corresponds to the 'y' vector of the optimisation problem.
+        NB: this can be run only after having loaded the dictionary and the data.
+        """
+        if self.DICTIONARY is None :
+            raise RuntimeError( 'Dictionary not loaded; call "load_dictionary()" first.' )
+        if self.niiDWI is None :
+            raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
+        return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
-    def fit( self, tol_fun = 1e-3, max_iter = 100, verbose = 1, x0 = None ) :
+    def fit( self, tol_fun = 1e-3, tol_x = 1e-6, max_iter = 100, verbose = 1, x0 = None, regularisation = None ) :
         """Fit the model to the data.
 
         Parameters
@@ -622,6 +632,13 @@ cdef class Evaluation :
             Maximum number of iterations (default : 100)
         verbose : integer
             Level of verbosity: 0=no print, 1=print progress (default : 1)
+        x0 : np.array
+            Initial guess for the solution of the problem (default : None)
+        regularisation : commit.solvers.init_regularisation object
+            Python dictionary that describes the wanted regularisation term.
+            Check the documentation of commit.solvers.init_regularisation to see
+            how to properly define the wanted mathematical formulation
+            ( default : None )
         """
         if self.niiDWI is None :
             raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
@@ -633,31 +650,50 @@ cdef class Evaluation :
             raise RuntimeError( 'Threads not set; call "set_threads()" first.' )
         if self.A is None :
             raise RuntimeError( 'Operator not built; call "build_operator()" first.' )
+
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
-                raise RuntimeError( 'x0: dimension do not match' )
+                raise RuntimeError( 'x0: dimension does not match the number of columns of the dictionary.' )
+        if regularisation is None :
+            regularisation = commit.solvers.init_regularisation(self)
 
-        self.CONFIG['optimization'] = {}
-        self.CONFIG['optimization']['tol_fun']  = tol_fun
-        self.CONFIG['optimization']['max_iter'] = max_iter
-        self.CONFIG['optimization']['verbose']  = verbose
+        self.CONFIG['optimization']                   = {}
+        self.CONFIG['optimization']['tol_fun']        = tol_fun
+        self.CONFIG['optimization']['tol_x']          = tol_x
+        self.CONFIG['optimization']['max_iter']       = max_iter
+        self.CONFIG['optimization']['verbose']        = verbose
+        self.CONFIG['optimization']['regularisation'] = regularisation
 
         # run solver
         t = time.time()
-        print '\n-> Fit model using "nnls":'
-        Y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        self.x = commit.solvers.nnls( Y, self.A, tol_fun=tol_fun, max_iter=max_iter, verbose=verbose, x0=x0 )
+        print '\n-> Fit model'
+
+        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation)
+
+        self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
+
         print '   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) )
 
 
-    def save_results( self, path_suffix = None ) :
+    def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
         ----------
         path_suffix : string
             Text to be appended to "Results" to create the output path (default : None)
+        save_opt_details : boolean
+            Save everything in a pickle file containing the following list L:
+                L[0]: dictionary with all the configuration details
+                L[1]: np.array obtained through the optimisation process with the normalised kernels
+                L[2]: np.array renormalisation of L[1]
+            (default : True)
+        save_coeff : boolean
+            Save three txt files containing the coefficients related to each
+            compartment and a pickle file containing the dictionary with all
+            the configuration details.
+            (default : False)
         """
         if self.x is None :
             raise RuntimeError( 'Model not fitted to the data; call "fit()" first.' )
@@ -680,8 +716,8 @@ cdef class Evaluation :
         self.set_config('RESULTS_path', RESULTS_path)
 
         # Configuration and results
-        print '\t* configuration and results...',
-        sys.stdout.flush()
+        print '\t* configuration and results:'
+
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
@@ -697,9 +733,22 @@ cdef class Evaluation :
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
-        with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-            cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
-        print '[ OK ]'
+        if save_opt_details:
+            print '\t\t- pickle... ',
+            sys.stdout.flush()
+            with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
+                cPickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+            print '[ OK ]'
+        if save_coeff:
+            print '\t\t- txt... ',
+            sys.stdout.flush()
+            np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[0:nF])
+            np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[nF:nF+nE])
+            np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[(nF+nE):])
+            with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
+                cPickle.dump( self.CONFIG, fid, protocol=2 )
+            print '[ OK ]'
+
 
         # Map of wovelwise errors
         print '\t* fitting errors:'

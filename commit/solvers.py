@@ -1,157 +1,396 @@
-import numpy as np
-import sys
+"""
+Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
 
+This structure is based on the previous work of Rafael Carrillo and was
+supported by the LTS5 laboratory at EPFL, Lausanne.
+"""
+import numpy as np
+from math import sqrt
+import sys
 eps = np.finfo(float).eps
 
+from commit.proximals import (non_negativity,
+                             omega_group_sparsity,
+                             prox_group_sparsity,
+                             soft_thresholding,
+                             projection_onto_l2_ball)
+group_sparsity = -1
+non_negative = 0
+norm1 = 1
+norm2 = 2
+norminf = np.inf
+list_regnorms = [group_sparsity, non_negative, norm1, norm2]
+list_group_sparsity_norms = [norm2, norminf]
 
-def nnls( y, A, At = None, tol_fun = 1e-4, tol_x = 1e-9, max_iter = 100, verbose = 1, x0 = None ) :
-    """Solve non negative least squares problem of the following form:
-
-       min 0.5*||y-A x||_2^2 s.t. x >= 0
-
-    The problem is solved using the forward-backward algorithm with FISTA-like acceleration.
-
-    Parameters
-    ----------
-    y : 1-d array of doubles.
-        Contains the measurements.
-
-    A : matrix or class exposing the .dot() method.
-        It is the forward measurement operator.
-
-    At : matrix or class exposing the .dot() method.
-        It is the corresponding adjoint operator (default: computed as A.T).
-
-    tol_fun : double, optional (default: 1e-4).
-        Minimum relative change of the objective value. The algorithm stops if:
-               | f(x(t)) - f(x(t-1)) | / f(x(t)) < tol_fun,
-        where x(t) is the estimate of the solution at iteration t.
-
-    tol_x : double, optional (default: 1e-9).
-        Minimum relative change of the solution x. The algorithm stops if:
-               || x(t) - x(t-1) || / || x(t) || < tol_x,
-        where x(t) is the estimate of the solution at iteration t.
-
-    max_iter : integer, optional (default: 100).
-        Maximum number of iterations.
-
-    verbose : integer, optional (default: 1).
-        0 no log, 1 print each iteration results.
-
-    x0 : 1-d array of double, optional (default: automatically computed).
-        Initial solution.
-
-    Returns
-    -------
-    x : 1-d array of doubles.
-        Best solution in the least-squares sense.
-
-    Notes
-    -----
-    Author: Rafael Carrillo
-    E-mail: rafael.carrillo@epfl.ch
+def init_regularisation(commit_evaluation,
+                        regnorms = (non_negative, non_negative, non_negative),
+                        structureIC = None, weightsIC = None, group_norm = 2,
+                        group_is_ordered = False,
+                        lambdas = (.0,.0,.0) ):
     """
-    # Initialization
-    if At is None :
-        At = A.T
+    Initialise the data structure that defines Omega in
 
-    if x0 is not None :
-        xhat = x0
-        res = A.dot(xhat) - y
-    else :
-        xhat = np.zeros( A.shape[1], dtype=np.float64 )
-        res = -y
-    grad = At.dot(res)
-    prev_obj = 0.5 * np.linalg.norm(res)**2
-    iter = 1
+        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+
+
+    Input
+    -----
+    commit_evaluation - commit.Evaluation object :
+        dictionary and model have to be loaded beforehand.
+
+
+    regnorms - tuple :
+        this sets the penalty term to be used for each compartment.
+            Default = (non_negative,non_negative,non_negative).
+
+            regnorms[0] corresponds to the Intracellular compartment
+            regnorms[1] corresponds to the Extracellular compartment
+            regnorms[2] corresponds to the Isotropic compartment
+
+            Each regnorms[k] must be one of commit.solvers.
+                                {group_sparsity, non_negative, norm1, norm2}.
+
+            commit.solvers.group_sparsity considers both the non-overlapping
+                and the hierarchical group sparsity (see [1]). This option is
+                allowed only in the IC compartment. The mathematical formulation
+                of this term is
+                $\Omega(x) = \lambda \sum_{g\in G} w_g |x_g|
+
+            commit.solvers.non_negative puts a non negativity constraint on the
+                coefficients corresponding to the compartment. This is the
+                default option for each compartment
+
+            commit.solvers.norm1 penalises with the 1-norm of the coefficients
+                corresponding to the compartment.
+
+            commit.solvers.norm2 penalises with the 2-norm of the coefficients
+                corresponding to the compartment.
+
+
+    structureIC - np.array(list(list)) :
+        group structure for the IC compartment.
+            This field is necessary only if regterm[0]=commit.solver.group_sparsity.
+            Example:
+                structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]])
+
+                that is equivalent to
+                            [0,1,2,3,4,5]        [6]
+                              /       \
+                        [0,2,5]       [1,3,4]
+                which has two non overlapping groups, one of which is the union
+                of two other non-overlapping groups.
+
+
+    weightsIC - np.array(np.float64) :
+        this defines the weights associated to each group of structure IC.
+
+
+    group_norm - number :
+        norm type for the commit.solver.group_sparsity penalisation of the IC compartment.
+            Default: group_norm = commit.solver.norm2
+            To be chosen among commit.solver.{norm2,norminf}.
+
+    group_is_ordered - boolean :
+        True if the streamlines are ordered group-wise, False otherwise.
+            Defauls: False
+            This option is given for back compatibility with older and internal
+            version of the package that required an ordered version of the input
+            tractogram.
+            If you use QuickBundles(X) to define the group structure you
+            shouldn't take care of this option.
+
+            Note: this option will be deprecated in future release and gives a warning.
+
+    lambdas - tuple :
+        regularisation parameter for each compartment.
+            Default: lambdas = (0.0, 0.0, 0.0)
+            The lambdas correspond to the onse described in the mathematical
+            formulation of the regularisation term
+            $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
+
+
+    References:
+        [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
+    """
+    regularisation = {}
+
+    regularisation['startIC']  = 0
+    regularisation['sizeIC']   = int( commit_evaluation.DICTIONARY['IC']['nF'])#*len(commit_evaluation.model.ICVFs) )
+    regularisation['startEC']  = int( regularisation['sizeIC'] )
+    regularisation['sizeEC']   = int( commit_evaluation.DICTIONARY['EC']['nE'] )
+    regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
+    regularisation['sizeISO']  = int( commit_evaluation.DICTIONARY['nV'])#*len(commit_evaluation.model.d_ISOs) )
+
+    regularisation['normIC']  = regnorms[0]
+    regularisation['normEC']  = regnorms[1]
+    regularisation['normISO'] = regnorms[2]
+
+    regularisation['lambdaIC']  = float( lambdas[0] )
+    regularisation['lambdaEC']  = float( lambdas[1] )
+    regularisation['lambdaISO'] = float( lambdas[2] )
+
+    # Solver-specific fields
+    regularisation['group_is_ordered'] = group_is_ordered  # This option will be deprecated in future release
+    regularisation['structureIC']      = structureIC
+    regularisation['weightsIC']        = weightsIC
+    regularisation['group_norm']       = group_norm
+
+    return regularisation
+
+
+def regularisation2omegaprox(regularisation):
+    lambdaIC  = float(regularisation.get('lambdaIC'))
+    lambdaEC  = float(regularisation.get('lambdaEC'))
+    lambdaISO = float(regularisation.get('lambdaISO'))
+    if lambdaIC < 0.0 or lambdaEC < 0.0 or lambdaISO < 0.0:
+        raise ValueError('Negative regularisation parameters are not allowed')
+
+    normIC  = regularisation.get('normIC')
+    normEC  = regularisation.get('normEC')
+    normISO = regularisation.get('normISO')
+    if not normIC in list_regnorms:
+        raise ValueError('normIC must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
+    if not normEC in list_regnorms:
+        raise ValueError('normEC must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
+    if not normISO in list_regnorms:
+        raise ValueError('normISO must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
+
+    ## NNLS case
+    if (lambdaIC == 0.0 and lambdaEC == 0.0 and lambdaISO == 0.0) or (normIC == non_negative and normEC == non_negative and normISO == non_negative):
+        omega = lambda x: 0.0
+        prox  = lambda x: non_negativity(x, 0, len(x))
+        return omega, prox
+
+    ## All other cases
+    # Intracellular Compartment
+    startIC = regularisation.get('startIC')
+    sizeIC  = regularisation.get('sizeIC')
+    if lambdaIC == 0.0:
+        omegaIC = lambda x: 0.0
+        proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
+    elif normIC == norm2:
+        omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
+        proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
+    elif normIC == norm1:
+        omegaIC = lambda x: lambdaIC * sum( x[startIC:sizeIC] )
+        proxIC  = lambda x: soft_thresholding(x, lambdaIC, startIC, sizeIC)
+    elif normIC == non_negative:
+        omegaIC = lambda x: 0.0
+        proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
+    elif normIC == group_sparsity:
+        weightsIC   = regularisation.get('weightsIC')
+        structureIC = regularisation.get('structureIC')
+        if regularisation.get('group_is_ordered'): # This option will be deprecated in future release
+            raise DeprecationWarning('The ordered group structure will be deprecated. Consider using the structureIC field for defining the group structure.')
+            bundles = np.cumsum(np.insert(sizeIC,0,0))
+            structureIC = np.array([range(bundles[k],bundles[k+1]) for k in range(0,len(bundles)-1)])
+            regularisation['structureIC'] = structureIC
+            del bundles
+        if not len(structureIC) == len(weightsIC):
+            raise ValueError('Number of groups and weights do not coincide.')
+        group_norm = regularisation.get('group_norm')
+        if not group_norm in list_group_sparsity_norms:
+            raise ValueError('Wrong norm in the structured sparsity term. Choose between %s.' % str(list_group_sparsity_norms))
+
+        omegaIC = lambda x: omega_group_sparsity( x, structureIC, weightsIC, lambdaIC, normIC )
+        proxIC  = lambda x:  prox_group_sparsity( x, structureIC, weightsIC, lambdaIC, normIC )
+    else:
+        raise ValueError('Type of regularisation for IC compartment not recognized.')
+
+
+    # Extracellular Compartment
+    startEC = regularisation.get('startEC')
+    sizeEC  = regularisation.get('sizeEC')
+    if lambdaEC == 0.0:
+        omegaEC = lambda x: 0.0
+        proxEC  = lambda x: non_negativity(x, startEC, sizeEC)
+    elif normEC == norm2:
+        omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:sizeEC])
+        proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
+    elif normEC == norm1:
+        omegaEC = lambda x: lambdaEC * sum( x[startEC:sizeEC] )
+        proxEC  = lambda x: soft_thresholding(x, lambdaEC, startEC, sizeEC)
+    elif normEC == non_negative:
+        omegaEC = lambda x: 0.0
+        proxEC  = lambda x: non_negativity(x, startEC, sizeEC)
+    else:
+        raise ValueError('Type of regularisation for EC compartment not recognized.')
+
+    # Isotropic Compartment
+    startISO = regularisation.get('startISO')
+    sizeISO  = regularisation.get('sizeISO')
+    if lambdaISO == 0.0:
+        omegaISO = lambda x: 0.0
+        proxISO  = lambda x: non_negativity(x, startISO, sizeISO)
+    elif normISO == norm2:
+        omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:sizeISO])
+        proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
+    elif normISO == norm1:
+        omegaISO = lambda x: lambdaISO * sum( x[startISO:sizeISO] )
+        proxISO  = lambda x: soft_thresholding(x, lambdaISO, startISO, sizeISO)
+    elif normISO == non_negative:
+        omegaISO = lambda x: 0.0
+        proxISO  = lambda x: non_negativity(x, startISO, sizeISO)
+    else:
+        raise ValueError('Type of regularisation for ISO compartment not recognized.')
+
+    omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
+    prox = lambda x: non_negative(proxIC(proxEC(proxISO(x)))) # non negativity is redunduntly forced
+
+    return omega, prox
+
+def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
+    """
+    Solve the regularised least squares problem
+
+        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+
+    with the Omega described by 'regularisation'.
+
+    Check the documentation of commit.solvers.init_regularisation to see how to
+    solve a specific problem.
+    """
+    if regularisation is None:
+        omega = lambda x: 0.0
+        prox  = lambda x: non_negativity(x, 0, len(x))
+    else:
+        omega, prox = regularisation2omegaprox(regularisation)
+
+    if x0 is None:
+        x0 = np.ones(A.shape[1])
+
+    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox)
+
+def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
+    """
+    Solve the regularised least squares problem
+
+        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+
+    with the FISTA algorithm described in [1].
+
+    The penalty term and its proximal operator must be defined in such a way
+    that they already contain the regularisation parameter.
+
+    References:
+        [1] Beck & Teboulle - `A Fast Iterative Shrinkage Thresholding
+            Algorithm for Linear Inverse Problems`
+    """
+
+    # Initialization
+    res = -y.copy()
+    xhat = x0.copy()
+    x = np.zeros_like(xhat)
+    res += A.dot(xhat)
+    xhat = proximal( xhat )
+    reg_term = omega( xhat )
+    prev_obj = 0.5 * np.linalg.norm(res)**2 + reg_term
+
     told = 1
-    prev_x = xhat
     beta = 0.9
+    prev_x = xhat.copy()
+    grad = np.asarray(At.dot(res))
     qfval = prev_obj
 
     # Step size computation
-    L = np.linalg.norm( A.dot(grad) )**2 / np.linalg.norm(grad)**2
+    L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     mu = 1.9 / L
 
     # Main loop
     if verbose >= 1 :
+        print
         print "      |     ||Ax-y||     |  Cost function    Abs error      Rel error    |     Abs x          Rel x"
         print "------|------------------|-----------------------------------------------|------------------------------"
-
+    iter = 1
     while True :
         if verbose >= 1 :
             print "%4d  |" % iter,
             sys.stdout.flush()
 
-        # Gradient descend step
+        # Smooth step
         x = xhat - mu*grad
 
-        # Projection onto the positive orthant
-        x = np.real( x )
-        x[ x<0 ] = 0
+        # Non-smooth step
+        x = proximal( x )
+        reg_term_x = omega( x )
 
-        # Stepsize check
+        # Check stepsize
         tmp = x-xhat
-        q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2
+        q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
         res = A.dot(x) - y
-        curr_obj = 0.5 * np.linalg.norm(res)**2
+        res_norm = np.linalg.norm(res)
+        curr_obj = 0.5 * res_norm**2 + reg_term_x
 
         # Backtracking
         while curr_obj > q :
-            # Gradient descend step
+            # Smooth step
             mu = beta*mu
             x = xhat - mu*grad
 
-            # Projection onto the positive orthant
-            x = np.real( x )
-            x[ x<0 ] = 0
+            # Non-smooth step
+            x = proximal( x )
+            reg_term_x = omega( x )
 
-            # New stepsize check
+            # Check stepsize
             tmp = x-xhat
-            q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2
+            q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
             res = A.dot(x) - y
-            curr_obj = 0.5 * np.linalg.norm(res)**2
+            res_norm = np.linalg.norm(res)
+            curr_obj = 0.5 * res_norm**2 + reg_term_x
 
         # Global stopping criterion
-        abs_obj = np.abs(curr_obj - prev_obj)
+        abs_obj = abs(curr_obj - prev_obj)
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
         if verbose >= 1 :
-            print "  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( np.sqrt(2.0*curr_obj), curr_obj, abs_obj, rel_obj, abs_x, rel_x )
+            print "  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( res_norm, curr_obj, abs_obj, rel_obj, abs_x, rel_x )
 
         if abs_obj < eps :
-            criterion = "ABS_OBJ"
+            criterion = "Absolute tolerance on the objective"
             break
         elif rel_obj < tol_fun :
-            criterion = "REL_OBJ"
+            criterion = "Relative tolerance on the objective"
             break
         elif abs_x < eps :
-            criterion = "ABS_X"
+            criterion = "Absolute tolerance on the unknown"
             break
         elif rel_x < tol_x :
-            criterion = "REL_X"
+            criterion = "Relative tolerance on the unknown"
             break
         elif iter >= max_iter :
-            criterion = "MAX_IT"
+            criterion = "Maximum number of iterations"
             break
 
         # FISTA update
-        t = 0.5 * ( 1 + np.sqrt(1+4*told**2) )
+        t = 0.5 * ( 1 + sqrt(1+4*told**2) )
         xhat = x + (told-1)/t * (x - prev_x)
 
         # Gradient computation
         res = A.dot(xhat) - y
-        grad = At.dot(res)
+        xarr = np.asarray(x)
+
+        grad = np.asarray(At.dot(res))
 
         # Update variables
         iter += 1
         prev_obj = curr_obj
-        prev_x = x
+        prev_x = x.copy()
         told = t
         qfval = 0.5 * np.linalg.norm(res)**2
+
 
     if verbose >= 1 :
         print "< Stopping criterion: %s >" % criterion
 
-    return x
+    opt_details = {}
+    opt_details['residual'] = res_norm
+    opt_details['cost_function'] = curr_obj
+    opt_details['abs_cost'] = abs_obj
+    opt_details['rel_cost'] = rel_obj
+    opt_details['abs_x'] = abs_x
+    opt_details['rel _x'] = rel_x
+    opt_details['iterations'] = iter
+    opt_details['stopping_criterion'] = criterion
+
+    return x, opt_details
