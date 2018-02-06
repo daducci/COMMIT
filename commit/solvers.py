@@ -235,7 +235,7 @@ def regularisation2omegaprox(regularisation):
         raise ValueError('Type of regularisation for ISO compartment not recognized.')
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
-    prox = lambda x: non_negative(proxIC(proxEC(proxISO(x)))) # non negativity is redunduntly forced
+    prox = lambda x: non_negativity(proxIC(proxEC(proxISO(x))),0,x.size) # non negativity is redunduntly forced
 
     return omega, prox
 
