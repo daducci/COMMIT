@@ -7,6 +7,7 @@ supported by the LTS5 laboratory at EPFL, Lausanne.
 import numpy as np
 from math import sqrt
 import sys
+import warnings
 eps = np.finfo(float).eps
 
 from commit.proximals import (non_negativity,
@@ -181,7 +182,7 @@ def regularisation2omegaprox(regularisation):
         weightsIC   = regularisation.get('weightsIC')
         structureIC = regularisation.get('structureIC')
         if regularisation.get('group_is_ordered'): # This option will be deprecated in future release
-            raise DeprecationWarning('The ordered group structure will be deprecated. Consider using the structureIC field for defining the group structure.')
+            warnings.warn('The ordered group structure will be deprecated. Consider using the structureIC field for defining the group structure.',DeprecationWarning)
             bundles = np.cumsum(np.insert(sizeIC,0,0))
             structureIC = np.array([range(bundles[k],bundles[k+1]) for k in range(0,len(bundles)-1)])
             regularisation['structureIC'] = structureIC
@@ -261,7 +262,7 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
     """
     if regularisation is None:
         omega = lambda x: 0.0
-        prox  = lambda x: non_negativity(x, 0, len(x))
+        prox  = lambda x: non_negativity(x, 0, x.size)
     else:
         omega, prox = regularisation2omegaprox(regularisation)
 
