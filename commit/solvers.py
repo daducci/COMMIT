@@ -240,6 +240,15 @@ def regularisation2omegaprox(regularisation):
 
     return omega, prox
 
+def evaluate_model(y, A, x, regularisation = None):
+    if regularisation is None:
+        omega = lambda x: 0.0
+        prox  = lambda x: non_negativity(x, 0, len(x))
+    else:
+        omega, _ = regularisation2omegaprox(regularisation)
+
+    return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
+
 def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
     """
     Solve the regularised least squares problem
@@ -253,7 +262,7 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
     """
     if regularisation is None:
         omega = lambda x: 0.0
-        prox  = lambda x: non_negativity(x, 0, len(x))
+        prox  = lambda x: non_negativity(x, 0, x.size)
     else:
         omega, prox = regularisation2omegaprox(regularisation)
 
