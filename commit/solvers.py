@@ -182,8 +182,8 @@ def regularisation2omegaprox(regularisation):
         weightsIC   = regularisation.get('weightsIC')
         structureIC = regularisation.get('structureIC')
         if regularisation.get('group_is_ordered'): # This option will be deprecated in future release
-            warnings.warn('The ordered group structure will be deprecated. Consider using the structureIC field for defining the group structure.',DeprecationWarning)
-            bundles = np.insert(sizeIC,0,0)
+            warnings.warn('The ordered group structure will be deprecated. Check the documentation of commit.solvers.init_regularisation.',DeprecationWarning)
+            bundles = np.insert(structureIC,0,0)
             structureIC = np.array([np.arange(sum(bundles[:k+1]),sum(bundles[:k+1])+bundles[k+1]) for k in range(len(bundles)-1)]) # check how it works with bundles=[2,5,4]
             regularisation['structureIC'] = structureIC
             del bundles
