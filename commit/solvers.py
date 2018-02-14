@@ -7,6 +7,7 @@ supported by the LTS5 laboratory at EPFL, Lausanne.
 import numpy as np
 from math import sqrt
 import sys
+import warnings
 eps = np.finfo(float).eps
 
 from commit.proximals import (non_negativity,
@@ -181,10 +182,11 @@ def regularisation2omegaprox(regularisation):
         weightsIC   = regularisation.get('weightsIC')
         structureIC = regularisation.get('structureIC')
         if regularisation.get('group_is_ordered'): # This option will be deprecated in future release
-            raise DeprecationWarning('The ordered group structure will be deprecated. Consider using the structureIC field for defining the group structure.')
-            bundles = np.cumsum(np.insert(sizeIC,0,0))
-            structureIC = np.array([range(bundles[k],bundles[k+1]) for k in range(0,len(bundles)-1)])
+            warnings.warn('The ordered group structure will be deprecated. Check the documentation of commit.solvers.init_regularisation.',DeprecationWarning)
+            bundles = np.insert(structureIC,0,0)
+            structureIC = np.array([np.arange(sum(bundles[:k+1]),sum(bundles[:k+1])+bundles[k+1]) for k in range(len(bundles)-1)]) # check how it works with bundles=[2,5,4]
             regularisation['structureIC'] = structureIC
+            regulatisation['group_is_ordered'] = False # the group structure is overwritten, hence the flag has to be changed
             del bundles
         if not len(structureIC) == len(weightsIC):
             raise ValueError('Number of groups and weights do not coincide.')
@@ -235,9 +237,18 @@ def regularisation2omegaprox(regularisation):
         raise ValueError('Type of regularisation for ISO compartment not recognized.')
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
-    prox = lambda x: non_negative(proxIC(proxEC(proxISO(x)))) # non negativity is redunduntly forced
+    prox = lambda x: non_negativity(proxIC(proxEC(proxISO(x))),0,x.size) # non negativity is redunduntly forced
 
     return omega, prox
+
+def evaluate_model(y, A, x, regularisation = None):
+    if regularisation is None:
+        omega = lambda x: 0.0
+        prox  = lambda x: non_negativity(x, 0, len(x))
+    else:
+        omega, _ = regularisation2omegaprox(regularisation)
+
+    return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
     """
@@ -252,7 +263,7 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
     """
     if regularisation is None:
         omega = lambda x: 0.0
-        prox  = lambda x: non_negativity(x, 0, len(x))
+        prox  = lambda x: non_negativity(x, 0, x.size)
     else:
         omega, prox = regularisation2omegaprox(regularisation)
 
