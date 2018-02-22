@@ -194,8 +194,8 @@ def regularisation2omegaprox(regularisation):
         if not group_norm in list_group_sparsity_norms:
             raise ValueError('Wrong norm in the structured sparsity term. Choose between %s.' % str(list_group_sparsity_norms))
 
-        omegaIC = lambda x: omega_group_sparsity( x, structureIC, weightsIC, lambdaIC, normIC )
-        proxIC  = lambda x:  prox_group_sparsity( x, structureIC, weightsIC, lambdaIC, normIC )
+        omegaIC = lambda x: omega_group_sparsity( x, structureIC, weightsIC, lambdaIC, group_norm )
+        proxIC  = lambda x:  prox_group_sparsity( x, structureIC, weightsIC, lambdaIC, group_norm )
     else:
         raise ValueError('Type of regularisation for IC compartment not recognized.')
 
