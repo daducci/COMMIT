@@ -186,7 +186,7 @@ def regularisation2omegaprox(regularisation):
             bundles = np.insert(structureIC,0,0)
             structureIC = np.array([np.arange(sum(bundles[:k+1]),sum(bundles[:k+1])+bundles[k+1]) for k in range(len(bundles)-1)]) # check how it works with bundles=[2,5,4]
             regularisation['structureIC'] = structureIC
-            regulatisation['group_is_ordered'] = False # the group structure is overwritten, hence the flag has to be changed
+            regularisation['group_is_ordered'] = False # the group structure is overwritten, hence the flag has to be changed
             del bundles
         if not len(structureIC) == len(weightsIC):
             raise ValueError('Number of groups and weights do not coincide.')
