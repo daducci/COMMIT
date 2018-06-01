@@ -1,3 +1,5 @@
+#!python
+#cython: boundscheck=False, wraparound=False
 """
 Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
 
@@ -10,9 +12,6 @@ cimport numpy as np
 from math import sqrt
 import sys
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.profile(False)
 
 cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int compartment_size):
     """
@@ -26,6 +25,7 @@ cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int comp
         if v[i] < 0.0:
             v[i] = 0.0
     return v
+
 
 cpdef soft_thresholding(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
     """
@@ -43,6 +43,7 @@ cpdef soft_thresholding(np.ndarray[np.float64_t] x, double lam, int compartment_
             v[i] -= lam
     return v
 
+
 cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
     """
     Proximal of L2 norm
@@ -58,6 +59,7 @@ cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compar
         for i in range(compartment_start, compartment_start+compartment_size):
             v[i] = v[i]/xn*lam
     return v
+
 
 cpdef omega_group_sparsity(np.ndarray[np.float64_t] v, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n) :
     """
@@ -80,6 +82,7 @@ cpdef omega_group_sparsity(np.ndarray[np.float64_t] v, np.ndarray[object] subtre
                 tmp += weight[k] * max( v[idx] )
     return lam*tmp
 
+
 cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n ) :
     """
     References:
@@ -87,7 +90,7 @@ cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtre
     """
     cdef:
         np.ndarray[np.float64_t] v
-        int nG = weight.size, N, rho
+        int nG = weight.size
         size_t k, i
         double r, xn
 
