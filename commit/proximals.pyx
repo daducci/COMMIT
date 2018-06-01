@@ -22,7 +22,7 @@ cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int comp
         np.ndarray[np.float64_t] v
         size_t i
     v = x.copy()
-    for i in range(compartment_start, compartment_size):
+    for i in range(compartment_start, compartment_start+compartment_size):
         if v[i] < 0.0:
             v[i] = 0.0
     return v
@@ -36,7 +36,7 @@ cpdef soft_thresholding(np.ndarray[np.float64_t] x, double lam, int compartment_
         np.ndarray[np.float64_t] v
         size_t i
     v = x.copy()
-    for i in range(compartment_start, compartment_size):
+    for i in range(compartment_start, compartment_start+compartment_size):
         if v[i] <= lam:
             v[i] = 0.0
         else:
@@ -53,9 +53,9 @@ cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compar
         np.ndarray[np.float64_t] v
         size_t i
     v = x.copy()
-    xn = sqrt(sum(v[compartment_start:compartment_size]**2))
+    xn = sqrt(sum(v[compartment_start:(compartment_start+compartment_size)]**2))
     if xn > lam:
-        for i in range(compartment_start, compartment_size):
+        for i in range(compartment_start, compartment_start+compartment_size):
             v[i] = v[i]/xn*lam
     return v
 
