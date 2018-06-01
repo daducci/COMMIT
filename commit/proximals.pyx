@@ -53,7 +53,7 @@ cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compar
         np.ndarray[np.float64_t] v
         size_t i
     v = x.copy()
-    xn = sqrt(sum(v[compartment_start:(compartment_start+compartment_size)]**2))
+    xn = sqrt(sum(v[compartment_start:compartment_start+compartment_size]**2))
     if xn > lam:
         for i in range(compartment_start, compartment_start+compartment_size):
             v[i] = v[i]/xn*lam
