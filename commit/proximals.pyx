@@ -66,17 +66,14 @@ cpdef omega_group_sparsity(np.ndarray[np.float64_t] v, np.ndarray[object] subtre
     """
     cdef:
         int nG = weight.size
-        size_t k, i
-        double xn, tmp = 0.0
+        size_t k
+        double tmp = 0.0
 
     if lam != 0:
         if n == 2:
             for k in range(nG):
                 idx = subtree[k]
-                xn = 0.0
-                for i in idx:
-                    xn += v[i]*v[i]
-                    tmp += weight[k] * sqrt( xn )
+                tmp += weight[k] * sqrt( sum(v[idx]**2) )
         elif n == np.Inf:
             for k in range(nG):
                 idx = subtree[k]
@@ -92,7 +89,7 @@ cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtre
         np.ndarray[np.float64_t] v
         int nG = weight.size, N, rho
         size_t k, i
-        double r, xn, theta
+        double r, xn
 
     v = x.copy()
     v[v<0] = 0.0
@@ -111,10 +108,7 @@ cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtre
         if n == 2:
             for k in range(nG):
                 idx = subtree[k]
-                xn = 0.0
-                for i in idx:
-                    xn += v[i]*v[i]
-                    xn = sqrt(xn)
+                xn = sqrt( sum(v[idx]**2) )
                 r = weight[k] * lam
                 if xn > r:
                     r = (xn-r)/xn
