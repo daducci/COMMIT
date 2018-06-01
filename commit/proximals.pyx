@@ -1,3 +1,5 @@
+#!python
+#cython: boundscheck=False, wraparound=False
 """
 Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
 
@@ -10,9 +12,6 @@ cimport numpy as np
 from math import sqrt
 import sys
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.profile(False)
 
 cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int compartment_size):
     """
@@ -22,10 +21,11 @@ cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int comp
         np.ndarray[np.float64_t] v
         size_t i
     v = x.copy()
-    for i in range(compartment_start, compartment_size):
+    for i in range(compartment_start, compartment_start+compartment_size):
         if v[i] < 0.0:
             v[i] = 0.0
     return v
+
 
 cpdef soft_thresholding(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
     """
@@ -36,12 +36,13 @@ cpdef soft_thresholding(np.ndarray[np.float64_t] x, double lam, int compartment_
         np.ndarray[np.float64_t] v
         size_t i
     v = x.copy()
-    for i in range(compartment_start, compartment_size):
+    for i in range(compartment_start, compartment_start+compartment_size):
         if v[i] <= lam:
             v[i] = 0.0
         else:
             v[i] -= lam
     return v
+
 
 cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compartment_start, int compartment_size) :
     """
@@ -53,11 +54,12 @@ cpdef projection_onto_l2_ball(np.ndarray[np.float64_t] x, double lam, int compar
         np.ndarray[np.float64_t] v
         size_t i
     v = x.copy()
-    xn = sqrt(sum(v[compartment_start:compartment_size]**2))
+    xn = sqrt(sum(v[compartment_start:compartment_start+compartment_size]**2))
     if xn > lam:
-        for i in range(compartment_start, compartment_size):
+        for i in range(compartment_start, compartment_start+compartment_size):
             v[i] = v[i]/xn*lam
     return v
+
 
 cpdef omega_group_sparsity(np.ndarray[np.float64_t] v, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n) :
     """
@@ -66,22 +68,20 @@ cpdef omega_group_sparsity(np.ndarray[np.float64_t] v, np.ndarray[object] subtre
     """
     cdef:
         int nG = weight.size
-        size_t k, i
-        double xn, tmp = 0.0
+        size_t k
+        double tmp = 0.0
 
     if lam != 0:
         if n == 2:
             for k in range(nG):
                 idx = subtree[k]
-                xn = 0.0
-                for i in idx:
-                    xn += v[i]*v[i]
-                    tmp += weight[k] * sqrt( xn )
+                tmp += weight[k] * sqrt( sum(v[idx]**2) )
         elif n == np.Inf:
             for k in range(nG):
                 idx = subtree[k]
                 tmp += weight[k] * max( v[idx] )
     return lam*tmp
+
 
 cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtree, np.ndarray[np.float64_t] weight, double lam, double n ) :
     """
@@ -90,9 +90,9 @@ cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtre
     """
     cdef:
         np.ndarray[np.float64_t] v
-        int nG = weight.size, N, rho
+        int nG = weight.size
         size_t k, i
-        double r, xn, theta
+        double r, xn
 
     v = x.copy()
     v[v<0] = 0.0
@@ -111,10 +111,7 @@ cpdef prox_group_sparsity( np.ndarray[np.float64_t] x, np.ndarray[object] subtre
         if n == 2:
             for k in range(nG):
                 idx = subtree[k]
-                xn = 0.0
-                for i in idx:
-                    xn += v[i]*v[i]
-                    xn = sqrt(xn)
+                xn = sqrt( sum(v[idx]**2) )
                 r = weight[k] * lam
                 if xn > r:
                     r = (xn-r)/xn
