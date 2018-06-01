@@ -168,7 +168,7 @@ def regularisation2omegaprox(regularisation):
     sizeIC  = regularisation.get('sizeIC')
     if lambdaIC == 0.0:
         omegaIC = lambda x: 0.0
-        proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
+        proxIC  = lambda x: x
     elif normIC == norm2:
         omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
         proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
@@ -205,7 +205,7 @@ def regularisation2omegaprox(regularisation):
     sizeEC  = regularisation.get('sizeEC')
     if lambdaEC == 0.0:
         omegaEC = lambda x: 0.0
-        proxEC  = lambda x: non_negativity(x, startEC, sizeEC)
+        proxEC  = lambda x: x
     elif normEC == norm2:
         omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:sizeEC])
         proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
@@ -223,7 +223,7 @@ def regularisation2omegaprox(regularisation):
     sizeISO  = regularisation.get('sizeISO')
     if lambdaISO == 0.0:
         omegaISO = lambda x: 0.0
-        proxISO  = lambda x: non_negativity(x, startISO, sizeISO)
+        proxISO  = lambda x: x
     elif normISO == norm2:
         omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:sizeISO])
         proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
