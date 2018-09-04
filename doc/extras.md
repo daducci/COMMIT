@@ -71,6 +71,8 @@ COMMIT_debugger \
 
 ### Shortcuts
 
+- `left`, `right`, `up`, `down`, `page-up`, `page-down`: move voxel position
+
 - `1`, `2`, `3`: show/hide the x-, y-, z-plane, respectively. All plotting is performed on these planes.
 - `o`, `O`: decrease/increase the opacity of the three planes
 - `m`, `M`: decrease/increase the maximum intensity in the image
@@ -94,3 +96,5 @@ COMMIT_debugger \
 - `f`: show/hide the tracts
 - `c`, `C`: decrease/increase the slab region in which plotting the fibers
 - `space`: alternate between "crop fibers to slab around the planes" and "crop fibers in the current voxel (yellow)"
+- `ALT` + `left`, `right`, `up`, `down`, `page-up`, `page-down`: apply a shift to streamlines coordinates
+
