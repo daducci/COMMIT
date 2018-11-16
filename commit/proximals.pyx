@@ -10,8 +10,6 @@ cimport cython
 import numpy as np
 cimport numpy as np
 from math import sqrt
-import sys
-
 
 cpdef non_negativity(np.ndarray[np.float64_t] x, int compartment_start, int compartment_size):
     """
