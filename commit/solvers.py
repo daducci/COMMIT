@@ -26,7 +26,6 @@ list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
                         structureIC = None, weightsIC = None, group_norm = 2,
-                        group_is_ordered = False,
                         lambdas = (.0,.0,.0) ):
     """
     Initialise the data structure that defines Omega in
@@ -91,17 +90,6 @@ def init_regularisation(commit_evaluation,
             Default: group_norm = commit.solver.norm2
             To be chosen among commit.solver.{norm2,norminf}.
 
-    group_is_ordered - boolean :
-        True if the streamlines are ordered group-wise, False otherwise.
-            Defauls: False
-            This option is given for back compatibility with older and internal
-            version of the package that required an ordered version of the input
-            tractogram.
-            If you use QuickBundles(X) to define the group structure you
-            shouldn't take care of this option.
-
-            Note: this option will be deprecated in future release and gives a warning.
-
     lambdas - tuple :
         regularisation parameter for each compartment.
             Default: lambdas = (0.0, 0.0, 0.0)
@@ -131,7 +119,6 @@ def init_regularisation(commit_evaluation,
     regularisation['lambdaISO'] = float( lambdas[2] )
 
     # Solver-specific fields
-    regularisation['group_is_ordered'] = group_is_ordered  # This option will be deprecated in future release
     regularisation['structureIC']      = structureIC
     regularisation['weightsIC']        = weightsIC
     regularisation['group_norm']       = group_norm
@@ -181,13 +168,6 @@ def regularisation2omegaprox(regularisation):
     elif normIC == group_sparsity:
         weightsIC   = regularisation.get('weightsIC')
         structureIC = regularisation.get('structureIC')
-        if regularisation.get('group_is_ordered'): # This option will be deprecated in future release
-            warnings.warn('The ordered group structure will be deprecated. Check the documentation of commit.solvers.init_regularisation.',DeprecationWarning)
-            bundles = np.insert(structureIC,0,0)
-            structureIC = np.array([np.arange(sum(bundles[:k+1]),sum(bundles[:k+1])+bundles[k+1]) for k in range(len(bundles)-1)]) # check how it works with bundles=[2,5,4]
-            regularisation['structureIC'] = structureIC
-            regularisation['group_is_ordered'] = False # the group structure is overwritten, hence the flag has to be changed
-            del bundles
         if not len(structureIC) == len(weightsIC):
             raise ValueError('Number of groups and weights do not coincide.')
         group_norm = regularisation.get('group_norm')
