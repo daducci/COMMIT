@@ -166,16 +166,26 @@ def regularisation2omegaprox(regularisation):
         omegaIC = lambda x: 0.0
         proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
     elif normIC == group_sparsity:
-        weightsIC   = regularisation.get('weightsIC')
         structureIC = regularisation.get('structureIC')
-        if not len(structureIC) == len(weightsIC):
+        groupWeightIC   = regularisation.get('weightsIC')
+        if not len(structureIC) == len(groupWeightIC):
             raise ValueError('Number of groups and weights do not coincide.')
         group_norm = regularisation.get('group_norm')
         if not group_norm in list_group_sparsity_norms:
             raise ValueError('Wrong norm in the structured sparsity term. Choose between %s.' % str(list_group_sparsity_norms))
 
-        omegaIC = lambda x: omega_group_sparsity( x, structureIC, weightsIC, lambdaIC, group_norm )
-        proxIC  = lambda x:  prox_group_sparsity( x, structureIC, weightsIC, lambdaIC, group_norm )
+        # convert to new data structure (needed for faster access)
+        N = np.sum([g.size for g in structureIC])
+        groupIdxIC  = np.zeros( (N,), dtype=structureIC[0].dtype )
+        groupSizeIC = np.zeros( (structureIC.size,), dtype=np.int32 )
+        pos = 0
+        for i, g in enumerate(structureIC) :
+            groupSizeIC[i] = g.size
+            groupIdxIC[pos:(pos+g.size)] = g[:]
+            pos += g.size
+
+        omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, group_norm )
+        proxIC  = lambda x:  prox_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, group_norm )
     else:
         raise ValueError('Type of regularisation for IC compartment not recognized.')
 
