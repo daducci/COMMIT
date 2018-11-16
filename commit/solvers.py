@@ -310,8 +310,8 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     # Main loop
     if verbose >= 1 :
         print
-        print "      |     ||Ax-y||     |  Cost function    Abs error      Rel error    |     Abs x          Rel x"
-        print "------|------------------|-----------------------------------------------|------------------------------"
+        print "      |  1/2||Ax-y||^2    Omega         |  Cost function    Abs error      Rel error    |     Abs x          Rel x"
+        print "------|---------------------------------|-----------------------------------------------|------------------------------"
     iter = 1
     while True :
         if verbose >= 1 :
@@ -355,7 +355,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
         if verbose >= 1 :
-            print "  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( res_norm, curr_obj, abs_obj, rel_obj, abs_x, rel_x )
+            print "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x )
 
         if abs_obj < eps :
             criterion = "Absolute tolerance on the objective"
@@ -395,7 +395,8 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         print "< Stopping criterion: %s >" % criterion
 
     opt_details = {}
-    opt_details['residual'] = res_norm
+    opt_details['residual'] = 0.5*res_norm**2
+    opt_details['regterm'] = reg_term_x
     opt_details['cost_function'] = curr_obj
     opt_details['abs_cost'] = abs_obj
     opt_details['rel_cost'] = rel_obj
