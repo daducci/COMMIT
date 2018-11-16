@@ -21,7 +21,7 @@ norm1 = 1
 norm2 = 2
 norminf = np.inf
 list_regnorms = [group_sparsity, non_negative, norm1, norm2]
-list_group_sparsity_norms = [norm2, norminf]
+list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
 
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
