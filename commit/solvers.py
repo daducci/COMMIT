@@ -268,7 +268,7 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
         omega, prox = regularisation2omegaprox(regularisation)
 
     if x0 is None:
-        x0 = np.ones(A.shape[1])
+        x0 = np.zeros(A.shape[1])
 
     return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox)
 
