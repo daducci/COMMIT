@@ -176,7 +176,7 @@ def regularisation2omegaprox(regularisation):
 
         # convert to new data structure (needed for faster access)
         N = np.sum([g.size for g in structureIC])
-        groupIdxIC  = np.zeros( (N,), dtype=structureIC[0].dtype )
+        groupIdxIC  = np.zeros( (N,), dtype=np.int32 )
         groupSizeIC = np.zeros( (structureIC.size,), dtype=np.int32 )
         pos = 0
         for i, g in enumerate(structureIC) :
