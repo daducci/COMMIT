@@ -1,4 +1,4 @@
-a#!python
+#!python
 # cython: boundscheck=False, wraparound=False, profile=False
 
 import cython
