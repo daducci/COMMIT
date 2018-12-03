@@ -1,4 +1,4 @@
-#!python
+a#!python
 # cython: boundscheck=False, wraparound=False, profile=False
 
 import cython
@@ -12,14 +12,14 @@ import time
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
-        char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
+        char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
         int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True,
+cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks = None, filename_mask = None, do_intersect = True,
     fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
     flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
     blur_radii = [], blur_samples = [], blur_sigma = 1.0
@@ -31,7 +31,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     Parameters
     ----------
     filename_trk : string
-        Path to the .trk file containing the tractogram to convert.
+        Path to the .trk or .tck file containing the tractogram to convert.
 
     path_out : string
         Path to the folder where to store the sparse data structure.
@@ -153,19 +153,71 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
 
     print '\t* Loading data:'
-
-    # fiber-tracts from .trk
+    
+    # fiber-tracts from tractogram
     print '\t\t* tractogram'
+
+    # fiber-tracts from tractogram
+    print '\t\t* tractogram'
+    extension = os.path.splitext(filename_tractogram)[1]  #take extension of file
+    
+    if extension != ".trk" and extension != ".tck" :
+        raise IOError( 'Invalid input file. Please enter tractogram file .trk or .tck' )
     try :
-        _, trk_hdr = nibabel.trackvis.read( filename_trk )
+        if (extension == ".trk") : # if file tractogram is .trk
+            _, trk_hdr = nibabel.trackvis.read( filename_tractogram )
+        else : # if file tractogram is .tck
+            tck_hdr = nibabel.streamlines.tck.TckFile._read_header(filename_tractogram)
     except :
-        raise IOError( 'Track file not found' )
-    Nx = trk_hdr['dim'][0]
-    Ny = trk_hdr['dim'][1]
-    Nz = trk_hdr['dim'][2]
-    Px = trk_hdr['voxel_size'][0]
-    Py = trk_hdr['voxel_size'][1]
-    Pz = trk_hdr['voxel_size'][2]
+        raise IOError( 'Tractogram file not found' )
+        
+    if (extension == ".trk"):
+        Nx = trk_hdr['dim'][0]
+        Ny = trk_hdr['dim'][1]
+        Nz = trk_hdr['dim'][2]
+        Px = trk_hdr['voxel_size'][0]
+        Py = trk_hdr['voxel_size'][1]
+        Pz = trk_hdr['voxel_size'][2]
+
+        data_offset = 1000
+        n_count = trk_hdr['n_count']
+        n_scalars = trk_hdr['n_scalars']
+        n_properties = trk_hdr['n_properties']
+        
+    if (extension == ".tck"):
+        #open file .nii and get header of this to get info on the structure
+        if TCK_ref_image is None:
+            if filename_peaks is not None:
+                TCK_ref_image = filename_peaks
+            elif filename_mask is not None:
+                TCK_ref_image = filename_mask
+            else:
+                raise RuntimeError( 'TCK files do not contain info on the geometry. Use "TCK_ref_image" for that.' )
+
+        #load the TCK_ref_image( .nii file) with nibabel
+        nii_image = nibabel.load(TCK_ref_image)
+        #read the header of nii file
+        nii_hdr = nii_image.header if nibabel.__version__ >= '2.0.0' else nii_image.get_header()
+
+        #set shape's of tractogram
+        Nx = nii_image.shape[0]
+        Ny = nii_image.shape[1]
+        Nz = nii_image.shape[2]
+
+        #set distance's of control points
+        Px = nii_hdr['pixdim'][1]
+        Py = nii_hdr['pixdim'][2]
+        Pz = nii_hdr['pixdim'][3]
+
+        #set offset and number of streamlines
+        data_offset = int(tck_hdr['_offset_data'])  #set offset
+        n_count = int(tck_hdr['count'])  #set number of fibers
+
+        #set number of proprieties and numebr of scalar to zero, because there are not present in .tck file
+        n_scalars = 0
+        n_properties = 0
+
+        
     print '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz )
     print '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz )
     print '\t\t\t- %d fibers' % trk_hdr['n_count']
