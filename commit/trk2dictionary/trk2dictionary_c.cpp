@@ -70,14 +70,15 @@ double              radiusSigma;   // modulates the impact of each segment as fu
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vector<int> sectors, std::vector<double> radii, std::vector<double> weight );
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, double w );
-unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
+unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] );
 
 
 // =========================
 // Function called by CYTHON
 // =========================
 int trk2dictionary(
-    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
+    char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
@@ -102,10 +103,31 @@ int trk2dictionary(
     segInVoxKey         inVoxKey;
 
     printf( "\t* Exporting IC compartments:\n" );
+    
+    int isTRK; // var to check
 
-    FILE* fpTRK = fopen(strTRKfilename,"rb");
-    if (fpTRK == NULL) return 0;
-    fseek(fpTRK,1000,SEEK_SET);
+    char *ext = strrchr(str_filename, '.'); //get the extension of input file
+
+    if (strcmp(ext,".trk")==0) //if file is .trk
+        isTRK = 1;
+    else if (strcmp(ext,".tck")==0) // il file is .tch
+        isTRK = 0;
+    else
+        return 0;
+
+    //open input file
+    FILE* fpTractogram = fopen(str_filename,"rb"); // fpTractogram
+    if (fpTractogram == NULL) return 0;
+
+    // SKIP header on .trk
+    if ( isTRK ) { // .
+        printf("data_offset: %d\n", data_offset);
+        fseek(fpTractogram,data_offset,SEEK_SET); //skip the first 1000 bytes
+    }
+    else { // SKIP header on .tck
+        printf("data_offset: %d\n", data_offset);
+        fseek(fpTractogram,data_offset,SEEK_SET); //skip the first bytes in the header of the file
+    }
 
     // set global variables
     dim.Set( Nx, Ny, Nz );
@@ -149,7 +171,15 @@ int trk2dictionary(
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
-        N = read_fiber( fpTRK, fiber, n_scalars, n_properties );
+        
+        //I read the f-th fiber from the file
+        if (isTRK) {
+            N = read_fiberTRK( fpTractogram, fiber, n_scalars, n_properties );
+        }
+        else {
+            N = read_fiberTCK( fpTractogram, fiber );
+        }
+        
         fiberForwardModel( fiber, N, sectors, radii, weights );
 
         kept = 0;
@@ -513,7 +543,7 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
 
 
 // Read a fiber from file
-unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
+unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 {
     int N;
     fread((char*)&N, 1, 4, fp);
@@ -533,4 +563,23 @@ unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
     fseek(fp,4*np,SEEK_CUR);
 
     return N;
+}
+
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN])
+{
+    int N = 0;
+    float tmp[3];
+
+    fread((char*)tmp, 1, 12, fp);
+
+    while( !(isnan(tmp[0])) && !(isnan(tmp[1])) &&  !(isnan(tmp[2])) )
+    {
+        fiber[0][N] = tmp[0];
+        fiber[1][N] = tmp[1];
+        fiber[2][N] = tmp[2];
+        N++;
+        fread((char*)tmp, 1, 12, fp);
+    }
+
+     return N;
 }
