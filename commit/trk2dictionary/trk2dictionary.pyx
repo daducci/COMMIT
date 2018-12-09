@@ -35,6 +35,9 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
 
     path_out : string
         Path to the folder where to store the sparse data structure.
+        
+    TCK_ref_image : string
+        Path to the NIFTI file containing the info of the geometry of tractogram
 
     filename_peaks : string
         Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
@@ -164,6 +167,7 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
     if extension != ".trk" and extension != ".tck" :
         raise IOError( 'Invalid input file. Please enter tractogram file .trk or .tck' )
     try :
+        #read the file header
         if (extension == ".trk") : # if file tractogram is .trk
             _, trk_hdr = nibabel.trackvis.read( filename_tractogram )
         else : # if file tractogram is .tck
@@ -194,9 +198,9 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
             else:
                 raise RuntimeError( 'TCK files do not contain info on the geometry. Use "TCK_ref_image" for that.' )
 
-        #load the TCK_ref_image( .nii file) with nibabel
+        #load the TCK_ref_image( .nii file)
         nii_image = nibabel.load(TCK_ref_image)
-        #read the header of nii file
+        #read the header of .nii file
         nii_hdr = nii_image.header if nibabel.__version__ >= '2.0.0' else nii_image.get_header()
 
         #set shape's of tractogram
@@ -213,7 +217,7 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
         data_offset = int(tck_hdr['_offset_data'])  #set offset
         n_count = int(tck_hdr['count'])  #set number of fibers
 
-        #set number of proprieties and numebr of scalar to zero, because there are not present in .tck file
+        #set number of proprieties and number of scalar to zero, because there are not present in .tck file
         n_scalars = 0
         n_properties = 0
 
