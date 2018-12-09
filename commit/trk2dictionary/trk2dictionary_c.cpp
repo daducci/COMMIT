@@ -116,7 +116,7 @@ int trk2dictionary(
         return 0;
 
     //open input file
-    FILE* fpTractogram = fopen(str_filename,"rb"); // fpTractogram
+    FILE* fpTractogram = fopen(str_filename,"rb"); //create a pointer (fpTractogram) to the file
     if (fpTractogram == NULL) return 0;
 
     // SKIP header on .trk
@@ -542,7 +542,7 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
 }
 
 
-// Read a fiber from file
+//to read fiber in .trk file
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 {
     int N;
@@ -565,6 +565,7 @@ unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int n
     return N;
 }
 
+//to read fiber in .tck file
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN])
 {
     int N = 0;
