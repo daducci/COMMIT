@@ -224,7 +224,7 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
         
     print '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz )
     print '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz )
-    print '\t\t\t- %d fibers' % trk_hdr['n_count']
+    print '\t\t\t- %d fibers' % n_count
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         raise RuntimeError( 'The max dim size is 2^16 voxels' )
 
