@@ -218,7 +218,7 @@ int trk2dictionary(
     }
     PROGRESS.close();
 
-    fclose( fpTRK );
+    fclose( fpTractogram );
     fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
     fclose( pDict_IC_v );
