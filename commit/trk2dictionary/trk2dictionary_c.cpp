@@ -120,12 +120,10 @@ int trk2dictionary(
     if (fpTractogram == NULL) return 0;
 
     // SKIP header on .trk
-    if ( isTRK ) { // .
-        printf("data_offset: %d\n", data_offset);
+    if ( isTRK ) { // 
         fseek(fpTractogram,data_offset,SEEK_SET); //skip the first 1000 bytes
     }
     else { // SKIP header on .tck
-        printf("data_offset: %d\n", data_offset);
         fseek(fpTractogram,data_offset,SEEK_SET); //skip the first bytes in the header of the file
     }
 
