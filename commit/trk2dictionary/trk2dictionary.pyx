@@ -5,7 +5,7 @@ import cython
 import numpy as np
 cimport numpy as np
 import nibabel
-from os.path import join, exists
+from os.path import join, exists, splitext
 from os import makedirs, remove
 import time
 
@@ -162,7 +162,7 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
 
     # fiber-tracts from tractogram
     print '\t\t* tractogram'
-    extension = os.path.splitext(filename_tractogram)[1]  #take extension of file
+    extension = splitext(filename_tractogram)[1]  #take extension of file
     
     if extension != ".trk" and extension != ".tck" :
         raise IOError( 'Invalid input file. Please enter tractogram file .trk or .tck' )
