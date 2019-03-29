@@ -5,6 +5,7 @@ import cython
 import numpy as np
 cimport numpy as np
 import nibabel
+import os
 from os.path import join, exists, splitext
 from os import makedirs, remove
 import time
