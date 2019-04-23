@@ -1,5 +1,6 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, nonecheck=False, cdivision=True, initializedcheck=False, binding=False
+from __future__ import print_function
 cimport cython
 import numpy as np
 cimport numpy as np

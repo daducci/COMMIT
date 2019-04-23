@@ -1,6 +1,6 @@
 #!python
-# cython: language_level=3, boundscheck=False, wraparound=False, profile=False
-
+# cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
+from __future__ import print_function
 import cython
 import numpy as np
 cimport numpy as np
@@ -8,6 +8,7 @@ import nibabel
 from os.path import join, exists
 from os import makedirs, remove
 import time
+
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
