@@ -1,6 +1,6 @@
 #!python
-# cython: boundscheck=False, wraparound=False, profile=False
-
+# cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
+from __future__ import print_function
 import cython
 import numpy as np
 cimport numpy as np
@@ -8,6 +8,7 @@ import nibabel
 from os.path import join, exists
 from os import makedirs, remove
 import time
+
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
@@ -94,13 +95,13 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         raise RuntimeError( 'fiber_shift must be a scalar or a vector with 3 elements' )
 
     tic = time.time()
-    print '\n-> Creating the dictionary from tractogram:'
-    print '\t* Segment position = %s' % ( 'COMPUTE INTERSECTIONS' if do_intersect else 'CENTROID' )
-    print '\t* Fiber shift X    = %.3f (voxel-size units)' % fiber_shiftX
-    print '\t* Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY
-    print '\t* Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ
-    print '\t* Points to skip   = %d' % points_to_skip
-    print '\t* Min segment len  = %.2e' % min_seg_len
+    print( '\n-> Creating the dictionary from tractogram:' )
+    print( '\t* Segment position = %s' % ( 'COMPUTE INTERSECTIONS' if do_intersect else 'CENTROID' ) )
+    print( '\t* Fiber shift X    = %.3f (voxel-size units)' % fiber_shiftX )
+    print( '\t* Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY )
+    print( '\t* Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ )
+    print( '\t* Points to skip   = %d' % points_to_skip )
+    print( '\t* Min segment len  = %.2e' % min_seg_len )
 
     # check blur params
     cdef :
@@ -126,22 +127,22 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
 
     if nBlurRadii == 1 :
-        print '\t* Do not blur fibers'
+        print( '\t* Do not blur fibers' )
     else :
-        print '\t* Blur fibers :'
-        print '\t\t- sigma = %.3f' % blur_sigma
-        print '\t\t- radii =   [',
+        print( '\t* Blur fibers :' )
+        print( '\t\t- sigma = %.3f' % blur_sigma )
+        print( '\t\t- radii =   [', end="" )
         for i in xrange( 1, blurRadii.size ) :
-            print '%.3f' % blurRadii[i],
-        print ']'
-        print '\t\t- samples = [',
+            print( '%.3f' % blurRadii[i], end="" )
+        print( ']' )
+        print( '\t\t- samples = [', end="" )
         for i in xrange( 1, blurSamples.size ) :
-            print '%5d' % blurSamples[i],
-        print ']'
-        print '\t\t- weights = [',
+            print( '%5d' % blurSamples[i], end="" )
+        print( ']' )
+        print( '\t\t- weights = [', end="" )
         for i in xrange( 1, blurWeights.size ) :
-            print '%.3f' % blurWeights[i],
-        print ']'
+            print( '%.3f' % blurWeights[i], end="" )
+        print( ']' )
 
     ptrBlurRadii   = &blurRadii[0]
     ptrBlurSamples = &blurSamples[0]
@@ -152,10 +153,10 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         raise RuntimeError( 'min_seg_len must be >= 0' )
 
 
-    print '\t* Loading data:'
+    print( '\t* Loading data:' )
 
     # fiber-tracts from .trk
-    print '\t\t* tractogram'
+    print( '\t\t* tractogram' )
     try :
         _, trk_hdr = nibabel.trackvis.read( filename_trk )
     except :
@@ -166,9 +167,9 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     Px = trk_hdr['voxel_size'][0]
     Py = trk_hdr['voxel_size'][1]
     Pz = trk_hdr['voxel_size'][2]
-    print '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz )
-    print '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz )
-    print '\t\t\t- %d fibers' % trk_hdr['n_count']
+    print( '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz ) )
+    print( '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz ) )
+    print( '\t\t\t- %d fibers' % trk_hdr['n_count'] )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         raise RuntimeError( 'The max dim size is 2^16 voxels' )
 
@@ -176,18 +177,18 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     cdef float* ptrMASK
     cdef float [:, :, ::1] niiMASK_img
     if filename_mask is not None :
-        print '\t\t* filtering mask'
+        print( '\t\t* filtering mask' )
         niiMASK = nibabel.load( filename_mask )
         niiMASK_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
-        print '\t\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] )
-        print '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK_hdr['pixdim'][1], niiMASK_hdr['pixdim'][2], niiMASK_hdr['pixdim'][3] )
+        print( '\t\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] ) )
+        print( '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK_hdr['pixdim'][1], niiMASK_hdr['pixdim'][2], niiMASK_hdr['pixdim'][3] ) )
         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
              abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
-            print '\t\t  [WARNING] dataset does not have the same geometry as the tractogram'
+            print( '\t\t  [WARNING] dataset does not have the same geometry as the tractogram' )
         niiMASK_img = np.ascontiguousarray( niiMASK.get_data().astype(np.float32) )
         ptrMASK  = &niiMASK_img[0,0,0]
     else :
-        print '\t\t* no mask specified to filter IC compartments'
+        print( '\t\t* no mask specified to filter IC compartments' )
         ptrMASK = NULL
 
     # peaks file for EC contributions
@@ -199,17 +200,17 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     cdef double [:, ::1] affine
     cdef double* ptrAFFINE
     if filename_peaks is not None :
-        print '\t\t* EC orientations'
+        print( '\t\t* EC orientations' )
         niiPEAKS = nibabel.load( filename_peaks )
         niiPEAKS_hdr = niiPEAKS.header if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_header()
-        print '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] )
-        print '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS_hdr['pixdim'][1], niiPEAKS_hdr['pixdim'][2], niiPEAKS_hdr['pixdim'][3] )
-        print '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR
-        print '\t\t\t- %susing affine matrix' % ( "" if peaks_use_affine else "not " )
-        print '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] )
+        print( '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] ) )
+        print( '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS_hdr['pixdim'][1], niiPEAKS_hdr['pixdim'][2], niiPEAKS_hdr['pixdim'][3] ) )
+        print( '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR )
+        print( '\t\t\t- %susing affine matrix' % ( "" if peaks_use_affine else "not " ) )
+        print( '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] ) )
         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
              abs(Px-niiPEAKS_hdr['pixdim'][1])>1e-3 or abs(Py-niiPEAKS_hdr['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS_hdr['pixdim'][3])>1e-3 ) :
-            print "\t\t  [WARNING] dataset does not have the same geometry as the tractogram"
+            print( "\t\t  [WARNING] dataset does not have the same geometry as the tractogram" )
         if niiPEAKS.shape[3] % 3 :
             raise RuntimeError( 'PEAKS dataset must have 3*k volumes' )
         if vf_THR < 0 or vf_THR > 1 :
@@ -225,13 +226,13 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
             affine = np.ascontiguousarray( np.eye(3) )
         ptrAFFINE = &affine[0,0]
     else :
-        print '\t\t* no dataset specified for EC compartments'
+        print( '\t\t* no dataset specified for EC compartments' )
         Np = 0
         ptrPEAKS = NULL
         ptrAFFINE = NULL
 
     # output path
-    print '\t\t* output written to "%s"' % path_out
+    print( '\t\t* output written to "%s"' % path_out )
     if not exists( path_out ):
         makedirs( path_out )
 
@@ -244,12 +245,12 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
         nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights );
     if ret == 0 :
-        print '   [ DICTIONARY not generated ]'
+        print( '   [ DICTIONARY not generated ]' )
         return None
 
     # create new TRK with only fibers in the WM mask
     if gen_trk :
-        print '\t* Generate tractogram matching the dictionary: '
+        print( '\t* Generate tractogram matching the dictionary: ' )
         fib, _ = nibabel.trackvis.read( filename_trk, as_generator=True )
         fibKept = []
         file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
@@ -259,8 +260,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
                 fibKept.append( (f[0],None, None) )
             ind = ind+1
         nibabel.trackvis.write( join(path_out,'dictionary_TRK_fibers.trk'), fibKept, trk_hdr )
-        print '\t  [ %d fibers kept ]' % np.count_nonzero( file_kept )
-    print '   [ %.1f seconds ]' % ( time.time() - tic )
+        print( '\t  [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
+    print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
     # save TDI and MASK maps
     if filename_mask is not None :
