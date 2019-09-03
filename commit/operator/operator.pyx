@@ -1,5 +1,5 @@
 #!python
-#cython: boundscheck=False, wraparound=False, profile=False
+#cython: language_level=3, boundscheck=False, wraparound=False, profile=False
 
 import cython
 import numpy as np
