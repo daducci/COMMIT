@@ -4,7 +4,6 @@ Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
 This structure is based on the previous work of Rafael Carrillo and was
 supported by the LTS5 laboratory at EPFL, Lausanne.
 """
-from __future__ import print_function
 import numpy as np
 from math import sqrt
 import sys
@@ -23,7 +22,6 @@ norm2 = 2
 norminf = np.inf
 list_regnorms = [group_sparsity, non_negative, norm1, norm2]
 list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
-
 
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
@@ -233,7 +231,6 @@ def regularisation2omegaprox(regularisation):
 
     return omega, prox
 
-
 def evaluate_model(y, A, x, regularisation = None):
     if regularisation is None:
         omega = lambda x: 0.0
@@ -242,7 +239,6 @@ def evaluate_model(y, A, x, regularisation = None):
         omega, _ = regularisation2omegaprox(regularisation)
 
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
-
 
 def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
     """
@@ -265,7 +261,6 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
         x0 = np.zeros(A.shape[1])
 
     return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox)
-
 
 def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     """
@@ -304,13 +299,13 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
 
     # Main loop
     if verbose >= 1 :
-        print()
-        print( "      |  1/2||Ax-y||^2    Omega         |  Cost function    Abs error      Rel error    |     Abs x          Rel x" )
-        print( "------|---------------------------------|-----------------------------------------------|------------------------------" )
+        print
+        print "      |  1/2||Ax-y||^2    Omega         |  Cost function    Abs error      Rel error    |     Abs x          Rel x"
+        print "------|---------------------------------|-----------------------------------------------|------------------------------"
     iter = 1
     while True :
         if verbose >= 1 :
-            print( "%4d  |" % iter, end="" )
+            print "%4d  |" % iter,
             sys.stdout.flush()
 
         # Smooth step
@@ -350,7 +345,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
         if verbose >= 1 :
-            print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
+            print "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x )
 
         if abs_obj < eps :
             criterion = "Absolute tolerance on the objective"
@@ -387,7 +382,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
 
 
     if verbose >= 1 :
-        print( "< Stopping criterion: %s >" % criterion )
+        print "< Stopping criterion: %s >" % criterion
 
     opt_details = {}
     opt_details['residual'] = 0.5*res_norm**2
