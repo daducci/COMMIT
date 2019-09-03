@@ -288,7 +288,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     xhat = x0.copy()
     x = np.zeros_like(xhat)
     res += A.dot(xhat)
-    xhat = proximal( xhat )
+    proximal( xhat )
     reg_term = omega( xhat )
     prev_obj = 0.5 * np.linalg.norm(res)**2 + reg_term
 
@@ -317,7 +317,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         x = xhat - mu*grad
 
         # Non-smooth step
-        x = proximal( x )
+        proximal( x )
         reg_term_x = omega( x )
 
         # Check stepsize
@@ -334,7 +334,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
             x = xhat - mu*grad
 
             # Non-smooth step
-            x = proximal( x )
+            proximal( x )
             reg_term_x = omega( x )
 
             # Check stepsize
