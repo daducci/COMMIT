@@ -1,5 +1,5 @@
 #!python
-#cython: language_level=3, boundscheck=False, wraparound=False, profile=False
+#cython: boundscheck=False, wraparound=False, profile=False
 """
 Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
 
