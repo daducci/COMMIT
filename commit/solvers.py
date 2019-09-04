@@ -106,11 +106,11 @@ def init_regularisation(commit_evaluation,
     regularisation = {}
 
     regularisation['startIC']  = 0
-    regularisation['sizeIC']   = int( commit_evaluation.DICTIONARY['IC']['nF'])#*len(commit_evaluation.model.ICVFs) )
+    regularisation['sizeIC']   = int( commit_evaluation.DICTIONARY['IC']['nF'] * commit_evaluation.KERNELS['wmr'].shape[0])
     regularisation['startEC']  = int( regularisation['sizeIC'] )
-    regularisation['sizeEC']   = int( commit_evaluation.DICTIONARY['EC']['nE'] )
+    regularisation['sizeEC']   = int( commit_evaluation.DICTIONARY['EC']['nE'] * commit_evaluation.KERNELS['wmh'].shape[0])
     regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
-    regularisation['sizeISO']  = int( commit_evaluation.DICTIONARY['nV'])#*len(commit_evaluation.model.d_ISOs) )
+    regularisation['sizeISO']  = int( commit_evaluation.DICTIONARY['nV'] * commit_evaluation.KERNELS['iso'].shape[0])
 
     regularisation['normIC']  = regnorms[0]
     regularisation['normEC']  = regnorms[1]
