@@ -21,6 +21,7 @@ cpdef non_negativity(double [::1] x, int compartment_start, int compartment_size
     for i in xrange(compartment_start, compartment_start+compartment_size):
         if x[i] <= 0.0 :
             x[i] = 0.0
+    return np.asarray( x )
 
 
 cpdef soft_thresholding(double [::1] x, double lam, int compartment_start, int compartment_size) :
@@ -35,6 +36,7 @@ cpdef soft_thresholding(double [::1] x, double lam, int compartment_start, int c
             x[i] = 0.0
         else:
             x[i] = x[i] - lam
+    return np.asarray( x )
 
 
 cpdef projection_onto_l2_ball(double [::1] x, double lam, int compartment_start, int compartment_size) :
@@ -55,6 +57,7 @@ cpdef projection_onto_l2_ball(double [::1] x, double lam, int compartment_start,
     else :
         for i in xrange(compartment_start, compartment_start+compartment_size):
             x[i] = x[i]
+    return np.asarray( x )
 
 
 cpdef omega_group_sparsity(double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam, double n) :
@@ -135,3 +138,4 @@ cpdef prox_group_sparsity( double [::1] x, int [::1] group_idx, int [::1] group_
         #                 v[i] = 0.0
         #             else :
         #                 v[i] -= r
+    return np.asarray( x )
