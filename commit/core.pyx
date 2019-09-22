@@ -20,9 +20,9 @@ import pyximport
 pyximport.install( reload_support=True, language_level=3 )
 
 
-def setup( lmax = 12 ) :
+def setup( lmax = 12, ndirs = 32761 ) :
     """General setup/initialization of the COMMIT framework."""
-    amico.lut.precompute_rotation_matrices( lmax )
+    amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
 
 cdef class Evaluation :
@@ -182,7 +182,7 @@ cdef class Evaluation :
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
 
-    def generate_kernels( self, regenerate = False, lmax = 12 ) :
+    def generate_kernels( self, regenerate = False, lmax = 12, ndirs = 32761 ) :
         """Generate the high-resolution response functions for each compartment.
         Dispatch to the proper function, depending on the model.
 
@@ -200,6 +200,7 @@ cdef class Evaluation :
 
         # store some values for later use
         self.set_config('lmax', lmax)
+        self.set_config('ndirs', ndirs)
         self.model.scheme = self.scheme
 
         print( '\n-> Simulating with "%s" model:' % self.model.name )
@@ -218,12 +219,12 @@ cdef class Evaluation :
                 remove( f )
 
         # auxiliary data structures
-        aux = amico.lut.load_precomputed_rotation_matrices( lmax )
+        aux = amico.lut.load_precomputed_rotation_matrices( lmax, ndirs )
         idx_IN, idx_OUT = amico.lut.aux_structures_generate( self.scheme, lmax )
 
         # Dispatch to the right handler for each model
         tic = time.time()
-        self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT )
+        self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT, ndirs )
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
@@ -247,7 +248,7 @@ cdef class Evaluation :
             print( '\t* Merging multiple b0 volume(s)...', end="" )
         else :
             print( '\t* Keeping all b0 volume(s)...', end="" )
-        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0') )
+        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
@@ -262,12 +263,11 @@ cdef class Evaluation :
         # De-mean kernels
         if self.get_config('doDemean') :
             print( '\t* Demeaning signal...', end="" )
-            for j in xrange(181) :
-                for k in xrange(181) :
-                    for i in xrange(nIC) :
-                        self.KERNELS['wmr'][i,j,k,:] -= self.KERNELS['wmr'][i,j,k,:].mean()
-                    for i in xrange(nEC) :
-                        self.KERNELS['wmh'][i,j,k,:] -= self.KERNELS['wmh'][i,j,k,:].mean()
+            for j in xrange(self.get_config('ndirs')) :
+                for i in xrange(nIC) :
+                    self.KERNELS['wmr'][i,j,:] -= self.KERNELS['wmr'][i,j,:].mean()
+                for i in xrange(nEC) :
+                    self.KERNELS['wmh'][i,j,:] -= self.KERNELS['wmh'][i,j,:].mean()
             for i in xrange(nISO) :
                 self.KERNELS['iso'][i] -= self.KERNELS['iso'][i].mean()
             print( '[ OK ]' )
@@ -278,17 +278,15 @@ cdef class Evaluation :
 
             self.KERNELS['wmr_norm'] = np.zeros( nIC )
             for i in xrange(nIC) :
-                self.KERNELS['wmr_norm'][i] = np.linalg.norm( self.KERNELS['wmr'][i,0,0,:] )
-                for j in xrange(181) :
-                    for k in xrange(181) :
-                        self.KERNELS['wmr'][i,j,k,:] /= self.KERNELS['wmr_norm'][i]
+                self.KERNELS['wmr_norm'][i] = np.linalg.norm( self.KERNELS['wmr'][i,0,:] )
+                for j in xrange(self.get_config('ndirs')) :
+                    self.KERNELS['wmr'][i,j,:] /= self.KERNELS['wmr_norm'][i]
 
             self.KERNELS['wmh_norm'] = np.zeros( nEC )
             for i in xrange(nEC) :
-                self.KERNELS['wmh_norm'][i] = np.linalg.norm( self.KERNELS['wmh'][i,0,0,:] )
-                for j in xrange(181) :
-                    for k in xrange(181) :
-                        self.KERNELS['wmh'][i,j,k,:] /= self.KERNELS['wmh_norm'][i]
+                self.KERNELS['wmh_norm'][i] = np.linalg.norm( self.KERNELS['wmh'][i,0,:] )
+                for j in xrange(self.get_config('ndirs')) :
+                    self.KERNELS['wmh'][i,j,:] /= self.KERNELS['wmh_norm'][i]
 
             self.KERNELS['iso_norm'] = np.zeros( nISO )
             for i in xrange(nISO) :

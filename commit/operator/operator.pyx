@@ -76,9 +76,9 @@ cdef class LinearOperator :
         self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
 
         if KERNELS['wmr'].size > 0 :
-            self.nS = KERNELS['wmr'].shape[3]       # number of SAMPLES
+            self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
         elif KERNELS['wmh'].size > 0 :
-            self.nS = KERNELS['wmh'].shape[3]
+            self.nS = KERNELS['wmh'].shape[2]
         else :
             self.nS = KERNELS['wmr'].shape[1]
 
@@ -104,10 +104,10 @@ cdef class LinearOperator :
         self.ISOv = &ISOv[0]
 
         # get C pointers to arrays in KERNELS
-        cdef float [:, :, :, ::1] wmrSFP = KERNELS['wmr']
-        self.LUT_IC  = &wmrSFP[0,0,0,0]
-        cdef float [:, :, :, ::1] wmhSFP = KERNELS['wmh']
-        self.LUT_EC  = &wmhSFP[0,0,0,0]
+        cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
+        self.LUT_IC  = &wmrSFP[0,0,0]
+        cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
+        self.LUT_EC  = &wmhSFP[0,0,0]
         cdef float [:, ::1] isoSFP = KERNELS['iso']
         self.LUT_ISO = &isoSFP[0,0]
 
