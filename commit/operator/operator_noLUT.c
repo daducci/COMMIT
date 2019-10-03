@@ -71,7 +71,7 @@ void* COMMIT_A__block( void *ptr )
 // Function called by CYTHON
 // =========================
 void COMMIT_A(
-    int _nF, int _n, int _nE, int _nV, int _nS,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
     uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
@@ -153,7 +153,7 @@ void* COMMIT_At__block( void *ptr )
 // Function called by CYTHON
 // =========================
 void COMMIT_At(
-    int _nF, int _n, int _nE, int _nV, int _nS,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
     uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,

@@ -12,7 +12,7 @@
 
 
 /* global variables */
-int         nF, n, nE, nV, nS;
+int         nF, n, nE, nV, nS, ndirs;
 double      *x, *Y;
 uint32_t    *ICthreads, *ECthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
@@ -960,7 +960,7 @@ void* COMMIT_A__block( void *ptr )
 // Function called by CYTHON
 // =========================
 void COMMIT_A(
-    int _nF, int _n, int _nE, int _nV, int _nS,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
     uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
@@ -974,6 +974,7 @@ void COMMIT_A(
     nE = _nE;
     nV = _nV;
     nS = _nS;
+    ndirs = _ndirs;
 
     x = _vIN;
     Y = _vOUT;
@@ -989,43 +990,43 @@ void COMMIT_A(
     #if nIC>=1
     wmrSFP0 = _wmrSFP;
     #if nIC>=2
-    wmrSFP1 = wmrSFP0 + 181*181*_nS;
+    wmrSFP1 = wmrSFP0 + _ndirs*_nS;
     #if nIC>=3
-    wmrSFP2 = wmrSFP1 + 181*181*_nS;
+    wmrSFP2 = wmrSFP1 + _ndirs*_nS;
     #if nIC>=4
-    wmrSFP3 = wmrSFP2 + 181*181*_nS;
+    wmrSFP3 = wmrSFP2 + _ndirs*_nS;
     #if nIC>=5
-    wmrSFP4 = wmrSFP3 + 181*181*_nS;
+    wmrSFP4 = wmrSFP3 + _ndirs*_nS;
     #if nIC>=6
-    wmrSFP5 = wmrSFP4 + 181*181*_nS;
+    wmrSFP5 = wmrSFP4 + _ndirs*_nS;
     #if nIC>=7
-    wmrSFP6 = wmrSFP5 + 181*181*_nS;
+    wmrSFP6 = wmrSFP5 + _ndirs*_nS;
     #if nIC>=8
-    wmrSFP7 = wmrSFP6 + 181*181*_nS;
+    wmrSFP7 = wmrSFP6 + _ndirs*_nS;
     #if nIC>=9
-    wmrSFP8 = wmrSFP7 + 181*181*_nS;
+    wmrSFP8 = wmrSFP7 + _ndirs*_nS;
     #if nIC>=10
-    wmrSFP9 = wmrSFP8 + 181*181*_nS;
+    wmrSFP9 = wmrSFP8 + _ndirs*_nS;
     #if nIC>=11
-    wmrSFP10 = wmrSFP9 + 181*181*_nS;
+    wmrSFP10 = wmrSFP9 + _ndirs*_nS;
     #if nIC>=12
-    wmrSFP11 = wmrSFP10 + 181*181*_nS;
+    wmrSFP11 = wmrSFP10 + _ndirs*_nS;
     #if nIC>=13
-    wmrSFP12 = wmrSFP11 + 181*181*_nS;
+    wmrSFP12 = wmrSFP11 + _ndirs*_nS;
     #if nIC>=14
-    wmrSFP13 = wmrSFP12 + 181*181*_nS;
+    wmrSFP13 = wmrSFP12 + _ndirs*_nS;
     #if nIC>=15
-    wmrSFP14 = wmrSFP13 + 181*181*_nS;
+    wmrSFP14 = wmrSFP13 + _ndirs*_nS;
     #if nIC>=16
-    wmrSFP15 = wmrSFP14 + 181*181*_nS;
+    wmrSFP15 = wmrSFP14 + _ndirs*_nS;
     #if nIC>=17
-    wmrSFP16 = wmrSFP15 + 181*181*_nS;
+    wmrSFP16 = wmrSFP15 + _ndirs*_nS;
     #if nIC>=18
-    wmrSFP17 = wmrSFP16 + 181*181*_nS;
+    wmrSFP17 = wmrSFP16 + _ndirs*_nS;
     #if nIC>=19
-    wmrSFP18 = wmrSFP17 + 181*181*_nS;
+    wmrSFP18 = wmrSFP17 + _ndirs*_nS;
     #if nIC>=20
-    wmrSFP19 = wmrSFP18 + 181*181*_nS;
+    wmrSFP19 = wmrSFP18 + _ndirs*_nS;
     #endif
     #endif
     #endif
@@ -1049,43 +1050,43 @@ void COMMIT_A(
     #if nEC>=1
     wmhSFP0 = _wmhSFP;
     #if nEC>=2
-    wmhSFP1 = wmhSFP0 + 181*181*_nS;
+    wmhSFP1 = wmhSFP0 + _ndirs*_nS;
     #if nEC>=3
-    wmhSFP2 = wmhSFP1 + 181*181*_nS;
+    wmhSFP2 = wmhSFP1 + _ndirs*_nS;
     #if nEC>=4
-    wmhSFP3 = wmhSFP2 + 181*181*_nS;
+    wmhSFP3 = wmhSFP2 + _ndirs*_nS;
     #if nEC>=5
-    wmhSFP4 = wmhSFP3 + 181*181*_nS;
+    wmhSFP4 = wmhSFP3 + _ndirs*_nS;
     #if nEC>=6
-    wmhSFP5 = wmhSFP4 + 181*181*_nS;
+    wmhSFP5 = wmhSFP4 + _ndirs*_nS;
     #if nEC>=7
-    wmhSFP6 = wmhSFP5 + 181*181*_nS;
+    wmhSFP6 = wmhSFP5 + _ndirs*_nS;
     #if nEC>=8
-    wmhSFP7 = wmhSFP6 + 181*181*_nS;
+    wmhSFP7 = wmhSFP6 + _ndirs*_nS;
     #if nEC>=9
-    wmhSFP8 = wmhSFP7 + 181*181*_nS;
+    wmhSFP8 = wmhSFP7 + _ndirs*_nS;
     #if nEC>=10
-    wmhSFP9 = wmhSFP8 + 181*181*_nS;
+    wmhSFP9 = wmhSFP8 + _ndirs*_nS;
     #if nEC>=11
-    wmhSFP10 = wmhSFP9 + 181*181*_nS;
+    wmhSFP10 = wmhSFP9 + _ndirs*_nS;
     #if nEC>=12
-    wmhSFP11 = wmhSFP10 + 181*181*_nS;
+    wmhSFP11 = wmhSFP10 + _ndirs*_nS;
     #if nEC>=13
-    wmhSFP12 = wmhSFP11 + 181*181*_nS;
+    wmhSFP12 = wmhSFP11 + _ndirs*_nS;
     #if nEC>=14
-    wmhSFP13 = wmhSFP12 + 181*181*_nS;
+    wmhSFP13 = wmhSFP12 + _ndirs*_nS;
     #if nEC>=15
-    wmhSFP14 = wmhSFP13 + 181*181*_nS;
+    wmhSFP14 = wmhSFP13 + _ndirs*_nS;
     #if nEC>=16
-    wmhSFP15 = wmhSFP14 + 181*181*_nS;
+    wmhSFP15 = wmhSFP14 + _ndirs*_nS;
     #if nEC>=17
-    wmhSFP16 = wmhSFP15 + 181*181*_nS;
+    wmhSFP16 = wmhSFP15 + _ndirs*_nS;
     #if nEC>=18
-    wmhSFP17 = wmhSFP16 + 181*181*_nS;
+    wmhSFP17 = wmhSFP16 + _ndirs*_nS;
     #if nEC>=19
-    wmhSFP18 = wmhSFP17 + 181*181*_nS;
+    wmhSFP18 = wmhSFP17 + _ndirs*_nS;
     #if nEC>=20
-    wmhSFP19 = wmhSFP18 + 181*181*_nS;
+    wmhSFP19 = wmhSFP18 + _ndirs*_nS;
     #endif
     #endif
     #endif
@@ -2023,7 +2024,7 @@ void* COMMIT_At__block( void *ptr )
 // Function called by CYTHON
 // =========================
 void COMMIT_At(
-    int _nF, int _n, int _nE, int _nV, int _nS,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
     uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
@@ -2037,6 +2038,7 @@ void COMMIT_At(
     nE = _nE;
     nV = _nV;
     nS = _nS;
+    ndirs = _ndirs;
 
     x = _vOUT;
     Y = _vIN;
@@ -2052,43 +2054,43 @@ void COMMIT_At(
     #if nIC>=1
     wmrSFP0 = _wmrSFP;
     #if nIC>=2
-    wmrSFP1 = wmrSFP0 + 181*181*_nS;
+    wmrSFP1 = wmrSFP0 + _ndirs*_nS;
     #if nIC>=3
-    wmrSFP2 = wmrSFP1 + 181*181*_nS;
+    wmrSFP2 = wmrSFP1 + _ndirs*_nS;
     #if nIC>=4
-    wmrSFP3 = wmrSFP2 + 181*181*_nS;
+    wmrSFP3 = wmrSFP2 + _ndirs*_nS;
     #if nIC>=5
-    wmrSFP4 = wmrSFP3 + 181*181*_nS;
+    wmrSFP4 = wmrSFP3 + _ndirs*_nS;
     #if nIC>=6
-    wmrSFP5 = wmrSFP4 + 181*181*_nS;
+    wmrSFP5 = wmrSFP4 + _ndirs*_nS;
     #if nIC>=7
-    wmrSFP6 = wmrSFP5 + 181*181*_nS;
+    wmrSFP6 = wmrSFP5 + _ndirs*_nS;
     #if nIC>=8
-    wmrSFP7 = wmrSFP6 + 181*181*_nS;
+    wmrSFP7 = wmrSFP6 + _ndirs*_nS;
     #if nIC>=9
-    wmrSFP8 = wmrSFP7 + 181*181*_nS;
+    wmrSFP8 = wmrSFP7 + _ndirs*_nS;
     #if nIC>=10
-    wmrSFP9 = wmrSFP8 + 181*181*_nS;
+    wmrSFP9 = wmrSFP8 + _ndirs*_nS;
     #if nIC>=11
-    wmrSFP10 = wmrSFP9 + 181*181*_nS;
+    wmrSFP10 = wmrSFP9 + _ndirs*_nS;
     #if nIC>=12
-    wmrSFP11 = wmrSFP10 + 181*181*_nS;
+    wmrSFP11 = wmrSFP10 + _ndirs*_nS;
     #if nIC>=13
-    wmrSFP12 = wmrSFP11 + 181*181*_nS;
+    wmrSFP12 = wmrSFP11 + _ndirs*_nS;
     #if nIC>=14
-    wmrSFP13 = wmrSFP12 + 181*181*_nS;
+    wmrSFP13 = wmrSFP12 + _ndirs*_nS;
     #if nIC>=15
-    wmrSFP14 = wmrSFP13 + 181*181*_nS;
+    wmrSFP14 = wmrSFP13 + _ndirs*_nS;
     #if nIC>=16
-    wmrSFP15 = wmrSFP14 + 181*181*_nS;
+    wmrSFP15 = wmrSFP14 + _ndirs*_nS;
     #if nIC>=17
-    wmrSFP16 = wmrSFP15 + 181*181*_nS;
+    wmrSFP16 = wmrSFP15 + _ndirs*_nS;
     #if nIC>=18
-    wmrSFP17 = wmrSFP16 + 181*181*_nS;
+    wmrSFP17 = wmrSFP16 + _ndirs*_nS;
     #if nIC>=19
-    wmrSFP18 = wmrSFP17 + 181*181*_nS;
+    wmrSFP18 = wmrSFP17 + _ndirs*_nS;
     #if nIC>=20
-    wmrSFP19 = wmrSFP18 + 181*181*_nS;
+    wmrSFP19 = wmrSFP18 + _ndirs*_nS;
     #endif
     #endif
     #endif
@@ -2112,43 +2114,43 @@ void COMMIT_At(
     #if nEC>=1
     wmhSFP0 = _wmhSFP;
     #if nEC>=2
-    wmhSFP1 = wmhSFP0 + 181*181*_nS;
+    wmhSFP1 = wmhSFP0 + _ndirs*_nS;
     #if nEC>=3
-    wmhSFP2 = wmhSFP1 + 181*181*_nS;
+    wmhSFP2 = wmhSFP1 + _ndirs*_nS;
     #if nEC>=4
-    wmhSFP3 = wmhSFP2 + 181*181*_nS;
+    wmhSFP3 = wmhSFP2 + _ndirs*_nS;
     #if nEC>=5
-    wmhSFP4 = wmhSFP3 + 181*181*_nS;
+    wmhSFP4 = wmhSFP3 + _ndirs*_nS;
     #if nEC>=6
-    wmhSFP5 = wmhSFP4 + 181*181*_nS;
+    wmhSFP5 = wmhSFP4 + _ndirs*_nS;
     #if nEC>=7
-    wmhSFP6 = wmhSFP5 + 181*181*_nS;
+    wmhSFP6 = wmhSFP5 + _ndirs*_nS;
     #if nEC>=8
-    wmhSFP7 = wmhSFP6 + 181*181*_nS;
+    wmhSFP7 = wmhSFP6 + _ndirs*_nS;
     #if nEC>=9
-    wmhSFP8 = wmhSFP7 + 181*181*_nS;
+    wmhSFP8 = wmhSFP7 + _ndirs*_nS;
     #if nEC>=10
-    wmhSFP9 = wmhSFP8 + 181*181*_nS;
+    wmhSFP9 = wmhSFP8 + _ndirs*_nS;
     #if nEC>=11
-    wmhSFP10 = wmhSFP9 + 181*181*_nS;
+    wmhSFP10 = wmhSFP9 + _ndirs*_nS;
     #if nEC>=12
-    wmhSFP11 = wmhSFP10 + 181*181*_nS;
+    wmhSFP11 = wmhSFP10 + _ndirs*_nS;
     #if nEC>=13
-    wmhSFP12 = wmhSFP11 + 181*181*_nS;
+    wmhSFP12 = wmhSFP11 + _ndirs*_nS;
     #if nEC>=14
-    wmhSFP13 = wmhSFP12 + 181*181*_nS;
+    wmhSFP13 = wmhSFP12 + _ndirs*_nS;
     #if nEC>=15
-    wmhSFP14 = wmhSFP13 + 181*181*_nS;
+    wmhSFP14 = wmhSFP13 + _ndirs*_nS;
     #if nEC>=16
-    wmhSFP15 = wmhSFP14 + 181*181*_nS;
+    wmhSFP15 = wmhSFP14 + _ndirs*_nS;
     #if nEC>=17
-    wmhSFP16 = wmhSFP15 + 181*181*_nS;
+    wmhSFP16 = wmhSFP15 + _ndirs*_nS;
     #if nEC>=18
-    wmhSFP17 = wmhSFP16 + 181*181*_nS;
+    wmhSFP17 = wmhSFP16 + _ndirs*_nS;
     #if nEC>=19
-    wmhSFP18 = wmhSFP17 + 181*181*_nS;
+    wmhSFP18 = wmhSFP17 + _ndirs*_nS;
     #if nEC>=20
-    wmhSFP19 = wmhSFP18 + 181*181*_nS;
+    wmhSFP19 = wmhSFP18 + _ndirs*_nS;
     #endif
     #endif
     #endif

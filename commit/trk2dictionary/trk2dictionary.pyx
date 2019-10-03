@@ -8,7 +8,7 @@ import nibabel
 from os.path import join, exists
 from os import makedirs, remove
 import time
-
+import amico
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
@@ -16,14 +16,14 @@ cdef extern from "trk2dictionary_c.cpp":
         char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, short* prtHashTable
     ) nogil
 
 
 cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True,
     fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
     flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
-    blur_radii = [], blur_samples = [], blur_sigma = 1.0
+    blur_radii = [], blur_samples = [], blur_sigma = 1.0, ndirs = 32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -155,6 +155,9 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     print( '\t* Loading data:' )
 
+    cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
+    cdef short* ptrHashTable = &htable[0]
+
     # fiber-tracts from .trk
     print( '\t\t* tractogram' )
     try :
@@ -243,7 +246,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights );
+        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrHashTable );
     if ret == 0 :
         print( '   [ DICTIONARY not generated ]' )
         return None
