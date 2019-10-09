@@ -14,21 +14,24 @@ class segKey
 {
     public:
     unsigned short x, y, z;
-    unsigned short o;
+    //unsigned short o;
+    unsigned short ox, oy;
     segKey(){}
 
-    void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned short _o)
+    void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned short _ox, unsigned short _oy)
     {
         x  = _x;
         y  = _y;
         z  = _z;
-        o  = _o;
+        //o = _o;
+        ox = _ox;
+        oy = _oy;//*/
     }
 
-    bool const operator <(const segKey& seg) const
+    bool const operator <(const segKey& o) const
     {
-        return o < seg.o;
-        //return oy<o.oy || (oy==o.oy && ox<o.ox) || (oy==o.oy && ox==o.ox && z<o.z) || (oy==o.oy && ox==o.ox && z==o.z && y<o.y) || (oy==o.oy && ox==o.ox && z==o.z && y==o.y && x<o.x);
+        //return o < seg.o;
+        return oy<o.oy || (oy==o.oy && ox<o.ox) || (oy==o.oy && ox==o.ox && z<o.z) || (oy==o.oy && ox==o.ox && z==o.z && y<o.y) || (oy==o.oy && ox==o.ox && z==o.z && y==o.y && x<o.x);
     }
 };
 
@@ -150,6 +153,7 @@ int trk2dictionary(
     {
         PROGRESS.inc();
         N = read_fiber( fpTRK, fiber, n_scalars, n_properties );
+        //printf("N = %d\n", N);
         fiberForwardModel( fiber, N, sectors, radii, weights, ptrHashTable );
 
         kept = 0;
@@ -163,7 +167,8 @@ int trk2dictionary(
                 // NB: plese note inverted ordering for 'v'
                 v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                 //o = it->first.oy + 181 * it->first.ox;
-                o = it->first.o;
+                o = ptrHashTable[it->first.ox*181 + it->first.ox];
+                //o = it->first.o;
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
                 fwrite( &v,              4, 1, pDict_IC_v );
                 fwrite( &o,              2, 1, pDict_IC_o );
@@ -279,7 +284,7 @@ int trk2dictionary(
                         oy = (int)round(longitude/M_PI*180.0);
 
                         v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
-                        o = ptrHashTable[oy*181 + ox];
+                        o = ptrHashTable[ox*181 + oy];
                         fwrite( &v, 4, 1, pDict_EC_v );
                         fwrite( &o, 2, 1, pDict_EC_o );
                         totECSegments++;
@@ -313,6 +318,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
     static int            i, j, k;
 
     FiberSegments.clear();
+    //printf("RANGO -----------------------------> from %d to %d\n", nPointsToSkip, pts-1-nPointsToSkip);
     for(i=nPointsToSkip; i<pts-1-nPointsToSkip ;i++)
     {
         // original segment to be processed
@@ -448,9 +454,10 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, do
     // add the segment to the data structure
     longitude  = atan2(dir.y, dir.x);
     colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
-    ox = (int)round(colatitude/M_PI*180.0);
-    oy = (int)round(longitude/M_PI*180.0);
-    key.set( vox.x, vox.y, vox.z, ptrHashTable[oy*181 + ox]);
+    ox = (int)round(colatitude/M_PI*180.0); // theta // i1
+    oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
+    key.set( vox.x, vox.y, vox.z, ox, oy);
+    //key.set( vox.x, vox.y, vox.z, ox*181 + oy/*ptrHashTable[ox*181 + oy]*/);
     FiberSegments[key] += w * len;
 }
 
