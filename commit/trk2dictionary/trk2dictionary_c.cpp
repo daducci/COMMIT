@@ -167,7 +167,7 @@ int trk2dictionary(
                 // NB: plese note inverted ordering for 'v'
                 v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                 //o = it->first.oy + 181 * it->first.ox;
-                o = ptrHashTable[it->first.ox*181 + it->first.ox];
+                o = ptrHashTable[it->first.ox*181 + it->first.oy];
                 //o = it->first.o;
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
                 fwrite( &v,              4, 1, pDict_IC_v );
