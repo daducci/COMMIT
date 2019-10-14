@@ -4,6 +4,7 @@ Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
 This structure is based on the previous work of Rafael Carrillo and was
 supported by the LTS5 laboratory at EPFL, Lausanne.
 """
+from __future__ import print_function
 import numpy as np
 from math import sqrt
 import sys
@@ -22,6 +23,7 @@ norm2 = 2
 norminf = np.inf
 list_regnorms = [group_sparsity, non_negative, norm1, norm2]
 list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
+
 
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
@@ -104,11 +106,11 @@ def init_regularisation(commit_evaluation,
     regularisation = {}
 
     regularisation['startIC']  = 0
-    regularisation['sizeIC']   = int( commit_evaluation.DICTIONARY['IC']['nF'])#*len(commit_evaluation.model.ICVFs) )
+    regularisation['sizeIC']   = int( commit_evaluation.DICTIONARY['IC']['nF'] * commit_evaluation.KERNELS['wmr'].shape[0])
     regularisation['startEC']  = int( regularisation['sizeIC'] )
-    regularisation['sizeEC']   = int( commit_evaluation.DICTIONARY['EC']['nE'] )
+    regularisation['sizeEC']   = int( commit_evaluation.DICTIONARY['EC']['nE'] * commit_evaluation.KERNELS['wmh'].shape[0])
     regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
-    regularisation['sizeISO']  = int( commit_evaluation.DICTIONARY['nV'])#*len(commit_evaluation.model.d_ISOs) )
+    regularisation['sizeISO']  = int( commit_evaluation.DICTIONARY['nV'] * commit_evaluation.KERNELS['iso'].shape[0])
 
     regularisation['normIC']  = regnorms[0]
     regularisation['normEC']  = regnorms[1]
@@ -231,6 +233,7 @@ def regularisation2omegaprox(regularisation):
 
     return omega, prox
 
+
 def evaluate_model(y, A, x, regularisation = None):
     if regularisation is None:
         omega = lambda x: 0.0
@@ -239,6 +242,7 @@ def evaluate_model(y, A, x, regularisation = None):
         omega, _ = regularisation2omegaprox(regularisation)
 
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
+
 
 def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
     """
@@ -262,6 +266,7 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
 
     return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox)
 
+
 def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     """
     Solve the regularised least squares problem
@@ -283,7 +288,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     xhat = x0.copy()
     x = np.zeros_like(xhat)
     res += A.dot(xhat)
-    xhat = proximal( xhat )
+    proximal( xhat )
     reg_term = omega( xhat )
     prev_obj = 0.5 * np.linalg.norm(res)**2 + reg_term
 
@@ -299,20 +304,20 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
 
     # Main loop
     if verbose >= 1 :
-        print
-        print "      |  1/2||Ax-y||^2    Omega         |  Cost function    Abs error      Rel error    |     Abs x          Rel x"
-        print "------|---------------------------------|-----------------------------------------------|------------------------------"
+        print()
+        print( "      |  1/2||Ax-y||^2    Omega         |  Cost function    Abs error      Rel error    |     Abs x          Rel x" )
+        print( "------|---------------------------------|-----------------------------------------------|------------------------------" )
     iter = 1
     while True :
         if verbose >= 1 :
-            print "%4d  |" % iter,
+            print( "%4d  |" % iter, end="" )
             sys.stdout.flush()
 
         # Smooth step
         x = xhat - mu*grad
 
         # Non-smooth step
-        x = proximal( x )
+        proximal( x )
         reg_term_x = omega( x )
 
         # Check stepsize
@@ -329,7 +334,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
             x = xhat - mu*grad
 
             # Non-smooth step
-            x = proximal( x )
+            proximal( x )
             reg_term_x = omega( x )
 
             # Check stepsize
@@ -345,7 +350,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
         if verbose >= 1 :
-            print "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x )
+            print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
 
         if abs_obj < eps :
             criterion = "Absolute tolerance on the objective"
@@ -382,7 +387,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
 
 
     if verbose >= 1 :
-        print "< Stopping criterion: %s >" % criterion
+        print( "< Stopping criterion: %s >" % criterion )
 
     opt_details = {}
     opt_details['residual'] = 0.5*res_norm**2
