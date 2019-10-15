@@ -196,6 +196,8 @@ cdef class Evaluation :
             Regenerate kernels if they already exist (default : False)
         lmax : int
             Maximum SH order to use for the rotation procedure (default : 12)
+        ndirs : int
+            Number of directions on the half of the sphere
         """
         if not amico.lut.is_valid(ndirs):
             raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )

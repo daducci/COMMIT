@@ -80,6 +80,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
     blur_sigma
         The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)
+    ndirs : int
+            Number of directions on the half of the sphere
     """
 
     # check the value of ndirs
