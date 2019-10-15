@@ -22,6 +22,10 @@ pyximport.install( reload_support=True, language_level=3 )
 
 def setup( lmax = 12, ndirs = 32761 ) :
     """General setup/initialization of the COMMIT framework."""
+
+    if not amico.lut.is_valid(ndirs):
+        raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+
     amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
 
@@ -193,6 +197,8 @@ cdef class Evaluation :
         lmax : int
             Maximum SH order to use for the rotation procedure (default : 12)
         """
+        if not amico.lut.is_valid(ndirs):
+            raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
         if self.scheme is None :
             raise RuntimeError( 'Scheme not loaded; call "load_data()" first.' )
         if self.model is None :
