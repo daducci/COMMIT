@@ -14,24 +14,30 @@ class segKey
 {
     public:
     unsigned short x, y, z;
-    //unsigned short o;
-    unsigned short ox, oy;
+    unsigned short o;
+    //unsigned short ox, oy;
     segKey(){}
 
-    void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned short _ox, unsigned short _oy)
+    void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned short _o/*unsigned short _ox, unsigned short _oy*/)
     {
         x  = _x;
         y  = _y;
         z  = _z;
-        //o = _o;
-        ox = _ox;
+        o = _o;
+        /*ox = _ox;
         oy = _oy;//*/
     }
 
-    bool const operator <(const segKey& o) const
+    bool const operator <(const segKey& seg) const
     {
-        //return o < seg.o;
-        return oy<o.oy || (oy==o.oy && ox<o.ox) || (oy==o.oy && ox==o.ox && z<o.z) || (oy==o.oy && ox==o.ox && z==o.z && y<o.y) || (oy==o.oy && ox==o.ox && z==o.z && y==o.y && x<o.x);
+        /*unsigned short ox = (unsigned short) (o/181);
+        unsigned short oy = (unsigned short) (o%181);
+
+        unsigned short seg_ox = (unsigned short) (seg.o/181);
+        unsigned short seg_oy = (unsigned short) (seg.o%181);//*/
+        return o < seg.o || (o==seg.o && z<seg.z) || (o==seg.o && z==seg.z && y<seg.y) || (o==seg.o && z==seg.z && y==seg.y && x<seg.x);
+        //return oy<seg_oy || (oy==seg_oy && ox<seg_ox) || (oy==seg_oy && ox==seg_ox && z<seg.z) || (oy==seg_oy && ox==seg_ox && z==seg.z && y<seg.y) || (oy==seg_oy && ox==seg_ox && z==seg.z && y==seg.y && x<seg.x); //old commit
+        //return oy<o.oy || (oy==o.oy && ox<o.ox) || (oy==o.oy && ox==o.ox && z<o.z) || (oy==o.oy && ox==o.ox && z==o.z && y<o.y) || (oy==o.oy && ox==o.ox && z==o.z && y==o.y && x<o.x); //old commit
     }
 };
 
@@ -166,9 +172,9 @@ int trk2dictionary(
             {
                 // NB: plese note inverted ordering for 'v'
                 v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
-                //o = it->first.oy + 181 * it->first.ox;
-                o = ptrHashTable[it->first.ox*181 + it->first.oy];
-                //o = it->first.o;
+                //o = it->first.oy + 181 * it->first.ox; // old commit
+                //o = ptrHashTable[it->first.ox*181 + it->first.oy]; // new commit
+                o = it->first.o;
                 fwrite( &totFibers,      4, 1, pDict_IC_f );
                 fwrite( &v,              4, 1, pDict_IC_v );
                 fwrite( &o,              2, 1, pDict_IC_o );
@@ -456,8 +462,8 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, do
     colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
     ox = (int)round(colatitude/M_PI*180.0); // theta // i1
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
-    key.set( vox.x, vox.y, vox.z, ox, oy);
-    //key.set( vox.x, vox.y, vox.z, ox*181 + oy/*ptrHashTable[ox*181 + oy]*/);
+    //key.set( vox.x, vox.y, vox.z, ox, oy); //old commit
+    key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );
     FiberSegments[key] += w * len;
 }
 
