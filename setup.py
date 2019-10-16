@@ -2,6 +2,10 @@ from distutils.core import setup, Extension
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
 import numpy
+import amico
+
+if amico.__version__ != '1.1.0':
+    raise RuntimeError( 'COMMIT v1.3 requires AMICO v1.1.0' )
 
 # Cython extension to create the sparse data structure from a tractogram
 # for the computation of matrix-vector multiplications
