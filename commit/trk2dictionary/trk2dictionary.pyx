@@ -193,13 +193,23 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
         
     if (extension == ".tck"):
         #open file .nii and get header of this to get info on the structure
+        int peaks = 0
+        int mask = 0
+        
         if TCK_ref_image is None:
             if filename_peaks is not None:
+                peaks = 1
                 TCK_ref_image = filename_peaks
             elif filename_mask is not None:
+                mask = 1
                 TCK_ref_image = filename_mask
             else:
                 raise RuntimeError( 'TCK files do not contain info on the geometry. Use "TCK_ref_image" for that.' )
+                 
+        if(peaks == 0):
+            raise RuntimeError( 'Not peaks in input' )
+        if (mask == 0):
+            raise RuntimeError( 'No mask in input' )
 
         #load the TCK_ref_image( .nii file)
         nii_image = nibabel.load(TCK_ref_image)
