@@ -16,7 +16,7 @@ cdef extern from "trk2dictionary_c.cpp":
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrArrayInvM
     ) nogil
 
 
@@ -228,7 +228,23 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
     print '\t\t\t- %d fibers' % n_count
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         raise RuntimeError( 'The max dim size is 2^16 voxels' )
+    
+    print '\t\t* geometry_taken   = "%s"' %TCK_ref_image
+    #get affine
+    if (extension == ".tck"):
+        scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
+        M = nii_hdr.get_best_affine() #get affine
 
+        # Affine matrix without scaling, i.e. diagonal is 1
+        M[:3, :3] = np.dot(scaleMat, M[:3, :3]) #delete scalar
+
+        M = M.astype('<f4') # affine matrix in float value
+        
+        invM = np.linalg.inv(M) # inverse affine matrix
+        #create a vector of inverse matrix M
+        ArrayInvM = np.ravel(invM)
+        ptrArrayInvM = &ArrayInvM[0]
+    
     # white-matter mask
     cdef float* ptrMASK
     cdef float [:, :, ::1] niiMASK_img
