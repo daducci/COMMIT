@@ -199,10 +199,10 @@ def regularisation2omegaprox(regularisation):
         omegaEC = lambda x: 0.0
         proxEC  = lambda x: x
     elif normEC == norm2:
-        omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:sizeEC])
+        omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
         proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
     elif normEC == norm1:
-        omegaEC = lambda x: lambdaEC * sum( x[startEC:sizeEC] )
+        omegaEC = lambda x: lambdaEC * sum( x[startEC:(startEC+sizeEC)] )
         proxEC  = lambda x: soft_thresholding(x, lambdaEC, startEC, sizeEC)
     elif normEC == non_negative:
         omegaEC = lambda x: 0.0
@@ -217,10 +217,10 @@ def regularisation2omegaprox(regularisation):
         omegaISO = lambda x: 0.0
         proxISO  = lambda x: x
     elif normISO == norm2:
-        omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:sizeISO])
+        omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)])
         proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
     elif normISO == norm1:
-        omegaISO = lambda x: lambdaISO * sum( x[startISO:sizeISO] )
+        omegaISO = lambda x: lambdaISO * sum( x[startISO:(startISO+sizeISO)] )
         proxISO  = lambda x: soft_thresholding(x, lambdaISO, startISO, sizeISO)
     elif normISO == non_negative:
         omegaISO = lambda x: 0.0
