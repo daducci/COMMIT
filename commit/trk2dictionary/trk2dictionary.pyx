@@ -115,6 +115,8 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
         int* ptrBlurSamples
         double* ptrBlurWeights
         int nBlurRadii
+        float [:] ArrayInvM
+        float* ptrArrayInvM
 
     if len(blur_radii) != len(blur_samples) :
         raise RuntimeError( 'number of radii and samples must match' )
