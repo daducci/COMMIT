@@ -71,7 +71,7 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vector<int> sectors, std::vector<double> radii, std::vector<double> weight );
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, double w );
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
-unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] );
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine[4][4] );
 
 
 // =========================
@@ -166,6 +166,19 @@ int trk2dictionary(
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
     PROGRESS.setPrefix("\t  ");
+    
+    float affine[4][4]; //create the affine matrix in C
+    if (!isTRK)  {//.tck
+        //ricreate affine matrix
+        int k = 0;
+        for(int i=0; i<4; i++) {
+            for (int j=0; j<4; j++) {
+                affine[i][j] = VetAffine[k];
+                k++;
+            }
+        }
+    }
+    
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
@@ -564,7 +577,7 @@ unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int n
 }
 
 //to read fiber in .tck file
-unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN])
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float affine[4][4])
 {
     int N = 0;
     float tmp[3];
@@ -573,9 +586,9 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN])
 
     while( !(isnan(tmp[0])) && !(isnan(tmp[1])) &&  !(isnan(tmp[2])) )
     {
-        fiber[0][N] = tmp[0];
-        fiber[1][N] = tmp[1];
-        fiber[2][N] = tmp[2];
+        fiber[0][N] = tmp[0]*affine[0][0] + tmp[1]*affine[0][1] + tmp[2]*affine[0][2] + affine[0][3];
+        fiber[1][N] = tmp[0]*affine[1][0] + tmp[1]*affine[1][1] + tmp[2]*affine[1][2] + affine[1][3];
+        fiber[2][N] = tmp[0]*affine[2][0] + tmp[1]*affine[2][1] + tmp[2]*affine[2][2] + affine[2][3];
         N++;
         fread((char*)tmp, 1, 12, fp);
     }
