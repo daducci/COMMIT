@@ -5,6 +5,8 @@
 #include <vector>
 #include "Vector.h"
 #include "ProgressBar.h"
+#include <numpy/arrayobject.h>
+#include <math.h>
 
 #define MAX_FIB_LEN 10000
 
@@ -70,18 +72,19 @@ double              radiusSigma;   // modulates the impact of each segment as fu
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vector<int> sectors, std::vector<double> radii, std::vector<double> weight );
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, double w );
-unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
+unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine[4][4]);
 
 
 // =========================
 // Function called by CYTHON
 // =========================
 int trk2dictionary(
-    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
+    char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
+    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* VetAffine
 )
 {
     /*=========================*/
