@@ -224,6 +224,23 @@ cpdef run( filename_tractogram, path_out, filename_peaks = None, filename_mask =
     print( '\t\t\t- %d fibers' % trk_hdr['n_count'] )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         raise RuntimeError( 'The max dim size is 2^16 voxels' )
+    
+    print ('\t\t* geometry_taken   = "%s"' %TCK_ref_image)
+    # get the affine matrix
+    if (extension == ".tck"):
+        scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
+        M = nii_hdr.get_best_affine() #get affine
+
+        # Affine matrix without scaling, i.e. diagonal is 1
+        M[:3, :3] = np.dot(scaleMat, M[:3, :3]) #delete scalar
+
+        M = M.astype('<f4') # affine matrix in float value
+
+        invM = np.linalg.inv(M) # inverse affine matrix
+
+        #create a vector of inverse matrix M
+        ArrayInvM = np.ravel(invM)
+        ptrArrayInvM = &ArrayInvM[0]
 
     # white-matter mask
     cdef float* ptrMASK
