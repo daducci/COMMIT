@@ -23,7 +23,7 @@ cdef extern from "trk2dictionary_c.cpp":
     ) nogil
 
 
-cpdef run( filename_tractogram, path_out, filename_peaks = None, filename_mask = None, do_intersect = True,
+cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks = None, filename_mask = None, do_intersect = True,
     fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
     flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
     blur_radii = [], blur_samples = [], blur_sigma = 1.0
@@ -221,7 +221,7 @@ cpdef run( filename_tractogram, path_out, filename_peaks = None, filename_mask =
         
     print( '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz ) )
     print( '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz ) )
-    print( '\t\t\t- %d fibers' % trk_hdr['n_count'] )
+    print( '\t\t\t- %d fibers' % n_count )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         raise RuntimeError( 'The max dim size is 2^16 voxels' )
     
