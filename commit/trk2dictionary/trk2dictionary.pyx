@@ -164,7 +164,7 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
     print( '\t\t* tractogram' )
     
     extension = os.path.splitext(filename_tractogram)[1]  #take extension of file
-    #print(extension)
+    
     if (extension != ".trk" and extension != ".tck") :
         raise IOError( 'Invalid input file. Please enter tractogram file .trk or .tck' )
     try : #read the header of the file in the same way both in .trk and in .tck
