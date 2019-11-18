@@ -105,10 +105,30 @@ int trk2dictionary(
     segInVoxKey         inVoxKey;
 
     printf( "\t* Exporting IC compartments:\n" );
+    
+    int isTRK; // var to check
 
-    FILE* fpTRK = fopen(strTRKfilename,"rb");
-    if (fpTRK == NULL) return 0;
-    fseek(fpTRK,1000,SEEK_SET);
+    char *ext = strrchr(str_filename, '.'); //get the extension of input file
+
+    if (strcmp(ext,".trk")==0) //for .trk file
+        isTRK = 1;
+    else if (strcmp(ext,".tck")==0)// for .tck file
+        isTRK = 0;
+    else
+        return 0;
+
+    FILE* fpTractogram = fopen(str_filename,"rb"); //open 
+    if (fpTractogram == NULL) return 0;
+
+    // SKIP header on .trk
+    if ( isTRK ) { // .
+        printf("data_offset: %d\n", data_offset);
+        fseek(fpTractogram,data_offset,SEEK_SET); //skip the first 1000 bytes in the .trk file
+    }
+    else { // SKIP header on .tck
+        printf("data_offset: %d\n", data_offset);
+        fseek(fpTractogram,data_offset,SEEK_SET); //skip the first offset bytes in the .tck file
+    }
 
     // set global variables
     dim.Set( Nx, Ny, Nz );
@@ -149,6 +169,21 @@ int trk2dictionary(
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
     PROGRESS.setPrefix("\t  ");
+    
+    float affine[4][4];
+    if (!isTRK)  {//.tck
+        //ricreate affine matrix
+        int k = 0;
+        for(int i=0; i<4; i++) {
+            for (int j=0; j<4; j++) {
+                affine[i][j] = VetAffine[k];
+                k++;
+                //printf("%f ", affine[i][j]);
+            }
+            //printf("\n");
+        }
+    }
+    
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
