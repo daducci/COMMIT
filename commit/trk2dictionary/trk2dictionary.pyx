@@ -306,29 +306,30 @@ cpdef run( filename_tractogram, path_out, filename_peaks = None, filename_mask =
         makedirs( path_out )
 
     # calling actual C code
-    ret = trk2dictionary( filename_trk,
-        trk_hdr['dim'][0], trk_hdr['dim'][1], trk_hdr['dim'][2],
-        trk_hdr['voxel_size'][0], trk_hdr['voxel_size'][1], trk_hdr['voxel_size'][2],
-        trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
+    ret = trk2dictionary( filename_tractogram, data_offset,
+        Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
+        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights );
+        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM );
     if ret == 0 :
         print( '   [ DICTIONARY not generated ]' )
         return None
 
     # create new TRK with only fibers in the WM mask
+    # create new dictionaty file (TRK or TCK) with only fibers in the WM mask
     if gen_trk :
-        print( '\t* Generate tractogram matching the dictionary: ' )
-        fib, _ = nibabel.trackvis.read( filename_trk, as_generator=True )
-        fibKept = []
+        print ('\t* Generate tractogram matching the dictionary: ')
+        fib = nibabel.streamlines.load(filename_tractogram)
+        hdr = fib.header
+
         file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
-        ind = 0
-        for f in fib:
-            if file_kept[ind]:
-                fibKept.append( (f[0],None, None) )
-            ind = ind+1
-        nibabel.trackvis.write( join(path_out,'dictionary_TRK_fibers.trk'), fibKept, trk_hdr )
+        tractogram_out = fib.tractogram[ file_kept ]
+        hdr['count'] = len(tractogram_out) #set new number of fibers in the header
+        hdr['nb_streamlines'] = len(tractogram_out)
+
+        #create a output dictionary file (TRK or TCK) in path_out
+        nibabel.streamlines.save( tractogram_out, join(path_out,'dictionary_TRK_fibers'+extension), header=hdr )
         print( '\t  [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
     print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
