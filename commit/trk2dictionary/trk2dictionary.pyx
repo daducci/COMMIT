@@ -8,19 +8,22 @@ import nibabel
 from os.path import join, exists
 from os import makedirs, remove
 import time
+import os.path
+import array
 
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
-        char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
+        char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, 
+        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrArrayInvM
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True,
+cpdef run( filename_tractogram, path_out, filename_peaks = None, filename_mask = None, do_intersect = True,
     fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
     flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
     blur_radii = [], blur_samples = [], blur_sigma = 1.0
@@ -32,7 +35,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     Parameters
     ----------
     filename_trk : string
-        Path to the .trk file containing the tractogram to convert.
+        Path to the .trk or .tck file containing the tractogram to convert.
 
     path_out : string
         Path to the folder where to store the sparse data structure.
@@ -112,6 +115,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         int* ptrBlurSamples
         double* ptrBlurWeights
         int nBlurRadii
+        float [:] ArrayInvM
+        float* ptrArrayInvM
 
     if len(blur_radii) != len(blur_samples) :
         raise RuntimeError( 'number of radii and samples must match' )
@@ -157,10 +162,16 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     # fiber-tracts from .trk
     print( '\t\t* tractogram' )
-    try :
-        _, trk_hdr = nibabel.trackvis.read( filename_trk )
+    
+    extension = os.path.splitext(filename_tractogram)[1]  #take extension of file
+    #print(extension)
+    if (extension != ".trk" and extension != ".tck") :
+        raise IOError( 'Invalid input file. Please enter tractogram file .trk or .tck' )
+    try : #read the header of the file in the same way both in .trk and in .tck
+        hdr = nibabel.streamlines.load( filename_tractogram ).header
     except :
-        raise IOError( 'Track file not found' )
+        raise IOError( 'Tractogram file not found' )
+        
     Nx = trk_hdr['dim'][0]
     Ny = trk_hdr['dim'][1]
     Nz = trk_hdr['dim'][2]
