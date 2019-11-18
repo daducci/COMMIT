@@ -187,7 +187,15 @@ int trk2dictionary(
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
-        N = read_fiber( fpTRK, fiber, n_scalars, n_properties );
+        
+        //read fibers in .trk or in .tck
+        if (isTRK) { // .trk file
+            N = read_fiberTRK( fpTractogram, fiber, n_scalars, n_properties );
+        }
+        else { // .tck file
+            N = read_fiberTCK( fpTractogram, fiber , affine );
+        }
+        
         fiberForwardModel( fiber, N, sectors, radii, weights );
 
         kept = 0;
@@ -550,8 +558,8 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
 }
 
 
-// Read a fiber from file
-unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
+// Read a fiber from file .trk
+unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 {
     int N;
     fread((char*)&N, 1, 4, fp);
@@ -571,4 +579,28 @@ unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
     fseek(fp,4*np,SEEK_CUR);
 
     return N;
+}
+
+// Read a fiber from file .tck
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float affine[4][4])
+{
+    int N = 0;
+    float tmp[3];
+
+    fread((char*)tmp, 1, 12, fp);
+    //printf("%f %f %f\n", tmp[0],tmp[1],tmp[2]);
+
+    while( !(isnan(tmp[0])) && !(isnan(tmp[1])) &&  !(isnan(tmp[2])) )
+    {
+        //printf("%f %f %f\n", tmp[0],tmp[1],tmp[2]);
+        fiber[0][N] = tmp[0]*affine[0][0] + tmp[1]*affine[0][1] + tmp[2]*affine[0][2] + affine[0][3];
+        fiber[1][N] = tmp[0]*affine[1][0] + tmp[1]*affine[1][1] + tmp[2]*affine[1][2] + affine[1][3];
+        fiber[2][N] = tmp[0]*affine[2][0] + tmp[1]*affine[2][1] + tmp[2]*affine[2][2] + affine[2][3];
+        N++;
+        fread((char*)tmp, 1, 12, fp);
+        //printf("%f %f %f\n", fiber[0][N],fiber[1][N],fiber[2][N]);
+    }
+    //printf("End Fiber\n");
+
+     return N;
 }
