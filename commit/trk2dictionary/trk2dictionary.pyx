@@ -172,12 +172,53 @@ cpdef run( filename_tractogram, path_out, filename_peaks = None, filename_mask =
     except :
         raise IOError( 'Tractogram file not found' )
         
-    Nx = trk_hdr['dim'][0]
-    Ny = trk_hdr['dim'][1]
-    Nz = trk_hdr['dim'][2]
-    Px = trk_hdr['voxel_size'][0]
-    Py = trk_hdr['voxel_size'][1]
-    Pz = trk_hdr['voxel_size'][2]
+    if (extension == ".trk"): #read header of .trk file
+        Nx = hdr['dimensions'][0]
+        Ny = hdr['dimensions'][1]
+        Nz = hdr['dimensions'][2]
+        Px = hdr['voxel_sizes'][0]
+        Py = hdr['voxel_sizes'][1]
+        Pz = hdr['voxel_sizes'][2]
+
+        data_offset = 1000
+        n_count = hdr['nb_streamlines']
+        n_scalars = hdr['nb_scalars_per_point']
+        n_properties = hdr['nb_properties_per_streamline']
+
+    if (extension == ".tck"): #read header of .tck file
+        #open file .nii and get header of this to get info on the structure
+
+        if TCK_ref_image is None:
+            if filename_peaks is not None:
+                TCK_ref_image = filename_peaks
+            elif filename_mask is not None:
+                TCK_ref_image = filename_mask
+            else:
+                raise RuntimeError( 'TCK files do not contain info on the geometry. Use "TCK_ref_image" for that.' )
+
+        #load the TCK_ref_image( .nii file ) with nibabel
+        nii_image = nibabel.load(TCK_ref_image)
+        #read the header of nii file
+        nii_hdr = nii_image.header if nibabel.__version__ >= '2.0.0' else nii_image.get_header()
+
+        #set shape's of tractogram
+        Nx = nii_image.shape[0]
+        Ny = nii_image.shape[1]
+        Nz = nii_image.shape[2]
+
+        #set distance's of control points
+        Px = nii_hdr['pixdim'][1]
+        Py = nii_hdr['pixdim'][2]
+        Pz = nii_hdr['pixdim'][3]
+
+        #set offset and number of streamlines
+        data_offset = int(hdr['_offset_data'])  #set offset
+        n_count = int(hdr['count'])  #set number of fibers
+
+        #set number of proprieties and number of scalar to zero, because there are not present in .tck file
+        n_scalars = 0
+        n_properties = 0
+        
     print( '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz ) )
     print( '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz ) )
     print( '\t\t\t- %d fibers' % trk_hdr['n_count'] )
