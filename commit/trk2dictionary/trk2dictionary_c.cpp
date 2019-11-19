@@ -175,9 +175,7 @@ int trk2dictionary(
             for (int j=0; j<4; j++) {
                 affine[i][j] = VetAffine[k];
                 k++;
-                //printf("%f ", affine[i][j]);
             }
-            //printf("\n");
         }
     }
     
