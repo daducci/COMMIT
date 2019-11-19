@@ -343,6 +343,14 @@ cdef class Evaluation :
         print( '\t* segments from the tracts...', end="" )
         sys.stdout.flush()
 
+        if not exists( pjoin(self.get_config('TRACKING_path'), "dictionary_ndirs.dict") ):
+            raise RuntimeError( 'Dictionary is outdated. Execute ''trk2dictionary'' script first.' )
+
+        self.DICTIONARY['ndirs'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ndirs.dict'), dtype=np.uint16 )
+
+        if self.DICTIONARY['ndirs'] != self.get_config('ndirs'):
+            raise RuntimeError( 'Dictionary is outdated. Execute ''trk2dictionary'' script first.' )
+
         self.DICTIONARY['TRK'] = {}
         self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
         self.DICTIONARY['TRK']['len']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )

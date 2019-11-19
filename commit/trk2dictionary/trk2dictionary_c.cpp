@@ -80,7 +80,7 @@ int trk2dictionary(
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, short* ptrHashTable
+    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, unsigned short ndirs, short* ptrHashTable
 )
 {
     /*=========================*/
@@ -141,6 +141,7 @@ int trk2dictionary(
     filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len    = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len   = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept  = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_ndirs.dict";       FILE* pDict_ndirs     = fopen(filename.c_str(),"wb");
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
@@ -187,6 +188,9 @@ int trk2dictionary(
     }
     PROGRESS.close();
 
+    // write dictionary ndirs value
+    fwrite(&ndirs, 1, sizeof(unsigned short), pDict_ndirs);
+
     fclose( fpTRK );
     fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
@@ -195,6 +199,7 @@ int trk2dictionary(
     fclose( pDict_IC_len );
     fclose( pDict_TRK_len );
     fclose( pDict_TRK_kept );
+    fclose( pDict_ndirs );
 
     printf("\t  [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
 

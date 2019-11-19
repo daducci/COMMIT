@@ -16,7 +16,7 @@ cdef extern from "trk2dictionary_c.cpp":
         char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, short* prtHashTable
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, unsigned short ndirs, short* prtHashTable
     ) nogil
 
 
@@ -252,7 +252,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrHashTable );
+        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ndirs, ptrHashTable );
     if ret == 0 :
         print( '   [ DICTIONARY not generated ]' )
         return None
