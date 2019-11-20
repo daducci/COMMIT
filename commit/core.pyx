@@ -28,8 +28,14 @@ def setup( lmax = 12, ndirs = 32761 ) :
 
     amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
-def load_dictionary_info():
-    filename = 'dictionary_info.pickle'
+def load_dictionary_info(filename):
+    """Function to load dictionary info file
+    
+    Parameters
+    ----------
+    filename : string
+        This value is always COMMIT_PATH + dictionary_info.pickle
+    """
     if not isfile( filename ):
         raise RuntimeError( 'Dictionary is outdated or not found. Execute ''trk2dictionary'' script first.' )
     with open( filename, 'rb' ) as dictionary_info_file:
@@ -357,10 +363,7 @@ cdef class Evaluation :
         print( '\t* segments from the tracts...', end="" )
         sys.stdout.flush()
 
-        dictionary_info = load_dictionary_info()
-
-        """if not exists( pjoin(self.get_config('TRACKING_path'), "dictionary_ndirs.dict") ):
-            raise RuntimeError( 'Dictionary is outdated. Execute ''trk2dictionary'' script first.' )"""
+        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
 
         self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
 

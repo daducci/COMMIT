@@ -85,7 +85,7 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
             Number of directions on the half of the sphere
     """
 
-    filename = 'dictionary_info.pickle'
+    filename = path_out + '/dictionary_info.pickle'
     dictionary_info = {}
     dictionary_info['filename_trk'] = filename_trk
     dictionary_info['path_out'] = path_out
