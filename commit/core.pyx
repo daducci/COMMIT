@@ -9,7 +9,7 @@ import time
 import glob
 import sys
 from os import makedirs, remove
-from os.path import exists, join as pjoin
+from os.path import exists, join as pjoin, isfile
 import nibabel
 import pickle
 import commit.models
@@ -28,6 +28,20 @@ def setup( lmax = 12, ndirs = 32761 ) :
 
     amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
+def load_dictionary_info():
+    filename = 'dictionary_info.pickle'
+    if not isfile( filename ):
+        raise RuntimeError( 'Dictionary is outdated or not found. Execute ''trk2dictionary'' script first.' )
+    with open( filename, 'rb' ) as dictionary_info_file:
+        if sys.version_info.major == 3:
+            aux = pickle.load( dictionary_info_file, fix_imports=True, encoding='bytes' )
+            # Pickle files written by Python 2 are loaded with byte
+            # keys, whereas those written by Python 3 are loaded with
+            # str keys, even when both are written using protocol=2
+            result_aux = {(k.decode() if hasattr(k,"decode") else k): v for k, v in aux.items()}
+            return result_aux
+        else:
+            return pickle.load( dictionary_info_file )
 
 cdef class Evaluation :
     """Class to hold all the information (data and parameters) when performing an
@@ -343,10 +357,12 @@ cdef class Evaluation :
         print( '\t* segments from the tracts...', end="" )
         sys.stdout.flush()
 
-        if not exists( pjoin(self.get_config('TRACKING_path'), "dictionary_ndirs.dict") ):
-            raise RuntimeError( 'Dictionary is outdated. Execute ''trk2dictionary'' script first.' )
+        dictionary_info = load_dictionary_info()
 
-        self.DICTIONARY['ndirs'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ndirs.dict'), dtype=np.uint16 )
+        """if not exists( pjoin(self.get_config('TRACKING_path'), "dictionary_ndirs.dict") ):
+            raise RuntimeError( 'Dictionary is outdated. Execute ''trk2dictionary'' script first.' )"""
+
+        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
 
         if self.DICTIONARY['ndirs'] != self.get_config('ndirs'):
             raise RuntimeError( 'Dictionary is outdated. Execute ''trk2dictionary'' script first.' )

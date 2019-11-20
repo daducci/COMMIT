@@ -9,6 +9,7 @@ from os.path import join, exists
 from os import makedirs, remove
 import time
 import amico
+import pickle
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
@@ -83,6 +84,28 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     ndirs : int
             Number of directions on the half of the sphere
     """
+
+    filename = 'dictionary_info.pickle'
+    dictionary_info = {}
+    dictionary_info['filename_trk'] = filename_trk
+    dictionary_info['path_out'] = path_out
+    dictionary_info['filename_peaks'] = filename_peaks
+    dictionary_info['filename_mask'] = filename_mask
+    dictionary_info['do_intersect'] = do_intersect
+    dictionary_info['fiber_shift'] = fiber_shift
+    dictionary_info['points_to_skip'] = points_to_skip
+    dictionary_info['vf_THR'] = vf_THR
+    dictionary_info['peaks_use_affine'] = peaks_use_affine
+    dictionary_info['flip_peaks'] = flip_peaks
+    dictionary_info['min_seg_len'] = min_seg_len
+    dictionary_info['gen_trk'] = gen_trk
+    dictionary_info['blur_radii'] = blur_radii
+    dictionary_info['blur_samples'] = blur_samples
+    dictionary_info['blur_sigma'] = blur_sigma
+    dictionary_info['ndirs'] = ndirs
+
+    with open( filename, 'wb+' ) as dictionary_info_file:
+        pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
     # check the value of ndirs
     if not amico.lut.is_valid(ndirs):
