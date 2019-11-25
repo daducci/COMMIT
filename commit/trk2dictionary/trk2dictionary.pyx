@@ -22,7 +22,7 @@ cdef extern from "trk2dictionary_c.cpp":
     ) nogil
 
 
-cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks = None, filename_mask = None, do_intersect = True,
+cpdef run( filename_tractogram = None, filename_trk = None, path_out = None, TCK_ref_image = None, filename_peaks = None, filename_mask = None, do_intersect = True,
     fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
     flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
     blur_radii = [], blur_samples = [], blur_sigma = 1.0
@@ -35,6 +35,8 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
     ----------
     filename_tractogram : string
         Path to the .trk or .tck file containing the tractogram to convert.
+        
+    filename_trk : DEPRECATED
 
     path_out : string
         Path to the folder where to store the sparse data structure.
@@ -161,6 +163,19 @@ cpdef run( filename_tractogram, path_out, TCK_ref_image = None, filename_peaks =
 
     # fiber-tracts from .trk
     print( '\t\t* tractogram' )
+    
+    if (path_out is None):
+        raise IOError( 'Path out not defined' )
+
+    if (filename_trk is None and filename_tractogram is None):
+        raise IOError( 'Tractogram file not defined' )
+
+    if (filename_trk is not None and filename_tractogram is not None):
+        print('[WARNING] filename_tractogram will be used, filename_trk will not be considered')
+
+    if (filename_trk is not None and filename_tractogram is None):
+        filename_tractogram = filename_trk
+        print('[WARNING] filename_trk parameter is deprecated, in the future use filename_tractogram ')
     
     extension = splitext(filename_tractogram)[1]  #take extension of file
     
