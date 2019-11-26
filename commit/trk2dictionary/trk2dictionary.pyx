@@ -104,9 +104,6 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     dictionary_info['blur_sigma'] = blur_sigma
     dictionary_info['ndirs'] = ndirs
 
-    with open( filename, 'wb+' ) as dictionary_info_file:
-        pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
-
     # check the value of ndirs
     if not amico.lut.is_valid(ndirs):
         raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
@@ -267,6 +264,10 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
     print( '\t\t* output written to "%s"' % path_out )
     if not exists( path_out ):
         makedirs( path_out )
+
+    # write dictionary info file
+    with open( filename, 'wb+' ) as dictionary_info_file:
+        pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
     # calling actual C code
     ret = trk2dictionary( filename_trk,
