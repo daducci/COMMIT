@@ -36,7 +36,7 @@ cpdef run( filename_tractogram = None, filename_trk = None, path_out = None, TCK
     filename_tractogram : string
         Path to the .trk or .tck file containing the tractogram to convert.
         
-    filename_trk : DEPRECATED
+    filename_trk : DEPRECATED. Use filename_tractogram instead.
 
     path_out : string
         Path to the folder where to store the sparse data structure.
