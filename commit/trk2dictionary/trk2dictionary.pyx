@@ -36,7 +36,8 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     filename_tractogram : string
         Path to the .trk or .tck file containing the tractogram to convert.
         
-    filename_trk : DEPRECATED. Use filename_tractogram instead.
+    filename_trk : string
+        DEPRECATED. Use filename_tractogram instead.
 
     path_out : string
         Path to the folder where to store the sparse data structure.
@@ -78,12 +79,15 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
 
     gen_trk : boolean
         If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
+    
     blur_radii : list of float
         Translate each segment to given radii to assign a broader fiber contribution (default : [])
+    
     blur_samples : list of integer
         Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
+    
     blur_sigma
-        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)
+        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
     """
 
     # check conflicts of fiber_shift
@@ -171,11 +175,11 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         raise IOError( 'Tractogram file not defined' )
 
     if (filename_trk is not None and filename_tractogram is not None):
-        print('[WARNING] filename_tractogram will be used, filename_trk will not be considered')
+        print('\t\t\t  [WARNING] filename_tractogram will be used, filename_trk will not be considered')
 
     if (filename_trk is not None and filename_tractogram is None):
         filename_tractogram = filename_trk
-        print('[WARNING] filename_trk parameter is deprecated, in the future use filename_tractogram ')
+        print('\t\t\t  [WARNING] filename_trk parameter is deprecated, in the future use filename_tractogram ')
     
     extension = splitext(filename_tractogram)[1]  #take extension of file
     
@@ -208,7 +212,9 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
             elif filename_mask is not None:
                 TCK_ref_image = filename_mask
             else:
-                raise RuntimeError( 'TCK files do not contain info on the geometry. Use "TCK_ref_image" for that.' )
+                raise RuntimeError( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that.' )
+
+        print ('\t\t\t- geometry taken from "%s"' %TCK_ref_image)
 
         #load the TCK_ref_image( .nii file ) with nibabel
         nii_image = nibabel.load(TCK_ref_image)
@@ -239,7 +245,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         raise RuntimeError( 'The max dim size is 2^16 voxels' )
     
-    print ('\t\t* geometry_taken   = "%s"' %TCK_ref_image)
     # get the affine matrix
     if (extension == ".tck"):
         scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))

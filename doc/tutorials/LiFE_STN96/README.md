@@ -37,10 +37,10 @@ Use the module `commit.trk2dictionary` to convert the tracts contained in the fi
 ```python
 from commit import trk2dictionary
 trk2dictionary.run(
-    filename_trk   = 'STN96/scan1/Tracking/PROB/fibers.trk',
-    path_out       = 'STN96/scan1/Tracking/PROB',
-    filename_peaks = 'STN96/scan1/CSD/CSD_FODsh_peaks.nii',
-    filename_mask  = 'STN96/scan1/WM.nii'
+    filename_tractogram = 'STN96/scan1/Tracking/PROB/fibers.trk',
+    path_out            = 'STN96/scan1/Tracking/PROB',
+    filename_peaks      = 'STN96/scan1/CSD/CSD_FODsh_peaks.nii',
+    filename_mask       = 'STN96/scan1/WM.nii'
 )
 ```
 This will create the necessary data structure (`STN96/scan1/Tracking/PROB/dictionary_*`) containing all the details of the tracts.
