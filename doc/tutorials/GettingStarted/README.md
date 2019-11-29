@@ -21,12 +21,12 @@ Open the *Python interpreter* and go to the folder where you downloaded/unzipped
 from commit import trk2dictionary
 
 trk2dictionary.run(
-    filename_trk   = 'LausanneTwoShell/fibers.trk',
-    path_out       = 'LausanneTwoShell/CommitOutput',
-    filename_peaks = 'LausanneTwoShell/peaks.nii.gz',
-    filename_mask  = 'LausanneTwoShell/WM.nii.gz',
-    fiber_shift    = 0.5,
-    peaks_use_affine = True
+    filename_tractogram = 'LausanneTwoShell/fibers.trk',
+    path_out            = 'LausanneTwoShell/CommitOutput',
+    filename_peaks      = 'LausanneTwoShell/peaks.nii.gz',
+    filename_mask       = 'LausanneTwoShell/WM.nii.gz',
+    fiber_shift         = 0.5,
+    peaks_use_affine    = True
 )
 ```
 

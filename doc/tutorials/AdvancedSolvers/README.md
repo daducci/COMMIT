@@ -38,12 +38,12 @@ cd path_to_the_directory_with_the_unzipped_archive
 from commit import trk2dictionary
 
 trk2dictionary.run(
-    filename_trk   = 'LausanneTwoShell/fibers.trk',
-    path_out       = 'LausanneTwoShell/CommitOutput',
-    filename_peaks = 'LausanneTwoShell/peaks.nii.gz',
-    filename_mask  = 'LausanneTwoShell/WM.nii.gz',
-    fiber_shift    = 0.5,
-    peaks_use_affine = True
+    filename_tractogram = 'LausanneTwoShell/fibers.trk',
+    path_out            = 'LausanneTwoShell/CommitOutput',
+    filename_peaks      = 'LausanneTwoShell/peaks.nii.gz',
+    filename_mask       = 'LausanneTwoShell/WM.nii.gz',
+    fiber_shift         = 0.5,
+    peaks_use_affine    = True
 )
 
 import commit

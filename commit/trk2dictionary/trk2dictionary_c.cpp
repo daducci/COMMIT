@@ -5,6 +5,8 @@
 #include <vector>
 #include "Vector.h"
 #include "ProgressBar.h"
+#include <numpy/arrayobject.h>
+#include <math.h>
 
 #define MAX_FIB_LEN 10000
 
@@ -70,18 +72,19 @@ double              radiusSigma;   // modulates the impact of each segment as fu
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vector<int> sectors, std::vector<double> radii, std::vector<double> weight );
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, double w );
-unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
+unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine[4][4]);
 
 
 // =========================
 // Function called by CYTHON
 // =========================
 int trk2dictionary(
-    char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
+    char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights
+    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* VetAffine
 )
 {
     /*=========================*/
@@ -102,10 +105,27 @@ int trk2dictionary(
     segInVoxKey         inVoxKey;
 
     printf( "\t* Exporting IC compartments:\n" );
+    
+    int isTRK; // var to check
 
-    FILE* fpTRK = fopen(strTRKfilename,"rb");
-    if (fpTRK == NULL) return 0;
-    fseek(fpTRK,1000,SEEK_SET);
+    char *ext = strrchr(str_filename, '.'); //get the extension of input file
+
+    if (strcmp(ext,".trk")==0) //for .trk file
+        isTRK = 1;
+    else if (strcmp(ext,".tck")==0)// for .tck file
+        isTRK = 0;
+    else
+        return 0;
+
+    FILE* fpTractogram = fopen(str_filename,"rb"); //open 
+    if (fpTractogram == NULL) return 0;
+
+    if ( isTRK ) { // SKIP header on .trk
+        fseek(fpTractogram,data_offset,SEEK_SET); //skip the first 1000 bytes in the .trk file
+    }
+    else { // SKIP header on .tck
+        fseek(fpTractogram,data_offset,SEEK_SET); //skip the first offset bytes in the .tck file
+    }
 
     // set global variables
     dim.Set( Nx, Ny, Nz );
@@ -146,10 +166,31 @@ int trk2dictionary(
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
     PROGRESS.setPrefix("\t  ");
+    
+    float affine[4][4];
+    if (!isTRK)  {//.tck
+        //ricreate affine matrix
+        int k = 0;
+        for(int i=0; i<4; i++) {
+            for (int j=0; j<4; j++) {
+                affine[i][j] = VetAffine[k];
+                k++;
+            }
+        }
+    }
+    
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
-        N = read_fiber( fpTRK, fiber, n_scalars, n_properties );
+        
+        //read fibers in .trk or in .tck
+        if (isTRK) { // .trk file
+            N = read_fiberTRK( fpTractogram, fiber, n_scalars, n_properties );
+        }
+        else { // .tck file
+            N = read_fiberTCK( fpTractogram, fiber , affine );
+        }
+        
         fiberForwardModel( fiber, N, sectors, radii, weights );
 
         kept = 0;
@@ -188,7 +229,7 @@ int trk2dictionary(
     }
     PROGRESS.close();
 
-    fclose( fpTRK );
+    fclose( fpTractogram );
     fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
     fclose( pDict_IC_v );
@@ -512,8 +553,8 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
 }
 
 
-// Read a fiber from file
-unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
+// Read a fiber from file .trk
+unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 {
     int N;
     fread((char*)&N, 1, 4, fp);
@@ -533,4 +574,28 @@ unsigned int read_fiber( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
     fseek(fp,4*np,SEEK_CUR);
 
     return N;
+}
+
+// Read a fiber from file .tck
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float affine[4][4])
+{
+    int N = 0;
+    float tmp[3];
+
+    fread((char*)tmp, 1, 12, fp);
+    //printf("%f %f %f\n", tmp[0],tmp[1],tmp[2]);
+
+    while( !(isnan(tmp[0])) && !(isnan(tmp[1])) &&  !(isnan(tmp[2])) )
+    {
+        //printf("%f %f %f\n", tmp[0],tmp[1],tmp[2]);
+        fiber[0][N] = tmp[0]*affine[0][0] + tmp[1]*affine[0][1] + tmp[2]*affine[0][2] + affine[0][3];
+        fiber[1][N] = tmp[0]*affine[1][0] + tmp[1]*affine[1][1] + tmp[2]*affine[1][2] + affine[1][3];
+        fiber[2][N] = tmp[0]*affine[2][0] + tmp[1]*affine[2][1] + tmp[2]*affine[2][2] + affine[2][3];
+        N++;
+        fread((char*)tmp, 1, 12, fp);
+        //printf("%f %f %f\n", fiber[0][N],fiber[1][N],fiber[2][N]);
+    }
+    //printf("End Fiber\n");
+
+     return N;
 }
