@@ -34,7 +34,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     Parameters
     ----------
     filename_tractogram : string
-        Path to the .trk or .tck file containing the tractogram to convert.
+        Path to the .trk or .tck file containing the tractogram to load.
         
     filename_trk : string
         DEPRECATED. Use filename_tractogram instead.
@@ -86,8 +86,12 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     blur_samples : list of integer
         Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
     
-    blur_sigma
+    blur_sigma: float
         The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
+    
+    TCK_ref_image: string
+        Path to the NIFTI file containing the information about the geometry used for the tractogram .tck to load. 
+        If it is not specified, it will try to use the information of filename_peaks or filename_mask.
     """
 
     # check conflicts of fiber_shift
@@ -169,10 +173,10 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     print( '\t\t* tractogram' )
     
     if (path_out is None):
-        raise IOError( 'Path out not defined' )
+        raise RuntimeError( 'Path out not defined' )
 
     if (filename_trk is None and filename_tractogram is None):
-        raise IOError( 'Tractogram file not defined' )
+        raise RuntimeError( 'Tractogram file not defined' )
 
     if (filename_trk is not None and filename_tractogram is not None):
         print('\t\t\t  [WARNING] filename_tractogram will be used, filename_trk will not be considered')
