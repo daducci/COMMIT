@@ -5,26 +5,28 @@ import cython
 import numpy as np
 cimport numpy as np
 import nibabel
-from os.path import join, exists
+from os.path import join, exists, splitext
 from os import makedirs, remove
 import time
 import amico
 import pickle
 
+
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
-        char* strTRKfilename, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
+        char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, 
+        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, unsigned short ndirs, short* prtHashTable
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrArrayInvM, unsigned short ndirs, short* prtHashTable
     ) nogil
 
 
-cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, do_intersect = True,
+cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, filename_mask = None, do_intersect = True,
     fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
     flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
-    blur_radii = [], blur_samples = [], blur_sigma = 1.0, ndirs = 32761
+    blur_radii = [], blur_samples = [], blur_sigma = 1.0, filename_trk = None, TCK_ref_image = None, ndirs = 32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -32,8 +34,11 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     Parameters
     ----------
+    filename_tractogram : string
+        Path to the .trk or .tck file containing the tractogram to load.
+        
     filename_trk : string
-        Path to the .trk file containing the tractogram to convert.
+        DEPRECATED. Use filename_tractogram instead.
 
     path_out : string
         Path to the folder where to store the sparse data structure.
@@ -75,12 +80,20 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     gen_trk : boolean
         If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
+    
     blur_radii : list of float
         Translate each segment to given radii to assign a broader fiber contribution (default : [])
+    
     blur_samples : list of integer
         Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
-    blur_sigma
-        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)
+
+    blur_sigma: float
+        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
+    
+    TCK_ref_image: string
+        Path to the NIFTI file containing the information about the geometry used for the tractogram .tck to load. 
+        If it is not specified, it will try to use the information of filename_peaks or filename_mask.
+    
     ndirs : int
             Number of directions on the half of the sphere
     """
@@ -138,6 +151,8 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         int* ptrBlurSamples
         double* ptrBlurWeights
         int nBlurRadii
+        float [:] ArrayInvM
+        float* ptrArrayInvM
 
     if len(blur_radii) != len(blur_samples) :
         raise RuntimeError( 'number of radii and samples must match' )
@@ -186,21 +201,99 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
 
     # fiber-tracts from .trk
     print( '\t\t* tractogram' )
-    try :
-        _, trk_hdr = nibabel.trackvis.read( filename_trk )
+    
+    if (path_out is None):
+        raise RuntimeError( 'Path out not defined' )
+
+    if (filename_trk is None and filename_tractogram is None):
+        raise RuntimeError( 'Tractogram file not defined' )
+
+    if (filename_trk is not None and filename_tractogram is not None):
+        print('\t\t\t  [WARNING] filename_tractogram will be used, filename_trk will not be considered')
+
+    if (filename_trk is not None and filename_tractogram is None):
+        filename_tractogram = filename_trk
+        print('\t\t\t  [WARNING] filename_trk parameter is deprecated, in the future use filename_tractogram ')
+    
+    extension = splitext(filename_tractogram)[1]  #take extension of file
+    
+    if (extension != ".trk" and extension != ".tck") :
+        raise IOError( 'Invalid input file. Please enter tractogram file .trk or .tck' )
+    try : #read the header of the file in the same way both in .trk and in .tck
+        hdr = nibabel.streamlines.load( filename_tractogram ).header
     except :
-        raise IOError( 'Track file not found' )
-    Nx = trk_hdr['dim'][0]
-    Ny = trk_hdr['dim'][1]
-    Nz = trk_hdr['dim'][2]
-    Px = trk_hdr['voxel_size'][0]
-    Py = trk_hdr['voxel_size'][1]
-    Pz = trk_hdr['voxel_size'][2]
+        raise IOError( 'Tractogram file not found' )
+        
+    if (extension == ".trk"): #read header of .trk file
+        Nx = hdr['dimensions'][0]
+        Ny = hdr['dimensions'][1]
+        Nz = hdr['dimensions'][2]
+        Px = hdr['voxel_sizes'][0]
+        Py = hdr['voxel_sizes'][1]
+        Pz = hdr['voxel_sizes'][2]
+
+        data_offset = 1000
+        n_count = hdr['nb_streamlines']
+        n_scalars = hdr['nb_scalars_per_point']
+        n_properties = hdr['nb_properties_per_streamline']
+
+    if (extension == ".tck"): #read header of .tck file
+        #open file .nii and get header of this to get info on the structure
+
+        if TCK_ref_image is None:
+            if filename_peaks is not None:
+                TCK_ref_image = filename_peaks
+            elif filename_mask is not None:
+                TCK_ref_image = filename_mask
+            else:
+                raise RuntimeError( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that.' )
+
+        print ('\t\t\t- geometry taken from "%s"' %TCK_ref_image)
+
+        #load the TCK_ref_image( .nii file ) with nibabel
+        nii_image = nibabel.load(TCK_ref_image)
+        #read the header of nii file
+        nii_hdr = nii_image.header if nibabel.__version__ >= '2.0.0' else nii_image.get_header()
+
+        #set shape's of tractogram
+        Nx = nii_image.shape[0]
+        Ny = nii_image.shape[1]
+        Nz = nii_image.shape[2]
+
+        #set distance's of control points
+        Px = nii_hdr['pixdim'][1]
+        Py = nii_hdr['pixdim'][2]
+        Pz = nii_hdr['pixdim'][3]
+
+        #set offset and number of streamlines
+        data_offset = int(hdr['_offset_data'])  #set offset
+        n_count = int(hdr['count'])  #set number of fibers
+
+        #set number of proprieties and number of scalar to zero, because there are not present in .tck file
+        n_scalars = 0
+        n_properties = 0
+        
     print( '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz ) )
     print( '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz ) )
-    print( '\t\t\t- %d fibers' % trk_hdr['n_count'] )
+    print( '\t\t\t- %d fibers' % n_count )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         raise RuntimeError( 'The max dim size is 2^16 voxels' )
+    
+    # get the affine matrix
+    if (extension == ".tck"):
+        scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
+        M = nii_hdr.get_best_affine() #get affine
+
+        # Affine matrix without scaling, i.e. diagonal is 1
+        M[:3, :3] = np.dot(scaleMat, M[:3, :3]) #delete scalar
+
+        M = M.astype('<f4') # affine matrix in float value
+
+        invM = np.linalg.inv(M) # inverse affine matrix
+
+        #create a vector of inverse matrix M
+        ArrayInvM = np.ravel(invM)
+        ptrArrayInvM = &ArrayInvM[0]
 
     # white-matter mask
     cdef float* ptrMASK
@@ -270,29 +363,30 @@ cpdef run( filename_trk, path_out, filename_peaks = None, filename_mask = None, 
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
     # calling actual C code
-    ret = trk2dictionary( filename_trk,
-        trk_hdr['dim'][0], trk_hdr['dim'][1], trk_hdr['dim'][2],
-        trk_hdr['voxel_size'][0], trk_hdr['voxel_size'][1], trk_hdr['voxel_size'][2],
-        trk_hdr['n_count'], trk_hdr['n_scalars'], trk_hdr['n_properties'], fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
+    ret = trk2dictionary( filename_tractogram, data_offset,
+        Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
+        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ndirs, ptrHashTable );
+        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM, ndirs, ptrHashTable  );
     if ret == 0 :
         print( '   [ DICTIONARY not generated ]' )
         return None
 
     # create new TRK with only fibers in the WM mask
+    # create new dictionaty file (TRK or TCK) with only fibers in the WM mask
     if gen_trk :
-        print( '\t* Generate tractogram matching the dictionary: ' )
-        fib, _ = nibabel.trackvis.read( filename_trk, as_generator=True )
-        fibKept = []
+        print ('\t* Generate tractogram matching the dictionary: ')
+        fib = nibabel.streamlines.load(filename_tractogram)
+        hdr = fib.header
+
         file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
-        ind = 0
-        for f in fib:
-            if file_kept[ind]:
-                fibKept.append( (f[0],None, None) )
-            ind = ind+1
-        nibabel.trackvis.write( join(path_out,'dictionary_TRK_fibers.trk'), fibKept, trk_hdr )
+        tractogram_out = fib.tractogram[ file_kept ]
+        hdr['count'] = len(tractogram_out) #set new number of fibers in the header
+        hdr['nb_streamlines'] = len(tractogram_out)
+
+        #create a output dictionary file (TRK or TCK) in path_out
+        nibabel.streamlines.save( tractogram_out, join(path_out,'dictionary_TRK_fibers'+extension), header=hdr )
         print( '\t  [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
     print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 

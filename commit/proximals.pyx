@@ -51,12 +51,12 @@ cpdef projection_onto_l2_ball(double [::1] x, double lam, int compartment_start,
         xn += x[i]*x[i]
     xn = sqrt(xn)
     if xn > lam :
-        k = lam/xn
+        k = 1. - lam/xn
         for i in xrange(compartment_start, compartment_start+compartment_size):
             x[i] = x[i]*k
     else :
         for i in xrange(compartment_start, compartment_start+compartment_size):
-            x[i] = x[i]
+            x[i] = 0
     return np.asarray( x )
 
 
