@@ -9,7 +9,7 @@ import time
 import glob
 import sys
 from os import makedirs, remove
-from os.path import exists, join as pjoin
+from os.path import exists, join as pjoin, isfile
 import nibabel
 import pickle
 import commit.models
@@ -20,10 +20,42 @@ import pyximport
 pyximport.install( reload_support=True, language_level=3 )
 
 
-def setup( lmax = 12 ) :
-    """General setup/initialization of the COMMIT framework."""
-    amico.lut.precompute_rotation_matrices( lmax )
+def setup( lmax = 12, ndirs = 32761 ) :
+    """General setup/initialization of the COMMIT framework.
+    
+    Parameters
+    ----------
+    lmax : int
+        Maximum SH order to use for the rotation phase (default : 12)
+    ndirs : int
+        Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
+    """
 
+    if not amico.lut.is_valid(ndirs):
+        raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+
+    amico.lut.precompute_rotation_matrices( lmax, ndirs )
+
+def load_dictionary_info(filename):
+    """Function to load dictionary info file
+    
+    Parameters
+    ----------
+    filename : string
+        This value is always COMMIT_PATH + dictionary_info.pickle
+    """
+    if not isfile( filename ):
+        raise RuntimeError( 'Dictionary is outdated or not found. Execute ''trk2dictionary'' script first.' )
+    with open( filename, 'rb' ) as dictionary_info_file:
+        if sys.version_info.major == 3:
+            aux = pickle.load( dictionary_info_file, fix_imports=True, encoding='bytes' )
+            # Pickle files written by Python 2 are loaded with byte
+            # keys, whereas those written by Python 3 are loaded with
+            # str keys, even when both are written using protocol=2
+            result_aux = {(k.decode() if hasattr(k,"decode") else k): v for k, v in aux.items()}
+            return result_aux
+        else:
+            return pickle.load( dictionary_info_file )
 
 cdef class Evaluation :
     """Class to hold all the information (data and parameters) when performing an
@@ -182,7 +214,7 @@ cdef class Evaluation :
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
 
-    def generate_kernels( self, regenerate = False, lmax = 12 ) :
+    def generate_kernels( self, regenerate = False, lmax = 12, ndirs = 32761 ) :
         """Generate the high-resolution response functions for each compartment.
         Dispatch to the proper function, depending on the model.
 
@@ -192,7 +224,11 @@ cdef class Evaluation :
             Regenerate kernels if they already exist (default : False)
         lmax : int
             Maximum SH order to use for the rotation procedure (default : 12)
+        ndirs : int
+            Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
         """
+        if not amico.lut.is_valid(ndirs):
+            raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
         if self.scheme is None :
             raise RuntimeError( 'Scheme not loaded; call "load_data()" first.' )
         if self.model is None :
@@ -200,6 +236,7 @@ cdef class Evaluation :
 
         # store some values for later use
         self.set_config('lmax', lmax)
+        self.set_config('ndirs', ndirs)
         self.model.scheme = self.scheme
 
         print( '\n-> Simulating with "%s" model:' % self.model.name )
@@ -218,12 +255,12 @@ cdef class Evaluation :
                 remove( f )
 
         # auxiliary data structures
-        aux = amico.lut.load_precomputed_rotation_matrices( lmax )
+        aux = amico.lut.load_precomputed_rotation_matrices( lmax, ndirs )
         idx_IN, idx_OUT = amico.lut.aux_structures_generate( self.scheme, lmax )
 
         # Dispatch to the right handler for each model
         tic = time.time()
-        self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT )
+        self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT, ndirs )
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
@@ -247,7 +284,7 @@ cdef class Evaluation :
             print( '\t* Merging multiple b0 volume(s)...', end="" )
         else :
             print( '\t* Keeping all b0 volume(s)...', end="" )
-        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0') )
+        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
@@ -262,12 +299,11 @@ cdef class Evaluation :
         # De-mean kernels
         if self.get_config('doDemean') :
             print( '\t* Demeaning signal...', end="" )
-            for j in xrange(181) :
-                for k in xrange(181) :
-                    for i in xrange(nIC) :
-                        self.KERNELS['wmr'][i,j,k,:] -= self.KERNELS['wmr'][i,j,k,:].mean()
-                    for i in xrange(nEC) :
-                        self.KERNELS['wmh'][i,j,k,:] -= self.KERNELS['wmh'][i,j,k,:].mean()
+            for j in xrange(self.get_config('ndirs')) :
+                for i in xrange(nIC) :
+                    self.KERNELS['wmr'][i,j,:] -= self.KERNELS['wmr'][i,j,:].mean()
+                for i in xrange(nEC) :
+                    self.KERNELS['wmh'][i,j,:] -= self.KERNELS['wmh'][i,j,:].mean()
             for i in xrange(nISO) :
                 self.KERNELS['iso'][i] -= self.KERNELS['iso'][i].mean()
             print( '[ OK ]' )
@@ -278,17 +314,15 @@ cdef class Evaluation :
 
             self.KERNELS['wmr_norm'] = np.zeros( nIC )
             for i in xrange(nIC) :
-                self.KERNELS['wmr_norm'][i] = np.linalg.norm( self.KERNELS['wmr'][i,0,0,:] )
-                for j in xrange(181) :
-                    for k in xrange(181) :
-                        self.KERNELS['wmr'][i,j,k,:] /= self.KERNELS['wmr_norm'][i]
+                self.KERNELS['wmr_norm'][i] = np.linalg.norm( self.KERNELS['wmr'][i,0,:] )
+                for j in xrange(self.get_config('ndirs')) :
+                    self.KERNELS['wmr'][i,j,:] /= self.KERNELS['wmr_norm'][i]
 
             self.KERNELS['wmh_norm'] = np.zeros( nEC )
             for i in xrange(nEC) :
-                self.KERNELS['wmh_norm'][i] = np.linalg.norm( self.KERNELS['wmh'][i,0,0,:] )
-                for j in xrange(181) :
-                    for k in xrange(181) :
-                        self.KERNELS['wmh'][i,j,k,:] /= self.KERNELS['wmh_norm'][i]
+                self.KERNELS['wmh_norm'][i] = np.linalg.norm( self.KERNELS['wmh'][i,0,:] )
+                for j in xrange(self.get_config('ndirs')) :
+                    self.KERNELS['wmh'][i,j,:] /= self.KERNELS['wmh_norm'][i]
 
             self.KERNELS['iso_norm'] = np.zeros( nISO )
             for i in xrange(nISO) :
@@ -336,6 +370,13 @@ cdef class Evaluation :
         # ------------------------
         print( '\t* segments from the tracts...', end="" )
         sys.stdout.flush()
+
+        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
+
+        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
+
+        if self.DICTIONARY['ndirs'] != self.get_config('ndirs'):
+            raise RuntimeError( 'Dictionary is outdated. Execute ''trk2dictionary'' script first.' )
 
         self.DICTIONARY['TRK'] = {}
         self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )

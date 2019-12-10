@@ -8,7 +8,8 @@ import nibabel
 from os.path import join, exists, splitext
 from os import makedirs, remove
 import time
-import array
+import amico
+import pickle
 
 
 # Interface to actual C code
@@ -18,14 +19,14 @@ cdef extern from "trk2dictionary_c.cpp":
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrArrayInvM
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrArrayInvM, unsigned short ndirs, short* prtHashTable
     ) nogil
 
 
 cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, filename_mask = None, do_intersect = True,
     fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
     flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
-    blur_radii = [], blur_samples = [], blur_sigma = 1.0, filename_trk = None, TCK_ref_image = None
+    blur_radii = [], blur_samples = [], blur_sigma = 1.0, filename_trk = None, TCK_ref_image = None, ndirs = 32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -85,14 +86,40 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     
     blur_samples : list of integer
         Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
-    
+
     blur_sigma: float
         The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
     
     TCK_ref_image: string
         Path to the NIFTI file containing the information about the geometry used for the tractogram .tck to load. 
         If it is not specified, it will try to use the information of filename_peaks or filename_mask.
+    
+    ndirs : int
+            Number of directions on the half of the sphere
     """
+
+    filename = path_out + '/dictionary_info.pickle'
+    dictionary_info = {}
+    dictionary_info['filename_trk'] = filename_trk
+    dictionary_info['path_out'] = path_out
+    dictionary_info['filename_peaks'] = filename_peaks
+    dictionary_info['filename_mask'] = filename_mask
+    dictionary_info['do_intersect'] = do_intersect
+    dictionary_info['fiber_shift'] = fiber_shift
+    dictionary_info['points_to_skip'] = points_to_skip
+    dictionary_info['vf_THR'] = vf_THR
+    dictionary_info['peaks_use_affine'] = peaks_use_affine
+    dictionary_info['flip_peaks'] = flip_peaks
+    dictionary_info['min_seg_len'] = min_seg_len
+    dictionary_info['gen_trk'] = gen_trk
+    dictionary_info['blur_radii'] = blur_radii
+    dictionary_info['blur_samples'] = blur_samples
+    dictionary_info['blur_sigma'] = blur_sigma
+    dictionary_info['ndirs'] = ndirs
+
+    # check the value of ndirs
+    if not amico.lut.is_valid(ndirs):
+        raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
 
     # check conflicts of fiber_shift
     if np.isscalar(fiber_shift) :
@@ -168,6 +195,9 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
 
 
     print( '\t* Loading data:' )
+
+    cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
+    cdef short* ptrHashTable = &htable[0]
 
     # fiber-tracts from .trk
     print( '\t\t* tractogram' )
@@ -328,13 +358,17 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if not exists( path_out ):
         makedirs( path_out )
 
+    # write dictionary info file
+    with open( filename, 'wb+' ) as dictionary_info_file:
+        pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
+
     # calling actual C code
     ret = trk2dictionary( filename_tractogram, data_offset,
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM );
+        nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM, ndirs, ptrHashTable  );
     if ret == 0 :
         print( '   [ DICTIONARY not generated ]' )
         return None

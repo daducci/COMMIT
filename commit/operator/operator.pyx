@@ -7,7 +7,7 @@ cimport numpy as np
 
 # Interfaces to actual C code performing the multiplications
 cdef extern void COMMIT_A(
-    int _nF, int _n, int _nE, int _nV, int _nS,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
@@ -17,7 +17,7 @@ cdef extern void COMMIT_A(
 ) nogil
 
 cdef extern void COMMIT_At(
-    int _nF, int _n, int _nE, int _nV, int _nS,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
@@ -33,7 +33,7 @@ cdef class LinearOperator :
     with the COMMIT linear operator A. The multiplications are done using C code
     that uses information from the DICTIONARY, KERNELS and THREADS data structures.
     """
-    cdef int nS, nF, nR, nE, nT, nV, nI, n
+    cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
 
     cdef DICTIONARY
@@ -74,11 +74,12 @@ cdef class LinearOperator :
         self.nV         = DICTIONARY['nV']          # number of VOXELS
         self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
         self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
+        self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
 
         if KERNELS['wmr'].size > 0 :
-            self.nS = KERNELS['wmr'].shape[3]       # number of SAMPLES
+            self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
         elif KERNELS['wmh'].size > 0 :
-            self.nS = KERNELS['wmh'].shape[3]
+            self.nS = KERNELS['wmh'].shape[2]
         else :
             self.nS = KERNELS['wmr'].shape[1]
 
@@ -104,10 +105,10 @@ cdef class LinearOperator :
         self.ISOv = &ISOv[0]
 
         # get C pointers to arrays in KERNELS
-        cdef float [:, :, :, ::1] wmrSFP = KERNELS['wmr']
-        self.LUT_IC  = &wmrSFP[0,0,0,0]
-        cdef float [:, :, :, ::1] wmhSFP = KERNELS['wmh']
-        self.LUT_EC  = &wmhSFP[0,0,0,0]
+        cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
+        self.LUT_IC  = &wmrSFP[0,0,0]
+        cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
+        self.LUT_EC  = &wmhSFP[0,0,0]
         cdef float [:, ::1] isoSFP = KERNELS['iso']
         self.LUT_ISO = &isoSFP[0,0]
 
@@ -170,7 +171,7 @@ cdef class LinearOperator :
             # DIRECT PRODUCT A*x
             with nogil :
                 COMMIT_A(
-                    self.nF, self.n, self.nE, self.nV, self.nS,
+                    self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
@@ -180,7 +181,7 @@ cdef class LinearOperator :
             # INVERSE PRODUCT A'*y
             with nogil :
                 COMMIT_At(
-                    self.nF, self.n, self.nE, self.nV, self.nS,
+                    self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
