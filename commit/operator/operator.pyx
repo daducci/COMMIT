@@ -26,7 +26,15 @@ cdef extern void COMMIT_At(
     unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
 ) nogil
 
+cdef extern void COMMIT_L(
+    int _nF, int _nIC, int _nV, int _nS, double _regterm,
+    double *_v_in, double *_v_out
+) nogil
 
+cdef extern void COMMIT_Lt(
+    int _nF, int _nIC, int _nV, int _nS, double _regterm,
+    double *_v_in, double *_v_out
+) nogil
 
 cdef class LinearOperator :
     """This class is a wrapper to the C code for performing marix-vector multiplications
@@ -61,7 +69,7 @@ cdef class LinearOperator :
     cdef unsigned int*   ISOthreadsT
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, tikterm=0.3 ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
@@ -75,6 +83,7 @@ cdef class LinearOperator :
         self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
         self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
         self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
+        #self.tikterm    = tikterm
 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
@@ -85,7 +94,7 @@ cdef class LinearOperator :
 
         self.adjoint    = 0                         # direct of inverse product
 
-        self.n1 = self.nV*self.nS
+        self.n1 = self.nV*self.nS + self.nR
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
 
         # get C pointers to arrays in DICTIONARY
@@ -187,5 +196,20 @@ cdef class LinearOperator :
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
                     self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
                 )
+
+        if not self.adjoint:
+            with nogil:
+                # DIRECT PRODUCT L*lambda*x
+                COMMIT_L(
+                    self.nF, self.nR, self.nV, self.nS, 0.3,
+                    &v_in[0], &v_out[0]
+                )
+        else:
+            with nogil:
+                # INVERSE PRODUCT L'*lambda*y
+                COMMIT_Lt(
+                    self.nF, self.nR, self.nV, self.nS, 0.3, #self.tikterm
+                    &v_in[0], &v_out[0]
+                ) #"""
 
         return v_out

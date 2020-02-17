@@ -661,7 +661,19 @@ cdef class Evaluation :
             raise RuntimeError( 'Dictionary not loaded; call "load_dictionary()" first.' )
         if self.niiDWI is None :
             raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
-        return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
+        y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+        #return y
+        print(type(y))
+        print(y.shape)
+        print(y.shape[0])
+        print(self.KERNELS['wmr'].shape[0])
+        print(y.shape[0] + self.KERNELS['wmr'].shape[0])
+        y2 = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0], dtype=np.float64)
+        y2[0:y.shape[0]] = y
+        print(y2.shape)
+        return y2
+        #"""
 
     def fit( self, tol_fun = 1e-3, tol_x = 1e-6, max_iter = 100, verbose = 1, x0 = None, regularisation = None ) :
         """Fit the model to the data.
@@ -763,6 +775,7 @@ cdef class Evaluation :
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
+        nS = self.KERNELS['wmr'].shape[2]
         norm_fib = np.ones( nF )
         # x is the x of the original problem
         # self.x is the x preconditioned
@@ -803,7 +816,7 @@ cdef class Evaluation :
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
-        y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
+        y_est = np.reshape( self.A.dot(self.x)[:int(nV*nS)], (nV,-1) ).astype(np.float32)
 
         print( '\t\t- RMSE...', end="" )
         sys.stdout.flush()

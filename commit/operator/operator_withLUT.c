@@ -2245,3 +2245,34 @@ void COMMIT_At(
         pthread_join( threads[t], NULL );
     return;
 }
+
+void COMMIT_L(
+    int _nF, int _nIC, int _nV, int _nS, double _tikterm,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+
+        _vOUT[_nV*_nS] += _tikterm*( -2*_vIN[f] + x[_nF + f] );
+
+        for(int r = 1; r < _nIC-1; r++){
+            _vOUT[_nV*_nS + r] += _tikterm*( _vIN[(r-1)*_nF + f] -2*_vIN[r*_nF + f] + _vIN[(r+1)*_nF + f] );
+        }
+
+        _vOUT[_nV*_nS + _nIC - 1] += _tikterm*( _vIN[(_nIC-2)*_nF + f] - 2*_vIN[(_nIC-1)*_nF + f] );
+    }
+}
+
+void COMMIT_Lt(
+    int _nF, int _nIC, int _nV, int _nS, double _tikterm,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+        _vOUT[f] += _tikterm*( -2*_vIN[_nV*_nS] + _vIN[_nV*_nS + 1] );
+
+        for (int r = 0; r < _nIC; r++){
+            _vOUT[r*_nF + f] += _tikterm*( _vIN[_nV*_nS + (r-1)] - 2*_vIN[_nV*_nS + r] + _vIN[_nV*_nS + (r+1)] );
+        }
+        
+        _vOUT[(_nIC-1)*_nF + f] += _tikterm*( _vIN[_nV*_nS + (_nIC-2)] - 2*_vIN[_nV*_nS + (_nIC-1)] );
+    }
+}

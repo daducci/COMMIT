@@ -185,3 +185,34 @@ void COMMIT_At(
         pthread_join( threads[t], NULL );
     return;
 }
+
+void COMMIT_L(
+    int nF, int nIC, int nV, int nS, double regterm,
+    double *vIN, double *vOUT)
+{
+    for(int f = 0; f < nF; f++){
+
+        vOUT[nV*nS] += regterm*( -2*vIN[f] + x[nF + f] );
+
+        for(int r = 1; r < nIC-1; r++){
+            vOUT[nV*nS + r] += regterm*( vIN[(r-1)*nF + f] -2*vIN[r*nF + f] + vIN[(r+1)*nF + f] );
+        }
+
+        vOUT[nV*nS + nIC - 1] += regterm*( vIN[(nIC-2)*nF + f] - 2*vIN[(nIC-1)*nF + f] );
+    }
+}
+
+void COMMIT_Lt(
+    int nF, int nIC, int nV, int nS, double regterm,
+    double *vIN, double *vOUT)
+{
+    for(int f = 0; f < nF; f++){
+        vOUT[f] += regterm*( -2*vIN[nV*nS] + vIN[nV*nS + 1] );
+
+        for (int r = 0; r < nIC; r++){
+            vOUT[r*nF + f] += regterm*( vIN[nV*nS + (r-1)] - 2*vIN[nV*nS + r] + vIN[nV*nS + (r+1)] );
+        }
+        
+        vOUT[(nIC-1)*nF + f] += regterm*( vIN[nV*nS + (nIC-2)] - 2*vIN[nV*nS + (nIC-1)] );
+    }
+}
