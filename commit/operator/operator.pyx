@@ -43,6 +43,7 @@ cdef class LinearOperator :
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
+    cdef public float regtikhonov
 
     cdef DICTIONARY
     cdef KERNELS
@@ -69,7 +70,7 @@ cdef class LinearOperator :
     cdef unsigned int*   ISOthreadsT
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS, tikterm=0.3 ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, regtikhonov ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
@@ -83,7 +84,7 @@ cdef class LinearOperator :
         self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
         self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
         self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
-        #self.tikterm    = tikterm
+        self.regtikhonov = regtikhonov
 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
@@ -140,7 +141,7 @@ cdef class LinearOperator :
     @property
     def T( self ) :
         """Transpose of the explicit matrix."""
-        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.regtikhonov )
         C.adjoint = 1 - C.adjoint
         return C
 
@@ -201,14 +202,14 @@ cdef class LinearOperator :
             with nogil:
                 # DIRECT PRODUCT L*lambda*x
                 COMMIT_L(
-                    self.nF, self.nR, self.nV, self.nS, 0.3,
+                    self.nF, self.nR, self.nV, self.nS, self.regtikhonov,
                     &v_in[0], &v_out[0]
                 )
         else:
             with nogil:
                 # INVERSE PRODUCT L'*lambda*y
                 COMMIT_Lt(
-                    self.nF, self.nR, self.nV, self.nS, 0.3, #self.tikterm
+                    self.nF, self.nR, self.nV, self.nS, self.regtikhonov, #self.tikterm
                     &v_in[0], &v_out[0]
                 ) #"""
 

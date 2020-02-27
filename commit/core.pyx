@@ -621,7 +621,7 @@ cdef class Evaluation :
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self ) :
+    def build_operator( self, regtikhonov=0.1 ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
@@ -648,7 +648,7 @@ cdef class Evaluation :
             import commit.operator.operator
         else :
             reload( sys.modules['commit.operator.operator'] )
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, regtikhonov )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
