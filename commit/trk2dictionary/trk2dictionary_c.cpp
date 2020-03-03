@@ -387,8 +387,6 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
             q.y = dir.y * w;
             q.z = dir.z * w;
             w = cos(alpha/2.0);
-
-
             for(j=0; j<sectors[k] ;j++)
             {
                 // rotate the segment's normal
@@ -401,7 +399,6 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                 n.x += w * qxn.x + qxqxn.x;
                 n.y += w * qxn.y + qxqxn.y;
                 n.z += w * qxn.z + qxqxn.z;
-                // n /= np.linalg.norm(n)
 
                 // move the segment
                 S1m.x = S1.x + R*n.x;
@@ -419,6 +416,16 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                         len = sqrt( pow(S2m.x-S1m.x,2) + pow(S2m.y-S1m.y,2) + pow(S2m.z-S1m.z,2) ); // in mm
                         if ( len <= minSegLen )
                             break;
+                        
+                        if ( floor(S1m.x/pixdim.x)==floor(S2m.x/pixdim.x) &&
+                             floor(S1m.y/pixdim.y)==floor(S2m.y/pixdim.y) &&
+                             floor(S1m.z/pixdim.z)==floor(S2m.z/pixdim.z)
+                            )
+                        {
+                            // same voxel, no need to compute intersections
+                            segmentForwardModel( S1m, S2m, weights[k], ptrHashTable );
+                            break;
+                        }
 
                         // compute AABB of the first point (in mm)
                         vmin.x = floor( (S1m.x + 1e-6*dir.x)/pixdim.x ) * pixdim.x;
