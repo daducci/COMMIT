@@ -220,7 +220,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if (extension != ".trk" and extension != ".tck") :
         raise IOError( 'Invalid input file. Please enter tractogram file .trk or .tck' )
     try : #read the header of the file in the same way both in .trk and in .tck
-        hdr = nibabel.streamlines.load( filename_tractogram ).header
+        hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
     except :
         raise IOError( 'Tractogram file not found' )
         
@@ -377,15 +377,19 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     # create new dictionaty file (TRK or TCK) with only fibers in the WM mask
     if gen_trk :
         print ('\t* Generate tractogram matching the dictionary: ')
-        fib = nibabel.streamlines.load(filename_tractogram)
+        fib = nibabel.streamlines.load( filename_tractogram, lazy_load=True )
         hdr = fib.header
 
         file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
-        tractogram_out = fib.tractogram[ file_kept ]
-        hdr['count'] = len(tractogram_out) #set new number of fibers in the header
-        hdr['nb_streamlines'] = len(tractogram_out)
+        streamlines_out = []
+        for i, f in enumerate(fib.streamlines):
+            if file_kept[i] :
+                streamlines_out.append( f )
+        hdr['count'] = len(streamlines_out) #set new number of fibers in the header
+        hdr['nb_streamlines'] = len(streamlines_out)
 
         #create a output dictionary file (TRK or TCK) in path_out
+        tractogram_out = nibabel.streamlines.tractogram.Tractogram(streamlines=streamlines_out, affine_to_rasmm=fib.tractogram.affine_to_rasmm)
         nibabel.streamlines.save( tractogram_out, join(path_out,'dictionary_TRK_fibers'+extension), header=hdr )
         print( '\t  [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
     print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
