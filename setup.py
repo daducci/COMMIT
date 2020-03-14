@@ -162,8 +162,8 @@ if CUDA != None:
     )
 
     ext = Extension(
-        name='commit.gpumanager',
-        sources = ['commit/gpumanager.cu'],
+        name='commit.cudaoperator',
+        sources = ['commit/gpumanager.cu', 'commit/cudaoperator.pyx'],
         library_dirs = [CUDA['lib64']],
         libraries = ['cudart'],
         language = 'c++',

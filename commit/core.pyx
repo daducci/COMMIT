@@ -71,6 +71,7 @@ cdef class Evaluation :
     cdef public A
     cdef public x
     cdef public CONFIG
+    cdef public gpu_A
 
     def __init__( self, study_path, subject ) :
         """Setup the data structures with default values.
@@ -90,6 +91,7 @@ cdef class Evaluation :
         self.THREADS    = None # set by "set_threads" method
         self.A          = None # set by "build_operator" method
         self.x          = None # set by "fit" method
+        self.gpu_A      = None
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
@@ -649,6 +651,9 @@ cdef class Evaluation :
         else :
             reload( sys.modules['commit.operator.operator'] )
         self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        
+        import commit.cudaoperator
+        self.gpu_A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
