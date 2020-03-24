@@ -287,6 +287,11 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     res = -y.copy()
     xhat = x0.copy()
     x = np.zeros_like(xhat)
+    checkval = np.sum(A.dot(xhat))
+    if np.isnan(checkval):
+        print('----------------------------------- Te la pelas 1 Ax -----------------------------------')
+        print(A.dot(xhat))
+        print()
     res += A.dot(xhat)
     proximal( xhat )
     reg_term = omega( xhat )
@@ -295,10 +300,20 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     told = 1
     beta = 0.9
     prev_x = xhat.copy()
+    checkval = np.sum(np.asarray(At.dot(res)))
+    if np.isnan(checkval):
+        print('----------------------------------- Te la pelas 2 A\'y -----------------------------------')
+        print(np.asarray(At.dot(res)))
+        print()
     grad = np.asarray(At.dot(res))
     qfval = prev_obj
 
     # Step size computation
+    checkval = np.sum(A.dot(grad))
+    if np.isnan(checkval):
+        print('----------------------------------- Te la pelas 3 Ax -----------------------------------')
+        print(A.dot(grad))
+        print()
     L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     mu = 1.9 / L
 
@@ -323,6 +338,11 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         # Check stepsize
         tmp = x-xhat
         q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
+        checkval = np.sum(A.dot(x) - y)
+        if np.isnan(checkval):
+            print('----------------------------------- Te la pelas 4 Ax -----------------------------------')
+            print(A.dot(x) - y)
+            print()
         res = A.dot(x) - y
         res_norm = np.linalg.norm(res)
         curr_obj = 0.5 * res_norm**2 + reg_term_x
@@ -340,6 +360,11 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
             # Check stepsize
             tmp = x-xhat
             q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
+            checkval = np.sum(A.dot(x) - y)
+            if np.isnan(checkval):
+                print('----------------------------------- Te la pelas 5 Ax -----------------------------------')
+                print(A.dot(x) - y)
+                print()
             res = A.dot(x) - y
             res_norm = np.linalg.norm(res)
             curr_obj = 0.5 * res_norm**2 + reg_term_x
@@ -373,9 +398,19 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         xhat = x + (told-1)/t * (x - prev_x)
 
         # Gradient computation
+        checkval = np.sum(A.dot(xhat) - y)
+        if np.isnan(checkval):
+            print('----------------------------------- Te la pelas 6 Ax -----------------------------------')
+            print(A.dot(xhat) - y)
+            print()
         res = A.dot(xhat) - y
         xarr = np.asarray(x)
 
+        checkval = np.sum(np.asarray(At.dot(res)))
+        if np.isnan(checkval):
+            print('----------------------------------- Te la pelas 7 A\'y -----------------------------------')
+            print(np.asarray(At.dot(res)))
+            print()
         grad = np.asarray(At.dot(res))
 
         # Update variables

@@ -2269,7 +2269,7 @@ void COMMIT_Lt(
     for(int f = 0; f < _nF; f++){
         _vOUT[f] += _tikterm*( -2*_vIN[_nV*_nS] + _vIN[_nV*_nS + 1] );
 
-        for (int r = 0; r < _nIC; r++){
+        for (int r = 0; r < _nIC-1; r++){
             _vOUT[r*_nF + f] += _tikterm*( _vIN[_nV*_nS + (r-1)] - 2*_vIN[_nV*_nS + r] + _vIN[_nV*_nS + (r+1)] );
         }
         

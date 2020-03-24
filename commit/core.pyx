@@ -664,14 +664,14 @@ cdef class Evaluation :
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
         #return y
-        print(type(y))
+        """print(type(y))
         print(y.shape)
         print(y.shape[0])
         print(self.KERNELS['wmr'].shape[0])
-        print(y.shape[0] + self.KERNELS['wmr'].shape[0])
+        print(y.shape[0] + self.KERNELS['wmr'].shape[0])"""
         y2 = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0], dtype=np.float64)
         y2[0:y.shape[0]] = y
-        print(y2.shape)
+        #print(y2.shape)
         return y2
         #"""
 
