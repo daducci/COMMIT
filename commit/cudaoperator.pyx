@@ -30,6 +30,9 @@ cdef extern from "gpumanager.cuh":
             int,
             int)
 
+        void multiplyByX(np.float64_t*, np.float64_t*)
+        void multiplyByY(np.float64_t*, np.float64_t*)
+
 cdef class CudaLinearOperator :
     """This class is a wrapper to the C code for performing marix-vector multiplications
     with the COMMIT linear operator A. The multiplications are done using C code
