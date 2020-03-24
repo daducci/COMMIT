@@ -216,7 +216,7 @@ __global__ void multiply_Ax_ICpart(
 
     shmem[tid] = 0.0;
 
-    if(sid >= num_samples) return;
+    if(sid >= NUM_SAMPLES) return;
 
     uint32_t offset = offsetPerBlock[bid] + (segmentsPerBlock[bid]/2)*gid;
     uint32_t nsegments = segmentsPerBlock[bid]/2 + (segmentsPerBlock[bid]%2)*gid;
@@ -277,16 +277,16 @@ __global__ void multiply_Ax_ECpart(
 
     float64_t sum = 0.0;
     for(int i = 0; i < nsegments; i++){
-        uint32_t offset_lut = (*orientation)*num_samples + tid;
+        uint32_t offset_lut = (*orien)*NUM_SAMPLES + tid;
 
         for(int j = 0; j < NUM_ZEPPELINS; j++)
-            //sum += (double)(lut[lut_offset + j*num_orientations*num_samples])*x[target + j*num_excomps + i];
-            sum += tex1Dfetch(tex_lutEC, offset_lut + j*num_orientations*num_samples) * x[target + j*num_excomps + i];
+            sum += (double)(lut[lut_offset + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[target + j*NUM_PEAKS + i];
+            //sum += tex1Dfetch(tex_lutEC, offset_lut + j*num_orientations*num_samples) * x[target + j*num_excomps + i];
 
-        orientation++;
+        orien++;
     }
 
-    y[(*voxel)*num_samples + tid] += sum;
+    y[(*voxel)*NUM_SAMPLES + tid] += sum;
 }
 
 __global__ void multiply_Ax_ISOpart(
@@ -316,12 +316,12 @@ void CudaLinearOperator::multiplyByX(float64_t* x, float64_t* y){
     cudaMemcpy(this->x, x, ncols*sizeof(double), cudaMemcpyHostToDevice);
 
     // Multiply IC part in the GPU
-    multiply_Ax_ICpart<<<nvoxels, 1024>>>(voxelIC, fiberIC, orientIC, lengthIC, segmentsPerBlockIC, offsetPerBlockIC, lutIC, this->x, this->y);
+    multiply_Ax_ICpart<<<nvoxels, 1024>>>(voxelIC, fiberIC, orienIC, lengthIC, segmentsPerBlockIC, offsetPerBlockIC, lutIC, this->x, this->y);
 
     //cudaCheckKernel();
 
     // Multiply EC part in the GPU
-    multiply_Ax_ECpart<<<nvoxels, 512>>>(voxelEC, orientEC, segmentsPerBlockEC, offsetPerBlockEC, lutEC, this->x, this->y);
+    multiply_Ax_ECpart<<<nvoxels, 512>>>(voxelEC, orienEC, segmentsPerBlockEC, offsetPerBlockEC, lutEC, this->x, this->y);
 
     //cudaCheckKernel();
 
