@@ -74,19 +74,25 @@ class CudaLinearOperator {
     float64_t* x;
     float64_t* y;
 
+    // dimensions of the operator
+    int nrows;
+    int ncols;
+    int nvoxels;
+    int nfibers;
+
     public:
         CudaLinearOperator(
             uint32_t* voxelIC,
             uint32_t* fiberIC,
             uint16_t* orienIC,
-            float*    lengthIC,
-            float*    lutIC,
+            float32_t*    lengthIC,
+            float32_t*    lutIC,
         
             uint32_t* voxelEC,
             uint16_t* orienEC,
-            float*    lutEC,
+            float32_t*    lutEC,
         
-            float*    lutISO,
+            float32_t*    lutISO,
         
             int nsegments,
             int nvoxels,      
@@ -99,4 +105,7 @@ class CudaLinearOperator {
             int nballs);
         
         ~CudaLinearOperator();
+
+        void multiplyByX(float64_t* x, float64_t* y);
+        void multiplyByY(float64_t* y, float64_t* x);
 };

@@ -49,8 +49,10 @@ CudaLinearOperator::CudaLinearOperator(
     int nzeppelins,   
     int nballs)
 {
-    int nrows = nvoxels * nsamples;
-    int ncols = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
+    this->nvoxels = nvoxels;
+    this->nfibers = nfibers;
+    this->nrows = nvoxels * nsamples;
+    this->ncols = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
     int size_lutic  = ndiameters*norientations*nsamples;
     int size_lutec  = nzeppelins*norientations*nsamples;
     int size_lutiso = nballs*nsamples;
@@ -192,4 +194,173 @@ CudaLinearOperator::~CudaLinearOperator(){
 
     cudaFree(x);
     cudaFree(y);
+}
+
+__global__ void multiply_Ax_ICpart(
+    uint32_t*  voxelIDs,
+    uint32_t*  fiberIDs,
+    uint16_t*  orienIDs,
+    float32_t* lengths,
+    uint32_t*  segmentsPerBlock,
+    uint32_t*  offsetPerBlock,
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y){
+
+    __shared__ float64_t shmem[1024];
+
+    uint32_t bid = blockIdx.x;
+    uint32_t tid = threadIdx.x;
+    uint32_t gid = threadIdx.x / 512;
+    uint32_t sid = threadIdx.x - 512*gid;
+
+    shmem[tid] = 0.0;
+
+    if(sid >= num_samples) return;
+
+    uint32_t offset = offsetPerBlock[bid] + (segmentsPerBlock[bid]/2)*gid;
+    uint32_t nsegments = segmentsPerBlock[bid]/2 + (segmentsPerBlock[bid]%2)*gid;
+
+    //segment_t* segment = segments + offset;
+    uint32_t*  voxel  = voxelIDs + offset;
+    uint32_t*  fiber  = fiberIDs + offset;
+    uint16_t*  orien  = orienIDs + offset;
+    float32_t* length = lengths  + offset;
+
+    float64_t sum = 0.0;
+
+    for(int i = 0; i < nsegments; i++){
+        int offset_lut = (*orien)*NUM_SAMPLES + sid;
+
+        float64_t aux = 0.0;
+        for(int j = 0; j < NUM_DIAMETERS; j++){
+            aux += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[(*fiber) + j*NUM_FIBERS];
+            //aux += tex1Dfetch(tex_lutIC, offset_lut + j*num_orientations*num_samples) * x[(*fiber) + j*num_fibers];
+        }
+
+        sum += aux * (*length);
+
+        fiber++;
+        orien++;
+        length++;
+    }
+
+    shmem[tid] = sum;
+    __syncthreads();
+
+    if(tid < NUM_SAMPLES)
+        y[(*voxel)*NUM_SAMPLES + sid] = sum + shmem[tid+512];
+}
+
+__global__ void multiply_Ax_ECpart(
+    uint32_t*  voxelIDs,
+    uint16_t*  orienIDs,
+    uint32_t*  segmentsPerBlock,
+    uint32_t*  offsetPerBlock,
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y)
+{
+    uint32_t bid = blockIdx.x;
+    uint32_t tid = threadIdx.x;
+
+    if(tid >= NUM_SAMPLES) return;
+
+    uint32_t offset  = offsetPerBlock[bid];
+    uint32_t nsegments = segmentsPerBlock[bid];
+
+    //compartmentEC_t* excomp = excomps + offset;
+    uint32_t* voxel = voxelIDs + offset;
+    uint16_t* orien = orienIDs + offset;
+
+    uint32_t target = NUM_FIBERS*NUM_DIAMETERS + offset;
+
+    float64_t sum = 0.0;
+    for(int i = 0; i < nsegments; i++){
+        uint32_t offset_lut = (*orientation)*num_samples + tid;
+
+        for(int j = 0; j < NUM_ZEPPELINS; j++)
+            //sum += (double)(lut[lut_offset + j*num_orientations*num_samples])*x[target + j*num_excomps + i];
+            sum += tex1Dfetch(tex_lutEC, offset_lut + j*num_orientations*num_samples) * x[target + j*num_excomps + i];
+
+        orientation++;
+    }
+
+    y[(*voxel)*num_samples + tid] += sum;
+}
+
+__global__ void multiply_Ax_ISOpart(
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y)
+{
+    uint32_t bid = blockIdx.x;
+    uint32_t tid = threadIdx.x;
+
+    if(tid >= NUM_SAMPLES) return;
+
+    uint32_t target = NUM_FIBERS*NUM_DIAMETERS + NUM_PEAKS*NUM_ZEPPELINS + bid;
+
+    float64_t sum = 0.0;
+    for(int j = 0; j < NUM_BALLS; j++)
+        sum += (double)(lut[j*NUM_SAMPLES + tid])*x[target + j*NUM_VOXELS];
+        //sum += (double)(tex1Dfetch(tex_lutISO, j*num_samples + tid))*x[target + j*num_voxels];
+        
+
+    y[bid*NUM_SAMPLES + tid] += sum;
+}
+
+void CudaLinearOperator::multiplyByX(float64_t* x, float64_t* y){
+
+    // Copy vector x to the GPU
+    cudaMemcpy(this->x, x, ncols*sizeof(double), cudaMemcpyHostToDevice);
+
+    // Multiply IC part in the GPU
+    multiply_Ax_ICpart<<<nvoxels, 1024>>>(voxelIC, fiberIC, orientIC, lengthIC, segmentsPerBlockIC, offsetPerBlockIC, lutIC, this->x, this->y);
+
+    //cudaCheckKernel();
+
+    // Multiply EC part in the GPU
+    multiply_Ax_ECpart<<<nvoxels, 512>>>(voxelEC, orientEC, segmentsPerBlockEC, offsetPerBlockEC, lutEC, this->x, this->y);
+
+    //cudaCheckKernel();
+
+    // Multiply ISO part in the GPU
+    multiply_Ax_ISOpart<<<nvoxels, 512>>>(lutISO, this->x, this->y);
+
+    //cudaCheckKernel();
+
+    // Copy back result to CPU
+    cudaMemcpy(y, this->y, nrows*sizeof(double), cudaMemcpyDeviceToHost);
+}
+
+void CudaLinearOperator::multiplyByY(float64_t* y, float64_t* x){
+        
+    // Copy vector y to the GPU
+    //cudaCheck( cudaMemset(gpu_x, 0, NUM_COLS*sizeof(float64_t)) );
+    //cudaCheck( cudaMemcpy(gpu_x, x, NUM_COLS*sizeof(double), cudaMemcpyHostToDevice) );
+    //cudaCheck( cudaMemcpy(gpu_y, y, NUM_ROWS*sizeof(double), cudaMemcpyHostToDevice) );
+
+    // Multiply IC part in the GPU
+    //multiply_Aty_ICpart<<<NUM_FIBERS, 512>>>(gpu_voxelICt, gpu_fiberICt, gpu_orientICt, gpu_lengthICt, gpu_segmentsPerBlockICt, gpu_offsetPerBlockICt, gpu_lutIC, gpu_x, gpu_y);
+
+    //cudaCheckKernel();//*/
+
+    // Multiply EC part in the GPU
+    //multiply_Aty_ECpart<<<NUM_VOXELS, 512>>>(gpu_voxelEC, gpu_orientEC, gpu_segmentsPerBlockEC, gpu_offsetPerBlockEC, gpu_lutEC, gpu_x, gpu_y);
+
+    //cudaCheckKernel();
+
+    // Multiply ISO part in the GPU
+    //multiply_Aty_ISOpart<<<NUM_VOXELS, 512>>>(gpu_lutISO, gpu_x, gpu_y);
+
+    //cudaCheckKernel();//*/
+
+    // Copy back result to CPU
+    //cudaCheck( cudaMemcpy(x, gpu_x, NUM_COLS*sizeof(double), cudaMemcpyDeviceToHost) ); 
+        
+    /*printf("\n\n VECTOR X EC PART:\n");
+    for(int i = NUM_FIBERS*NUM_RESFUNCIC; i < NUM_FIBERS*NUM_RESFUNCIC+20; i++)
+        printf("%lf ", x[i]);
+    printf("\n\n");//*/
 }

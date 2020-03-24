@@ -196,8 +196,10 @@ cdef class CudaLinearOperator :
         if not self.adjoint :
             # DIRECT PRODUCT A*x
             print('MULTIPLICO Ax')
+            self.A.multiplyByX(&v_in[0], &v_out[0])
         else :
             # INVERSE PRODUCT A'*y
             print('MULTIPLICO A\'y')
+            self.A.multiplyByY(&v_in[0], &v_out[0])
 
         return v_out
