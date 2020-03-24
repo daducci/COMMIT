@@ -30,6 +30,7 @@ cdef extern from "gpumanager.cuh":
             int,
             int)
 
+        void setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
         void multiplyByX(np.float64_t*, np.float64_t*)
         void multiplyByY(np.float64_t*, np.float64_t*)
 
@@ -133,6 +134,16 @@ cdef class CudaLinearOperator :
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
 
+        idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['v'])] )
+        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
+        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
+        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
+        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+
+        idx = np.lexsort( [np.array(self.DICTIONARY['EC']['o']), np.array(self.DICTIONARY['EC']['v'])] )
+        self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
+        self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
+
         self.A = new C_CudaLinearOperator(
             &ICv[0],
             &ICf[0],
@@ -156,6 +167,15 @@ cdef class CudaLinearOperator :
             self.nT,
             self.nI
         )
+
+        idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
+        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
+        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
+        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
+        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+        del idx
+
+        self.A.setTransposeData(&ICv[0], &ICf[0], &ICo[0], &ICl[0])
 
     @property
     def T( self ) :

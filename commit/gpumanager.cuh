@@ -55,6 +55,14 @@ class CudaLinearOperator {
     uint16_t*  orienIC;
     float32_t* lengthIC;
 
+    // pointers to IC data (transpose) in GPU memory
+    uint32_t*  voxelICt;
+    uint32_t*  fiberICt;
+    uint16_t*  orienICt;
+    float32_t* lengthICt;
+    uint32_t* fibersPerBlockICt;
+    uint32_t* offsetPerBlockICt;
+
     // auxiliar arrays for GPU
     uint32_t* segmentsPerBlockIC;
     uint32_t* offsetPerBlockIC;
@@ -106,6 +114,7 @@ class CudaLinearOperator {
         
         ~CudaLinearOperator();
 
+        void setTransposeData(uint32_t* voxelIDs, uint32_t* fiberIDs, uint16_t* orienIDs, float32_t* lengths);
         void multiplyByX(float64_t* x, float64_t* y);
         void multiplyByY(float64_t* y, float64_t* x);
 };

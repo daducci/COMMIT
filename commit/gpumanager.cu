@@ -20,6 +20,44 @@ void preprocessDataForGPU(uint32_t* data, int NUM_COMPARTMENTS, uint32_t* compar
         offsetPerBlock[i] = offsetPerBlock[i-1] + compartmentsPerBlock[i-1];
 }
 
+void CudaLinearOperator::setTransponseData(
+    uint32_t*  voxelIDs,
+    uint32_t*  fiberIDs,
+    uint16_t*  orienIDs,
+    float32_t* lengths)
+{
+    bool status;
+    uint32_t*  fibersPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
+    uint32_t*  offsetPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
+
+    preprocessDataForGPU(fiberIDs, nsegments, fibersPerBlock, offsetPerBlock, nfibers);
+
+    printf("\t* extra memory for operator A' ... ");
+    status = true;
+    status = status && cudaCheck( cudaMalloc((void**)&(this->voxelICt),  nsegments*sizeof(uint32_t))  );
+    status = status && cudaCheck( cudaMalloc((void**)&(this->fiberICt),  nsegments*sizeof(uint32_t))  );
+    status = status && cudaCheck( cudaMalloc((void**)&(this->orienICt),  nsegments*sizeof(uint16_t))  );
+    status = status && cudaCheck( cudaMalloc((void**)&(this->lengthICt), nsegments*sizeof(float32_t)) );
+    status = status && cudaCheck( cudaMalloc((void**)&(this->fibersPerBlockICt),  nfibers*sizeof(uint32_t)) );
+    status = status && cudaCheck( cudaMalloc((void**)&(this->offsetPerBlockICt) , nfibers*sizeof(uint32_t)) );
+    if (status) printf("[ OK ]\n");
+    else        printf("[ ERROR ]\n");
+
+    printf("\t* transfering memory for operator A' ... ");
+    status = true;
+    status = status && cudaCheck( cudaMemcpy(this->voxelICt,  voxel,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(this->fiberICt,  fiber,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(this->orienICt,  orien,  nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(this->lengthICt, length, nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(this->fibersPerBlockICt, fibersPerBlock, nfibers*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(this->offsetPerBlockICt, offsetPerBlock, nfibers*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+    if (status) printf("[ OK ]\n");
+    else        printf("[ ERROR ]\n");
+
+    free(fibersPerBlock);
+    free(offsetPerBlock);
+}
+
 /*
 __dual__ segment::segment() {}
 
@@ -192,6 +230,13 @@ CudaLinearOperator::~CudaLinearOperator(){
 
     cudaFree(lutISO);
 
+    cudaFree(voxelICt);
+    cudaFree(fiberICt);
+    cudaFree(orienICt);
+    cudaFree(lengthICt);
+    cudaFree(fibersPerBlockICt);
+    cudaFree(offsetPerBlockICt);
+
     cudaFree(x);
     cudaFree(y);
 }
@@ -310,6 +355,168 @@ __global__ void multiply_Ax_ISOpart(
     y[bid*NUM_SAMPLES + tid] += sum;
 }
 
+__global__ void multiply_Aty_ICpart(
+    uint32_t*  voxelICt,
+    uint32_t*  fiberICt,
+    uint16_t*  orienICt,
+    float32_t* lengthICt,
+    uint32_t*  compartmentsPerBlock,
+    uint32_t*  offsetPerBlock,
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y)
+{
+    __shared__ float64_t shmem[512];
+
+    uint32_t bid = blockIdx.x;
+    uint32_t tid = threadIdx.x;
+
+    shmem[tid] = 0.0;
+
+    if(tid >= NUM_SAMPLES) return;
+
+    /*if(bid == 0 && tid == 0){
+    for(int i = 0; i < 10; i++){
+    printf("%d %d %d %f\n", voxelICt[i], fiberICt[i], orientICt[i], lengthICt[i]);
+    }
+    }
+    else if(bid != 0) return;
+    //__syncthreads();//*/
+
+    uint32_t offset = offsetPerBlock[bid];
+    uint32_t nsegments = offset + compartmentsPerBlock[bid];
+
+    //segment_t* segment = segments + offset;
+    uint32_t*  voxel  = voxelICt  + offset;
+    uint32_t*  fiber  = fiberICt  + offset;
+    uint16_t*  orien  = orienICt  + offset;
+    float32_t* length = lengthICt + offset;
+    //uint fiber = segment->fiber;
+
+    for(int j = 0; j < NUM_DIAMETERS; j++){
+        int offset_lut = j*NUM_ORIENTATIONS*NUM_SAMPLES + tid;
+
+        float64_t sum = 0.0;
+        //segment = segments + offset;
+        voxel  = voxelICt  + offset;
+        orient = orienICt  + offset;
+        length = lengthICt + offset;
+        for(int i = offset; i < nsegments; i++){
+            sum += ((float64_t)(*length)) *( (float64_t) lut[offset_lut + (*orien)*NUM_SAMPLES] )* y[(*voxel)*NUM_SAMPLES + tid];
+            //sum += ((float64_t)(*length)) *( (float64_t) tex1Dfetch(tex_lutIC, offset_lut + (*orient)*num_samples) )* y[(*voxel)*num_samples + tid];
+            //segment++;
+            voxel++;
+            //fiber++;
+            orien++;
+            length++;
+        }
+
+        shmem[tid] = sum;
+        __syncthreads();
+
+        if(tid < 256) shmem[tid] += shmem[tid + 256]; __syncthreads();
+        if(tid < 128) shmem[tid] += shmem[tid + 128]; __syncthreads();
+        if(tid <  64) shmem[tid] += shmem[tid +  64]; __syncthreads();
+        if(tid <  32) shmem[tid] += shmem[tid +  32]; __syncthreads();
+        if(tid <  16) shmem[tid] += shmem[tid +  16]; __syncthreads();
+        if(tid <   8) shmem[tid] += shmem[tid +   8]; __syncthreads();
+        if(tid <   4) shmem[tid] += shmem[tid +   4]; __syncthreads();
+        //if(tid <   2) shmem[tid] += shmem[tid +   2]; __syncthreads();
+
+        if(tid == 0) x[j*NUM_FIBERS + (*fiber)] = shmem[0] + shmem[1] + shmem[2] + shmem[3];
+
+        __syncthreads();
+    }
+}
+
+__global__ void multiply_Aty_ECpart(
+    uint32_t*  voxelEC,
+    uint16_t*  orienEC,
+    uint32_t*  segmentsPerBlock,
+    uint32_t*  offsetPerBlock,
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y)
+{
+    __shared__ float64_t shmem[512];
+
+    uint32_t bid = blockIdx.x;
+    uint32_t tid = threadIdx.x;
+
+    shmem[tid] = 0.0;
+
+    if(tid >= NUM_SAMPLES) return;
+
+    uint32_t offset  = offsetPerBlock[bid];
+    uint32_t ncompartments = segmentsPerBlock[bid] + offset;
+
+    //compartmentEC_t* peak = peaks + offset;
+    uint32_t* voxel = voxelEC + offset;
+    uint16_t* orien = orienEC + offset;
+
+    for(int j = 0; j < NUM_ZEPPELINS; j++){        
+        uint32_t offset_lut = j*NUM_ORIENTATIONS*NUM_SAMPLES + tid;
+
+        //peak = peaks + offset;
+        voxel = voxelEC + offset;
+        orien = orienEC + offset;
+        for(int i = offset; i < ncompartments; i++){
+            //shmem[tid] =( (float64_t)tex1Dfetch(tex_lutEC, (*orient)*num_samples + offset_lut) )* y[(*voxel)*num_samples + tid];
+            shmem[tid] =( (float64_t)(lut[(*orien)*NUM_SAMPLES + offset_lut] ))* y[(*voxel)*NUM_SAMPLES + tid];
+            __syncthreads();
+
+            //if(bid == 0){
+            //printf("%lf\n", lut[(peak->orientation)*num_samples + lut_offset] * y[(peak->voxel)*num_samples + tid]);
+
+            if(tid < 256) shmem[tid] += shmem[tid + 256]; __syncthreads();
+            if(tid < 128) shmem[tid] += shmem[tid + 128]; __syncthreads();
+            if(tid <  64) shmem[tid] += shmem[tid +  64]; __syncthreads();
+            if(tid <  32) shmem[tid] += shmem[tid +  32]; __syncthreads();
+            if(tid <  16) shmem[tid] += shmem[tid +  16]; __syncthreads();
+            if(tid <   8) shmem[tid] += shmem[tid +   8]; __syncthreads();
+            if(tid <   4) shmem[tid] += shmem[tid +   4]; __syncthreads();
+            if(tid <   2) shmem[tid] += shmem[tid +   2]; __syncthreads();
+
+            if(tid == 0) x[NUM_FIBERS*NUM_DIAMETERS + j*NUM_PEAKS + i] = shmem[0] + shmem[1];
+            //}
+
+            //peak++;
+            voxel++;
+            orien++;
+            __syncthreads();
+        }
+    }
+} //*/
+
+__global__ void multiply_Aty_ISOpart(float* lut, double* x, double* y){
+    __shared__ double shmem[512];
+
+    uint bid = blockIdx.x;
+    uint tid = threadIdx.x;
+    uint offset = NUM_FIBERS*NUM_DIAMETERS + NUM_PEAKS*NUM_ZEPPELINS + bid;
+
+    shmem[tid] = 0.0;
+
+    if(tid >= NUM_SAMPLES) return;
+
+    for(int j = 0; j < NUM_BALLS; j++){
+        shmem[tid] =( (float64_t) lut[j*NUM_SAMPLES + tid] )* y[bid*NUM_SAMPLES + tid];
+        //shmem[tid] =( (float64_t) tex1Dfetch(tex_lutISO, j*num_samples + tid) )* y[bid*num_samples + tid];
+        __syncthreads();
+
+        if(tid < 256) shmem[tid] += shmem[tid + 256]; __syncthreads();
+        if(tid < 128) shmem[tid] += shmem[tid + 128]; __syncthreads();
+        if(tid <  64) shmem[tid] += shmem[tid +  64]; __syncthreads();
+        if(tid <  32) shmem[tid] += shmem[tid +  32]; __syncthreads();
+        if(tid <  16) shmem[tid] += shmem[tid +  16]; __syncthreads();
+        if(tid <   8) shmem[tid] += shmem[tid +   8]; __syncthreads();
+        if(tid <   4) shmem[tid] += shmem[tid +   4]; __syncthreads(); 
+
+        if(tid == 0)
+            x[offset + j*NUM_VOXELS] = shmem[0] + shmem[1] + shmem[2] + shmem[3];
+    }
+}//*/
+
 void CudaLinearOperator::multiplyByX(float64_t* x, float64_t* y){
 
     // Copy vector x to the GPU
@@ -334,30 +541,30 @@ void CudaLinearOperator::multiplyByX(float64_t* x, float64_t* y){
     cudaMemcpy(y, this->y, nrows*sizeof(double), cudaMemcpyDeviceToHost);
 }
 
-void CudaLinearOperator::multiplyByY(float64_t* y, float64_t* x){
+void CudaLinearOperator::multiplyByY(float64_t* v_in, float64_t* v_out){
         
     // Copy vector y to the GPU
     //cudaCheck( cudaMemset(gpu_x, 0, NUM_COLS*sizeof(float64_t)) );
     //cudaCheck( cudaMemcpy(gpu_x, x, NUM_COLS*sizeof(double), cudaMemcpyHostToDevice) );
-    //cudaCheck( cudaMemcpy(gpu_y, y, NUM_ROWS*sizeof(double), cudaMemcpyHostToDevice) );
+    cudaCheck( cudaMemcpy(y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice) );
 
     // Multiply IC part in the GPU
-    //multiply_Aty_ICpart<<<NUM_FIBERS, 512>>>(gpu_voxelICt, gpu_fiberICt, gpu_orientICt, gpu_lengthICt, gpu_segmentsPerBlockICt, gpu_offsetPerBlockICt, gpu_lutIC, gpu_x, gpu_y);
+    multiply_Aty_ICpart<<<nfibers, 512>>>(voxelICt, fiberICt, orienICt, lengthICt, fibersPerBlockICt, offsetPerBlockICt, lutIC, x, y);
 
     //cudaCheckKernel();//*/
 
     // Multiply EC part in the GPU
-    //multiply_Aty_ECpart<<<NUM_VOXELS, 512>>>(gpu_voxelEC, gpu_orientEC, gpu_segmentsPerBlockEC, gpu_offsetPerBlockEC, gpu_lutEC, gpu_x, gpu_y);
+    multiply_Aty_ECpart<<<nvoxels, 512>>>(voxelEC, orienEC, segmentsPerBlockEC, offsetPerBlockEC, lutEC, x, y);
 
     //cudaCheckKernel();
 
     // Multiply ISO part in the GPU
-    //multiply_Aty_ISOpart<<<NUM_VOXELS, 512>>>(gpu_lutISO, gpu_x, gpu_y);
+    multiply_Aty_ISOpart<<<nvoxels, 512>>>(lutISO, x, y);
 
     //cudaCheckKernel();//*/
 
     // Copy back result to CPU
-    //cudaCheck( cudaMemcpy(x, gpu_x, NUM_COLS*sizeof(double), cudaMemcpyDeviceToHost) ); 
+    cudaCheck( cudaMemcpy(v_out, x, ncols*sizeof(double), cudaMemcpyDeviceToHost) );
         
     /*printf("\n\n VECTOR X EC PART:\n");
     for(int i = NUM_FIBERS*NUM_RESFUNCIC; i < NUM_FIBERS*NUM_RESFUNCIC+20; i++)
