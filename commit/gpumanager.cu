@@ -280,7 +280,7 @@ __global__ void multiply_Ax_ECpart(
         uint32_t offset_lut = (*orien)*NUM_SAMPLES + tid;
 
         for(int j = 0; j < NUM_ZEPPELINS; j++)
-            sum += (double)(lut[lut_offset + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[target + j*NUM_PEAKS + i];
+            sum += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[target + j*NUM_PEAKS + i];
             //sum += tex1Dfetch(tex_lutEC, offset_lut + j*num_orientations*num_samples) * x[target + j*num_excomps + i];
 
         orien++;
