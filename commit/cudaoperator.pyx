@@ -173,9 +173,19 @@ cdef class CudaLinearOperator :
         self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
         self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
-        del idx
 
         self.A.setTransposeData(&ICv[0], &ICf[0], &ICo[0], &ICl[0], self.n)
+
+        idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['v'])] )
+        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
+        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
+        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
+        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+
+        idx = np.lexsort( [np.array(self.DICTIONARY['EC']['o']), np.array(self.DICTIONARY['EC']['v'])] )
+        self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
+        self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
+        del idx
 
     @property
     def T( self ) :
