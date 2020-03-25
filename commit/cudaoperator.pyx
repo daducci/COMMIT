@@ -185,8 +185,9 @@ cdef class CudaLinearOperator :
 
         idx = np.lexsort( [np.array(DICTIONARY['EC']['o']), np.array(DICTIONARY['EC']['v'])] )
         DICTIONARY['EC']['v'] = DICTIONARY['EC']['v'][ idx ]
-        DICTIONARY['EC']['o'] = DICTIONARY['EC']['o'][ idx ]"""
+        DICTIONARY['EC']['o'] = DICTIONARY['EC']['o'][ idx ]
         del idx
+        """
 
     @property
     def T( self ) :
