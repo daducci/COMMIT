@@ -207,7 +207,8 @@ void CudaLinearOperator::setTransposeData(
     uint32_t*  voxelIDs,
     uint32_t*  fiberIDs,
     uint16_t*  orienIDs,
-    float32_t* lengths)
+    float32_t* lengths,
+    int nsegments)
 {
     bool status;
     uint32_t*  fibersPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));

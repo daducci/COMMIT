@@ -175,7 +175,7 @@ cdef class CudaLinearOperator :
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
         del idx
 
-        self.A.setTransposeData(&ICv[0], &ICf[0], &ICo[0], &ICl[0])
+        self.A.setTransposeData(&ICv[0], &ICf[0], &ICo[0], &ICl[0], self.n)
 
     @property
     def T( self ) :
