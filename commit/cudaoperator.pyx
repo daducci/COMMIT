@@ -134,7 +134,7 @@ cdef class CudaLinearOperator :
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
 
-        idx = np.lexsort( [np.array(DICTIONARY['IC']['o']), np.array(DICTIONARY['IC']['v'])] )
+        """idx = np.lexsort( [np.array(DICTIONARY['IC']['o']), np.array(DICTIONARY['IC']['v'])] )
         DICTIONARY['IC']['v']     = DICTIONARY['IC']['v'][ idx ]
         DICTIONARY['IC']['o']     = DICTIONARY['IC']['o'][ idx ]
         DICTIONARY['IC']['fiber'] = DICTIONARY['IC']['fiber'][ idx ]
@@ -142,7 +142,7 @@ cdef class CudaLinearOperator :
 
         idx = np.lexsort( [np.array(DICTIONARY['EC']['o']), np.array(DICTIONARY['EC']['v'])] )
         DICTIONARY['EC']['v'] = DICTIONARY['EC']['v'][ idx ]
-        DICTIONARY['EC']['o'] = DICTIONARY['EC']['o'][ idx ]
+        DICTIONARY['EC']['o'] = DICTIONARY['EC']['o'][ idx ]"""
 
         self.A = new C_CudaLinearOperator(
             &ICv[0],
@@ -168,6 +168,7 @@ cdef class CudaLinearOperator :
             self.nI
         )
 
+        """
         idx = np.lexsort( [np.array(DICTIONARY['IC']['o']), np.array(DICTIONARY['IC']['fiber'])] )
         DICTIONARY['IC']['v']     = DICTIONARY['IC']['v'][ idx ]
         DICTIONARY['IC']['o']     = DICTIONARY['IC']['o'][ idx ]
@@ -184,7 +185,7 @@ cdef class CudaLinearOperator :
 
         idx = np.lexsort( [np.array(DICTIONARY['EC']['o']), np.array(DICTIONARY['EC']['v'])] )
         DICTIONARY['EC']['v'] = DICTIONARY['EC']['v'][ idx ]
-        DICTIONARY['EC']['o'] = DICTIONARY['EC']['o'][ idx ]
+        DICTIONARY['EC']['o'] = DICTIONARY['EC']['o'][ idx ]"""
         del idx
 
     @property
