@@ -30,7 +30,7 @@ cdef extern from "gpumanager.cuh":
             int,
             int)
 
-        void setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
+        void setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*, int)
         void multiplyByX(np.float64_t*, np.float64_t*)
         void multiplyByY(np.float64_t*, np.float64_t*)
 
