@@ -203,15 +203,15 @@ CudaLinearOperator::~CudaLinearOperator(){
     cudaFree(y);
 }
 
-static void CudaLinearOperator::setTransponseData(
+void CudaLinearOperator::setTransposeData(
     uint32_t*  voxelIDs,
     uint32_t*  fiberIDs,
     uint16_t*  orienIDs,
     float32_t* lengths)
 {
     bool status;
-    uint32_t*  fibersPerBlock = (uint32_t*) malloc(this->nfibers*sizeof(uint32_t));
-    uint32_t*  offsetPerBlock = (uint32_t*) malloc(this->nfibers*sizeof(uint32_t));
+    uint32_t*  fibersPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
+    uint32_t*  offsetPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
 
     preprocessDataForGPU(fiberIDs, nsegments, fibersPerBlock, offsetPerBlock, nfibers);
 
