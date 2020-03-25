@@ -114,7 +114,7 @@ class CudaLinearOperator {
         
         ~CudaLinearOperator();
 
-        static void setTransposeData(uint32_t* voxelIDs, uint32_t* fiberIDs, uint16_t* orienIDs, float32_t* lengths);
+        void setTransposeData(uint32_t* voxelIDs, uint32_t* fiberIDs, uint16_t* orienIDs, float32_t* lengths);
         void multiplyByX(float64_t* x, float64_t* y);
         void multiplyByY(float64_t* y, float64_t* x);
 };
