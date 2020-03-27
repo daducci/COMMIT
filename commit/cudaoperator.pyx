@@ -160,7 +160,7 @@ cdef class CudaLinearOperator :
             self.nI
         )
 
-        """
+        
         idx = np.lexsort( [np.array(DICTIONARY['IC']['o']), np.array(DICTIONARY['IC']['fiber'])] )
         DICTIONARY['IC']['v']     = DICTIONARY['IC']['v'][ idx ]
         DICTIONARY['IC']['o']     = DICTIONARY['IC']['o'][ idx ]
@@ -179,7 +179,7 @@ cdef class CudaLinearOperator :
         DICTIONARY['EC']['v'] = DICTIONARY['EC']['v'][ idx ]
         DICTIONARY['EC']['o'] = DICTIONARY['EC']['o'][ idx ]
         del idx
-        """
+        #"""
 
     @property
     def T( self ) :
