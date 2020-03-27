@@ -364,6 +364,14 @@ cdef class Evaluation :
             if not exists( mask_filename ) :
                 raise RuntimeError( 'Dictionary not found. Execute ''trk2dictionary'' script first.' );
         niiMASK = nibabel.load( mask_filename )
+        niiMASK_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
+        if ( self.get_config('dim')[0]!=niiMASK.shape[0] or
+             self.get_config('dim')[1]!=niiMASK.shape[1] or
+             self.get_config('dim')[2]!=niiMASK.shape[2] or
+             abs(self.get_config('pixdim')[0]-niiMASK_hdr['pixdim'][1])>1e-3 or
+             abs(self.get_config('pixdim')[1]-niiMASK_hdr['pixdim'][2])>1e-3 or
+             abs(self.get_config('pixdim')[2]-niiMASK_hdr['pixdim'][3])>1e-3 ) :
+            print( '  [WARNING] dictionary does not have the same geometry as the dataset' )
         self.DICTIONARY['MASK'] = (niiMASK.get_data() > 0).astype(np.uint8)
 
         # segments from the tracts
