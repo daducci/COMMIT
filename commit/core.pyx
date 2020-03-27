@@ -531,7 +531,7 @@ cdef class Evaluation :
         sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
-            self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
+            self.THREADS['IC'] = np.zeros( nthreads+1, dtype=np.uint32 )
             if nthreads > 1 :
                 N = np.floor( self.DICTIONARY['IC']['n']/nthreads )
                 t = 1
@@ -553,7 +553,7 @@ cdef class Evaluation :
             self.THREADS['IC'] = None
 
         if self.DICTIONARY['EC']['nE'] > 0 :
-            self.THREADS['EC'] = np.zeros( n+1, dtype=np.uint32 )
+            self.THREADS['EC'] = np.zeros( nthreads+1, dtype=np.uint32 )
             for i in xrange(nthreads) :
                 self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
             self.THREADS['EC'][nthreads] = self.DICTIONARY['EC']['nE']
@@ -566,7 +566,7 @@ cdef class Evaluation :
             self.THREADS['EC'] = None
 
         if self.DICTIONARY['nV'] > 0 :
-            self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
+            self.THREADS['ISO'] = np.zeros( nthreads+1, dtype=np.uint32 )
             for i in xrange(nthreads) :
                 self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
             self.THREADS['ISO'][nthreads] = self.DICTIONARY['nV']
