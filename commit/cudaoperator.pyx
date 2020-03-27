@@ -161,23 +161,39 @@ cdef class CudaLinearOperator :
         )
 
         
-        idx = np.lexsort( [np.array(DICTIONARY['IC']['o']), np.array(DICTIONARY['IC']['fiber'])] )
-        DICTIONARY['IC']['v']     = DICTIONARY['IC']['v'][ idx ]
-        DICTIONARY['IC']['o']     = DICTIONARY['IC']['o'][ idx ]
-        DICTIONARY['IC']['fiber'] = DICTIONARY['IC']['fiber'][ idx ]
-        DICTIONARY['IC']['len']   = DICTIONARY['IC']['len'][ idx ]
+        idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
+        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
+        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
+        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
+        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+
+        ICf  = self.DICTIONARY['IC']['fiber']
+        self.ICf = &ICf[0]
+        ICl  = self.DICTIONARY['IC']['len']
+        self.ICl = &ICl[0]
+        ICv  = self.DICTIONARY['IC']['v']
+        self.ICv = &ICv[0]
+        ICo  = self.DICTIONARY['IC']['o']
+        self.ICo = &ICo[0]
+        ECv  = self.DICTIONARY['EC']['v']
+        self.ECv = &ECv[0]
+        ECo  = self.DICTIONARY['EC']['o']
+        self.ECo = &ECo[0]
+        ISOv = self.DICTIONARY['ISO']['v']
+        self.ISOv = &ISOv[0]
 
         self.A.setTransposeData(&ICv[0], &ICf[0], &ICo[0], &ICl[0], self.n)
 
-        idx = np.lexsort( [np.array(DICTIONARY['IC']['o']), np.array(DICTIONARY['IC']['v'])] )
-        DICTIONARY['IC']['v']     = DICTIONARY['IC']['v'][ idx ]
-        DICTIONARY['IC']['o']     = DICTIONARY['IC']['o'][ idx ]
-        DICTIONARY['IC']['fiber'] = DICTIONARY['IC']['fiber'][ idx ]
-        DICTIONARY['IC']['len']   = DICTIONARY['IC']['len'][ idx ]
+        idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
+        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
+        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
+        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
+        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+        del idx
 
-        idx = np.lexsort( [np.array(DICTIONARY['EC']['o']), np.array(DICTIONARY['EC']['v'])] )
-        DICTIONARY['EC']['v'] = DICTIONARY['EC']['v'][ idx ]
-        DICTIONARY['EC']['o'] = DICTIONARY['EC']['o'][ idx ]
+        idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
+        self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
+        self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
         del idx
         #"""
 
