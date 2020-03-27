@@ -201,6 +201,12 @@ CudaLinearOperator::~CudaLinearOperator(){
 
     cudaFree(x);
     cudaFree(y);
+
+    printf("\t* reseting GPU ... ");
+    status = true;
+    status = status && cudaCheck( cudaDeviceReset() );
+    if (status) printf("[ OK ]\n");
+    else        printf("[ ERROR ]\n");
 }
 
 void CudaLinearOperator::setTransposeData(

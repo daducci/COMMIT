@@ -393,12 +393,25 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
 
         # reorder the segments based on the "v" field
+        idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['v'])] )
+        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
+        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
+        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
+        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+        del idx
+
+        idx = np.lexsort( [np.array(self.DICTIONARY['EC']['o']), np.array(self.DICTIONARY['EC']['v'])] )
+        self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
+        self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
+        del idx
+        """
         idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
         self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
         self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
         self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
         del idx
+        """
 
         # divide the length of each segment by the fiber length so that all the columns of the libear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels

@@ -134,19 +134,7 @@ cdef class CudaLinearOperator :
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
 
-        """
-        idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['v'])] )
-        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
-        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
-        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
-        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
-        del idx
-
-        idx = np.lexsort( [np.array(self.DICTIONARY['EC']['o']), np.array(self.DICTIONARY['EC']['v'])] )
-        self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
-        self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
-        del idx
-        """
+        #sort here
 
         self.A = new C_CudaLinearOperator(
             &ICv[0],
