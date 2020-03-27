@@ -490,31 +490,32 @@ cdef class Evaluation :
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def set_threads( self, n = None ) :
+    def set_threads( self, nthreads = None ) :
         """Set the number of threads to use for the matrix-vector operations with A and A'.
 
         Parameters
         ----------
-        n : integer
-            Number of threads to use (default : number of CPUs in the system)
+        nthreads : integer
+            Number of threads to use (nthreads = None ---> all the CPU threads available in the system
+                                      nthreads = 0    ---> enable CUDA GPU acceleration)
         """
-        if n is None :
+        if nthreads is None :
             # Set to the number of CPUs in the system
             try :
                 import multiprocessing
-                n = multiprocessing.cpu_count()
+                nthreads = multiprocessing.cpu_count()
             except :
-                n = 1
+                nthreads = 1
 
-        if n < 1 or n > 255 :
-            raise RuntimeError( 'Number of threads must be between 1 and 255' )
+        if nthreads < 0 or nthreads > 255 :
+            raise RuntimeError( 'Number of threads must be between 0 and 255' )
         if self.DICTIONARY is None :
             raise RuntimeError( 'Dictionary not loaded; call "load_dictionary()" first.' )
         if self.KERNELS is None :
             raise RuntimeError( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first.' )
 
         self.THREADS = {}
-        self.THREADS['n'] = n
+        self.THREADS['n'] = nthreads
 
         cdef :
             long [:] C
@@ -523,7 +524,7 @@ cdef class Evaluation :
 
         tic = time.time()
         print( '\n-> Distributing workload to different threads:' )
-        print( '\t* number of threads : %d' % n )
+        print( '\t* number of threads : %d' % nthreads )
 
         # Distribute load for the computation of A*x product
         print( '\t* A operator...', end="" )
@@ -531,8 +532,8 @@ cdef class Evaluation :
 
         if self.DICTIONARY['IC']['n'] > 0 :
             self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
-            if n > 1 :
-                N = np.floor( self.DICTIONARY['IC']['n']/n )
+            if nthreads > 1 :
+                N = np.floor( self.DICTIONARY['IC']['n']/nthreads )
                 t = 1
                 tot = 0
                 C = np.bincount( self.DICTIONARY['IC']['v'] )
@@ -542,7 +543,7 @@ cdef class Evaluation :
                         self.THREADS['IC'][t] = self.THREADS['IC'][t-1] + tot
                         t += 1
                         tot = 0
-            self.THREADS['IC'][n] = self.DICTIONARY['IC']['n']
+            self.THREADS['IC'][nthreads] = self.DICTIONARY['IC']['n']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['IC'].astype(np.int32) ) <= 0 ) :
@@ -553,9 +554,9 @@ cdef class Evaluation :
 
         if self.DICTIONARY['EC']['nE'] > 0 :
             self.THREADS['EC'] = np.zeros( n+1, dtype=np.uint32 )
-            for i in xrange(n) :
+            for i in xrange(nthreads) :
                 self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-            self.THREADS['EC'][n] = self.DICTIONARY['EC']['nE']
+            self.THREADS['EC'][nthreads] = self.DICTIONARY['EC']['nE']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
@@ -566,9 +567,9 @@ cdef class Evaluation :
 
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
-            for i in xrange(n) :
+            for i in xrange(nthreads) :
                 self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-            self.THREADS['ISO'][n] = self.DICTIONARY['nV']
+            self.THREADS['ISO'][nthreads] = self.DICTIONARY['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
@@ -584,19 +585,19 @@ cdef class Evaluation :
         sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
-            self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
-            if n > 1 :
+            self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], nthreads-1, dtype=np.uint8 )
+            if nthreads > 1 :
                 idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind='mergesort' )
                 C = np.bincount( self.DICTIONARY['IC']['fiber'] )
                 t = tot = i1 = i2 = 0
-                N = np.floor(self.DICTIONARY['IC']['n']/n)
+                N = np.floor(self.DICTIONARY['IC']['n']/nthreads)
                 for c in C :
                     i2 += c
                     tot += c
                     if tot >= N :
                         self.THREADS['ICt'][ i1:i2 ] = t
                         t += 1
-                        if t==n-1 :
+                        if t==nthreads-1 :
                             break
                         i1 = i2
                         tot = c
@@ -606,11 +607,11 @@ cdef class Evaluation :
             self.THREADS['ICt'] = None
 
         if self.DICTIONARY['EC']['nE'] > 0 :
-            self.THREADS['ECt'] = np.zeros( n+1, dtype=np.uint32 )
-            N = np.floor( self.DICTIONARY['EC']['nE']/n )
-            for i in xrange(1,n) :
+            self.THREADS['ECt'] = np.zeros( nthreads+1, dtype=np.uint32 )
+            N = np.floor( self.DICTIONARY['EC']['nE']/nthreads )
+            for i in xrange(1,nthreads) :
                 self.THREADS['ECt'][i] = self.THREADS['ECt'][i-1] + N
-            self.THREADS['ECt'][n] = self.DICTIONARY['EC']['nE']
+            self.THREADS['ECt'][nthreads] = self.DICTIONARY['EC']['nE']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
@@ -621,10 +622,10 @@ cdef class Evaluation :
 
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
-            N = np.floor( self.DICTIONARY['nV']/n )
-            for i in xrange(1,n) :
+            N = np.floor( self.DICTIONARY['nV']/nthreads )
+            for i in xrange(1,nthreads) :
                 self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
-            self.THREADS['ISOt'][n] = self.DICTIONARY['nV']
+            self.THREADS['ISOt'][nthreads] = self.DICTIONARY['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
