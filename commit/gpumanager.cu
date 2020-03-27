@@ -203,7 +203,7 @@ CudaLinearOperator::~CudaLinearOperator(){
     cudaFree(y);
 
     printf("\t* reseting GPU ... ");
-    status = true;
+    bool status = true;
     status = status && cudaCheck( cudaDeviceReset() );
     if (status) printf("[ OK ]\n");
     else        printf("[ ERROR ]\n");
