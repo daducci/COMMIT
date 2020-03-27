@@ -792,9 +792,15 @@ cdef class Evaluation :
         if save_coeff:
             print( '\t\t- txt... ', end="" )
             sys.stdout.flush()
-            np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[0:nF])
-            np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[nF:nF+nE])
-            np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[(nF+nE):])
+            if len(self.KERNELS['wmr']) > 0 :
+                offset = nF * self.KERNELS['wmr'].shape[0]
+                np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[:offset], fmt='%12.5e')
+            if len(self.KERNELS['wmh']) > 0 :
+                offset = nF * self.KERNELS['wmr'].shape[0]
+                np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[offset:offset+nE*len(self.KERNELS['wmh'])], fmt='%12.5e')
+            if len(self.KERNELS['iso']) > 0 :
+                offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
+                np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[offset:], fmt='%12.5e')
             with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
                 pickle.dump( self.CONFIG, fid, protocol=2 )
             print( '[ OK ]' )
