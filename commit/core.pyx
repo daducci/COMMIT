@@ -482,6 +482,9 @@ cdef class Evaluation :
         self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
         self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
 
+        import commit.cudaoperator
+        self.gpu_A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+
         print( '         [ OK ]' )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
@@ -663,9 +666,6 @@ cdef class Evaluation :
         else :
             reload( sys.modules['commit.operator.operator'] )
         self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
-        
-        import commit.cudaoperator
-        self.gpu_A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 

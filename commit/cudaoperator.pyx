@@ -167,6 +167,7 @@ cdef class CudaLinearOperator :
         self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
 
+        """
         ICf  = self.DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
         ICl  = self.DICTIONARY['IC']['len']
@@ -180,7 +181,7 @@ cdef class CudaLinearOperator :
         ECo  = self.DICTIONARY['EC']['o']
         self.ECo = &ECo[0]
         ISOv = self.DICTIONARY['ISO']['v']
-        self.ISOv = &ISOv[0]
+        self.ISOv = &ISOv[0]"""
 
         self.A.setTransposeData(&ICv[0], &ICf[0], &ICo[0], &ICl[0], self.n)
 
