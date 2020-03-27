@@ -119,7 +119,7 @@ cdef class CudaLinearOperator :
         cdef float [:, ::1] isoSFP = KERNELS['iso']
         self.LUT_ISO = &isoSFP[0,0]
 
-        # get C pointers to arrays in THREADS
+        """# get C pointers to arrays in THREADS
         cdef unsigned int [::1] ICthreads = THREADS['IC']
         self.ICthreads  = &ICthreads[0]
         cdef unsigned int [::1] ECthreads = THREADS['EC']
@@ -132,7 +132,7 @@ cdef class CudaLinearOperator :
         cdef unsigned int  [::1] ECthreadsT = THREADS['ECt']
         self.ECthreadsT  = &ECthreadsT[0]
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
-        self.ISOthreadsT = &ISOthreadsT[0]
+        self.ISOthreadsT = &ISOthreadsT[0] """
 
         #sort here
 
