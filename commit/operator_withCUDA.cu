@@ -17,6 +17,56 @@ typedef double float64_t;
 bool cudaCheck(cudaError_t cudaStatus);
 void preprocessDataForGPU(uint32_t* data, int NUM_COMPARTMENTS, uint32_t* compartmentsPerBlock, uint32_t* offsetPerBlock, int NUM_BLOCKS);
 
+__global__ void multiply_Ax_ICpart(
+    uint32_t*  voxelIDs,
+    uint32_t*  fiberIDs,
+    uint16_t*  orienIDs,
+    float32_t* lengths,
+    uint32_t*  segmentsPerBlock,
+    uint32_t*  offsetPerBlock,
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y);
+
+__global__ void multiply_Ax_ECpart(
+        uint32_t*  voxelIDs,
+        uint16_t*  orienIDs,
+        uint32_t*  segmentsPerBlock,
+        uint32_t*  offsetPerBlock,
+        float32_t* lut,
+        float64_t* x,
+        float64_t* y);
+
+__global__ void multiply_Ax_ISOpart(
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y);
+
+__global__ void multiply_Aty_ICpart(
+    uint32_t*  voxelICt,
+    uint32_t*  fiberICt,
+    uint16_t*  orienICt,
+    float32_t* lengthICt,
+    uint32_t*  compartmentsPerBlock,
+    uint32_t*  offsetPerBlock,
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y);
+
+__global__ void multiply_Aty_ECpart(
+    uint32_t*  voxelEC,
+    uint16_t*  orienEC,
+    uint32_t*  segmentsPerBlock,
+    uint32_t*  offsetPerBlock,
+    float32_t* lut,
+    float64_t* x,
+    float64_t* y);
+
+__global__ void multiply_Aty_ISOpart(
+    float* lut,
+    double* x,
+    double* y);
+
 // constant values in GPU
 __constant__ int NUM_VOXELS;
 __constant__ int NUM_FIBERS;
@@ -903,7 +953,7 @@ __global__ void multiply_Aty_ISOpart(float* lut, double* x, double* y){
     // Multiply IC part in the GPU
     multiply_Aty_ICpart<<<nfibers, 512>>>(voxelICt, fiberICt, orienICt, lengthICt, fibersPerBlockICt, offsetPerBlockICt, lutIC, x, y);
 
-    //cudaCheckKernel();//*/
+    //cudaCheckKernel();
 
     // Multiply EC part in the GPU
     multiply_Aty_ECpart<<<nvoxels, 512>>>(voxelEC, orienEC, segmentsPerBlockEC, offsetPerBlockEC, lutEC, x, y);
@@ -913,13 +963,9 @@ __global__ void multiply_Aty_ISOpart(float* lut, double* x, double* y){
     // Multiply ISO part in the GPU
     multiply_Aty_ISOpart<<<nvoxels, 512>>>(lutISO, x, y);
 
-    //cudaCheckKernel();//*/
+    //cudaCheckKernel();
 
     // Copy back result to CPU
     cudaCheck( cudaMemcpy(v_out, x, ncols*sizeof(double), cudaMemcpyDeviceToHost) );
         
-    /*printf("\n\n VECTOR X EC PART:\n");
-    for(int i = NUM_FIBERS*NUM_RESFUNCIC; i < NUM_FIBERS*NUM_RESFUNCIC+20; i++)
-        printf("%lf ", x[i]);
-    printf("\n\n");//*/
 }*/
