@@ -5,7 +5,7 @@ import cython
 import numpy as np
 cimport numpy as np
 
-cdef extern from "operator_withCUDA.cu":
+cdef extern from "operator_withCUDA.cuh":
     cdef cppclass C_CudaLinearOperator "CudaLinearOperator":
         C_CudaLinearOperator(
             np.uint32_t*,

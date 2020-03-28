@@ -246,7 +246,7 @@ void CudaLinearOperator::dot(float64_t* v_in, float64_t* v_out){
     cudaMemcpy(v_out, y, nrows*sizeof(double), cudaMemcpyDeviceToHost);
 }
 
-void Tdot(float64_t* v_in, float64_t* v_out){
+void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
         
     // Copy vector y to the GPU
     //cudaCheck( cudaMemset(gpu_x, 0, NUM_COLS*sizeof(float64_t)) );
