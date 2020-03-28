@@ -30,9 +30,9 @@ cdef extern from "operator_withCUDA.cuh":
             int,
             int)
 
-        void setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*, int)
-        void multiplyByX(np.float64_t*, np.float64_t*)
-        void multiplyByY(np.float64_t*, np.float64_t*)
+        void setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
+        void  dot(np.float64_t*, np.float64_t*)
+        void Tdot(np.float64_t*, np.float64_t*)
 
 cdef class CudaLinearOperator :
     """This class is a wrapper to the C code for performing marix-vector multiplications
@@ -183,7 +183,7 @@ cdef class CudaLinearOperator :
         ISOv = self.DICTIONARY['ISO']['v']
         self.ISOv = &ISOv[0]
 
-        self.A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0], self.n)
+        self.A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
 
         idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
         self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
@@ -240,10 +240,10 @@ cdef class CudaLinearOperator :
         if not self.adjoint :
             # DIRECT PRODUCT A*x
             print('MULTIPLICO Ax')
-            self.A.multiplyByX(&v_in[0], &v_out[0])
+            self.A.dot(&v_in[0], &v_out[0])
         else :
             # INVERSE PRODUCT A'*y
             print('MULTIPLICO A\'y')
-            self.A.multiplyByY(&v_in[0], &v_out[0])
+            self.A.Tdot(&v_in[0], &v_out[0])
 
         return v_out
