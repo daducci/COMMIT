@@ -199,23 +199,23 @@ void CudaLinearOperator::setTransposeData(
 
     printf("\t* extra memory for operator A' ... ");
     status = true;
-    status = status && cudaCheck( cudaMalloc((void**)&(voxelICt),  nsegments*sizeof(uint32_t))  );
-    status = status && cudaCheck( cudaMalloc((void**)&(fiberICt),  nsegments*sizeof(uint32_t))  );
-    status = status && cudaCheck( cudaMalloc((void**)&(orienICt),  nsegments*sizeof(uint16_t))  );
-    status = status && cudaCheck( cudaMalloc((void**)&(lengthICt), nsegments*sizeof(float32_t)) );
-    status = status && cudaCheck( cudaMalloc((void**)&(fibersPerBlockICt), nfibers*sizeof(uint32_t)) );
-    status = status && cudaCheck( cudaMalloc((void**)&(offsetPerBlockICt), nfibers*sizeof(uint32_t)) );
+    status = status && cudaCheck( cudaMalloc((void**)&(TvoxelIC),  nsegments*sizeof(uint32_t))  );
+    status = status && cudaCheck( cudaMalloc((void**)&(TfiberIC),  nsegments*sizeof(uint32_t))  );
+    status = status && cudaCheck( cudaMalloc((void**)&(TorienIC),  nsegments*sizeof(uint16_t))  );
+    status = status && cudaCheck( cudaMalloc((void**)&(TlengthIC), nsegments*sizeof(float32_t)) );
+    status = status && cudaCheck( cudaMalloc((void**)&(TfibersPerBlockIC), nfibers*sizeof(uint32_t)) );
+    status = status && cudaCheck( cudaMalloc((void**)&(ToffsetPerBlockIC), nfibers*sizeof(uint32_t)) );
     if (status) printf("[ OK ]\n");
     else        printf("[ ERROR ]\n");
 
     printf("\t* transfering memory for operator A' ... ");
     status = true;
-    status = status && cudaCheck( cudaMemcpy(voxelICt,  voxelIDs, nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
-    status = status && cudaCheck( cudaMemcpy(fiberICt,  fiberIDs, nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
-    status = status && cudaCheck( cudaMemcpy(orienICt,  orienIDs, nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
-    status = status && cudaCheck( cudaMemcpy(lengthICt, lengths,  nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
-    status = status && cudaCheck( cudaMemcpy(fibersPerBlockICt, fibersPerBlock, nfibers*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
-    status = status && cudaCheck( cudaMemcpy(offsetPerBlockICt, offsetPerBlock, nfibers*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(TvoxelIC,  voxelIDs, nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(TfiberIC,  fiberIDs, nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(TorienIC,  orienIDs, nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(TlengthIC, lengths,  nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(TfibersPerBlockIC, fibersPerBlock, nfibers*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+    status = status && cudaCheck( cudaMemcpy(ToffsetPerBlockIC, offsetPerBlock, nfibers*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
     if (status) printf("[ OK ]\n");
     else        printf("[ ERROR ]\n");
 
