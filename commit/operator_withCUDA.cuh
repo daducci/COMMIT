@@ -147,7 +147,7 @@ class CudaLinearOperator {
             int ndiameters,   
             int nzeppelins,   
             int nballs);
-        }
+
         ~CudaLinearOperator();
 
         void setTransposeData(uint32_t*  voxelIDs, uint32_t*  fiberIDs, uint16_t*  orienIDs, float32_t* lengths);
