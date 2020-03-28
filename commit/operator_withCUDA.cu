@@ -168,12 +168,12 @@ CudaLinearOperator::~CudaLinearOperator(){
 
     cudaFree(lutISO);
 
-    cudaFree(voxelICt);
-    cudaFree(fiberICt);
-    cudaFree(orienICt);
-    cudaFree(lengthICt);
-    cudaFree(fibersPerBlockICt);
-    cudaFree(offsetPerBlockICt);
+    cudaFree(TvoxelIC);
+    cudaFree(TfiberIC);
+    cudaFree(TorienIC);
+    cudaFree(TlengthIC);
+    cudaFree(TfibersPerBlockIC);
+    cudaFree(ToffsetPerBlockIC);
 
     cudaFree(x);
     cudaFree(y);
