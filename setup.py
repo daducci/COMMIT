@@ -96,27 +96,25 @@ def customize_compiler_for_nvcc(self):
     # Inject our redefined _compile method into the class
     self._compile = _compile
 
+# Obtain the numpy include directory. This logic works across numpy versions.
+try:
+    numpy_include = numpy.get_include()
+except AttributeError:
+    numpy_include = numpy.get_numpy_include()
+
 # Try to locate CUDA
 CUDA = locate_cuda()
 
 if CUDA != None:
-    print('Installing CUDA Version')
-
     # Run the customize_compiler
-    class custom_build_ext(build_ext):
+    class cuda_build_ext(build_ext):
         def build_extensions(self):
             customize_compiler_for_nvcc(self.compiler)
             build_ext.build_extensions(self)
 
-    # Obtain the numpy include directory. This logic works across numpy versions.
-    try:
-        numpy_include = numpy.get_include()
-    except AttributeError:
-        numpy_include = numpy.get_numpy_include()
-
     # Cython extension to create the sparse data structure from a tractogram
     # for the computation of matrix-vector multiplications
-    ext1 = Extension(
+    trk2dictionary_ext = Extension(
         name='commit.trk2dictionary',
         sources=['commit/trk2dictionary/trk2dictionary.pyx'],
         include_dirs=[numpy.get_include()],
@@ -131,7 +129,7 @@ if CUDA != None:
         language='c++',
     )
 
-    ext2 = Extension(
+    core_ext = Extension(
         name='commit.core',
         sources=['commit/core.pyx'],
         include_dirs=[numpy.get_include()],
@@ -146,7 +144,7 @@ if CUDA != None:
         language='c++',
     )
 
-    ext3 = Extension(
+    proximals_ext = Extension(
         name='commit.proximals',
         sources=['commit/proximals.pyx'],
         include_dirs=[numpy.get_include()],
@@ -161,9 +159,9 @@ if CUDA != None:
         language='c++',
     )
 
-    ext = Extension(
+    cudaoperator_ext = Extension(
         name='commit.cudaoperator',
-        sources = ['commit/gpumanager.cu', 'commit/cudaoperator.pyx'],
+        sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
         library_dirs = [CUDA['lib64']],
         libraries = ['cudart'],
         language = 'c++',
@@ -189,8 +187,8 @@ if CUDA != None:
         author='Alessandro Daducci',
         author_email='alessandro.daducci@gmail.com',
         url='https://github.com/daducci/COMMIT',
-        cmdclass = {'build_ext':custom_build_ext},
-        ext_modules = [ ext1, ext2, ext3, ext ],
+        cmdclass = {'build_ext':cuda_build_ext},
+        ext_modules = [ trk2dictionary_ext, core_ext, proximals_ext, cudaoperator_ext ],
         packages=['commit','commit.operator'],
         package_data={
             'commit.operator':["*.*"], # needed by pyximport to compile at runtime
