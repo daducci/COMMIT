@@ -284,7 +284,7 @@ void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     cudaCheckKernel();
 
     // Copy back result to CPU
-    bool cudaStatus = cudaCheck( cudaMemcpy(v_out, x, ncols*sizeof(double), cudaMemcpyDeviceToHost) );
+    cudaStatus = cudaCheck( cudaMemcpy(v_out, x, ncols*sizeof(double), cudaMemcpyDeviceToHost) );
     if (cudaStatus != cudaSuccess) printf("\t* tranfering x to CPU ... [ ERROR ]");
     else                           printf("\t* tranfering x to CPU ... [   OK  ]");
         
