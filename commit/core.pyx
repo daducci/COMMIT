@@ -678,10 +678,10 @@ cdef class Evaluation :
             import commit.cudaoperator
             #print( '\t* building dictionary in GPU ... ' )
             self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
-            """if self.gpu_A.cuda_status == 1:
-                print( '[ OK ]' )
+            if self.gpu_A.cuda_status == 1:
+                print( '[ CUDA OK ]' )
             else:
-                print( '[ ERROR ]' )"""
+                print( '[ CUDA ERROR ]' )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
