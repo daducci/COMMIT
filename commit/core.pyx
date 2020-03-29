@@ -468,7 +468,7 @@ cdef class Evaluation :
 
         # post-processing
         # ---------------
-        print( '\t* post-processing...', end="" )
+        print( '\t* post-processing...' )
         sys.stdout.flush()
 
         # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
@@ -481,14 +481,6 @@ cdef class Evaluation :
         self.DICTIONARY['IC'][ 'v'] = lut[ self.DICTIONARY['IC'][ 'v'] ]
         self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
         self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
-
-        import commit.cudaoperator
-        print( '\t* building dictionary in GPU ... ' )
-        self.gpu_A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
-        if self.gpu_A.cuda_status == 1:
-            print( '[ OK ]' )
-        else:
-            print( '[ WRONG ]' )
 
         print( '         [ OK ]' )
 
@@ -671,7 +663,17 @@ cdef class Evaluation :
             import commit.operator.operator
         else :
             reload( sys.modules['commit.operator.operator'] )
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+
+        if self.THREADS['n'] > 0:
+            self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        else:
+            import commit.cudaoperator
+            #print( '\t* building dictionary in GPU ... ' )
+            self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+            """if self.gpu_A.cuda_status == 1:
+                print( '[ OK ]' )
+            else:
+                print( '[ ERROR ]' )"""
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
