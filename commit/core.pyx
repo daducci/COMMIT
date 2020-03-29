@@ -483,7 +483,12 @@ cdef class Evaluation :
         self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
 
         import commit.cudaoperator
+        print( '\t* building dictionary in GPU ... ' )
         self.gpu_A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        if gpu_A.status == True:
+            print( '[ OK ]' )
+        else:
+            print( '[ WRONG ]' )
 
         print( '         [ OK ]' )
 

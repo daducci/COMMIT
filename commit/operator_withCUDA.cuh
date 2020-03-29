@@ -67,21 +67,6 @@ __global__ void multiply_Aty_ISOpart(
     double* x,
     double* y);
 
-// constant values in GPU
-__constant__ int NUM_VOXELS;
-__constant__ int NUM_FIBERS;
-__constant__ int NUM_PEAKS;
-__constant__ int NUM_ORIENTATIONS;
-__constant__ int NUM_SAMPLES;
-__constant__ int NUM_DIAMETERS;
-__constant__ int NUM_ZEPPELINS;
-__constant__ int NUM_BALLS;
-__constant__ int NUM_ROWS;        
-__constant__ int NUM_COLS;      
-__constant__ int SIZE_LUTIC;      
-__constant__ int SIZE_LUTEC;     
-__constant__ int SIZE_LUTISO;
-
 class CudaLinearOperator {
 
     // pointers to IC data in GPU memory
@@ -89,24 +74,22 @@ class CudaLinearOperator {
     uint32_t*  fiberIC;
     uint16_t*  orienIC;
     float32_t* lengthIC;
+    uint32_t*  segmentsPerBlockIC;
+    uint32_t*  offsetPerBlockIC;
 
     // pointers to IC data (transpose) in GPU memory
     uint32_t*  TvoxelIC;
     uint32_t*  TfiberIC;
     uint16_t*  TorienIC;
     float32_t* TlengthIC;
-    uint32_t* TfibersPerBlockIC;
-    uint32_t* ToffsetPerBlockIC;
-
-    // auxiliar arrays for GPU
-    uint32_t* segmentsPerBlockIC;
-    uint32_t* offsetPerBlockIC;
-    uint32_t* segmentsPerBlockEC;
-    uint32_t* offsetPerBlockEC;
+    uint32_t*  TfibersPerBlockIC;
+    uint32_t*  ToffsetPerBlockIC;
 
     // pointers to EC data in GPU memory
-    uint32_t*  voxelEC;
-    uint16_t*  orienEC;
+    uint32_t* voxelEC;
+    uint16_t* orienEC;
+    uint32_t* segmentsPerBlockEC;
+    uint32_t* offsetPerBlockEC;
 
     // pointers to LUTs in GPU memory
     float32_t* lutIC;
@@ -117,12 +100,30 @@ class CudaLinearOperator {
     float64_t* x;
     float64_t* y;
 
-    // dimensions of the operator
+    // constant values in GPU
+    __constant__ int NUM_VOXELS;
+    __constant__ int NUM_FIBERS;
+    __constant__ int NUM_PEAKS;
+    __constant__ int NUM_ORIENTATIONS;
+    __constant__ int NUM_SAMPLES;
+    __constant__ int NUM_DIAMETERS;
+    __constant__ int NUM_ZEPPELINS;
+    __constant__ int NUM_BALLS;
+    __constant__ int NUM_ROWS;        
+    __constant__ int NUM_COLS;      
+    __constant__ int SIZE_LUTIC;      
+    __constant__ int SIZE_LUTEC;     
+    __constant__ int SIZE_LUTISO;
+
+    // constant values in CPU
     int nrows;
     int ncols;
     int nvoxels;
     int nfibers;
     int nsegments;
+
+    // CUDA GPU status
+    bool cudaStatus;
 
     public:
         CudaLinearOperator(
