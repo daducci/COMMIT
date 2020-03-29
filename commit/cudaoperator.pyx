@@ -248,6 +248,7 @@ cdef class CudaLinearOperator :
 
         return v_out
 
+    @property
     def cuda_status( self ):
         """Return status of CUDA GPU"""
         return self.A.getCudaStatus()
