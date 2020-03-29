@@ -41,6 +41,7 @@ cdef class CudaLinearOperator :
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
+    cdef public bool status
 
     cdef DICTIONARY
     cdef KERNELS
@@ -205,7 +206,6 @@ cdef class CudaLinearOperator :
         C.adjoint = 1 - C.adjoint
         return C
 
-
     @property
     def shape( self ) :
         """Size of the explicit matrix."""
@@ -247,3 +247,8 @@ cdef class CudaLinearOperator :
             self.A.Tdot(&v_in[0], &v_out[0])
 
         return v_out
+
+    @property
+    def cuda_status( self ):
+        """Return status of CUDA GPU"""
+        return self.A.cudaStatus
