@@ -485,7 +485,7 @@ cdef class Evaluation :
         import commit.cudaoperator
         print( '\t* building dictionary in GPU ... ' )
         self.gpu_A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
-        if gpu_A.cuda_status == True:
+        if gpu_A.cuda_status == 1:
             print( '[ OK ]' )
         else:
             print( '[ WRONG ]' )
