@@ -520,14 +520,14 @@ cdef class Evaluation :
         self.THREADS['ECt'] = None
         self.THREADS['ISOt'] = None
 
+        cdef :
+            long [:] C
+            long t, tot, i1, i2, N, c
+            int i
+
+        tic = time.time()
+
         if nthreads > 0:
-
-            cdef :
-                long [:] C
-                long t, tot, i1, i2, N, c
-                int i
-
-            tic = time.time()
             print( '\n-> Distributing workload to different threads:' )
             print( '\t* number of threads : %d' % nthreads )
 
