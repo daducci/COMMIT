@@ -67,6 +67,21 @@ __global__ void multiply_Aty_ISOpart(
     double* x,
     double* y);
 
+// constant values in GPU
+__constant__ int NUM_VOXELS;
+__constant__ int NUM_FIBERS;
+__constant__ int NUM_PEAKS;
+__constant__ int NUM_ORIENTATIONS;
+__constant__ int NUM_SAMPLES;
+__constant__ int NUM_DIAMETERS;
+__constant__ int NUM_ZEPPELINS;
+__constant__ int NUM_BALLS;
+__constant__ int NUM_ROWS;        
+__constant__ int NUM_COLS;      
+__constant__ int SIZE_LUTIC;      
+__constant__ int SIZE_LUTEC;     
+__constant__ int SIZE_LUTISO;
+
 class CudaLinearOperator {
 
     // pointers to IC data in GPU memory
@@ -99,21 +114,6 @@ class CudaLinearOperator {
     // pointers to vector x and y
     float64_t* x;
     float64_t* y;
-
-    // constant values in GPU
-    __constant__ int NUM_VOXELS;
-    __constant__ int NUM_FIBERS;
-    __constant__ int NUM_PEAKS;
-    __constant__ int NUM_ORIENTATIONS;
-    __constant__ int NUM_SAMPLES;
-    __constant__ int NUM_DIAMETERS;
-    __constant__ int NUM_ZEPPELINS;
-    __constant__ int NUM_BALLS;
-    __constant__ int NUM_ROWS;        
-    __constant__ int NUM_COLS;      
-    __constant__ int SIZE_LUTIC;      
-    __constant__ int SIZE_LUTEC;     
-    __constant__ int SIZE_LUTISO;
 
     // constant values in CPU
     int nrows;
