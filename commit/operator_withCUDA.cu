@@ -243,30 +243,50 @@ void CudaLinearOperator::dot(float64_t* v_in, float64_t* v_out){
     cudaMemcpy(v_out, y, nrows*sizeof(double), cudaMemcpyDeviceToHost);
 }
 
+void cudaCheckKernel(){
+    cudaError_t cudaStatus;
+    
+    cudaStatus = cudaGetLastError();
+	if(cudaStatus != cudaSuccess)
+        fprintf(stderr, "\t* kernel launch... [ ERROR ]: %s\n\n", cudaGetErrorString(cudaStatus));
+    else
+        printf("\t* kernel launch... [ OK ]\n");
+
+    cudaStatus = cudaDeviceSynchronize();
+	if(cudaStatus != cudaSuccess)
+        fprintf(stderr, "\t* cudaDeviceSynchronize() after launching kernel... [ ERROR ]: %d\n", cudaStatus);
+    else
+        printf("\t* cudaDeviceSynchronize() after launching kernel... [ OK ]\n");
+}
+
 void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
         
     // Copy vector y to the GPU
     //cudaCheck( cudaMemset(gpu_x, 0, NUM_COLS*sizeof(float64_t)) );
     //cudaCheck( cudaMemcpy(gpu_x, x, NUM_COLS*sizeof(double), cudaMemcpyHostToDevice) );
-    cudaCheck( cudaMemcpy(y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice) );
+    bool cudaStatus = cudaCheck( cudaMemcpy(y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice) );
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering y to GPU ... [ ERROR ]");
+    else                           printf("\t* tranfering y to GPU ... [   OK  ]");
 
     // Multiply IC part in the GPU
     multiply_Aty_ICpart<<<nfibers, 512>>>(TvoxelIC, TfiberIC, TorienIC, TlengthIC, TfibersPerBlockIC, ToffsetPerBlockIC, lutIC, x, y);
 
-    //cudaCheckKernel();//*/
+    cudaCheckKernel();
 
     // Multiply EC part in the GPU
     multiply_Aty_ECpart<<<nvoxels, 512>>>(voxelEC, orienEC, segmentsPerBlockEC, offsetPerBlockEC, lutEC, x, y);
 
-    //cudaCheckKernel();
+    cudaCheckKernel();
 
     // Multiply ISO part in the GPU
     multiply_Aty_ISOpart<<<nvoxels, 512>>>(lutISO, x, y);
 
-    //cudaCheckKernel();//*/
+    cudaCheckKernel();
 
     // Copy back result to CPU
-    cudaCheck( cudaMemcpy(v_out, x, ncols*sizeof(double), cudaMemcpyDeviceToHost) );
+    bool cudaStatus = cudaCheck( cudaMemcpy(v_out, x, ncols*sizeof(double), cudaMemcpyDeviceToHost) );
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering x to CPU ... [ ERROR ]");
+    else                           printf("\t* tranfering x to CPU ... [   OK  ]");
         
     /*printf("\n\n VECTOR X EC PART:\n");
     for(int i = NUM_FIBERS*NUM_RESFUNCIC; i < NUM_FIBERS*NUM_RESFUNCIC+20; i++)
