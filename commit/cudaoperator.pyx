@@ -30,6 +30,7 @@ cdef extern from "operator_withCUDA.cuh":
             int,
             int)
 
+        bool getCudaStatus()
         void setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
         void  dot(np.float64_t*, np.float64_t*)
         void Tdot(np.float64_t*, np.float64_t*)
@@ -251,4 +252,4 @@ cdef class CudaLinearOperator :
     @property
     def cuda_status( self ):
         """Return status of CUDA GPU"""
-        return self.A.cudaStatus
+        return self.A.getCudaStatus()
