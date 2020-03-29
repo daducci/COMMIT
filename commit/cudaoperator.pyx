@@ -42,7 +42,6 @@ cdef class CudaLinearOperator :
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
-    cdef public bool status
 
     cdef DICTIONARY
     cdef KERNELS
