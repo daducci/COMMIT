@@ -179,6 +179,7 @@ CudaLinearOperator::~CudaLinearOperator(){
 }
 
 CudaLinearOperator::destroy(){
+    printf("\t* destroying and reseting GPU\n");
     cudaStatus = cudaStatus && cudaCheck( cudaFree(voxelIC) );
     cudaStatus = cudaStatus && cudaCheck( cudaFree(fiberIC) );
     cudaStatus = cudaStatus && cudaCheck( cudaFree(orienIC) );

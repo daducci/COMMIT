@@ -254,3 +254,6 @@ cdef class CudaLinearOperator :
     def cuda_status( self ):
         """Return status of CUDA GPU"""
         return self.A.getCudaStatus()
+
+    def destroy( self ):
+        self.A.destroy()
