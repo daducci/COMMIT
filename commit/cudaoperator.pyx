@@ -100,7 +100,7 @@ cdef class CudaLinearOperator :
         gpumem = 14*self.n + 6*self.nE + 16*nV + 4*(self.nR*self.ndirs*self.nS + self.nT*self.ndirs*self.nS + self.nI*self.nS + self.n1 + self.n2)
         print('Required GPU Memory = %f GB' % (gpumem*1E-6))
         if gpumen > 8.0:
-            raise RuntimeError( 'GPU Memory exceeded!!!!!!' )
+            print( 'GPU Memory exceeded!!!!!!' )
 
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
