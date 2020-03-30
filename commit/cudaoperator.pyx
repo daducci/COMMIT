@@ -98,8 +98,8 @@ cdef class CudaLinearOperator :
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
 
         
-        cdef int gpumem = 1E-6 * (14*self.n + 6*self.nE + 16*self.nV + 4*(self.nR*self.ndirs*self.nS + self.nT*self.ndirs*self.nS + self.nI*self.nS + self.n1 + self.n2) )
-        print('Required GPU Memory = %f MB' % (gpumem))
+        cdef float gpumem = 1E-6 * (14*self.n + 6*self.nE + 16*self.nV + 4*(self.nR*self.ndirs*self.nS + self.nT*self.ndirs*self.nS + self.nI*self.nS + self.n1 + self.n2) )
+        print('Required GPU Memory = %f MB' % gpumem)
         if gpumem > 8000.0:
             raise RuntimeError( 'GPU Memory exceeded!!!!!!' )
 
