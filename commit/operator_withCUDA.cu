@@ -179,34 +179,35 @@ CudaLinearOperator::~CudaLinearOperator(){
 }
 
 void CudaLinearOperator::destroy(){
-    printf("\t* destroying and reseting GPU\n");
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(voxelIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(fiberIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(orienIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(lengthIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(lutIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(segmentsPerBlockIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(offsetPerBlockIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(voxelEC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(orienEC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(lutEC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(segmentsPerBlockEC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(offsetPerBlockEC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(lutISO) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(TvoxelIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(TfiberIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(TorienIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(TlengthIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(TfibersPerBlockIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(ToffsetPerBlockIC) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(x) );
-    cudaStatus = cudaStatus && cudaCheck( cudaFree(y) );
+    printf("\t* destroying and reseting GPU ... \n");
+    bool status = true;
+    status = status && cudaCheck( cudaFree(voxelIC) );
+    status = status && cudaCheck( cudaFree(fiberIC) );
+    status = status && cudaCheck( cudaFree(orienIC) );
+    status = status && cudaCheck( cudaFree(lengthIC) );
+    status = status && cudaCheck( cudaFree(lutIC) );
+    status = status && cudaCheck( cudaFree(segmentsPerBlockIC) );
+    status = status && cudaCheck( cudaFree(offsetPerBlockIC) );
+    status = status && cudaCheck( cudaFree(voxelEC) );
+    status = status && cudaCheck( cudaFree(orienEC) );
+    status = status && cudaCheck( cudaFree(lutEC) );
+    status = status && cudaCheck( cudaFree(segmentsPerBlockEC) );
+    status = status && cudaCheck( cudaFree(offsetPerBlockEC) );
+    status = status && cudaCheck( cudaFree(lutISO) );
+    status = status && cudaCheck( cudaFree(TvoxelIC) );
+    status = status && cudaCheck( cudaFree(TfiberIC) );
+    status = status && cudaCheck( cudaFree(TorienIC) );
+    status = status && cudaCheck( cudaFree(TlengthIC) );
+    status = status && cudaCheck( cudaFree(TfibersPerBlockIC) );
+    status = status && cudaCheck( cudaFree(ToffsetPerBlockIC) );
+    status = status && cudaCheck( cudaFree(x) );
+    status = status && cudaCheck( cudaFree(y) );
 
     /*printf("\t* reseting GPU ... ");
     bool status = true;//*/
-    cudaStatus = cudaStatus && cudaCheck( cudaDeviceReset() );
-    /*if (status) printf("[ OK ]\n");
-    else        printf("[ ERROR ]\n");//*/
+    status = status && cudaCheck( cudaDeviceReset() );
+    if (status) printf("[ OK ]\n");
+    else        printf("[ CUDA ERROR ]\n");//*/
 }
 
 void CudaLinearOperator::setTransposeData(
@@ -264,9 +265,11 @@ void cudaCheckKernel(){
 }
 
 void CudaLinearOperator::dot(float64_t* v_in, float64_t* v_out){
+    cudaError_t cudaStatus;
+    
     // Copy vector x to the GPU
-    bool cudaStatus = cudaMemcpy(x, v_in, ncols*sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) printf("\t* tranfering x to GPU ... [ ERROR ]\n");
+    cudaStatus = cudaMemcpy(x, v_in, ncols*sizeof(double), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering x to GPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering x to GPU ... [   OK  ]\n");
 
     // Multiply IC part in the GPU
@@ -286,17 +289,18 @@ void CudaLinearOperator::dot(float64_t* v_in, float64_t* v_out){
 
     // Copy back result to CPU
     cudaStatus = cudaMemcpy(v_out, y, nrows*sizeof(double), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) printf("\t* tranfering y to CPU ... [ ERROR ]\n");
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering y to CPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering y to CPU ... [   OK  ]\n");
 }
 
 void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
         
+    cudaError_t cudaStatus;
     // Copy vector y to the GPU
     //cudaCheck( cudaMemset(gpu_x, 0, NUM_COLS*sizeof(float64_t)) );
     //cudaCheck( cudaMemcpy(gpu_x, x, NUM_COLS*sizeof(double), cudaMemcpyHostToDevice) );
-    bool cudaStatus = cudaCheck( cudaMemcpy(y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice) );
-    if (cudaStatus != cudaSuccess) printf("\t* tranfering y to GPU ... [ ERROR ]\n");
+    cudaStatus = cudaMemcpy(y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering y to GPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering y to GPU ... [   OK  ]\n");
 
     // Multiply IC part in the GPU
@@ -315,8 +319,8 @@ void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     cudaCheckKernel();
 
     // Copy back result to CPU
-    cudaStatus = cudaCheck( cudaMemcpy(v_out, x, ncols*sizeof(double), cudaMemcpyDeviceToHost) );
-    if (cudaStatus != cudaSuccess) printf("\t* tranfering x to CPU ... [ ERROR ]\n");
+    cudaStatus = cudaMemcpy(v_out, x, ncols*sizeof(double), cudaMemcpyDeviceToHost);
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering x to CPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering x to CPU ... [   OK  ]\n");
         
     /*printf("\n\n VECTOR X EC PART:\n");
