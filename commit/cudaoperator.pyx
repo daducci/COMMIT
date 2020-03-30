@@ -42,6 +42,7 @@ cdef class CudaLinearOperator :
     that uses information from the DICTIONARY, KERNELS and THREADS data structures.
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
+    cdef float gpumem
     cdef public int adjoint, n1, n2
 
     cdef DICTIONARY
@@ -98,10 +99,10 @@ cdef class CudaLinearOperator :
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
 
         
-        cdef float gpumem = 14*self.n + 6*self.nE + 16*nV + 4*(self.nR*self.ndirs*self.nS + self.nT*self.ndirs*self.nS + self.nI*self.nS + self.n1 + self.n2)
-        print('Required GPU Memory = %f GB' % (gpumem*1E-6))
-        if gpumen > 8.0:
-            print( 'GPU Memory exceeded!!!!!!' )
+        self.gpumem = 14*self.n + 6*self.nE + 16*nV + 4*(self.nR*self.ndirs*self.nS + self.nT*self.ndirs*self.nS + self.nI*self.nS + self.n1 + self.n2)
+        print('Required GPU Memory = %f GB' % (self.gpumem*1E-6))
+        if self.gpumen > 8.0:
+            raise RuntimeError( 'GPU Memory exceeded!!!!!!' )
 
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
