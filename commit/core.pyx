@@ -783,12 +783,14 @@ cdef class Evaluation :
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
+
         if save_opt_details:
             print( '\t\t- pickle... ', end="" )
             sys.stdout.flush()
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
                 pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
             print( '[ OK ]' )
+
         if save_coeff:
             print( '\t\t- txt... ', end="" )
             sys.stdout.flush()

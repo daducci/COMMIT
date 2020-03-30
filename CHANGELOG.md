@@ -2,6 +2,14 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.3.2] - 2020-03-27
+
+### Added
+- Check if dictionary (upon loading) and data have the same geometry.
+ 
+### Fixed
+- Bug while saving coefficients in save_results.
+
 ## [1.3.1] - 2020-03-27
 
 ### Fixed
