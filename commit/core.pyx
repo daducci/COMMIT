@@ -482,15 +482,6 @@ cdef class Evaluation :
         self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
         self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
 
-
-        import commit.cudaoperator
-        print( '\t* building dictionary in GPU ... ' )
-        self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
-        if self.A.cuda_status == 1:
-            print( '[ CUDA OK ]' )
-        else:
-            print( '[ CUDA ERROR ]' )
-
         print( '         [ OK ]' )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
@@ -683,16 +674,15 @@ cdef class Evaluation :
 
         if self.THREADS['n'] > 0:
             self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
-        """
+        
         else:
             import commit.cudaoperator
             #print( '\t* building dictionary in GPU ... ' )
             self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
             if self.A.cuda_status == 1:
-                print( '[ CUDA OK ]' )
+                print( '[ OPERATOR OK ]' )
             else:
-                print( '[ CUDA ERROR ]' )
-        """
+                print( '[ OPERATOR ERROR ]' )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
