@@ -239,7 +239,7 @@ cdef class CudaLinearOperator :
     def destroy( self ):
         self.A.destroy()
 
-    def set_transpose_data():
+    def set_transpose_data( self ):
         idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
         self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
         self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
