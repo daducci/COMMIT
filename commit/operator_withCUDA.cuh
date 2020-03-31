@@ -82,38 +82,38 @@ __constant__ int SIZE_LUTIC;
 __constant__ int SIZE_LUTEC;     
 __constant__ int SIZE_LUTISO;
 
+// pointers to IC data in GPU memory
+static uint32_t*  gpu_voxelIC;
+static uint32_t*  gpu_fiberIC;
+static uint16_t*  gpu_orienIC;
+static float32_t* gpu_lengthIC;
+static uint32_t*  gpu_segmentsPerBlockIC;
+static uint32_t*  gpu_offsetPerBlockIC;
+
+// pointers to IC data (transpose) in GPU memory
+static uint32_t*  gpu_TvoxelIC;
+static uint32_t*  gpu_TfiberIC;
+static uint16_t*  gpu_TorienIC;
+static float32_t* gpu_TlengthIC;
+static uint32_t*  gpu_TfibersPerBlockIC;
+static uint32_t*  gpu_ToffsetPerBlockIC;
+
+// pointers to EC data in GPU memory
+static uint32_t* gpu_voxelEC;
+static uint16_t* gpu_orienEC;
+static uint32_t* gpu_segmentsPerBlockEC;
+static uint32_t* gpu_offsetPerBlockEC;
+
+// pointers to LUTs in GPU memory
+static float32_t* gpu_lutIC;
+static float32_t* gpu_lutEC;
+static float32_t* gpu_lutISO;
+
+// pointers to vector x and y
+static float64_t* gpu_x;
+static float64_t* gpu_y;
+
 class CudaLinearOperator {
-
-    // pointers to IC data in GPU memory
-    uint32_t*  voxelIC;
-    uint32_t*  fiberIC;
-    uint16_t*  orienIC;
-    float32_t* lengthIC;
-    uint32_t*  segmentsPerBlockIC;
-    uint32_t*  offsetPerBlockIC;
-
-    // pointers to IC data (transpose) in GPU memory
-    uint32_t*  TvoxelIC;
-    uint32_t*  TfiberIC;
-    uint16_t*  TorienIC;
-    float32_t* TlengthIC;
-    uint32_t*  TfibersPerBlockIC;
-    uint32_t*  ToffsetPerBlockIC;
-
-    // pointers to EC data in GPU memory
-    uint32_t* voxelEC;
-    uint16_t* orienEC;
-    uint32_t* segmentsPerBlockEC;
-    uint32_t* offsetPerBlockEC;
-
-    // pointers to LUTs in GPU memory
-    float32_t* lutIC;
-    float32_t* lutEC;
-    float32_t* lutISO;
-
-    // pointers to vector x and y
-    float64_t* x;
-    float64_t* y;
 
     // constant values in CPU
     int nrows;
