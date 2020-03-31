@@ -818,6 +818,12 @@ cdef class Evaluation :
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
+        
+        
+        niiDWI_img = self.niiDWI_img.copy()
+        niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
+        niiDWI = nibabel.Nifti1Image( niiDWI_img , affine )
+        nibabel.save( niiDWI, pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
 
         print( '\t\t- RMSE...', end="" )
         sys.stdout.flush()
