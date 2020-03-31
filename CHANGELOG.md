@@ -2,6 +2,14 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.3.3] - 2020-03-31
+
+### Added
+- Added possibility to save the predicted DW-MR signal in save_results.
+ 
+### Fixed
+- Minor cleanup.
+
 ## [1.3.2] - 2020-03-27
 
 ### Added

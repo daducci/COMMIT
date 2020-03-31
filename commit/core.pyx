@@ -726,7 +726,7 @@ cdef class Evaluation :
         print( '   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
-    def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = False ) :
+    def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = False, save_est_dwi = False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -740,10 +740,11 @@ cdef class Evaluation :
                 L[2]: np.array renormalisation of L[1]
             (default : True)
         save_coeff : boolean
-            Save three txt files containing the coefficients related to each
-            compartment and a pickle file containing the dictionary with all
-            the configuration details.
+            Save the coefficients related to each compartment in txt files
+            and a pickle file containing the configuration details.
             (default : False)
+        save_est_dwi : boolean
+            Save the estimated DW-MRI signal (default : False)
         """
         if self.x is None :
             raise RuntimeError( 'Model not fitted to the data; call "fit()" first.' )
@@ -818,12 +819,6 @@ cdef class Evaluation :
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
-        
-        
-        niiDWI_img = self.niiDWI_img.copy()
-        niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
-        niiDWI = nibabel.Nifti1Image( niiDWI_img , affine )
-        nibabel.save( niiDWI, pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
 
         print( '\t\t- RMSE...', end="" )
         sys.stdout.flush()
@@ -894,4 +889,15 @@ cdef class Evaluation :
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
+        # Estimated DW-MRI signal
+        if save_est_dwi :
+            print( '\t* estimated DW-MRI signal...', end='' )
+            sys.stdout.flush()
+
+            self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
+            nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
+            self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
+
+            print( ' [ OK ]' )
+        
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
