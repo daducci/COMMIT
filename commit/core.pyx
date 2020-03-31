@@ -680,6 +680,7 @@ cdef class Evaluation :
             #print( '\t* building dictionary in GPU ... ' )
             self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
             if self.A.cuda_status == 1:
+                self.A.set_transpose_data()
                 print( '[ OPERATOR OK ]' )
             else:
                 print( '[ OPERATOR ERROR ]' )
