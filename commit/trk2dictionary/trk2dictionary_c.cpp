@@ -82,8 +82,8 @@ int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* VetAffine, unsigned short ndirs, short* ptrHashTable
+    float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
 )
 {
     /*=========================*/
@@ -173,7 +173,7 @@ int trk2dictionary(
         int k = 0;
         for(int i=0; i<4; i++) {
             for (int j=0; j<4; j++) {
-                affine[i][j] = VetAffine[k];
+                affine[i][j] = ptrTractsAffine[k];
                 k++;
             }
         }
@@ -300,9 +300,9 @@ int trk2dictionary(
                         ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
 
                         // multiply by the affine matrix
-                        dir.x = ptr[0] * ptrAFFINE[0] + ptr[1] * ptrAFFINE[1] + ptr[2] * ptrAFFINE[2];
-                        dir.y = ptr[0] * ptrAFFINE[3] + ptr[1] * ptrAFFINE[4] + ptr[2] * ptrAFFINE[5];
-                        dir.z = ptr[0] * ptrAFFINE[6] + ptr[1] * ptrAFFINE[7] + ptr[2] * ptrAFFINE[8];
+                        dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
+                        dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
+                        dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
 
                         // flip axes if requested
                         dir.x *= ECix;
@@ -593,23 +593,17 @@ unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int n
 // Read a fiber from file .tck
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float affine[4][4])
 {
-    int N = 0;
+    int i = 0;
     float tmp[3];
-
     fread((char*)tmp, 1, 12, fp);
-    //printf("%f %f %f\n", tmp[0],tmp[1],tmp[2]);
-
     while( !(isnan(tmp[0])) && !(isnan(tmp[1])) &&  !(isnan(tmp[2])) )
     {
-        //printf("%f %f %f\n", tmp[0],tmp[1],tmp[2]);
-        fiber[0][N] = tmp[0]*affine[0][0] + tmp[1]*affine[0][1] + tmp[2]*affine[0][2] + affine[0][3];
-        fiber[1][N] = tmp[0]*affine[1][0] + tmp[1]*affine[1][1] + tmp[2]*affine[1][2] + affine[1][3];
-        fiber[2][N] = tmp[0]*affine[2][0] + tmp[1]*affine[2][1] + tmp[2]*affine[2][2] + affine[2][3];
-        N++;
+        fiber[0][i] = tmp[0]*affine[0][0] + tmp[1]*affine[0][1] + tmp[2]*affine[0][2] + affine[0][3];
+        fiber[1][i] = tmp[0]*affine[1][0] + tmp[1]*affine[1][1] + tmp[2]*affine[1][2] + affine[1][3];
+        fiber[2][i] = tmp[0]*affine[2][0] + tmp[1]*affine[2][1] + tmp[2]*affine[2][2] + affine[2][3];
+        i++;
         fread((char*)tmp, 1, 12, fp);
-        //printf("%f %f %f\n", fiber[0][N],fiber[1][N],fiber[2][N]);
     }
-    //printf("End Fiber\n");
 
-     return N;
+    return i;
 }

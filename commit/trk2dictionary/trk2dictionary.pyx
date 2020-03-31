@@ -18,8 +18,8 @@ cdef extern from "trk2dictionary_c.cpp":
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, 
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-        float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrArrayInvM, unsigned short ndirs, short* prtHashTable
+        float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+        int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
     ) nogil
 
 
