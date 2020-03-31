@@ -146,9 +146,9 @@ cdef class Evaluation :
         self.set_config('b0_thr', b0_thr)
         self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
         print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
-        print( '\t\t- %d @ b=0' % ( self.scheme.b0_count ), end="" )
+        print( '\t\t- %d @ b=0' % ( self.scheme.b0_count ), end='' )
         for i in xrange(len(self.scheme.shells)) :
-            print( ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] ), end="" )
+            print( ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] ), end='' )
         print()
 
         if self.scheme.nS != self.niiDWI_img.shape[3] :
@@ -165,7 +165,7 @@ cdef class Evaluation :
 
         if self.get_config('doNormalizeSignal') :
             if self.scheme.b0_count > 0 :
-                print( '\t* Normalizing to b0...', end="" )
+                print( '\t* Normalizing to b0...', end='' )
                 sys.stdout.flush()
                 mean = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
                 idx = mean <= 0
@@ -175,20 +175,20 @@ cdef class Evaluation :
                 for i in xrange(self.scheme.nS) :
                     self.niiDWI_img[:,:,:,i] *= mean
             else :
-                print( '\t* There are no b0 volume(s) for normalization...', end="" )
+                print( '\t* There are no b0 volume(s) for normalization...', end='' )
             print( '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() ) )
 
         if self.scheme.b0_count > 1 :
             if self.get_config('doMergeB0') :
-                print( '\t* Merging multiple b0 volume(s)...', end="" )
+                print( '\t* Merging multiple b0 volume(s)...', end='' )
                 mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                 self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
             else :
-                print( '\t* Keeping all b0 volume(s)...', end="" )
+                print( '\t* Keeping all b0 volume(s)...', end='' )
             print( '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
 
         if self.get_config('doDemean') :
-            print( '\t* Demeaning signal...', end="" )
+            print( '\t* Demeaning signal...', end='' )
             sys.stdout.flush()
             mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
             self.niiDWI_img = self.niiDWI_img - mean
@@ -281,9 +281,9 @@ cdef class Evaluation :
 
         # Dispatch to the right handler for each model
         if self.get_config('doMergeB0') :
-            print( '\t* Merging multiple b0 volume(s)...', end="" )
+            print( '\t* Merging multiple b0 volume(s)...', end='' )
         else :
-            print( '\t* Keeping all b0 volume(s)...', end="" )
+            print( '\t* Keeping all b0 volume(s)...', end='' )
         self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
@@ -298,7 +298,7 @@ cdef class Evaluation :
 
         # De-mean kernels
         if self.get_config('doDemean') :
-            print( '\t* Demeaning signal...', end="" )
+            print( '\t* Demeaning signal...', end='' )
             for j in xrange(self.get_config('ndirs')) :
                 for i in xrange(nIC) :
                     self.KERNELS['wmr'][i,j,:] -= self.KERNELS['wmr'][i,j,:].mean()
@@ -310,7 +310,7 @@ cdef class Evaluation :
 
         # Normalize atoms
         if self.get_config('doNormalizeKernels') :
-            print( '\t* Normalizing...', end="" )
+            print( '\t* Normalizing...', end='' )
 
             self.KERNELS['wmr_norm'] = np.zeros( nIC )
             for i in xrange(nIC) :
@@ -376,7 +376,7 @@ cdef class Evaluation :
 
         # segments from the tracts
         # ------------------------
-        print( '\t* segments from the tracts...', end="" )
+        print( '\t* segments from the tracts...', end='' )
         sys.stdout.flush()
 
         dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
@@ -421,7 +421,7 @@ cdef class Evaluation :
 
         # segments from the peaks
         # -----------------------
-        print( '\t* segments from the peaks...', end="" )
+        print( '\t* segments from the peaks...', end='' )
         sys.stdout.flush()
 
         self.DICTIONARY['EC'] = {}
@@ -439,7 +439,7 @@ cdef class Evaluation :
 
         # isotropic compartments
         # ----------------------
-        print( '\t* isotropic contributions...', end="" )
+        print( '\t* isotropic contributions...', end='' )
         sys.stdout.flush()
 
         self.DICTIONARY['ISO'] = {}
@@ -462,7 +462,7 @@ cdef class Evaluation :
 
         # post-processing
         # ---------------
-        print( '\t* post-processing...', end="" )
+        print( '\t* post-processing...', end='' )
         sys.stdout.flush()
 
         # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
@@ -517,7 +517,7 @@ cdef class Evaluation :
         print( '\t* number of threads : %d' % n )
 
         # Distribute load for the computation of A*x product
-        print( '\t* A operator...', end="" )
+        print( '\t* A operator...', end='' )
         sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
@@ -571,7 +571,7 @@ cdef class Evaluation :
         print( ' [ OK ]' )
 
         # Distribute load for the computation of At*y product
-        print( '\t* A\' operator...', end="" )
+        print( '\t* A\' operator...', end='' )
         sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
@@ -757,18 +757,6 @@ cdef class Evaluation :
         print( '\n-> Saving results to "%s/*":' % RESULTS_path )
         tic = time.time()
 
-        # create folder or delete existing files (if any)
-        RESULTS_path = pjoin( self.get_config('TRACKING_path'), RESULTS_path )
-        if not exists( RESULTS_path ) :
-            makedirs( RESULTS_path )
-        else :
-            for f in glob.glob( pjoin(RESULTS_path,'*') ) :
-                remove( f )
-        self.set_config('RESULTS_path', RESULTS_path)
-
-        # Configuration and results
-        print( '\t* configuration and results:' )
-
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
@@ -785,31 +773,16 @@ cdef class Evaluation :
         else :
             x = self.x
 
-        if save_opt_details:
-            print( '\t\t- pickle... ', end="" )
-            sys.stdout.flush()
-            with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-                pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
-            print( '[ OK ]' )
+        # create folder or delete existing files (if any)
+        RESULTS_path = pjoin( self.get_config('TRACKING_path'), RESULTS_path )
+        if not exists( RESULTS_path ) :
+            makedirs( RESULTS_path )
+        else :
+            for f in glob.glob( pjoin(RESULTS_path,'*') ) :
+                remove( f )
+        self.set_config('RESULTS_path', RESULTS_path)
 
-        if save_coeff:
-            print( '\t\t- txt... ', end="" )
-            sys.stdout.flush()
-            if len(self.KERNELS['wmr']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[:offset], fmt='%12.5e')
-            if len(self.KERNELS['wmh']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[offset:offset+nE*len(self.KERNELS['wmh'])], fmt='%12.5e')
-            if len(self.KERNELS['iso']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[offset:], fmt='%12.5e')
-            with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
-                pickle.dump( self.CONFIG, fid, protocol=2 )
-            print( '[ OK ]' )
-
-
-        # Map of wovelwise errors
+        # Map of voxelwise errors
         print( '\t* fitting errors:' )
 
         niiMAP_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
@@ -820,7 +793,7 @@ cdef class Evaluation :
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
 
-        print( '\t\t- RMSE...', end="" )
+        print( '\t\t- RMSE...', end='' )
         sys.stdout.flush()
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
@@ -829,7 +802,7 @@ cdef class Evaluation :
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
         print( ' [ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
 
-        print( '\t\t- NRMSE...', end="" )
+        print( '\t\t- NRMSE...', end='' )
         sys.stdout.flush()
         tmp = np.sum(y_mea**2,axis=1)
         idx = np.where( tmp < 1E-12 )
@@ -845,7 +818,7 @@ cdef class Evaluation :
         # Map of compartment contributions
         print( '\t* voxelwise contributions:' )
 
-        print( '\t\t- intra-axonal', end="" )
+        print( '\t\t- intra-axonal', end='' )
         sys.stdout.flush()
         niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmr']) > 0 :
@@ -857,7 +830,7 @@ cdef class Evaluation :
             niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '[ OK ]' )
 
-        print( '\t\t- extra-axonal', end="" )
+        print( '\t\t- extra-axonal', end='' )
         sys.stdout.flush()
         niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmh']) > 0 :
@@ -867,7 +840,7 @@ cdef class Evaluation :
             niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '[ OK ]' )
 
-        print( '\t\t- isotropic', end="" )
+        print( '\t\t- isotropic', end='' )
         sys.stdout.flush()
         niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
@@ -889,15 +862,38 @@ cdef class Evaluation :
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
-        # Estimated DW-MRI signal
-        if save_est_dwi :
-            print( '\t* estimated DW-MRI signal...', end='' )
-            sys.stdout.flush()
+        # Configuration and results
+        print( '\t* configuration and results:' )
 
+        if save_opt_details:
+            print( '\t\t- results.pickle... ', end='' )
+            sys.stdout.flush()
+            with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
+                pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+            print( '[ OK ]' )
+
+        if save_coeff:
+            print( '\t\t- coefficient txt files... ', end='' )
+            sys.stdout.flush()
+            if len(self.KERNELS['wmr']) > 0 :
+                offset = nF * self.KERNELS['wmr'].shape[0]
+                np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[:offset], fmt='%12.5e')
+            if len(self.KERNELS['wmh']) > 0 :
+                offset = nF * self.KERNELS['wmr'].shape[0]
+                np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[offset:offset+nE*len(self.KERNELS['wmh'])], fmt='%12.5e')
+            if len(self.KERNELS['iso']) > 0 :
+                offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
+                np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[offset:], fmt='%12.5e')
+            with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
+                pickle.dump( self.CONFIG, fid, protocol=2 )
+            print( '[ OK ]' )
+
+        if save_est_dwi :
+            print( '\t\t- estimated signal... ', end='' )
+            sys.stdout.flush()
             self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
             nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
             self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
-
-            print( ' [ OK ]' )
+            print( '[ OK ]' )
         
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )

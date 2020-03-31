@@ -305,7 +305,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     # Main loop
     if verbose >= 1 :
         print()
-        print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |     Abs x          Rel x" )
+        print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
         print( "------|--------------------------------|-----------------------------------------------|------------------------------" )
     iter = 1
     while True :
