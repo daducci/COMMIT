@@ -233,12 +233,12 @@ void CudaLinearOperator::destroy(){
 
     printf("\t* deleting A' ... ");
     cudaStatus = true;
-    status = status && cudaCheck( cudaFree(gpu_TvoxelIC) );
-    status = status && cudaCheck( cudaFree(gpu_TfiberIC) );
-    status = status && cudaCheck( cudaFree(gpu_TorienIC) );
-    status = status && cudaCheck( cudaFree(gpu_TlengthIC) );
-    status = status && cudaCheck( cudaFree(gpu_TfibersPerBlockIC) );
-    status = status && cudaCheck( cudaFree(gpu_ToffsetPerBlockIC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_TvoxelIC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_TfiberIC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_TorienIC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_TlengthIC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_TfibersPerBlockIC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_ToffsetPerBlockIC) );
     if (cudaStatus) printf("[ OK ]\n");
     else            printf("[ CUDA ERROR ]\n");
 
