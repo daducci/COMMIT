@@ -16,48 +16,7 @@ typedef double float64_t;
 
 bool cudaCheck(cudaError_t cudaStatus);
 void preprocessDataForGPU(uint32_t* data, int NUM_COMPARTMENTS, uint32_t* compartmentsPerBlock, uint32_t* offsetPerBlock, int NUM_BLOCKS);
-bool checkCompatibility(size_t required_mem, int gpu_id = 0) {
-    int num_gpus;
-    cudaError_t cudaStatus;
-    
-    //printf("-> Checking availability of CUDA:\n");
-    cudaStatus = cudaGetDeviceCount(&num_gpus);
-
-    if (num_gpus <= 0 || num_gpus <= gpu_id) {
-        printf("\t* the selected GPU does not exist or is not detected \n");
-        return false;
-    }
-
-    if(cudaStatus == cudaSuccess){
-        cudaDeviceProp gpu_properties;
-        cudaGetDeviceProperties(&gpu_properties, gpu_id);
-
-        printf("\t* checking availability of CUDA ... [ OK ]\n");
-        printf("\t* number of CUDA GPUs detected: %d\n", num_gpus);
-        printf("\t* using GPU %s with ID %d... \n", gpu_properties.name, gpu_id);
-
-        if (required_mem <= gpu_properties.totalGlobalMem) {
-            printf("\t* using %f GB of total %f GB... [ OK ]\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
-        }
-        else {
-            printf("\t* using %f GB of total %f GB... [ ERROR ]: dictionary too big for GPU memory\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
-        }
-
-        if(gpu_properties.major >= 5){
-            printf("\t* compute capability: %d.%d [ OK ]\n", gpu_properties.major, gpu_properties.minor);
-        }
-        else{
-            printf("\t* compute capability: %d.%d [ ERROR ]. GPU compute capability must be at least 5.0\n", gpu_properties.major, gpu_properties.minor);
-            return false;
-        }
-
-        return true;
-    }
-    else{
-        printf("\t* checking availability of CUDA ... [ ERROR ]: CUDA is not available or GPU is not CUDA compatible\n");
-        return false;
-    }
-}
+bool checkCompatibility(size_t required_mem, int gpu_id = 0);
 
 __global__ void multiply_Ax_ICpart(
     uint32_t*  voxelIDs,
