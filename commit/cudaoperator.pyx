@@ -30,7 +30,7 @@ cdef extern from "operator_withCUDA.cuh":
             int,
             int,
             
-            bool)
+            int)
 
         int   getCudaStatus()
         void  setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
@@ -72,7 +72,7 @@ cdef class CudaLinearOperator :
     cdef C_CudaLinearOperator* A
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS, fcall = False ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, fcall = 0 ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS

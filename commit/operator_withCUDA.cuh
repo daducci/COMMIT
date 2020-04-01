@@ -150,7 +150,7 @@ class CudaLinearOperator {
             int nzeppelins,   
             int nballs,
         
-            bool fcall);
+            int fcall);
 
         ~CudaLinearOperator();
 

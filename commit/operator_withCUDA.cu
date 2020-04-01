@@ -67,7 +67,7 @@ CudaLinearOperator::CudaLinearOperator(
     int nzeppelins,   
     int nballs,
 
-    bool fcall)
+    int fcall)
 {
     this->nsegments = nsegments;
     this->nvoxels   = nvoxels;
@@ -82,7 +82,7 @@ CudaLinearOperator::CudaLinearOperator(
         int size_lutec  = nzeppelins*norientations*nsamples;
         int size_lutiso = nballs*nsamples;
 
-        size_t required_mem = 28*nsegments + 6.0*npeaks + 8.0*nfibers + 16.0*nvoxels + 4.0*(size_lutic + size_lutec + size_lutiso + this->nrows + this->ncols);
+        size_t required_mem = 28*(size_t)nsegments + 6.0*(size_t)npeaks + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols);
         checkCompatibility(required_mem, 0);
 
         cudaStatus = true;
