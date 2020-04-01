@@ -24,15 +24,8 @@ bool checkCompatibility(size_t required_mem, int gpu_id = 0) {
     cudaStatus = cudaGetDeviceCount(&num_gpus);
 
     if (num_gpus <= 0 || num_gpus <= gpu_id) {
-        print("\t* the selected GPU does not exist or is not detected \n");
+        printf("\t* the selected GPU does not exist or is not detected \n");
         return false;
-    }
-
-    if (required_mem <= gpu_properties.totalGlobalMem) {
-        printf("\t* using %f GB of total %f GB... [ OK ]\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
-    }
-    else {
-        printf("\t* using %f GB of total %f GB... [ ERROR ]: dictionary too big for GPU memory\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
     }
 
     if(cudaStatus == cudaSuccess){
@@ -42,6 +35,13 @@ bool checkCompatibility(size_t required_mem, int gpu_id = 0) {
         printf("\t* checking availability of CUDA ... [ OK ]\n");
         printf("\t* number of CUDA GPUs detected: %d\n", num_gpus);
         printf("\t* using GPU %s with ID %d... \n", gpu_properties.name, gpu_id);
+
+        if (required_mem <= gpu_properties.totalGlobalMem) {
+            printf("\t* using %f GB of total %f GB... [ OK ]\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
+        }
+        else {
+            printf("\t* using %f GB of total %f GB... [ ERROR ]: dictionary too big for GPU memory\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
+        }
 
         if(gpu_properties.major >= 5){
             printf("\t* compute capability: %d.%d [ OK ]\n", gpu_properties.major, gpu_properties.minor);
