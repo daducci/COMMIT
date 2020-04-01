@@ -281,15 +281,14 @@ cdef class Evaluation :
 
         # Dispatch to the right handler for each model
         if self.get_config('doMergeB0') :
-            print( '\t* Merging multiple b0 volume(s)...', end='' )
+            print( '\t* Merging multiple b0 volume(s)' )
         else :
-            print( '\t* Keeping all b0 volume(s)...', end='' )
+            print( '\t* Keeping all b0 volume(s)' )
         self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
-        print( '[ OK ]' )
-
+        print( '\t  [ OK ]' )
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
