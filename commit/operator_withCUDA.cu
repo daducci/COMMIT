@@ -18,10 +18,10 @@ bool checkCompatibility(size_t required_mem, int gpu_id) {
 
         printf("\t* checking availability of CUDA ... [ OK ]\n");
         printf("\t* number of CUDA GPUs detected: %d\n", num_gpus);
-        printf("\t* using GPU %s with ID %d... \n", gpu_properties.name, gpu_id);
+        printf("\t* using GPU with ID %d... [ %s ]\n", gpu_id, gpu_properties.name);
 
         if (required_mem <= gpu_properties.totalGlobalMem) {
-            printf("\t* using %f GB of total %f GB... [ OK ]\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
+            printf("\t* using %.2f GB of total %.2f GB... [ OK ]\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
         }
         else {
             printf("\t* using %f GB of total %f GB... [ ERROR ]: dictionary too big for GPU memory\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
@@ -76,7 +76,7 @@ CudaLinearOperator::CudaLinearOperator(
     this->ncols     = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
 
     if (fcall) {
-        printf("\t* configuring dictionary in CUDA GPU ... \n");
+        //printf("\t* configuring dictionary in CUDA GPU ... \n");
 
         int size_lutic  = ndiameters*norientations*nsamples;
         int size_lutec  = nzeppelins*norientations*nsamples;
@@ -87,6 +87,8 @@ CudaLinearOperator::CudaLinearOperator(
 
         cudaStatus = true;
 
+        printf("\t* constant values ... ");
+        cudaStatus = true;
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_VOXELS,       &nvoxels,       sizeof(int)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_FIBERS,       &nfibers,       sizeof(int)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_PEAKS,        &npeaks,        sizeof(int)) );
@@ -100,12 +102,16 @@ CudaLinearOperator::CudaLinearOperator(
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTIC,       &size_lutic,    sizeof(int)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTEC,       &size_lutec,    sizeof(int)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTISO,      &size_lutiso,   sizeof(int)) );
+        if (cudaStatus) printf("[ OK ]\n");
+        else            printf("[ CUDA ERROR ]\n");
 
         // alloc memory in GPU for vectors x and y
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_x, ncols*sizeof(float64_t)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_y, nrows*sizeof(float64_t)) );
 
         // setup LUTs
+        printf("\t* loading LUT ... ");
+        cudaStatus = true;
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lutIC, size_lutic*sizeof(float32_t)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lutIC, lutIC, size_lutic*sizeof(float32_t), cudaMemcpyHostToDevice) );
 
@@ -114,20 +120,11 @@ CudaLinearOperator::CudaLinearOperator(
 
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lutISO, size_lutiso*sizeof(float32_t)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lutISO, lutISO, size_lutiso*sizeof(float32_t), cudaMemcpyHostToDevice) );
+        if (cudaStatus) printf("[ OK ]\n");
+        else            printf("[ CUDA ERROR ]\n");
 
-        //if (gpu_voxelIC == NULL || gpu_fiberIC == NULL || gpu_orienIC == NULL || gpu_lengthIC == NULL) {
-            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_voxelIC,  nsegments*sizeof(uint32_t))  );
-            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_fiberIC,  nsegments*sizeof(uint32_t))  );
-            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_orienIC,  nsegments*sizeof(uint16_t))  );
-            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lengthIC, nsegments*sizeof(float32_t)) );
-
-            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_voxelIC,  voxelIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
-            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_fiberIC,  fiberIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
-            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_orienIC,  orienIC,  nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
-            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lengthIC, lengthIC, nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
-        //}
-        
-        //if (gpu_segmentsPerBlockIC == NULL || gpu_offsetPerBlockIC == NULL) {
+        printf("\t* pre-processing ... ");
+        cudaStatus = true;
             uint32_t* segmentsPerBlock = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
             uint32_t* offsetPerBlock   = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
 
@@ -141,7 +138,22 @@ CudaLinearOperator::CudaLinearOperator(
 
             //free(segmentsPerBlock);
             //free(offsetPerBlock);
-        //}
+        if (cudaStatus) printf("[ OK ]\n");
+        else            printf("[ CUDA ERROR ]\n");
+
+        printf("\t*A  operator ... ");
+        cudaStatus = true;
+        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_voxelIC,  nsegments*sizeof(uint32_t))  );
+        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_fiberIC,  nsegments*sizeof(uint32_t))  );
+        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_orienIC,  nsegments*sizeof(uint16_t))  );
+        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lengthIC, nsegments*sizeof(float32_t)) );
+
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_voxelIC,  voxelIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_fiberIC,  fiberIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_orienIC,  orienIC,  nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lengthIC, lengthIC, nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
+        if (cudaStatus) printf("[ OK ]\n");
+        else            printf("[ CUDA ERROR ]\n");
 
         //if (gpu_voxelEC == NULL || gpu_orienEC == NULL) {
             cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_voxelEC,  npeaks*sizeof(uint32_t)) );
@@ -164,6 +176,11 @@ CudaLinearOperator::CudaLinearOperator(
 
             free(segmentsPerBlock);
             free(offsetPerBlock);
+
+            printf("\t* A' operator ... ");
+            cudaStatus = true;
+            if (cudaStatus) printf("[ OK ]\n");
+            else            printf("[ CUDA ERROR ]\n");
         //}
     }
 }
@@ -195,35 +212,56 @@ CudaLinearOperator::~CudaLinearOperator(){
 }
 
 void CudaLinearOperator::destroy(){
-    printf("\t* destroying and reseting GPU ... ");
-    bool status = true;
-    status = status && cudaCheck( cudaFree(gpu_voxelIC) );
-    status = status && cudaCheck( cudaFree(gpu_fiberIC) );
-    status = status && cudaCheck( cudaFree(gpu_orienIC) );
-    status = status && cudaCheck( cudaFree(gpu_lengthIC) );
-    status = status && cudaCheck( cudaFree(gpu_lutIC) );
-    status = status && cudaCheck( cudaFree(gpu_segmentsPerBlockIC) );
-    status = status && cudaCheck( cudaFree(gpu_offsetPerBlockIC) );
-    status = status && cudaCheck( cudaFree(gpu_voxelEC) );
-    status = status && cudaCheck( cudaFree(gpu_orienEC) );
-    status = status && cudaCheck( cudaFree(gpu_lutEC) );
-    status = status && cudaCheck( cudaFree(gpu_segmentsPerBlockEC) );
-    status = status && cudaCheck( cudaFree(gpu_offsetPerBlockEC) );
-    status = status && cudaCheck( cudaFree(gpu_lutISO) );
+    bool cudaStatus;
+
+    printf("-> Deleting GPU memory:\n");
+
+    printf("\t* deleting A  ... ");
+    cudaStatus = true;
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_voxelIC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_fiberIC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_orienIC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_lengthIC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_voxelEC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_orienEC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_segmentsPerBlockIC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_offsetPerBlockIC)   );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_segmentsPerBlockEC) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_offsetPerBlockEC)   );
+    if (cudaStatus) printf("[ OK ]\n");
+    else            printf("[ CUDA ERROR ]\n");
+
+    printf("\t* deleting A' ... ");
+    cudaStatus = true;
     status = status && cudaCheck( cudaFree(gpu_TvoxelIC) );
     status = status && cudaCheck( cudaFree(gpu_TfiberIC) );
     status = status && cudaCheck( cudaFree(gpu_TorienIC) );
     status = status && cudaCheck( cudaFree(gpu_TlengthIC) );
     status = status && cudaCheck( cudaFree(gpu_TfibersPerBlockIC) );
     status = status && cudaCheck( cudaFree(gpu_ToffsetPerBlockIC) );
-    status = status && cudaCheck( cudaFree(gpu_x) );
-    status = status && cudaCheck( cudaFree(gpu_y) );
+    if (cudaStatus) printf("[ OK ]\n");
+    else            printf("[ CUDA ERROR ]\n");
 
-    /*printf("\t* reseting GPU ... ");
-    bool status = true;//*/
-    status = status && cudaCheck( cudaDeviceReset() );
-    if (status) printf("[ OK ]\n");
-    else        printf("[ CUDA ERROR ]\n");//*/
+    printf("\t* deleting LUT ... ");
+    cudaStatus = true;
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_lutIC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_lutEC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_lutISO) );
+    if (cudaStatus) printf("[ OK ]\n");
+    else            printf("[ CUDA ERROR ]\n");
+
+    printf("\t* deleting vectors x and y ... ");
+    cudaStatus = true;
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_x) );
+    cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_y) );
+    if (cudaStatus) printf("[ OK ]\n");
+    else            printf("[ CUDA ERROR ]\n");
+
+    printf("\t* reseting GPU ... ");
+    cudaStatus = true;
+    cudaStatus = cudaStatus && cudaCheck( cudaDeviceReset() );
+    if (cudaStatus) printf("[ OK ]\n");
+    else            printf("[ CUDA ERROR ]\n");
 }
 
 void CudaLinearOperator::setTransposeData(

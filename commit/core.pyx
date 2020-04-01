@@ -468,7 +468,7 @@ cdef class Evaluation :
 
         # post-processing
         # ---------------
-        print( '\t* post-processing...' )
+        print( '\t* post-processing...', end="" )
         sys.stdout.flush()
 
         # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
@@ -525,14 +525,14 @@ cdef class Evaluation :
             long t, tot, i1, i2, N, c
             int i
 
-        tic = time.time()
-
         if nthreads > 0:
             print( '\n-> Distributing workload to different threads:' )
             print( '\t* number of threads : %d' % nthreads )
 
+            tic = time.time()
+
             # Distribute load for the computation of A*x product
-            print( '\t* A operator...', end="" )
+            print( '\t* A  operator...', end="" )
             sys.stdout.flush()
 
             if self.DICTIONARY['IC']['n'] > 0 :
@@ -639,9 +639,9 @@ cdef class Evaluation :
             else :
                 self.THREADS['ISOt'] = None
 
-        print( '[ OK ]' )
+            print( '[ OK ]' )
 
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def build_operator( self ) :
