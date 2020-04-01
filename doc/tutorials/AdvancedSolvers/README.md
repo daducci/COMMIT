@@ -47,6 +47,7 @@ trk2dictionary.run(
 )
 
 import commit
+commit.core.setup() 
 mit = commit.Evaluation( '.', 'LausanneTwoShell' )
 mit.load_data( 'DWI.nii', 'DWI.scheme' )
 
@@ -84,11 +85,9 @@ qb = QuickBundles(threshold=threshold)
 clusters = qb.cluster(streamlines)
 
 import numpy as np
-structureIC = np.array([c.indices for c in clusters])
+structureIC = np.array([np.array(c.indices) for c in clusters])
 weightsIC   = np.array([1.0/np.sqrt(len(c)) for c in structureIC])
 ```
-
-Notice that we defined `structure_IC` as a `numpy.array` that contains a list of lists containing the indices associated to each group. We know it sounds a little bit bizarre but it computationally convenient.
 
 ### Define the regularisation term
 Each compartment must be regularised separately. The user can choose among the following penalties:
@@ -101,11 +100,9 @@ Each compartment must be regularised separately. The user can choose among the f
 
 - $\iota_{\ge 0}(x)$ : `commit.solvers.non_negative` (Default for all compartments)
 
-If the chosen regularisation for the IC compartment is $\sum_{g\in G}\|x_g\|_k$, we can define $k$ via the `group_norm` field, which must be one between
+If the chosen regularisation for the IC compartment is $\sum_{g\in G}\|x_g\|_k$, we can define $k$ via the `group_norm` field, which must be
 
-- $\|x\|_2$ : `commit.solvers.norm2` (Default)
-
-- $\|x\|_\infty$ : `commit.solvers.norminf`
+- $\|x\|_2$ : `commit.solvers.norm2`
 
 In this example we consider the following penalties:
 
@@ -152,6 +149,6 @@ mit.fit(regularisation=regterm, max_iter=1000)
 
 
 ```python
-suffix = 'IC'+str(regterm[0])+'EC'+str(regterm[1])+'ISO'+str(regterm[2])
+suffix = '_AdvancedSolvers'
 mit.save_results(path_suffix=suffix)
 ```
