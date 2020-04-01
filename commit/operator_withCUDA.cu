@@ -33,7 +33,7 @@ CudaLinearOperator::CudaLinearOperator(
     this->ncols     = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
 
     if (fcall) {
-        print("\t* configuring dictionary in CUDA GPU ... \n");
+        printf("\t* configuring dictionary in CUDA GPU ... \n");
 
         int size_lutic  = ndiameters*norientations*nsamples;
         int size_lutec  = nzeppelins*norientations*nsamples;
