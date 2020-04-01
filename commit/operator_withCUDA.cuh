@@ -16,7 +16,7 @@ typedef double float64_t;
 
 bool cudaCheck(cudaError_t cudaStatus);
 void preprocessDataForGPU(uint32_t* data, int NUM_COMPARTMENTS, uint32_t* compartmentsPerBlock, uint32_t* offsetPerBlock, int NUM_BLOCKS);
-bool checkCompatibility(size_t required_mem, int gpu_id = 0);
+bool checkCompatibility(size_t required_mem, int gpu_id);
 
 __global__ void multiply_Ax_ICpart(
     uint32_t*  voxelIDs,

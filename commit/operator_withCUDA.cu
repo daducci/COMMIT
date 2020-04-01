@@ -1,6 +1,6 @@
 #include "operator_withCUDA.cuh"
 
-bool checkCompatibility(size_t required_mem, int gpu_id = 0) {
+bool checkCompatibility(size_t required_mem, int gpu_id) {
     int num_gpus;
     cudaError_t cudaStatus;
     
@@ -83,7 +83,7 @@ CudaLinearOperator::CudaLinearOperator(
         int size_lutiso = nballs*nsamples;
 
         size_t required_mem = 28*nsegments + 6.0*npeaks + 8.0*nfibers + 16.0*nvoxels + 4.0*(size_lutic + size_lutec + size_lutiso + this->nrows + this->ncols);
-        checkCompatibility(required_mem);
+        checkCompatibility(required_mem, 0);
 
         cudaStatus = true;
 
