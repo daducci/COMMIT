@@ -22,109 +22,106 @@ CudaLinearOperator::CudaLinearOperator(
     int nsamples,     
     int ndiameters,   
     int nzeppelins,   
-    int nballs)
+    int nballs,
+
+    bool fcall)
 {
     this->nsegments = nsegments;
-    this->nvoxels = nvoxels;
-    this->nfibers = nfibers;
-    this->nrows = nvoxels * nsamples;
-    this->ncols = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
-    int size_lutic  = ndiameters*norientations*nsamples;
-    int size_lutec  = nzeppelins*norientations*nsamples;
-    int size_lutiso = nballs*nsamples;
-    //bool status;
+    this->nvoxels   = nvoxels;
+    this->nfibers   = nfibers;
+    this->nrows     = nvoxels * nsamples;
+    this->ncols     = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
 
-    cudaStatus = true;
+    if (fcall) {
+        print("\t* configuring dictionary in CUDA GPU ... \n");
 
-    // copy constant values to GPU
-    //printf("\t* constant global values ... ");
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_VOXELS,       &nvoxels,       sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_FIBERS,       &nfibers,       sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_PEAKS,        &npeaks,        sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_ORIENTATIONS, &norientations, sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_SAMPLES,      &nsamples,      sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_DIAMETERS,    &ndiameters,    sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_ZEPPELINS,    &nzeppelins,    sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_BALLS,        &nballs,        sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_ROWS,         &nrows,         sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_COLS,         &ncols,         sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTIC,       &size_lutic,    sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTEC,       &size_lutec,    sizeof(int)) );
-    cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTISO,      &size_lutiso,   sizeof(int)) );
-    /*if (cudaStatus) printf("[ OK ]\n");
-    else            printf("[ ERROR ]\n");//*/
+        int size_lutic  = ndiameters*norientations*nsamples;
+        int size_lutec  = nzeppelins*norientations*nsamples;
+        int size_lutiso = nballs*nsamples;
 
+        size_t required_mem = 28*nsegments + 6.0*npeaks + 8.0*nfibers + 16.0*nvoxels + 4.0*(size_lutic + size_lutec + size_lutiso + this->nrows + this->ncols);
+        checkCompatibility(required_mem);
 
-    // alloc memory in GPU for vectors x and y
-    if (gpu_x == NULL) cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_x, ncols*sizeof(float64_t)) );
-    if (gpu_y == NULL) cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_y, nrows*sizeof(float64_t)) );
+        cudaStatus = true;
 
-    // setup LUTs
-    if (gpu_lutIC  == NULL){
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_VOXELS,       &nvoxels,       sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_FIBERS,       &nfibers,       sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_PEAKS,        &npeaks,        sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_ORIENTATIONS, &norientations, sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_SAMPLES,      &nsamples,      sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_DIAMETERS,    &ndiameters,    sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_ZEPPELINS,    &nzeppelins,    sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_BALLS,        &nballs,        sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_ROWS,         &nrows,         sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(NUM_COLS,         &ncols,         sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTIC,       &size_lutic,    sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTEC,       &size_lutec,    sizeof(int)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTISO,      &size_lutiso,   sizeof(int)) );
+
+        // alloc memory in GPU for vectors x and y
+        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_x, ncols*sizeof(float64_t)) );
+        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_y, nrows*sizeof(float64_t)) );
+
+        // setup LUTs
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lutIC, size_lutic*sizeof(float32_t)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lutIC, lutIC, size_lutic*sizeof(float32_t), cudaMemcpyHostToDevice) );
-    }
 
-    if (gpu_lutEC  == NULL){
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lutEC,  size_lutec*sizeof(float32_t)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lutEC, lutEC, size_lutec*sizeof(float32_t), cudaMemcpyHostToDevice) );
-    }
 
-    if (gpu_lutISO == NULL){
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lutISO, size_lutiso*sizeof(float32_t)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lutISO, lutISO, size_lutiso*sizeof(float32_t), cudaMemcpyHostToDevice) );
-    }
 
-    if (gpu_voxelIC == NULL || gpu_fiberIC == NULL || gpu_orienIC == NULL || gpu_lengthIC == NULL) {
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_voxelIC,  nsegments*sizeof(uint32_t))  );
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_fiberIC,  nsegments*sizeof(uint32_t))  );
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_orienIC,  nsegments*sizeof(uint16_t))  );
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lengthIC, nsegments*sizeof(float32_t)) );
+        //if (gpu_voxelIC == NULL || gpu_fiberIC == NULL || gpu_orienIC == NULL || gpu_lengthIC == NULL) {
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_voxelIC,  nsegments*sizeof(uint32_t))  );
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_fiberIC,  nsegments*sizeof(uint32_t))  );
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_orienIC,  nsegments*sizeof(uint16_t))  );
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lengthIC, nsegments*sizeof(float32_t)) );
 
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_voxelIC,  voxelIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_fiberIC,  fiberIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_orienIC,  orienIC,  nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lengthIC, lengthIC, nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
-    }
-    
-    if (gpu_segmentsPerBlockIC == NULL || gpu_offsetPerBlockIC == NULL) {
-        uint32_t* segmentsPerBlock = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
-        uint32_t* offsetPerBlock   = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_voxelIC,  voxelIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_fiberIC,  fiberIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_orienIC,  orienIC,  nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lengthIC, lengthIC, nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
+        //}
+        
+        //if (gpu_segmentsPerBlockIC == NULL || gpu_offsetPerBlockIC == NULL) {
+            uint32_t* segmentsPerBlock = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
+            uint32_t* offsetPerBlock   = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
 
-        preprocessDataForGPU(voxelIC, nsegments, segmentsPerBlock, offsetPerBlock, nvoxels);
+            preprocessDataForGPU(voxelIC, nsegments, segmentsPerBlock, offsetPerBlock, nvoxels);
 
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_segmentsPerBlockIC, nvoxels*sizeof(uint32_t)) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_offsetPerBlockIC,   nvoxels*sizeof(uint32_t)) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_segmentsPerBlockIC, nvoxels*sizeof(uint32_t)) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_offsetPerBlockIC,   nvoxels*sizeof(uint32_t)) );
 
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_segmentsPerBlockIC, segmentsPerBlock, nvoxels*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_offsetPerBlockIC,   offsetPerBlock,   nvoxels*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_segmentsPerBlockIC, segmentsPerBlock, nvoxels*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_offsetPerBlockIC,   offsetPerBlock,   nvoxels*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
 
-        free(segmentsPerBlock);
-        free(offsetPerBlock);
-    }
+            //free(segmentsPerBlock);
+            //free(offsetPerBlock);
+        //}
 
-    if (gpu_voxelEC == NULL || gpu_orienEC == NULL) {
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_voxelEC,  npeaks*sizeof(uint32_t)) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_orienEC,  npeaks*sizeof(uint16_t)) );
+        //if (gpu_voxelEC == NULL || gpu_orienEC == NULL) {
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_voxelEC,  npeaks*sizeof(uint32_t)) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_orienEC,  npeaks*sizeof(uint16_t)) );
 
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_voxelEC, voxelEC, npeaks*sizeof(uint32_t), cudaMemcpyHostToDevice) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_orienEC, orienEC, npeaks*sizeof(uint16_t), cudaMemcpyHostToDevice) );
-    }
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_voxelEC, voxelEC, npeaks*sizeof(uint32_t), cudaMemcpyHostToDevice) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_orienEC, orienEC, npeaks*sizeof(uint16_t), cudaMemcpyHostToDevice) );
+        //}
 
-    if (gpu_segmentsPerBlockEC == NULL || gpu_offsetPerBlockEC == NULL) {
-        uint32_t* segmentsPerBlock = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
-        uint32_t* offsetPerBlock   = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
+        //if (gpu_segmentsPerBlockEC == NULL || gpu_offsetPerBlockEC == NULL) {
+            //uint32_t* segmentsPerBlock = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
+            //uint32_t* offsetPerBlock   = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
+            preprocessDataForGPU(voxelEC, npeaks, segmentsPerBlock, offsetPerBlock, nvoxels);
 
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_segmentsPerBlockEC, nvoxels*sizeof(uint32_t)) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_offsetPerBlockEC,   nvoxels*sizeof(uint32_t)) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_segmentsPerBlockEC, nvoxels*sizeof(uint32_t)) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_offsetPerBlockEC,   nvoxels*sizeof(uint32_t)) );
 
-        preprocessDataForGPU(voxelEC, npeaks, segmentsPerBlock, offsetPerBlock, nvoxels);
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_segmentsPerBlockEC, segmentsPerBlock, nvoxels*sizeof(uint32_t), cudaMemcpyHostToDevice) );
+            cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_offsetPerBlockEC,   offsetPerBlock,   nvoxels*sizeof(uint32_t), cudaMemcpyHostToDevice) );
 
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_segmentsPerBlockEC, segmentsPerBlock, nvoxels*sizeof(uint32_t), cudaMemcpyHostToDevice) );
-        cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_offsetPerBlockEC,   offsetPerBlock,   nvoxels*sizeof(uint32_t), cudaMemcpyHostToDevice) );
-
-        free(segmentsPerBlock);
-        free(offsetPerBlock);
+            free(segmentsPerBlock);
+            free(offsetPerBlock);
+        //}
     }
 }
 
@@ -192,7 +189,7 @@ void CudaLinearOperator::setTransposeData(
     uint16_t*  orienIDs,
     float32_t* lengths)
 {
-    if (gpu_TvoxelIC == NULL || gpu_TfiberIC == NULL || gpu_TorienIC == NULL || gpu_TlengthIC == NULL) {
+    //if (gpu_TvoxelIC == NULL || gpu_TfiberIC == NULL || gpu_TorienIC == NULL || gpu_TlengthIC == NULL) {
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_TvoxelIC,  nsegments*sizeof(uint32_t))  );
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_TfiberIC,  nsegments*sizeof(uint32_t))  );
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_TorienIC,  nsegments*sizeof(uint16_t))  );
@@ -202,9 +199,9 @@ void CudaLinearOperator::setTransposeData(
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_TfiberIC,  fiberIDs, nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_TorienIC,  orienIDs, nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_TlengthIC, lengths,  nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
-    }
+    //}
     
-    if (gpu_TfibersPerBlockIC == NULL || gpu_ToffsetPerBlockIC == NULL) {
+    //if (gpu_TfibersPerBlockIC == NULL || gpu_ToffsetPerBlockIC == NULL) {
         uint32_t*  fibersPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
         uint32_t*  offsetPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
     
@@ -218,7 +215,7 @@ void CudaLinearOperator::setTransposeData(
     
         free(fibersPerBlock);
         free(offsetPerBlock);
-    }
+    //}
 }
 
 void cudaCheckKernel(){

@@ -28,7 +28,9 @@ cdef extern from "operator_withCUDA.cuh":
             int,
             int,
             int,
-            int)
+            int,
+            
+            bool)
 
         int   getCudaStatus()
         void  setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
@@ -70,7 +72,7 @@ cdef class CudaLinearOperator :
     cdef C_CudaLinearOperator* A
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, fcall = False ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
@@ -92,16 +94,17 @@ cdef class CudaLinearOperator :
         else :
             self.nS = KERNELS['wmr'].shape[1]
 
-        self.adjoint    = 0                         # direct of inverse product
+        self.adjoint = 0                            # direct of inverse product
 
         self.n1 = self.nV*self.nS
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
-
         
-        cdef double gpumem = 1E-6 * (28.0*self.n + 6.0*self.nE + 8.0*(self.nF) + 16.0*self.nV + 4.0*(self.nR*self.ndirs*self.nS + self.nT*self.ndirs*self.nS + self.nI*self.nS + self.n1 + self.n2) )
+        """
+        cdef double gpumem = 1E-6 * ( 28.0*self.n + 6.0*self.nE + 8.0*(self.nF) + 16.0*self.nV + 4.0*(self.nR*self.ndirs*self.nS + self.nT*self.ndirs*self.nS + self.nI*self.nS + self.n1 + self.n2) )
         print('Required GPU Memory = %f MB' % gpumem)
         if gpumem > 8000.0:
             raise RuntimeError( 'GPU Memory exceeded!!!!!!' )
+        """
 
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
@@ -127,23 +130,6 @@ cdef class CudaLinearOperator :
         cdef float [:, ::1] isoSFP = KERNELS['iso']
         self.LUT_ISO = &isoSFP[0,0]
 
-        """# get C pointers to arrays in THREADS
-        cdef unsigned int [::1] ICthreads = THREADS['IC']
-        self.ICthreads  = &ICthreads[0]
-        cdef unsigned int [::1] ECthreads = THREADS['EC']
-        self.ECthreads  = &ECthreads[0]
-        cdef unsigned int [::1] ISOthreads = THREADS['ISO']
-        self.ISOthreads = &ISOthreads[0]
-
-        cdef unsigned char [::1] ICthreadsT = THREADS['ICt']
-        self.ICthreadsT  = &ICthreadsT[0]
-        cdef unsigned int  [::1] ECthreadsT = THREADS['ECt']
-        self.ECthreadsT  = &ECthreadsT[0]
-        cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
-        self.ISOthreadsT = &ISOthreadsT[0] """
-
-        #sort here
-
         self.A = new C_CudaLinearOperator(
             &ICv[0],
             &ICf[0],
@@ -165,22 +151,10 @@ cdef class CudaLinearOperator :
             self.nS,
             self.nR,
             self.nT,
-            self.nI
+            self.nI,
+
+            fcall
         )
-
-        """
-        idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
-        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
-        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
-        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
-        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
-        del idx
-
-        idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
-        self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
-        self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
-        del idx
-        #"""
 
     @property
     def T( self ) :
@@ -222,38 +196,43 @@ cdef class CudaLinearOperator :
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
-            print('MULTIPLICO Ax')
             self.A.dot(&v_in[0], &v_out[0])
         else :
             # INVERSE PRODUCT A'*y
-            print('MULTIPLICO A\'y')
             self.A.Tdot(&v_in[0], &v_out[0])
 
         return v_out
 
     @property
     def cuda_status( self ):
-        """Return status of CUDA GPU"""
+        """Return status of the CUDA GPU"""
         return self.A.getCudaStatus()
 
     def destroy( self ):
+        """Free all memory of the CUDA GPU"""
         self.A.destroy()
 
     def set_transpose_data( self ):
+        """Send A' data to the CUDA GPU"""
         idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
+
         self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
         self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
         self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
 
-        
-        cdef unsigned int [::1] ICf  = self.DICTIONARY['IC']['fiber']
+        cdef unsigned int   [::1] ICf = self.DICTIONARY['IC']['fiber']
+        cdef float          [::1] ICl = self.DICTIONARY['IC']['len']
+        cdef unsigned int   [::1] ICv = self.DICTIONARY['IC']['v']
+        cdef unsigned short [::1] ICo = self.DICTIONARY['IC']['o']
+
         self.ICf = &ICf[0]
-        cdef float [::1] ICl  = self.DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
-        cdef unsigned int [::1] ICv  = self.DICTIONARY['IC']['v']
         self.ICv = &ICv[0]
-        cdef unsigned short [::1] ICo  = self.DICTIONARY['IC']['o']
         self.ICo = &ICo[0]
 
         self.A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
+
+    def gpu_compatibility( self ):
+        """Check if the available GPU is compatible"""
+        return 0
