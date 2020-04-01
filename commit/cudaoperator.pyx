@@ -121,30 +121,30 @@ cdef class CudaLinearOperator :
         cdef float [:, ::1] isoSFP = KERNELS['iso']
         self.LUT_ISO = &isoSFP[0,0]
 
-        self.A = new C_CudaLinearOperator(
-            &ICv[0],
-            &ICf[0],
-            &ICo[0],
-            &ICl[0],
-            &wmrSFP[0,0,0],
-
-            &ECv[0],
-            &ECo[0],
-            &wmhSFP[0,0,0],
-
-            &isoSFP[0,0],
-
-            self.n,
-            self.nV,
-            self.nF,
-            self.nE,
-            self.ndirs,
-            self.nS,
-            self.nR,
-            self.nT,
-            self.nI)
-
         if fcall == 1:
+            self.A = new C_CudaLinearOperator(
+                &ICv[0],
+                &ICf[0],
+                &ICo[0],
+                &ICl[0],
+                &wmrSFP[0,0,0],
+
+                &ECv[0],
+                &ECo[0],
+                &wmhSFP[0,0,0],
+
+                &isoSFP[0,0],
+
+                self.n,
+                self.nV,
+                self.nF,
+                self.nE,
+                self.ndirs,
+                self.nS,
+                self.nR,
+                self.nT,
+                self.nI)
+
             idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
 
             self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]

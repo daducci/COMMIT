@@ -218,7 +218,7 @@ void CudaLinearOperator::destroy(){
     if (cudaStatus) printf("[ OK ]\n");
     else            printf("[ CUDA ERROR ]\n");
 
-    printf("\t* deleting x&y ... ");
+    printf("\t* deleting x&y... ");
     cudaStatus = true;
     cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_x) );
     cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_y) );
