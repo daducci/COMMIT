@@ -71,7 +71,6 @@ cdef class Evaluation :
     cdef public A
     cdef public x
     cdef public CONFIG
-    cdef public gpu_A
 
     def __init__( self, study_path, subject ) :
         """Setup the data structures with default values.
@@ -399,14 +398,6 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
         del idx
-        """
-        idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
-        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
-        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
-        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
-        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
-        del idx
-        """
 
         # divide the length of each segment by the fiber length so that all the columns of the libear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
@@ -436,10 +427,6 @@ cdef class Evaluation :
         self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
         self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
         del idx
-        """idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
-        self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
-        self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
-        del idx """
 
         print( ' [ %d segments ]' % self.DICTIONARY['EC']['nE'] )
 
@@ -532,7 +519,7 @@ cdef class Evaluation :
             tic = time.time()
 
             # Distribute load for the computation of A*x product
-            print( '\t* A  operator...', end="" )
+            print( '\t* A  operator... ', end="" )
             sys.stdout.flush()
 
             if self.DICTIONARY['IC']['n'] > 0 :
@@ -554,8 +541,6 @@ cdef class Evaluation :
                 if np.count_nonzero( np.diff( self.THREADS['IC'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
                     raise RuntimeError( 'Too many threads for the IC compartments to evaluate; try decreasing the number.' )
-            else :
-                self.THREADS['IC'] = None
 
             if self.DICTIONARY['EC']['nE'] > 0 :
                 self.THREADS['EC'] = np.zeros( nthreads+1, dtype=np.uint32 )
@@ -567,8 +552,6 @@ cdef class Evaluation :
                 if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
                     raise RuntimeError( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
-            else :
-                self.THREADS['IC'] = None
 
             if self.DICTIONARY['nV'] > 0 :
                 self.THREADS['ISO'] = np.zeros( nthreads+1, dtype=np.uint32 )
@@ -580,13 +563,11 @@ cdef class Evaluation :
                 if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
                     raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
-            else :
-                self.THREADS['ISO'] = None
 
-            print( ' [ OK ]' )
+            print( '[ OK ]' )
 
             # Distribute load for the computation of At*y product
-            print( '\t* A\' operator...', end="" )
+            print( '\t* A\' operator... ', end="" )
             sys.stdout.flush()
 
             if self.DICTIONARY['IC']['n'] > 0 :
@@ -608,9 +589,6 @@ cdef class Evaluation :
                             tot = c
                     self.THREADS['ICt'][idx] = self.THREADS['ICt'].copy()
 
-            else :
-                self.THREADS['ICt'] = None
-
             if self.DICTIONARY['EC']['nE'] > 0 :
                 self.THREADS['ECt'] = np.zeros( nthreads+1, dtype=np.uint32 )
                 N = np.floor( self.DICTIONARY['EC']['nE']/nthreads )
@@ -622,8 +600,6 @@ cdef class Evaluation :
                 if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
                     raise RuntimeError( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
-            else :
-                self.THREADS['ECt'] = None
 
             if self.DICTIONARY['nV'] > 0 :
                 self.THREADS['ISOt'] = np.zeros( nthreads+1, dtype=np.uint32 )
@@ -636,8 +612,6 @@ cdef class Evaluation :
                 if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
                     raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
-            else :
-                self.THREADS['ISOt'] = None
 
             print( '[ OK ]' )
 
@@ -674,16 +648,9 @@ cdef class Evaluation :
 
         if self.THREADS['n'] > 0:
             self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
-        
         else:
             import commit.cudaoperator
-            #print( '\t* building dictionary in GPU ... ' )
             self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, fcall=1 )
-            if self.A.cuda_status == 1:
-                self.A.set_transpose_data()
-                print( '[ OPERATOR OK ]' )
-            else:
-                print( '[ OPERATOR ERROR ]' )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 

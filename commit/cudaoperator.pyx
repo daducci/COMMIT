@@ -98,13 +98,6 @@ cdef class CudaLinearOperator :
 
         self.n1 = self.nV*self.nS
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
-        
-        """
-        cdef double gpumem = 1E-6 * ( 28.0*self.n + 6.0*self.nE + 8.0*(self.nF) + 16.0*self.nV + 4.0*(self.nR*self.ndirs*self.nS + self.nT*self.ndirs*self.nS + self.nI*self.nS + self.n1 + self.n2) )
-        print('Required GPU Memory = %f MB' % gpumem)
-        if gpumem > 8000.0:
-            raise RuntimeError( 'GPU Memory exceeded!!!!!!' )
-        """
 
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
@@ -151,10 +144,27 @@ cdef class CudaLinearOperator :
             self.nS,
             self.nR,
             self.nT,
-            self.nI,
+            self.nI)
 
-            fcall
-        )
+        if fcall == 1:
+            idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
+
+            self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
+            self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
+            self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
+            self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+
+            cdef unsigned int   [::1] ICf = self.DICTIONARY['IC']['fiber']
+            cdef float          [::1] ICl = self.DICTIONARY['IC']['len']
+            cdef unsigned int   [::1] ICv = self.DICTIONARY['IC']['v']
+            cdef unsigned short [::1] ICo = self.DICTIONARY['IC']['o']
+
+            self.ICf = &ICf[0]
+            self.ICl = &ICl[0]
+            self.ICv = &ICv[0]
+            self.ICo = &ICo[0]
+
+            self.A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
 
     @property
     def T( self ) :
@@ -233,6 +243,3 @@ cdef class CudaLinearOperator :
 
         self.A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
 
-    def gpu_compatibility( self ):
-        """Check if the available GPU is compatible"""
-        return 0
