@@ -90,7 +90,6 @@ cdef class Evaluation :
         self.THREADS    = None # set by "set_threads" method
         self.A          = None # set by "build_operator" method
         self.x          = None # set by "fit" method
-        self.gpu_A      = None
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
