@@ -152,10 +152,10 @@ cdef class CudaLinearOperator :
             self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
             self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
 
-            cdef unsigned int   [::1] ICf = self.DICTIONARY['IC']['fiber']
-            cdef float          [::1] ICl = self.DICTIONARY['IC']['len']
-            cdef unsigned int   [::1] ICv = self.DICTIONARY['IC']['v']
-            cdef unsigned short [::1] ICo = self.DICTIONARY['IC']['o']
+            ICf = self.DICTIONARY['IC']['fiber']
+            ICl = self.DICTIONARY['IC']['len']
+            ICv = self.DICTIONARY['IC']['v']
+            ICo = self.DICTIONARY['IC']['o']
 
             self.ICf = &ICf[0]
             self.ICl = &ICl[0]
