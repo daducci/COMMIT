@@ -120,8 +120,12 @@ CudaLinearOperator::CudaLinearOperator(
     else            printf("[ CUDA ERROR ]\n");
 
     // alloc memory in GPU for vectors x and y
+    printf("\t* vectors x&y ... ");
+    cudaStatus = true;
     cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_x, ncols*sizeof(float64_t)) );
     cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_y, nrows*sizeof(float64_t)) );
+    if (cudaStatus) printf("[ OK ]\n");
+    else            printf("[ CUDA ERROR ]\n");
 
     // pre-process data for GPU
     printf("\t* pre-processing ... ");
@@ -327,7 +331,7 @@ void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     // Copy vector y to the GPU
     //cudaCheck( cudaMemset(gpu_x, 0, NUM_COLS*sizeof(float64_t)) );
     //cudaCheck( cudaMemcpy(gpu_x, x, NUM_COLS*sizeof(double), cudaMemcpyHostToDevice) );
-    cudaStatus = cudaMemcpy(gpu_y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice);
+    /*cudaStatus = cudaMemcpy(gpu_y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) printf("\t* tranfering y to GPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering y to GPU ... [   OK  ]\n");//*/
 
@@ -347,7 +351,7 @@ void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     cudaCheckKernel();//*/
 
     // Copy back result to CPU
-    /*cudaStatus = cudaMemcpy(v_out, gpu_x, ncols*sizeof(double), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(v_out, gpu_x, ncols*sizeof(double), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) printf("\t* tranfering x to CPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering x to CPU ... [   OK  ]\n");//*/
         
