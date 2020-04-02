@@ -250,6 +250,8 @@ void CudaLinearOperator::setTransposeData(uint32_t*  voxelIDs,
     uint32_t*  fibersPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
     uint32_t*  offsetPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
 
+    if(fibersPerBlock == NULL || offsetPerBlock == NULL) printf("problemas\n");
+
     preprocessDataForGPU(fiberIDs, nsegments, fibersPerBlock, offsetPerBlock, nfibers);
 
     cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_TfibersPerBlockIC, nfibers*sizeof(uint32_t)) );
