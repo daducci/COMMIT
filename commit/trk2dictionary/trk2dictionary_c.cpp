@@ -103,7 +103,7 @@ int trk2dictionary(
     std::map<segInVoxKey,float>::iterator itNorm;
     segInVoxKey         inVoxKey;
 
-    printf( "\t* Exporting IC compartments:\n" );
+    printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
     
     int isTRK; // var to check
 
@@ -165,7 +165,7 @@ int trk2dictionary(
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
-    PROGRESS.setPrefix("\t  ");
+    PROGRESS.setPrefix("     ");
     
     float affine[4][4];
     if (!isTRK)  {//.tck
@@ -240,7 +240,7 @@ int trk2dictionary(
     fclose( pDict_TRK_kept );
     fclose( pDict_ndirs );
 
-    printf("\t  [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
+    printf("     [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
 
 
     /*=========================*/
@@ -248,7 +248,7 @@ int trk2dictionary(
     /*=========================*/
     unsigned int totECSegments = 0, totECVoxels = 0;
 
-    printf( "\t* Exporting EC compartments:\n" );
+    printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
     filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v   = fopen( filename.c_str(),   "wb" );
     filename = OUTPUT_path+"/dictionary_EC_o.dict";        FILE* pDict_EC_o   = fopen( filename.c_str(),   "wb" );
@@ -338,7 +338,7 @@ int trk2dictionary(
     fclose( pDict_EC_v );
     fclose( pDict_EC_o );
 
-    printf("\t  [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
+    printf("     [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 
     return 1;
 }

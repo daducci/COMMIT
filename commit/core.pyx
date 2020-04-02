@@ -376,7 +376,7 @@ cdef class Evaluation :
 
         # segments from the tracts
         # ------------------------
-        print( '\t* segments from the tracts... ', end='' )
+        print( '\t* Segments from the tracts... ', end='' )
         sys.stdout.flush()
 
         dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
@@ -421,7 +421,7 @@ cdef class Evaluation :
 
         # segments from the peaks
         # -----------------------
-        print( '\t* segments from the peaks...  ', end='' )
+        print( '\t* Segments from the peaks...  ', end='' )
         sys.stdout.flush()
 
         self.DICTIONARY['EC'] = {}
@@ -439,7 +439,7 @@ cdef class Evaluation :
 
         # isotropic compartments
         # ----------------------
-        print( '\t* isotropic contributions...  ', end='' )
+        print( '\t* Isotropic contributions...  ', end='' )
         sys.stdout.flush()
 
         self.DICTIONARY['ISO'] = {}
@@ -462,7 +462,7 @@ cdef class Evaluation :
 
         # post-processing
         # ---------------
-        print( '\t* post-processing...          ', end='' )
+        print( '\t* Post-processing...          ', end='' )
         sys.stdout.flush()
 
         # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
@@ -514,7 +514,7 @@ cdef class Evaluation :
 
         tic = time.time()
         LOG( '\n-> Distributing workload to different threads:' )
-        print( '\t* number of threads : %d' % n )
+        print( '\t* Number of threads : %d' % n )
 
         # Distribute load for the computation of A*x product
         print( '\t* A operator...  ', end='' )
@@ -785,7 +785,7 @@ cdef class Evaluation :
         self.set_config('RESULTS_path', RESULTS_path)
 
         # Map of voxelwise errors
-        print( '\t* fitting errors:' )
+        print( '\t* Fitting errors:' )
 
         niiMAP_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
@@ -818,9 +818,9 @@ cdef class Evaluation :
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
 
         # Map of compartment contributions
-        print( '\t* voxelwise contributions:' )
+        print( '\t* Voxelwise contributions:' )
 
-        print( '\t\t- intra-axonal... ', end='' )
+        print( '\t\t- Intra-axonal... ', end='' )
         sys.stdout.flush()
         niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmr']) > 0 :
@@ -832,7 +832,7 @@ cdef class Evaluation :
             niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '[ OK ]' )
 
-        print( '\t\t- extra-axonal... ', end='' )
+        print( '\t\t- Extra-axonal... ', end='' )
         sys.stdout.flush()
         niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmh']) > 0 :
@@ -842,7 +842,7 @@ cdef class Evaluation :
             niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '[ OK ]' )
 
-        print( '\t\t- isotropic... ', end='' )
+        print( '\t\t- Isotropic... ', end='' )
         sys.stdout.flush()
         niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
@@ -865,7 +865,7 @@ cdef class Evaluation :
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # Configuration and results
-        print( '\t* configuration and results:' )
+        print( '\t* Configuration and results:' )
 
         if save_opt_details:
             print( '\t\t- results.pickle... ', end='' )
@@ -875,7 +875,7 @@ cdef class Evaluation :
             print( '[ OK ]' )
 
         if save_coeff:
-            print( '\t\t- coefficient txt files... ', end='' )
+            print( '\t\t- Coefficients txt files... ', end='' )
             sys.stdout.flush()
             if len(self.KERNELS['wmr']) > 0 :
                 offset = nF * self.KERNELS['wmr'].shape[0]
@@ -891,7 +891,7 @@ cdef class Evaluation :
             print( '[ OK ]' )
 
         if save_est_dwi :
-            print( '\t\t- estimated signal... ', end='' )
+            print( '\t\t- Estimated signal... ', end='' )
             sys.stdout.flush()
             self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
             nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )

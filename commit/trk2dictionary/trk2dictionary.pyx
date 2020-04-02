@@ -136,12 +136,14 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
 
     tic = time.time()
     LOG( '\n-> Creating the dictionary from tractogram:' )
-    print( '\t* Segment position = %s' % ( 'COMPUTE INTERSECTIONS' if do_intersect else 'CENTROID' ) )
-    print( '\t* Fiber shift X    = %.3f (voxel-size units)' % fiber_shiftX )
-    print( '\t* Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY )
-    print( '\t* Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ )
-    print( '\t* Points to skip   = %d' % points_to_skip )
-    print( '\t* Min segment len  = %.2e' % min_seg_len )
+    
+    LOG( '\n   * Configuration:' )
+    print( '\t- Segment position = %s' % ( 'COMPUTE INTERSECTIONS' if do_intersect else 'CENTROID' ) )
+    print( '\t- Fiber shift X    = %.3f (voxel-size units)' % fiber_shiftX )
+    print( '\t- Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY )
+    print( '\t- Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ )
+    print( '\t- Points to skip   = %d' % points_to_skip )
+    print( '\t- Min segment len  = %.2e' % min_seg_len )
 
     # check blur params
     cdef :
@@ -169,9 +171,9 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
 
     if nBlurRadii == 1 :
-        print( '\t* Do not blur fibers' )
+        print( '\t- Do not blur fibers' )
     else :
-        print( '\t* Blur fibers :' )
+        print( '\t- Blur fibers:' )
         print( '\t\t- sigma = %.3f' % blur_sigma )
         print( '\t\t- radii =   [', end="" )
         for i in xrange( 1, blurRadii.size ) :
@@ -194,12 +196,12 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if min_seg_len < 0 :
         ERROR( '"min_seg_len" must be >= 0' )
 
-    print( '\t* Loading data:' )
+    LOG( '\n   * Loading data:' )
     cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
     cdef short* ptrHashTable = &htable[0]
 
     # fiber-tracts from .trk
-    print( '\t\t* tractogram' )
+    print( '\t- Tractogram' )
     
     if (path_out is None):
         ERROR( '"path_out" not defined' )
@@ -208,22 +210,21 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         ERROR( '"filename_tractogram" not defined' )
 
     if (filename_trk is not None and filename_tractogram is not None):
-        WARNING('"filename_trk" will not be considered, "filename_tractogram: will be used')
+        WARNING('"filename_trk" will not be considered, "filename_tractogram" will be used')
 
     if (filename_trk is not None and filename_tractogram is None):
         filename_tractogram = filename_trk
         WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
     
-    extension = splitext(filename_tractogram)[1]  #take extension of file
-    
+    extension = splitext(filename_tractogram)[1]
     if (extension != ".trk" and extension != ".tck") :
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
-    try : #read the header of the file in the same way both in .trk and in .tck
+    try :
         hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
     except :
         ERROR( 'Tractogram file not found' )
         
-    if (extension == ".trk"): #read header of .trk file
+    if (extension == ".trk"):
         Nx = hdr['dimensions'][0]
         Ny = hdr['dimensions'][1]
         Nz = hdr['dimensions'][2]
@@ -236,9 +237,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         n_scalars = hdr['nb_scalars_per_point']
         n_properties = hdr['nb_properties_per_streamline']
 
-    if (extension == ".tck"): #read header of .tck file
-        #open file .nii and get header of this to get info on the structure
-
+    if (extension == ".tck"):
         if TCK_ref_image is None:
             if filename_peaks is not None:
                 TCK_ref_image = filename_peaks
@@ -247,49 +246,36 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
             else:
                 ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
 
-        print ('\t\t\t- geometry taken from "%s"' %TCK_ref_image)
+        print ('\t\t- geometry taken from "%s"' %TCK_ref_image)
 
-        #load the TCK_ref_image( .nii file ) with nibabel
         nii_image = nibabel.load(TCK_ref_image)
-        #read the header of nii file
         nii_hdr = nii_image.header if nibabel.__version__ >= '2.0.0' else nii_image.get_header()
-
-        #set shape's of tractogram
         Nx = nii_image.shape[0]
         Ny = nii_image.shape[1]
         Nz = nii_image.shape[2]
-
-        #set distance's of control points
         Px = nii_hdr['pixdim'][1]
         Py = nii_hdr['pixdim'][2]
         Pz = nii_hdr['pixdim'][3]
-
-        #set offset and number of streamlines
         data_offset = int(hdr['_offset_data'])  #set offset
         n_count = int(hdr['count'])  #set number of fibers
-
-        #set number of proprieties and number of scalar to zero, because there are not present in .tck file
         n_scalars = 0
         n_properties = 0
         
-    print( '\t\t\t- %d x %d x %d' % ( Nx, Ny, Nz ) )
-    print( '\t\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz ) )
-    print( '\t\t\t- %d fibers' % n_count )
+    print( '\t\t- %d x %d x %d' % ( Nx, Ny, Nz ) )
+    print( '\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz ) )
+    print( '\t\t- %d fibers' % n_count )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         ERROR( 'The max dim size is 2^16 voxels' )
     
     # get the affine matrix
     if (extension == ".tck"):
         scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
-        M = nii_hdr.get_best_affine() #get affine
+        M = nii_hdr.get_best_affine()
 
         # Affine matrix without scaling, i.e. diagonal is 1
-        M[:3, :3] = np.dot(scaleMat, M[:3, :3]) #delete scalar
-
+        M[:3, :3] = np.dot(scaleMat, M[:3, :3])
         M = M.astype('<f4') # affine matrix in float value
-
         invM = np.linalg.inv(M) # inverse affine matrix
-
         #create a vector of inverse matrix M
         ArrayInvM = np.ravel(invM)
         ptrArrayInvM = &ArrayInvM[0]
@@ -298,18 +284,18 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     cdef float* ptrMASK
     cdef float [:, :, ::1] niiMASK_img
     if filename_mask is not None :
-        print( '\t\t* filtering mask' )
+        print( '\t- Filtering mask' )
         niiMASK = nibabel.load( filename_mask )
         niiMASK_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
-        print( '\t\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] ) )
-        print( '\t\t\t- %.4f x %.4f x %.4f' % ( niiMASK_hdr['pixdim'][1], niiMASK_hdr['pixdim'][2], niiMASK_hdr['pixdim'][3] ) )
+        print( '\t\t- %d x %d x %d' % ( niiMASK.shape[0], niiMASK.shape[1], niiMASK.shape[2] ) )
+        print( '\t\t- %.4f x %.4f x %.4f' % ( niiMASK_hdr['pixdim'][1], niiMASK_hdr['pixdim'][2], niiMASK_hdr['pixdim'][3] ) )
         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
             abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             WARNING( 'Dataset does not have the same geometry as the tractogram' )
         niiMASK_img = np.ascontiguousarray( niiMASK.get_data().astype(np.float32) )
         ptrMASK  = &niiMASK_img[0,0,0]
     else :
-        print( '\t\t* no mask specified to filter IC compartments' )
+        print( '\t- No mask specified to filter IC compartments' )
         ptrMASK = NULL
 
     # peaks file for EC contributions
@@ -321,14 +307,14 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     cdef double [:, ::1] affine
     cdef double* ptrAFFINE
     if filename_peaks is not None :
-        print( '\t\t* EC orientations' )
+        print( '\t- EC orientations' )
         niiPEAKS = nibabel.load( filename_peaks )
         niiPEAKS_hdr = niiPEAKS.header if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_header()
-        print( '\t\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] ) )
-        print( '\t\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS_hdr['pixdim'][1], niiPEAKS_hdr['pixdim'][2], niiPEAKS_hdr['pixdim'][3] ) )
-        print( '\t\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR )
-        print( '\t\t\t- %susing affine matrix' % ( "" if peaks_use_affine else "not " ) )
-        print( '\t\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] ) )
+        print( '\t\t- %d x %d x %d x %d' % ( niiPEAKS.shape[0], niiPEAKS.shape[1], niiPEAKS.shape[2], niiPEAKS.shape[3] ) )
+        print( '\t\t- %.4f x %.4f x %.4f' % ( niiPEAKS_hdr['pixdim'][1], niiPEAKS_hdr['pixdim'][2], niiPEAKS_hdr['pixdim'][3] ) )
+        print( '\t\t- ignoring peaks < %.2f * MaxPeak' % vf_THR )
+        print( '\t\t- %susing affine matrix' % ( "" if peaks_use_affine else "not " ) )
+        print( '\t\t- flipping axes : [ x=%s, y=%s, z=%s ]' % ( flip_peaks[0], flip_peaks[1], flip_peaks[2] ) )
         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
             abs(Px-niiPEAKS_hdr['pixdim'][1])>1e-3 or abs(Py-niiPEAKS_hdr['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS_hdr['pixdim'][3])>1e-3 ) :
             WARNING( "Dataset does not have the same geometry as the tractogram" )
@@ -347,13 +333,13 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
             affine = np.ascontiguousarray( np.eye(3) )
         ptrAFFINE = &affine[0,0]
     else :
-        print( '\t\t* no dataset specified for EC compartments' )
+        print( '\t- No dataset specified for EC compartments' )
         Np = 0
         ptrPEAKS = NULL
         ptrAFFINE = NULL
 
     # output path
-    print( '\t\t* output written to "%s"' % path_out )
+    print( '\t- Output written to "%s"' % path_out )
     if not exists( path_out ):
         makedirs( path_out )
 
@@ -375,7 +361,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     # create new TRK with only fibers in the WM mask
     # create new dictionaty file (TRK or TCK) with only fibers in the WM mask
     if gen_trk :
-        print ('\t* Generate tractogram matching the dictionary: ')
+        LOG('\n   * Generate tractogram matching the dictionary:')
         fib = nibabel.streamlines.load( filename_tractogram, lazy_load=True )
         hdr = fib.header
 
@@ -390,7 +376,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         #create a output dictionary file (TRK or TCK) in path_out
         tractogram_out = nibabel.streamlines.tractogram.Tractogram(streamlines=streamlines_out, affine_to_rasmm=fib.tractogram.affine_to_rasmm)
         nibabel.streamlines.save( tractogram_out, join(path_out,'dictionary_TRK_fibers'+extension), header=hdr )
-        print( '\t  [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
+        print( '     [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
 
     # save TDI and MASK maps
     if filename_mask is not None :
@@ -409,7 +395,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), affine )
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+    LOG( '\n   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
 cpdef convert_old_dictionary( path ):

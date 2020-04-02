@@ -6,8 +6,8 @@ import amico
 
 amico_version = amico.__version__.split('.')
 amico_version = [int(version_val) for version_val in amico_version]
-if amico_version[0] == 1 and amico_version[1] < 1:
-    raise RuntimeError( 'COMMIT requires AMICO v1.1.0 or above. Current AMICO version is %s' % amico.__version__ )
+if amico_version[0] == 1 and amico_version[1] < 2:
+    raise RuntimeError( 'COMMIT requires AMICO v1.2.0 or above. Current AMICO version is %s' % amico.__version__ )
 
 # Cython extension to create the sparse data structure from a tractogram
 # for the computation of matrix-vector multiplications
