@@ -40,10 +40,10 @@ ext3 = Extension(
 
 setup(
     name='commit',
-    version='1.3.3',
+    version='1.3.4',
     description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
     author='Alessandro Daducci',
-    author_email='alessandro.daducci@gmail.com',
+    author_email='alessandro.daducci@univr.it',
     url='https://github.com/daducci/COMMIT',
     cmdclass = {'build_ext':build_ext},
     ext_modules = [ ext1, ext2, ext3 ],

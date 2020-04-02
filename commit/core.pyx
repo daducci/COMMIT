@@ -18,6 +18,7 @@ import amico.scheme
 import amico.lut
 import pyximport
 pyximport.install( reload_support=True, language_level=3 )
+from amico.util import LOG, NOTE, WARNING, ERROR
 
 
 def setup( lmax = 12, ndirs = 32761 ) :
@@ -32,7 +33,7 @@ def setup( lmax = 12, ndirs = 32761 ) :
     """
 
     if not amico.lut.is_valid(ndirs):
-        raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+        ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
 
     amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
@@ -45,7 +46,7 @@ def load_dictionary_info(filename):
         This value is always COMMIT_PATH + dictionary_info.pickle
     """
     if not isfile( filename ):
-        raise RuntimeError( 'Dictionary is outdated or not found. Execute ''trk2dictionary'' script first.' )
+        ERROR( 'Dictionary is outdated or not found. Execute "trk2dictionary" script first' )
     with open( filename, 'rb' ) as dictionary_info_file:
         if sys.version_info.major == 3:
             aux = pickle.load( dictionary_info_file, fix_imports=True, encoding='bytes' )
@@ -127,9 +128,9 @@ cdef class Evaluation :
 
         # Loading data and acquisition scheme
         tic = time.time()
-        print( '\n-> Loading data:' )
+        LOG( '\n-> Loading data:' )
 
-        print( '\t* DWI signal...' )
+        print( '\t* DWI signal:' )
         self.set_config('dwi_filename', dwi_filename)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = self.niiDWI.get_data().astype(np.float32)
@@ -141,7 +142,7 @@ cdef class Evaluation :
         print( '\t\t- dim    = %d x %d x %d x %d' % self.niiDWI_img.shape )
         print( '\t\t- pixdim = %.3f x %.3f x %.3f' % self.get_config('pixdim') )
 
-        print( '\t* Acquisition scheme...' )
+        print( '\t* Acquisition scheme:' )
         self.set_config('scheme_filename', scheme_filename)
         self.set_config('b0_thr', b0_thr)
         self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
@@ -152,20 +153,20 @@ cdef class Evaluation :
         print()
 
         if self.scheme.nS != self.niiDWI_img.shape[3] :
-            raise ValueError( 'Scheme does not match with DWI data' )
+            ERROR( 'Scheme does not match with DWI data' )
 
         if self.scheme.dwi_count == 0 :
-            raise ValueError( 'There are no DWI volumes in the data' )
+            ERROR( 'There are no DWI volumes in the data' )
 
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
         # Preprocessing
         tic = time.time()
-        print( '\n-> Preprocessing:' )
+        LOG( '\n-> Preprocessing:' )
 
         if self.get_config('doNormalizeSignal') :
             if self.scheme.b0_count > 0 :
-                print( '\t* Normalizing to b0...', end='' )
+                print( '\t* Normalizing to b0... ', end='' )
                 sys.stdout.flush()
                 mean = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
                 idx = mean <= 0
@@ -180,21 +181,21 @@ cdef class Evaluation :
 
         if self.scheme.b0_count > 1 :
             if self.get_config('doMergeB0') :
-                print( '\t* Merging multiple b0 volume(s)...', end='' )
+                print( '\t* Merging multiple b0 volume(s)... ', end='' )
                 mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                 self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
             else :
-                print( '\t* Keeping all b0 volume(s)...', end='' )
+                print( '\t* Keeping all b0 volume(s)... ', end='' )
             print( '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
 
         if self.get_config('doDemean') :
-            print( '\t* Demeaning signal...', end='' )
+            print( '\t* Demeaning signal... ', end='' )
             sys.stdout.flush()
             mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
             self.niiDWI_img = self.niiDWI_img - mean
             print( '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() ) )
 
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def set_model( self, model_name ) :
@@ -209,7 +210,7 @@ cdef class Evaluation :
         if hasattr(commit.models, model_name ) :
             self.model = getattr(commit.models,model_name)()
         else :
-            raise ValueError( 'Model "%s" not recognized' % model_name )
+            ERROR( 'Model "%s" not recognized' % model_name )
 
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
@@ -228,23 +229,23 @@ cdef class Evaluation :
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
         """
         if not amico.lut.is_valid(ndirs):
-            raise RuntimeError( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+            ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
         if self.scheme is None :
-            raise RuntimeError( 'Scheme not loaded; call "load_data()" first.' )
+            ERROR( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
-            raise RuntimeError( 'Model not set; call "set_model()" method first.' )
+            ERROR( 'Model not set; call "set_model()" method first' )
 
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
         self.model.scheme = self.scheme
 
-        print( '\n-> Simulating with "%s" model:' % self.model.name )
+        LOG( '\n-> Simulating with "%s" model:' % self.model.name )
 
         # check if kernels were already generated
         tmp = glob.glob( pjoin(self.get_config('ATOMS_path'),'A_*.npy') )
         if len(tmp)>0 and not regenerate :
-            print( '   [ Kernels already computed. Call "generate_kernels( regenerate=True )" to force regeneration. ]' )
+            LOG( '   [ Kernels already computed. Use option "regenerate=True" to force regeneration ]' )
             return
 
         # create folder or delete existing files (if any)
@@ -261,7 +262,7 @@ cdef class Evaluation :
         # Dispatch to the right handler for each model
         tic = time.time()
         self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT, ndirs )
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def load_kernels( self ) :
@@ -269,21 +270,21 @@ cdef class Evaluation :
         Dispatch to the proper function, depending on the model.
         """
         if self.model is None :
-            raise RuntimeError( 'Model not set; call "set_model()" method first.' )
+            ERROR( 'Model not set; call "set_model()" method first' )
         if self.scheme is None :
-            raise RuntimeError( 'Scheme not loaded; call "load_data()" first.' )
+            ERROR( 'Scheme not loaded; call "load_data()" first' )
 
         tic = time.time()
-        print( '\n-> Resampling LUT for subject "%s":' % self.get_config('subject') )
+        LOG( '\n-> Resampling LUT for subject "%s":' % self.get_config('subject') )
 
         # auxiliary data structures
         idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
 
         # Dispatch to the right handler for each model
         if self.get_config('doMergeB0') :
-            print( '\t* Merging multiple b0 volume(s)' )
+            print( '\t* Merging multiple b0 volume(s)...' )
         else :
-            print( '\t* Keeping all b0 volume(s)' )
+            print( '\t* Keeping all b0 volume(s)...' )
         self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
@@ -309,7 +310,7 @@ cdef class Evaluation :
 
         # Normalize atoms
         if self.get_config('doNormalizeKernels') :
-            print( '\t* Normalizing...', end='' )
+            print( '\t* Normalizing... ', end='' )
 
             self.KERNELS['wmr_norm'] = np.zeros( nIC )
             for i in xrange(nIC) :
@@ -330,7 +331,7 @@ cdef class Evaluation :
 
             print( '[ OK ]' )
 
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     cpdef load_dictionary( self, path, use_mask = False ) :
@@ -348,10 +349,10 @@ cdef class Evaluation :
             "mask" masks are equivalent and this parameter is not influent.
         """
         if self.niiDWI is None :
-            raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
+            ERROR( 'Data not loaded; call "load_data()" first' )
 
         tic = time.time()
-        print( '\n-> Loading the dictionary:' )
+        LOG( '\n-> Loading the dictionary:' )
         self.DICTIONARY = {}
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
@@ -361,7 +362,7 @@ cdef class Evaluation :
         if not exists( mask_filename ) :
             mask_filename += '.gz'
             if not exists( mask_filename ) :
-                raise RuntimeError( 'Dictionary not found. Execute ''trk2dictionary'' script first.' );
+                ERROR( 'Dictionary not found. Execute "trk2dictionary" script first' );
         niiMASK = nibabel.load( mask_filename )
         niiMASK_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
         if ( self.get_config('dim')[0]!=niiMASK.shape[0] or
@@ -375,7 +376,7 @@ cdef class Evaluation :
 
         # segments from the tracts
         # ------------------------
-        print( '\t* segments from the tracts...', end='' )
+        print( '\t* segments from the tracts... ', end='' )
         sys.stdout.flush()
 
         dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
@@ -383,7 +384,7 @@ cdef class Evaluation :
         self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
 
         if self.DICTIONARY['ndirs'] != self.get_config('ndirs'):
-            raise RuntimeError( 'Dictionary is outdated. Execute ''trk2dictionary'' script first.' )
+            ERROR( 'Dictionary is outdated. Execute "trk2dictionary" script first' )
 
         self.DICTIONARY['TRK'] = {}
         self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
@@ -420,7 +421,7 @@ cdef class Evaluation :
 
         # segments from the peaks
         # -----------------------
-        print( '\t* segments from the peaks...', end='' )
+        print( '\t* segments from the peaks...  ', end='' )
         sys.stdout.flush()
 
         self.DICTIONARY['EC'] = {}
@@ -434,11 +435,11 @@ cdef class Evaluation :
         self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
         del idx
 
-        print( ' [ %d segments ]' % self.DICTIONARY['EC']['nE'] )
+        print( '[ %d segments ]' % self.DICTIONARY['EC']['nE'] )
 
         # isotropic compartments
         # ----------------------
-        print( '\t* isotropic contributions...', end='' )
+        print( '\t* isotropic contributions...  ', end='' )
         sys.stdout.flush()
 
         self.DICTIONARY['ISO'] = {}
@@ -457,11 +458,11 @@ cdef class Evaluation :
         self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
         del idx
 
-        print( ' [ %d voxels ]' % self.DICTIONARY['nV'] )
+        print( '[ %d voxels ]' % self.DICTIONARY['nV'] )
 
         # post-processing
         # ---------------
-        print( '\t* post-processing...', end='' )
+        print( '\t* post-processing...          ', end='' )
         sys.stdout.flush()
 
         # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
@@ -475,9 +476,9 @@ cdef class Evaluation :
         self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
         self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
 
-        print( '         [ OK ]' )
+        print( '[ OK ]' )
 
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def set_threads( self, n = None ) :
@@ -497,11 +498,11 @@ cdef class Evaluation :
                 n = 1
 
         if n < 1 or n > 255 :
-            raise RuntimeError( 'Number of threads must be between 1 and 255' )
+            ERROR( 'Number of threads must be between 1 and 255' )
         if self.DICTIONARY is None :
-            raise RuntimeError( 'Dictionary not loaded; call "load_dictionary()" first.' )
+            ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.KERNELS is None :
-            raise RuntimeError( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first.' )
+            ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
 
         self.THREADS = {}
         self.THREADS['n'] = n
@@ -512,11 +513,11 @@ cdef class Evaluation :
             int i
 
         tic = time.time()
-        print( '\n-> Distributing workload to different threads:' )
+        LOG( '\n-> Distributing workload to different threads:' )
         print( '\t* number of threads : %d' % n )
 
         # Distribute load for the computation of A*x product
-        print( '\t* A operator...', end='' )
+        print( '\t* A operator...  ', end='' )
         sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
@@ -537,7 +538,7 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['IC'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                raise RuntimeError( 'Too many threads for the IC compartments to evaluate; try decreasing the number.' )
+                ERROR( 'Too many threads for the IC compartments to evaluate; try decreasing the number' )
         else :
             self.THREADS['IC'] = None
 
@@ -550,7 +551,7 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                raise RuntimeError( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
+                ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number' )
         else :
             self.THREADS['EC'] = None
 
@@ -563,14 +564,14 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
+                ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
         else :
             self.THREADS['ISO'] = None
 
-        print( ' [ OK ]' )
+        print( '[ OK ]' )
 
         # Distribute load for the computation of At*y product
-        print( '\t* A\' operator...', end='' )
+        print( '\t* A\' operator... ', end='' )
         sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
@@ -605,7 +606,7 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                raise RuntimeError( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
+                ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number' )
         else :
             self.THREADS['ECt'] = None
 
@@ -619,13 +620,13 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
+                ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
         else :
             self.THREADS['ISOt'] = None
 
         print( '[ OK ]' )
 
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def build_operator( self ) :
@@ -635,14 +636,14 @@ cdef class Evaluation :
             the data is changed in self.DICTIONARY, self.KERNELS or self.THREADS.
         """
         if self.DICTIONARY is None :
-            raise RuntimeError( 'Dictionary not loaded; call "load_dictionary()" first.' )
+            ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.KERNELS is None :
-            raise RuntimeError( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first.' )
+            ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
-            raise RuntimeError( 'Threads not set; call "set_threads()" first.' )
+            ERROR( 'Threads not set; call "set_threads()" first' )
 
         tic = time.time()
-        print( '\n-> Building linear operator A:' )
+        LOG( '\n-> Building linear operator A:' )
 
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
@@ -657,7 +658,8 @@ cdef class Evaluation :
             reload( sys.modules['commit.operator.operator'] )
         self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+
 
     def get_y( self ):
         """
@@ -665,10 +667,11 @@ cdef class Evaluation :
         NB: this can be run only after having loaded the dictionary and the data.
         """
         if self.DICTIONARY is None :
-            raise RuntimeError( 'Dictionary not loaded; call "load_dictionary()" first.' )
+            ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.niiDWI is None :
-            raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
+            ERROR( 'Data not loaded; call "load_data()" first' )
         return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
 
     def fit( self, tol_fun = 1e-3, tol_x = 1e-6, max_iter = 100, verbose = 1, x0 = None, regularisation = None ) :
         """Fit the model to the data.
@@ -690,19 +693,19 @@ cdef class Evaluation :
             ( default : None )
         """
         if self.niiDWI is None :
-            raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
+            ERROR( 'Data not loaded; call "load_data()" first' )
         if self.DICTIONARY is None :
-            raise RuntimeError( 'Dictionary not loaded; call "load_dictionary()" first.' )
+            ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.KERNELS is None :
-            raise RuntimeError( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first.' )
+            ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
-            raise RuntimeError( 'Threads not set; call "set_threads()" first.' )
+            ERROR( 'Threads not set; call "set_threads()" first' )
         if self.A is None :
-            raise RuntimeError( 'Operator not built; call "build_operator()" first.' )
+            ERROR( 'Operator not built; call "build_operator()" first' )
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
-                raise RuntimeError( 'x0: dimension does not match the number of columns of the dictionary.' )
+                ERROR( 'x0 dimension does not match the number of columns of the dictionary' )
         if regularisation is None :
             regularisation = commit.solvers.init_regularisation(self)
 
@@ -715,14 +718,14 @@ cdef class Evaluation :
 
         # run solver
         t = time.time()
-        print( '\n-> Fit model' )
+        LOG( '\n-> Fit model:' )
 
         self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
 
-        print( '   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
+        LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
     def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = False, save_est_dwi = False ) :
@@ -746,14 +749,14 @@ cdef class Evaluation :
             Save the estimated DW-MRI signal (default : False)
         """
         if self.x is None :
-            raise RuntimeError( 'Model not fitted to the data; call "fit()" first.' )
+            ERROR( 'Model not fitted to the data; call "fit()" first' )
 
         RESULTS_path = 'Results_' + self.model.id
         if path_suffix :
             self.set_config('path_suffix', path_suffix)
             RESULTS_path = RESULTS_path + path_suffix
 
-        print( '\n-> Saving results to "%s/*":' % RESULTS_path )
+        LOG( '\n-> Saving results to "%s/*":' % RESULTS_path )
         tic = time.time()
 
         nF = self.DICTIONARY['IC']['nF']
@@ -792,16 +795,16 @@ cdef class Evaluation :
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
 
-        print( '\t\t- RMSE...', end='' )
+        print( '\t\t- RMSE...  ', end='' )
         sys.stdout.flush()
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
         niiMAP_hdr['cal_min'] = 0
         niiMAP_hdr['cal_max'] = tmp.max()
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
-        print( ' [ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
+        print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
 
-        print( '\t\t- NRMSE...', end='' )
+        print( '\t\t- NRMSE... ', end='' )
         sys.stdout.flush()
         tmp = np.sum(y_mea**2,axis=1)
         idx = np.where( tmp < 1E-12 )
@@ -817,7 +820,7 @@ cdef class Evaluation :
         # Map of compartment contributions
         print( '\t* voxelwise contributions:' )
 
-        print( '\t\t- intra-axonal', end='' )
+        print( '\t\t- intra-axonal... ', end='' )
         sys.stdout.flush()
         niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmr']) > 0 :
@@ -829,7 +832,7 @@ cdef class Evaluation :
             niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '[ OK ]' )
 
-        print( '\t\t- extra-axonal', end='' )
+        print( '\t\t- extra-axonal... ', end='' )
         sys.stdout.flush()
         niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmh']) > 0 :
@@ -839,7 +842,7 @@ cdef class Evaluation :
             niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '[ OK ]' )
 
-        print( '\t\t- isotropic', end='' )
+        print( '\t\t- isotropic... ', end='' )
         sys.stdout.flush()
         niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
@@ -895,4 +898,4 @@ cdef class Evaluation :
             self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
             print( '[ OK ]' )
         
-        print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )

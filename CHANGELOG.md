@@ -2,6 +2,12 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.3.4] - 2020-04-02
+
+### Changed
+- Added colorized output.
+
+
 ## [1.3.3] - 2020-03-31
 
 ### Added
