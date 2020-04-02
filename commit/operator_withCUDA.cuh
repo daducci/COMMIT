@@ -148,7 +148,9 @@ class CudaLinearOperator {
             int nsamples,     
             int ndiameters,   
             int nzeppelins,   
-            int nballs);
+            int nballs,
+        
+            int fcall);
 
         ~CudaLinearOperator();
 
