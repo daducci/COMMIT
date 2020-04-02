@@ -295,27 +295,27 @@ void CudaLinearOperator::dot(float64_t* v_in, float64_t* v_out){
     
     // Copy vector x to the GPU
     cudaStatus = cudaMemcpy(gpu_x, v_in, ncols*sizeof(double), cudaMemcpyHostToDevice);
-    /*if (cudaStatus != cudaSuccess) printf("\t* tranfering x to GPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering x to GPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering x to GPU ... [   OK  ]\n");//*/
 
     // Multiply IC part in the GPU
     multiply_Ax_ICpart<<<nvoxels, 1024>>>(gpu_voxelIC, gpu_fiberIC, gpu_orienIC, gpu_lengthIC, gpu_segmentsPerBlockIC, gpu_offsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
 
-    //cudaCheckKernel();
+    cudaCheckKernel();
 
     // Multiply EC part in the GPU
     multiply_Ax_ECpart<<<nvoxels, 512>>>(gpu_voxelEC, gpu_orienEC, gpu_segmentsPerBlockEC, gpu_offsetPerBlockEC, gpu_lutEC, gpu_x, gpu_y);
 
-    //cudaCheckKernel();
+    cudaCheckKernel();
 
     // Multiply ISO part in the GPU
     multiply_Ax_ISOpart<<<nvoxels, 512>>>(gpu_lutISO, gpu_x, gpu_y);
 
-    //cudaCheckKernel();
+    cudaCheckKernel();
 
     // Copy back result to CPU
     cudaStatus = cudaMemcpy(v_out, gpu_y, nrows*sizeof(double), cudaMemcpyDeviceToHost);
-    /*if (cudaStatus != cudaSuccess) printf("\t* tranfering y to CPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering y to CPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering y to CPU ... [   OK  ]\n");//*/
 }
 

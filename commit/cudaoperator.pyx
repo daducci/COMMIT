@@ -207,6 +207,7 @@ cdef class CudaLinearOperator :
             self.A.dot(&v_in[0], &v_out[0])
         else :
             # INVERSE PRODUCT A'*y
+            print('transpuesta')
             self.A.Tdot(&v_in[0], &v_out[0])
 
         return v_out
