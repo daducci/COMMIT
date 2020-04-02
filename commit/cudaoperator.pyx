@@ -28,6 +28,8 @@ cdef extern from "operator_withCUDA.cuh":
             int,
             int,
             int,
+            int,
+            
             int)
 
         int   getCudaStatus()
