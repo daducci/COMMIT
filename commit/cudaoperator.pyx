@@ -211,38 +211,11 @@ cdef class CudaLinearOperator :
             self.A.dot(&v_in[0], &v_out[0])
         else :
             # INVERSE PRODUCT A'*y
-            print('transpuesta')
             self.A.Tdot(&v_in[0], &v_out[0])
 
         return v_out
 
-    @property
-    def cuda_status( self ):
-        """Return status of the CUDA GPU"""
-        return self.A.getCudaStatus()
-
     def destroy( self ):
         """Free all memory of the CUDA GPU"""
         self.A.destroy()
-
-    def set_transpose_data( self ):
-        """Send A' data to the CUDA GPU"""
-        idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
-
-        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
-        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
-        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
-        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
-
-        cdef unsigned int   [::1] ICf = self.DICTIONARY['IC']['fiber']
-        cdef float          [::1] ICl = self.DICTIONARY['IC']['len']
-        cdef unsigned int   [::1] ICv = self.DICTIONARY['IC']['v']
-        cdef unsigned short [::1] ICo = self.DICTIONARY['IC']['o']
-
-        self.ICf = &ICf[0]
-        self.ICl = &ICl[0]
-        self.ICv = &ICv[0]
-        self.ICo = &ICo[0]
-
-        self.A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
 
