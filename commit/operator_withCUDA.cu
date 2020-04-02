@@ -332,7 +332,7 @@ void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     else                           printf("\t* tranfering y to GPU ... [   OK  ]\n");//*/
 
     // Multiply IC part in the GPU
-    multiply_Aty_ICpart<<<nfibers, 512>>>(gpu_TvoxelIC, gpu_TfiberIC, gpu_TorienIC, gpu_TlengthIC, gpu_TfibersPerBlockIC, gpu_ToffsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
+    /*multiply_Aty_ICpart<<<nfibers, 512>>>(gpu_TvoxelIC, gpu_TfiberIC, gpu_TorienIC, gpu_TlengthIC, gpu_TfibersPerBlockIC, gpu_ToffsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
 
     cudaCheckKernel();
 
@@ -344,7 +344,7 @@ void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     // Multiply ISO part in the GPU
     multiply_Aty_ISOpart<<<nvoxels, 512>>>(gpu_lutISO, gpu_x, gpu_y);
 
-    cudaCheckKernel();
+    cudaCheckKernel();//*/
 
     // Copy back result to CPU
     cudaStatus = cudaMemcpy(v_out, gpu_x, ncols*sizeof(double), cudaMemcpyDeviceToHost);
