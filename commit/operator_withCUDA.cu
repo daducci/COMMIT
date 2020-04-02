@@ -326,27 +326,27 @@ void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     //cudaCheck( cudaMemset(gpu_x, 0, NUM_COLS*sizeof(float64_t)) );
     //cudaCheck( cudaMemcpy(gpu_x, x, NUM_COLS*sizeof(double), cudaMemcpyHostToDevice) );
     cudaStatus = cudaMemcpy(gpu_y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice);
-    /*if (cudaStatus != cudaSuccess) printf("\t* tranfering y to GPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering y to GPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering y to GPU ... [   OK  ]\n");//*/
 
     // Multiply IC part in the GPU
     multiply_Aty_ICpart<<<nfibers, 512>>>(gpu_TvoxelIC, gpu_TfiberIC, gpu_TorienIC, gpu_TlengthIC, gpu_TfibersPerBlockIC, gpu_ToffsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
 
-    //cudaCheckKernel();
+    cudaCheckKernel();
 
     // Multiply EC part in the GPU
     multiply_Aty_ECpart<<<nvoxels, 512>>>(gpu_voxelEC, gpu_orienEC, gpu_segmentsPerBlockEC, gpu_offsetPerBlockEC, gpu_lutEC, gpu_x, gpu_y);
 
-    //cudaCheckKernel();
+    cudaCheckKernel();
 
     // Multiply ISO part in the GPU
     multiply_Aty_ISOpart<<<nvoxels, 512>>>(gpu_lutISO, gpu_x, gpu_y);
 
-    //cudaCheckKernel();
+    cudaCheckKernel();
 
     // Copy back result to CPU
     cudaStatus = cudaMemcpy(v_out, gpu_x, ncols*sizeof(double), cudaMemcpyDeviceToHost);
-    /*if (cudaStatus != cudaSuccess) printf("\t* tranfering x to CPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
+    if (cudaStatus != cudaSuccess) printf("\t* tranfering x to CPU ... [ ERROR ]: %s\n", cudaGetErrorString(cudaStatus));
     else                           printf("\t* tranfering x to CPU ... [   OK  ]\n");//*/
         
     /*printf("\n\n VECTOR X EC PART:\n");

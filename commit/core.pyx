@@ -650,7 +650,7 @@ cdef class Evaluation :
         else:
             import commit.cudaoperator
             self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, fcall=1 )
-            self.A.set_transpose_data()
+            #self.A.set_transpose_data()
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 

@@ -145,7 +145,6 @@ cdef class CudaLinearOperator :
                 self.nT,
                 self.nI)
 
-            """
             idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
 
             self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
@@ -164,7 +163,6 @@ cdef class CudaLinearOperator :
             self.ICo = &ICo[0]
 
             self.A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
-            """
 
     @property
     def T( self ) :
