@@ -24,7 +24,6 @@ bool checkCompatibility(size_t required_mem, int gpu_id) {
     int num_gpus;
     cudaError_t cudaStatus;
     
-    //printf("-> Checking availability of CUDA:\n");
     cudaStatus = cudaGetDeviceCount(&num_gpus);
 
     if (num_gpus <= 0 || num_gpus <= gpu_id) {
@@ -390,7 +389,6 @@ __global__ void multiply_Ax_ICpart(uint32_t*  voxelIDs,
     uint32_t offset = offsetPerBlock[bid] + (segmentsPerBlock[bid]/2)*gid;
     uint32_t nsegments = segmentsPerBlock[bid]/2 + (segmentsPerBlock[bid]%2)*gid;
 
-    //segment_t* segment = segments + offset;
     uint32_t*  voxel  = voxelIDs + offset;
     uint32_t*  fiber  = fiberIDs + offset;
     uint16_t*  orien  = orienIDs + offset;
@@ -438,7 +436,6 @@ __global__ void multiply_Ax_ECpart(
     uint32_t offset  = offsetPerBlock[bid];
     uint32_t nsegments = segmentsPerBlock[bid];
 
-    //compartmentEC_t* excomp = excomps + offset;
     uint32_t* voxel = voxelIDs + offset;
     uint16_t* orien = orienIDs + offset;
 
@@ -499,38 +496,26 @@ __global__ void multiply_Aty_ICpart(
 
     if(tid >= NUM_SAMPLES) return;
 
-    /*if(bid == 0 && tid == 0){
-    for(int i = 0; i < 10; i++){
-    printf("%d %d %d %f\n", voxelICt[i], fiberICt[i], orientICt[i], lengthICt[i]);
-    }
-    }
-    else if(bid != 0) return;
-    //__syncthreads();//*/
-
     uint32_t offset = offsetPerBlock[bid];
     uint32_t nsegments = offset + compartmentsPerBlock[bid];
 
-    //segment_t* segment = segments + offset;
     uint32_t*  voxel  = voxelICt  + offset;
     uint32_t*  fiber  = fiberICt  + offset;
     uint16_t*  orien  = orienICt  + offset;
     float32_t* length = lengthICt + offset;
-    //uint fiber = segment->fiber;
 
     for(int j = 0; j < NUM_DIAMETERS; j++){
         int offset_lut = j*NUM_ORIENTATIONS*NUM_SAMPLES + tid;
 
         float64_t sum = 0.0;
-        //segment = segments + offset;
         voxel  = voxelICt  + offset;
         orien  = orienICt  + offset;
         length = lengthICt + offset;
         for(int i = offset; i < nsegments; i++){
             sum += ((float64_t)(*length)) *( (float64_t) lut[offset_lut + (*orien)*NUM_SAMPLES] )* y[(*voxel)*NUM_SAMPLES + tid];
             //sum += ((float64_t)(*length)) *( (float64_t) tex1Dfetch(tex_lutIC, offset_lut + (*orient)*num_samples) )* y[(*voxel)*num_samples + tid];
-            //segment++;
+
             voxel++;
-            //fiber++;
             orien++;
             length++;
         }
@@ -545,7 +530,6 @@ __global__ void multiply_Aty_ICpart(
         if(tid <  16) shmem[tid] += shmem[tid +  16]; __syncthreads();
         if(tid <   8) shmem[tid] += shmem[tid +   8]; __syncthreads();
         if(tid <   4) shmem[tid] += shmem[tid +   4]; __syncthreads();
-        //if(tid <   2) shmem[tid] += shmem[tid +   2]; __syncthreads();
 
         if(tid == 0) x[j*NUM_FIBERS + (*fiber)] = shmem[0] + shmem[1] + shmem[2] + shmem[3];
 
@@ -574,23 +558,18 @@ __global__ void multiply_Aty_ECpart(
     uint32_t offset  = offsetPerBlock[bid];
     uint32_t ncompartments = segmentsPerBlock[bid] + offset;
 
-    //compartmentEC_t* peak = peaks + offset;
     uint32_t* voxel = voxelEC + offset;
     uint16_t* orien = orienEC + offset;
 
     for(int j = 0; j < NUM_ZEPPELINS; j++){        
         uint32_t offset_lut = j*NUM_ORIENTATIONS*NUM_SAMPLES + tid;
 
-        //peak = peaks + offset;
         voxel = voxelEC + offset;
         orien = orienEC + offset;
         for(int i = offset; i < ncompartments; i++){
             //shmem[tid] =( (float64_t)tex1Dfetch(tex_lutEC, (*orient)*num_samples + offset_lut) )* y[(*voxel)*num_samples + tid];
             shmem[tid] =( (float64_t)(lut[(*orien)*NUM_SAMPLES + offset_lut] ))* y[(*voxel)*NUM_SAMPLES + tid];
             __syncthreads();
-
-            //if(bid == 0){
-            //printf("%lf\n", lut[(peak->orientation)*num_samples + lut_offset] * y[(peak->voxel)*num_samples + tid]);
 
             if(tid < 256) shmem[tid] += shmem[tid + 256]; __syncthreads();
             if(tid < 128) shmem[tid] += shmem[tid + 128]; __syncthreads();
@@ -602,15 +581,13 @@ __global__ void multiply_Aty_ECpart(
             if(tid <   2) shmem[tid] += shmem[tid +   2]; __syncthreads();
 
             if(tid == 0) x[NUM_FIBERS*NUM_DIAMETERS + j*NUM_PEAKS + i] = shmem[0] + shmem[1];
-            //}
 
-            //peak++;
             voxel++;
             orien++;
             __syncthreads();
         }
     }
-} //*/
+}
 
 __global__ void multiply_Aty_ISOpart(float* lut, double* x, double* y){
     __shared__ double shmem[512];
@@ -639,5 +616,5 @@ __global__ void multiply_Aty_ISOpart(float* lut, double* x, double* y){
         if(tid == 0)
             x[offset + j*NUM_VOXELS] = shmem[0] + shmem[1] + shmem[2] + shmem[3];
     }
-}//*/
+}
 
