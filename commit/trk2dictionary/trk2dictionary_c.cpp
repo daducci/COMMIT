@@ -82,8 +82,8 @@ int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrAFFINE,
-    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* VetAffine, unsigned short ndirs, short* ptrHashTable
+    float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
 )
 {
     /*=========================*/
@@ -103,7 +103,7 @@ int trk2dictionary(
     std::map<segInVoxKey,float>::iterator itNorm;
     segInVoxKey         inVoxKey;
 
-    printf( "\t* Exporting IC compartments:\n" );
+    printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
     
     int isTRK; // var to check
 
@@ -165,7 +165,7 @@ int trk2dictionary(
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
-    PROGRESS.setPrefix("\t  ");
+    PROGRESS.setPrefix("     ");
     
     float affine[4][4];
     if (!isTRK)  {//.tck
@@ -173,7 +173,7 @@ int trk2dictionary(
         int k = 0;
         for(int i=0; i<4; i++) {
             for (int j=0; j<4; j++) {
-                affine[i][j] = VetAffine[k];
+                affine[i][j] = ptrTractsAffine[k];
                 k++;
             }
         }
@@ -240,7 +240,7 @@ int trk2dictionary(
     fclose( pDict_TRK_kept );
     fclose( pDict_ndirs );
 
-    printf("\t  [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
+    printf("     [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
 
 
     /*=========================*/
@@ -248,7 +248,7 @@ int trk2dictionary(
     /*=========================*/
     unsigned int totECSegments = 0, totECVoxels = 0;
 
-    printf( "\t* Exporting EC compartments:\n" );
+    printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
     filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v   = fopen( filename.c_str(),   "wb" );
     filename = OUTPUT_path+"/dictionary_EC_o.dict";        FILE* pDict_EC_o   = fopen( filename.c_str(),   "wb" );
@@ -300,9 +300,9 @@ int trk2dictionary(
                         ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
 
                         // multiply by the affine matrix
-                        dir.x = ptr[0] * ptrAFFINE[0] + ptr[1] * ptrAFFINE[1] + ptr[2] * ptrAFFINE[2];
-                        dir.y = ptr[0] * ptrAFFINE[3] + ptr[1] * ptrAFFINE[4] + ptr[2] * ptrAFFINE[5];
-                        dir.z = ptr[0] * ptrAFFINE[6] + ptr[1] * ptrAFFINE[7] + ptr[2] * ptrAFFINE[8];
+                        dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
+                        dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
+                        dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
 
                         // flip axes if requested
                         dir.x *= ECix;
@@ -338,7 +338,7 @@ int trk2dictionary(
     fclose( pDict_EC_v );
     fclose( pDict_EC_o );
 
-    printf("\t  [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
+    printf("     [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 
     return 1;
 }
@@ -387,8 +387,6 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
             q.y = dir.y * w;
             q.z = dir.z * w;
             w = cos(alpha/2.0);
-
-
             for(j=0; j<sectors[k] ;j++)
             {
                 // rotate the segment's normal
@@ -401,7 +399,6 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                 n.x += w * qxn.x + qxqxn.x;
                 n.y += w * qxn.y + qxqxn.y;
                 n.z += w * qxn.z + qxqxn.z;
-                // n /= np.linalg.norm(n)
 
                 // move the segment
                 S1m.x = S1.x + R*n.x;
@@ -419,6 +416,16 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                         len = sqrt( pow(S2m.x-S1m.x,2) + pow(S2m.y-S1m.y,2) + pow(S2m.z-S1m.z,2) ); // in mm
                         if ( len <= minSegLen )
                             break;
+                        
+                        if ( floor(S1m.x/pixdim.x)==floor(S2m.x/pixdim.x) &&
+                             floor(S1m.y/pixdim.y)==floor(S2m.y/pixdim.y) &&
+                             floor(S1m.z/pixdim.z)==floor(S2m.z/pixdim.z)
+                            )
+                        {
+                            // same voxel, no need to compute intersections
+                            segmentForwardModel( S1m, S2m, weights[k], ptrHashTable );
+                            break;
+                        }
 
                         // compute AABB of the first point (in mm)
                         vmin.x = floor( (S1m.x + 1e-6*dir.x)/pixdim.x ) * pixdim.x;
@@ -586,23 +593,17 @@ unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int n
 // Read a fiber from file .tck
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float affine[4][4])
 {
-    int N = 0;
+    int i = 0;
     float tmp[3];
-
     fread((char*)tmp, 1, 12, fp);
-    //printf("%f %f %f\n", tmp[0],tmp[1],tmp[2]);
-
     while( !(isnan(tmp[0])) && !(isnan(tmp[1])) &&  !(isnan(tmp[2])) )
     {
-        //printf("%f %f %f\n", tmp[0],tmp[1],tmp[2]);
-        fiber[0][N] = tmp[0]*affine[0][0] + tmp[1]*affine[0][1] + tmp[2]*affine[0][2] + affine[0][3];
-        fiber[1][N] = tmp[0]*affine[1][0] + tmp[1]*affine[1][1] + tmp[2]*affine[1][2] + affine[1][3];
-        fiber[2][N] = tmp[0]*affine[2][0] + tmp[1]*affine[2][1] + tmp[2]*affine[2][2] + affine[2][3];
-        N++;
+        fiber[0][i] = tmp[0]*affine[0][0] + tmp[1]*affine[0][1] + tmp[2]*affine[0][2] + affine[0][3];
+        fiber[1][i] = tmp[0]*affine[1][0] + tmp[1]*affine[1][1] + tmp[2]*affine[1][2] + affine[1][3];
+        fiber[2][i] = tmp[0]*affine[2][0] + tmp[1]*affine[2][1] + tmp[2]*affine[2][2] + affine[2][3];
+        i++;
         fread((char*)tmp, 1, 12, fp);
-        //printf("%f %f %f\n", fiber[0][N],fiber[1][N],fiber[2][N]);
     }
-    //printf("End Fiber\n");
 
-     return N;
+    return i;
 }
