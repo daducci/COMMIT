@@ -36,18 +36,13 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     Parameters
     ----------
     filename_tractogram : string
-        Path to the .trk or .tck file containing the tractogram to load.
+        Path to the tractogram (.trk or .tck) containing the streamlines to load.
         
     filename_trk : string
         DEPRECATED. Use filename_tractogram instead.
 
     path_out : string
-        Path to the folder where to store the sparse data structure.
-
-    filename_peaks : string
-        Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
-        The data matrix should be 4D with last dimension 3*N, where N is the number
-        of peaks in each voxel. (default : no extra-cellular contributions)
+        Path to the folder to store the sparse data structure.
 
     filename_mask : string
         Path to a binary mask to restrict the analysis to specific areas. Segments
@@ -64,29 +59,36 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         The value is specified in voxel units, eg 0.5 translates by half voxel.
         Do noth use if you are using fiber_shiftX or fiber_shiftY or fiber_shiftZ.
 
+    min_seg_len : float
+        Discard segments <= than this length in mm (default : 1e-3)
+
     points_to_skip : integer
         If necessary, discard first points at beginning/end of a fiber (default : 0).
 
-    vf_THR : float
-        Discard peaks smaller than vf_THR * max peak (default : 0.1).
+    filename_peaks : string
+        Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
+        The data matrix should be 4D with last dimension 3*N, where N is the number
+        of peaks in each voxel. (default : no extra-cellular contributions)
 
     peaks_use_affine : boolean
         Whether to rotate the peaks according to the affine matrix (default : False).
 
+    vf_THR : float
+        Discard peaks smaller than vf_THR * max peak (default : 0.1).
+
     flip_peaks : list of three boolean
         If necessary, flips peak orientations along each axis (default : no flipping).
 
-    min_seg_len : float
-        Discard segments <= than this length in mm (default : 1e-3)
-
     gen_trk : boolean
-        If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
+        If True, create a tractogram in the 'path_out' folder (either .tck or .tck)
+        containing the streamlines actually considered in the dictionary (default : True)
     
     blur_radii : list of float
         Translate each segment to given radii to assign a broader fiber contribution (default : [])
     
     blur_samples : list of integer
-        Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
+        Segments are duplicated along a circle at a given radius; this parameter controls the
+        number of samples to take over a given circle (defaut : [])
 
     blur_sigma: float
         The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
@@ -96,7 +98,8 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         If it is not specified, it will try to use the information of filename_peaks or filename_mask.
     
     ndirs : int
-            Number of directions on the half of the sphere
+        Number of orientations on the sphere used to discretize the orientation of each
+        each segment in a streamline (default : 32761)
     """
 
     filename = path_out + '/dictionary_info.pickle'
