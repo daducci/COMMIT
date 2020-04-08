@@ -95,7 +95,7 @@ cdef class LinearOperator :
 
         self.adjoint    = 0                         # direct of inverse product
 
-        self.n1 = self.nV*self.nS + self.nR-1
+        self.n1 = self.nV*self.nS + self.nR-2
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
 
         # get C pointers to arrays in DICTIONARY
