@@ -190,6 +190,34 @@ void COMMIT_L(
     int nF, int nIC, int nV, int nS, double regterm,
     double *vIN, double *vOUT)
 {
+    /*for(int r = 0; r < nIC-1; r++){
+        for(int f = 0; f < nF; f++){
+            vOUT[nV*nS + r] += regterm*( -vIN[r*nF + f] + vIN[(r+1)*nF + f] );
+        }
+    }//*/
+}
+
+void COMMIT_Lt(
+    int nF, int nIC, int nV, int nS, double regterm,
+    double *vIN, double *vOUT)
+{
+    /*for(int f = 0; f < nF; f++){
+        vOUT[f] = -vIN[nV*nS];
+        vOUT[nF*(nIC-1) + f] = vIN[nV*nS + nIC-2];
+    }
+
+    for(int r = 0; r < nIC-2; r++){
+        for(int f = 0; f < nF; f++){
+            vOUT[nF*(r+1) + f] = vIN[nV*nS + r] + vIN[nV*nS + r+1];
+        }
+    }//*/
+}
+
+
+/*void COMMIT_L(
+    int nF, int nIC, int nV, int nS, double regterm,
+    double *vIN, double *vOUT)
+{
     for(int f = 0; f < nF; f++){
 
         vOUT[nV*nS] += regterm*( -2*vIN[f] + x[nF + f] );
@@ -215,4 +243,4 @@ void COMMIT_Lt(
         
         vOUT[(nIC-1)*nF + f] += regterm*( vIN[nV*nS + (nIC-2)] - 2*vIN[nV*nS + (nIC-1)] );
     }
-}
+}//*/

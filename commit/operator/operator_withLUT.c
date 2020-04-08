@@ -2247,6 +2247,34 @@ void COMMIT_At(
 }
 
 void COMMIT_L(
+    int _nF, int _nIC, int _nV, int _nS, double _regterm,
+    double *_vIN, double *_vOUT)
+{
+    /*for(int r = 0; r < _nIC-1; r++){
+        for(int f = 0; f < _nF; f++){
+            _vOUT[_nV*_nS + r] += _regterm*( -_vIN[r*_nF + f] + _vIN[(r+1)*_nF + f] );
+        }
+    }//*/
+}
+
+void COMMIT_Lt(
+    int _nF, int _nIC, int _nV, int _nS, double _regterm,
+    double *_vIN, double *_vOUT)
+{
+    /*for(int f = 0; f < _nF; f++){
+        _vOUT[f] = -_vIN[_nV*_nS];
+        _vOUT[_nF*(_nIC-1) + f] = _vIN[_nV*_nS + _nIC-2];
+    }
+
+    for(int r = 0; r < _nIC-2; r++){
+        for(int f = 0; f < _nF; f++){
+            _vOUT[_nF*(r+1) + f] = _vIN[_nV*_nS + r] + _vIN[_nV*_nS + r+1];
+        }
+    }//*/
+}
+
+/*
+void COMMIT_L(
     int _nF, int _nIC, int _nV, int _nS, double _tikterm,
     double *_vIN, double *_vOUT)
 {
@@ -2275,4 +2303,4 @@ void COMMIT_Lt(
         
         _vOUT[(_nIC-1)*_nF + f] += _tikterm*( _vIN[_nV*_nS + (_nIC-2)] - 2*_vIN[_nV*_nS + (_nIC-1)] );
     }
-}
+}//*/
