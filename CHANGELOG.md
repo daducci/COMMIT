@@ -2,11 +2,18 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.3.5] - 2020-04-08
+
+### Added
+- Parameter 'min_fiber_len' in trk2dictionary to discard streamlines shorter than a given length in mm.
+
+### Fixed
+- Few corrections to docstring of trk2dictionary.
+
 ## [1.3.4] - 2020-04-02
 
 ### Changed
 - Added colorized output. NB: needs AMICO 1.2.0 or above.
-
 
 ## [1.3.3] - 2020-03-31
 

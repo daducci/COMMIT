@@ -60,7 +60,7 @@ float*          ptrMASK;
 unsigned int    nPointsToSkip;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
-float           minSegLen;
+float           minSegLen, minFiberLen;
 
 std::vector<double> radii;         // radii for the extrusion
 std::vector<double> weights;       // damping weight
@@ -80,7 +80,7 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine
 // =========================
 int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
-    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
+    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
@@ -136,6 +136,7 @@ int trk2dictionary(
     ptrMASK       = _ptrMASK;
     doIntersect   = c > 0;
     minSegLen     = min_seg_len;
+    minFiberLen   = min_fiber_len;
 
     radii.clear();
     sectors.clear();
@@ -195,34 +196,34 @@ int trk2dictionary(
         kept = 0;
         if ( FiberSegments.size() > 0 )
         {
-            // add segments to files
-            fiberNorm = 0;
-            fiberLen = 0;
-            for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
-            {
-                // NB: plese note inverted ordering for 'v'
-                v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
-                o = it->first.o;
-                fwrite( &totFibers,      4, 1, pDict_IC_f );
-                fwrite( &v,              4, 1, pDict_IC_v );
-                fwrite( &o,              2, 1, pDict_IC_o );
-                fwrite( &(it->second),   4, 1, pDict_IC_len );
-                ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
-                inVoxKey.set( it->first.x, it->first.y, it->first.z );
-                FiberNorm[inVoxKey] += it->second;
+            for (fiberLen = 0, it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 fiberLen += it->second;
-            }
-            for (itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
+            if ( fiberLen >= minFiberLen )
             {
-                fiberNorm += pow(itNorm->second,2);
+                // add segments to files
+                for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
+                {
+                    // NB: plese note inverted ordering for 'v'
+                    v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
+                    o = it->first.o;
+                    fwrite( &totFibers,      4, 1, pDict_IC_f );
+                    fwrite( &v,              4, 1, pDict_IC_v );
+                    fwrite( &o,              2, 1, pDict_IC_o );
+                    fwrite( &(it->second),   4, 1, pDict_IC_len );
+                    ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
+                    inVoxKey.set( it->first.x, it->first.y, it->first.z );
+                    FiberNorm[inVoxKey] += it->second;
+                }
+                for (fiberNorm = 0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
+                    fiberNorm += pow(itNorm->second,2);
+                fiberNorm = sqrt(fiberNorm);
+                FiberNorm.clear();
+                fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
+                fwrite( &fiberLen,   1, 4, pDict_TRK_len );
+                totICSegments += FiberSegments.size();
+                totFibers++;
+                kept = 1;
             }
-            fiberNorm = sqrt(fiberNorm);
-            FiberNorm.clear();
-            fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
-            fwrite( &fiberLen,   1, 4, pDict_TRK_len );
-            totICSegments += FiberSegments.size();
-            totFibers++;
-            kept = 1;
         }
         fwrite( &kept, 1, 1, pDict_TRK_kept );
     }
@@ -355,7 +356,6 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
     static int            i, j, k;
 
     FiberSegments.clear();
-    //printf("RANGO -----------------------------> from %d to %d\n", nPointsToSkip, pts-1-nPointsToSkip);
     for(i=nPointsToSkip; i<pts-1-nPointsToSkip ;i++)
     {
         // original segment to be processed
@@ -480,7 +480,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, do
         dir.z = P1.z-P2.z;
     }
 
-    // length of segment
+    // length of the segment
     len = dir.norm();
     if ( len <= minSegLen )
         return;
@@ -517,7 +517,6 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
     invrd.x = 1.0 / direction.x;
     invrd.y = 1.0 / direction.y;
     invrd.z = 1.0 / direction.z;
-
 
     if (invrd.x >= 0)
     {
