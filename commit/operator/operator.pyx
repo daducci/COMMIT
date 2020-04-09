@@ -95,7 +95,7 @@ cdef class LinearOperator :
 
         self.adjoint    = 0                         # direct of inverse product
 
-        self.n1 = self.nV*self.nS + self.nR
+        self.n1 = self.nV*self.nS + self.nR-2
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
 
         # get C pointers to arrays in DICTIONARY
@@ -209,7 +209,7 @@ cdef class LinearOperator :
             with nogil:
                 # INVERSE PRODUCT L'*lambda*y
                 COMMIT_Lt(
-                    self.nF, self.nR, self.nV, self.nS, self.regtikhonov, #self.tikterm
+                    self.nF, self.nR, self.nV, self.nS, self.regtikhonov,
                     &v_in[0], &v_out[0]
                 ) #"""
 

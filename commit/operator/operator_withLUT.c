@@ -2246,7 +2246,7 @@ void COMMIT_At(
     return;
 }
 
-
+/*
 ////////////////////////// L_2^z //////////////////////////
 void COMMIT_L(
     int _nF, int _nIC, int _nV, int _nS, double _tikterm,
@@ -2308,7 +2308,7 @@ void COMMIT_Lt(
 //*/
 
 ////////////////////////// L_2 //////////////////////////
-/*void COMMIT_L(
+void COMMIT_L(
     int _nF, int _nIC, int _nV, int _nS, double _tikterm,
     double *_vIN, double *_vOUT)
 {

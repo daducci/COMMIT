@@ -678,7 +678,7 @@ cdef class Evaluation :
         print(y.shape[0])
         print(self.KERNELS['wmr'].shape[0])
         print(y.shape[0] + self.KERNELS['wmr'].shape[0])"""
-        y2 = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0], dtype=np.float64)
+        y2 = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-2, dtype=np.float64)
         y2[0:y.shape[0]] = y
         #print(y2.shape)
         return y2
