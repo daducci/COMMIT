@@ -198,7 +198,7 @@ int trk2dictionary(
         {
             for (fiberLen = 0, it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 fiberLen += it->second;
-            if ( fiberLen >= minFiberLen )
+            if ( fiberLen > minFiberLen )
             {
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
