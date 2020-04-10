@@ -17,7 +17,7 @@ from amico.util import LOG, NOTE, WARNING, ERROR
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, 
-        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len,
+        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
@@ -25,9 +25,10 @@ cdef extern from "trk2dictionary_c.cpp":
 
 
 cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, filename_mask = None, do_intersect = True,
-    fiber_shift = 0, points_to_skip = 0, vf_THR = 0.1, peaks_use_affine = False,
-    flip_peaks = [False,False,False], min_seg_len = 1e-3, gen_trk = True,
-    blur_radii = [], blur_samples = [], blur_sigma = 1.0, filename_trk = None, TCK_ref_image = None, ndirs = 32761
+    fiber_shift = 0, min_seg_len = 1e-3, min_fiber_len = 5.0, points_to_skip = 0,
+    vf_THR = 0.1, peaks_use_affine = False, flip_peaks = [False,False,False], 
+    blur_radii = [], blur_samples = [], blur_sigma = 1.0,
+    gen_trk = True, filename_trk = None, TCK_ref_image = None, ndirs = 32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -36,18 +37,13 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     Parameters
     ----------
     filename_tractogram : string
-        Path to the .trk or .tck file containing the tractogram to load.
+        Path to the tractogram (.trk or .tck) containing the streamlines to load.
         
     filename_trk : string
         DEPRECATED. Use filename_tractogram instead.
 
     path_out : string
-        Path to the folder where to store the sparse data structure.
-
-    filename_peaks : string
-        Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
-        The data matrix should be 4D with last dimension 3*N, where N is the number
-        of peaks in each voxel. (default : no extra-cellular contributions)
+        Path to the folder to store the sparse data structure.
 
     filename_mask : string
         Path to a binary mask to restrict the analysis to specific areas. Segments
@@ -62,31 +58,40 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         If necessary, apply a translation to fiber coordinates (default : 0) to account
         for differences between the reference system of the tracking algorithm and COMMIT.
         The value is specified in voxel units, eg 0.5 translates by half voxel.
-        Do noth use if you are using fiber_shiftX or fiber_shiftY or fiber_shiftZ.
-
-    points_to_skip : integer
-        If necessary, discard first points at beginning/end of a fiber (default : 0).
-
-    vf_THR : float
-        Discard peaks smaller than vf_THR * max peak (default : 0.1).
-
-    peaks_use_affine : boolean
-        Whether to rotate the peaks according to the affine matrix (default : False).
-
-    flip_peaks : list of three boolean
-        If necessary, flips peak orientations along each axis (default : no flipping).
 
     min_seg_len : float
         Discard segments <= than this length in mm (default : 1e-3)
 
+    min_fiber_len : float
+        Discard streamlines <= than this length in mm (default : 5.0)
+
+    points_to_skip : integer
+        If necessary, discard first points at beginning/end of a fiber (default : 0).
+
+    filename_peaks : string
+        Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
+        The data matrix should be 4D with last dimension 3*N, where N is the number
+        of peaks in each voxel. (default : no extra-cellular contributions)
+
+    peaks_use_affine : boolean
+        Whether to rotate the peaks according to the affine matrix (default : False).
+
+    vf_THR : float
+        Discard peaks smaller than vf_THR * max peak (default : 0.1).
+
+    flip_peaks : list of three boolean
+        If necessary, flips peak orientations along each axis (default : no flipping).
+
     gen_trk : boolean
-        If True then generate a .trk file in the 'path_out' containing the fibers used in the dictionary (default : True)
+        If True, create a tractogram in the 'path_out' folder (either .tck or .tck)
+        containing the streamlines actually considered in the dictionary (default : True)
     
     blur_radii : list of float
         Translate each segment to given radii to assign a broader fiber contribution (default : [])
     
     blur_samples : list of integer
-        Segments are duplicated along a circle at a given radius; this parameter controls the number of samples to take over a given circle (defaut : [])
+        Segments are duplicated along a circle at a given radius; this parameter controls the
+        number of samples to take over a given circle (defaut : [])
 
     blur_sigma: float
         The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
@@ -96,7 +101,8 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         If it is not specified, it will try to use the information of filename_peaks or filename_mask.
     
     ndirs : int
-            Number of directions on the half of the sphere
+        Number of orientations on the sphere used to discretize the orientation of each
+        each segment in a streamline (default : 32761)
     """
 
     filename = path_out + '/dictionary_info.pickle'
@@ -112,6 +118,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     dictionary_info['peaks_use_affine'] = peaks_use_affine
     dictionary_info['flip_peaks'] = flip_peaks
     dictionary_info['min_seg_len'] = min_seg_len
+    dictionary_info['min_fiber_len'] = min_fiber_len
     dictionary_info['gen_trk'] = gen_trk
     dictionary_info['blur_radii'] = blur_radii
     dictionary_info['blur_samples'] = blur_samples
@@ -143,7 +150,8 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     print( '\t- Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY )
     print( '\t- Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ )
     print( '\t- Points to skip   = %d' % points_to_skip )
-    print( '\t- Min segment len  = %.2e' % min_seg_len )
+    print( '\t- Min segment len  = %.2e mm' % min_seg_len )
+    print( '\t- Min fiber len    = %.2e mm' % min_fiber_len )
 
     # check blur params
     cdef :
@@ -192,9 +200,10 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     ptrBlurSamples = &blurSamples[0]
     ptrBlurWeights = &blurWeights[0]
 
-    # minimum segment length
     if min_seg_len < 0 :
         ERROR( '"min_seg_len" must be >= 0' )
+    if min_fiber_len < 0 :
+        ERROR( '"min_fiber_len" must be >= 0' )
 
     LOG( '\n   * Loading data:' )
     cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
@@ -350,7 +359,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     # calling actual C code
     ret = trk2dictionary( filename_tractogram, data_offset,
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
-        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len,
+        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len, min_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
         nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM, ndirs, ptrHashTable  );
