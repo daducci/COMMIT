@@ -58,7 +58,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         If necessary, apply a translation to fiber coordinates (default : 0) to account
         for differences between the reference system of the tracking algorithm and COMMIT.
         The value is specified in voxel units, eg 0.5 translates by half voxel.
-        Do noth use if you are using fiber_shiftX or fiber_shiftY or fiber_shiftZ.
 
     min_seg_len : float
         Discard segments <= than this length in mm (default : 1e-3)
