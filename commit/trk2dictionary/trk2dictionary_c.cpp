@@ -356,6 +356,9 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
     static int            i, j, k;
 
     FiberSegments.clear();
+    if ( pts <= 2*nPointsToSkip )
+        return;
+
     for(i=nPointsToSkip; i<pts-1-nPointsToSkip ;i++)
     {
         // original segment to be processed
