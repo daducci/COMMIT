@@ -8,7 +8,7 @@ All notable changes to COMMIT will be documented in this file.
 - Parameter 'min_fiber_len' in trk2dictionary to discard streamlines shorter than a given length in mm.
 
 ### Fixed
-- Bug when the parameter points_to_skip was higher then streamlin length.
+- Bug when 'points_to_skip' was higher then streamline length.
 - Few corrections to docstring of trk2dictionary.
 
 ## [1.3.4] - 2020-04-02
