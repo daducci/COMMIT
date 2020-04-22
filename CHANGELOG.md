@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.3.6] - 2020-04-22
+
+### Fixed
+- Bug when the selected model has EC compartments but no peaks are provided (in trk2dictionary).
+
 ## [1.3.5] - 2020-04-08
 
 ### Added

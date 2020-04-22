@@ -641,6 +641,11 @@ cdef class Evaluation :
             ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
             ERROR( 'Threads not set; call "set_threads()" first' )
+        
+        if self.DICTIONARY['IC']['nF'] <= 0 :
+            ERROR( 'No streamline found in the dictionary; check your data' )
+        if self.DICTIONARY['EC']['nE'] <= 0 and self.KERNELS['wmh'].shape[0] > 0 :
+            ERROR( 'The selected model has EC compartments, but no peaks have been provided; check your data' )
 
         tic = time.time()
         LOG( '\n-> Building linear operator A:' )
