@@ -67,7 +67,7 @@ float	                 GLYPHS_b0_thr = 50.0;
 /*----------------------------------------------------------------------------------------------------------------------------------*/
 int main(int argc, char** argv)
 {
-    TCLAP::CmdLine cmd("Bla bla bla", ' ', "1.0");
+    TCLAP::CmdLine cmd("", ' ', "1.0");
 
     TCLAP::UnlabeledValueArg<string> argDWI(    "dwi","Filename of the DWI dataset [nifti]", true, "", "DWI", cmd );
     TCLAP::UnlabeledValueArg<string> argSCHEME( "scheme","Filename of the scheme file [text]", true, "", "scheme", cmd );
@@ -582,3 +582,4 @@ int main(int argc, char** argv)
 
     return EXIT_SUCCESS;
 }
+ 

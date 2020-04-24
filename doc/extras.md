@@ -1,6 +1,6 @@
 # External C++ tools
 
-This is a collection of additional tools that might be helpful during a tractogram evaluation with the COMMIT framework. At the moment, the following tool(s) are available:
+This is a collection of additional tools that might be helpful during a tractogram evaluation with the COMMIT framework. At the moment, the following tool(s) are availablae:
 
 - [COMMIT_debugger](#commit_debugger)
 
@@ -15,7 +15,20 @@ You will still need to install the following libraries:
 - [Blitz++](http://sourceforge.net/projects/blitz/) for efficiently manipulating multi-dimensional arrays;
 - [OpenGL](https://www.opengl.org/) and [GLUT](https://www.opengl.org/resources/libraries/glut/) for 3D visualization.
 
-Please follow the corresponding documentation to install these libraries on your platform. Our code was successfully tested on Linux (Ubuntu 14.04) and OSX (10.9 and 10.10) systems.
+Please follow the corresponding documentation to install these libraries on your platform. Our code was successfully tested on Linux (Ubuntu 14.04) and OSX (10.9 up to 10.15) systems.
+
+### OSX with homebrew
+
+If your're using [homebrew](https://brew.sh), then the following should do:
+
+```bash
+brew tap brewsci/science
+brew install cmake
+brew install blitz
+brew install niftilib
+```
+
+The `OpenGL` and `GLUT` libraries are already provided by the operating system.
 
 ##  Compile, build and install
 
@@ -33,9 +46,10 @@ Once back to the terminal, type:
 
 ```bash
 make
+make install
 ```
 
-This will install the binaries into the `build` folder.
+This will install the binaries into the `/usr/local/bin` folder. This installation path can be changed by rerunning `ccmake ..` and then modifying the `CMAKE_INSTALL_PREFIX` parameter to suits your custom needs.
 
 
 #  List of tools
@@ -51,7 +65,8 @@ This tool allows one to display, in a common 3D world, all ingredients considere
 
 **NB**: please note that this tool is very rudimental and is released only for debugging purposes.
 
-![Application screenshot](https://github.com/daducci/COMMIT/blob/master/doc/COMMIT_debugger.jpg)
+![Application screenshot](https://github.com/daducci/COMMIT/
+ob/master/doc/COMMIT_debugger.jpg)
 
 ### Synopsis
 
