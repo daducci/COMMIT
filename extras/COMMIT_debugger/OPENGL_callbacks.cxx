@@ -893,7 +893,7 @@ void OpenGL_init( int argc, char** argv )
 {
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
-    glutInitWindowSize( ScreenX, ScreenY );
+    glutReshapeWindow( ScreenX, ScreenY );
     glutCreateWindow( "COMMIT debugger" );
 
     // Projection and model matrix
@@ -947,5 +947,7 @@ void OpenGL_init( int argc, char** argv )
 
     PrintConfig();
 
+    glutReshapeWindow( ScreenX-1, ScreenY-1 );
+    glutReshapeWindow( ScreenX,   ScreenY   );
     glutMainLoop();
 }
