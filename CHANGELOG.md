@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.3.7] - 2020-04-25
+
+### Changed
+- Adapt demos to use d_perps instead of ICVFs for setting model parameters.
+
 ## [1.3.6] - 2020-04-22
 
 ### Fixed
