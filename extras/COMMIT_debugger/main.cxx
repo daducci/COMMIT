@@ -105,28 +105,35 @@ int main(int argc, char** argv)
     pixdim.z = niiDWI->hdr->pixdim[3];
     printf( "\tdim    : %d x %d x %d x %d\n", dim.x, dim.y, dim.z, niiDWI->hdr->dim[4] );
     printf( "\tpixdim : %.4f x %.4f x %.4f\n", 	pixdim.x, pixdim.y, pixdim.z );
-    printf( "\tsform  : '%s'\n", nifti_xform_string( niiDWI->hdr->sform_code ) );
-    mat44 DWI_sform = niiDWI->hdr->sto_xyz;
-    for(int i=0; i<3 ;i++)
+    printf( "\tqform  : %d\n", niiDWI->hdr->qform_code );
+    if ( niiDWI->hdr->qform_code > 0 )
     {
-        printf( "\t\t| " );
-        for(int j=0; j<4 ;j++)
-            printf( "%9.4f ", DWI_sform.m[i][j] );
-        printf( "|\n" );
+        mat44 M = niiDWI->hdr->qto_xyz;
+        for(int i=0; i<3 ;i++)
+        {
+            printf( "\t\t| " );
+            for(int j=0; j<4 ;j++)
+                printf( "%9.4f ", M.m[i][j] );
+            printf( "|\n" );
+        }
     }
-    printf( "\tqform  : '%s'\n", nifti_xform_string( niiDWI->hdr->qform_code ) );
-    mat44 DWI_qform = niiDWI->hdr->qto_xyz;
-    for(int i=0; i<3 ;i++)
+    else
     {
-        printf( "\t\t| " );
-        for(int j=0; j<4 ;j++)
-            printf( "%9.4f ", DWI_qform.m[i][j] );
-        printf( "|\n" );
+        COLOR_warning( "This sould never happen!", "\t\t" );
     }
-
-
+    printf( "\tsform  : %d\n", niiDWI->hdr->sform_code );
+    if ( niiDWI->hdr->sform_code > 0 )
+    {
+        mat44 M = niiDWI->hdr->sto_xyz;
+        for(int i=0; i<3 ;i++)
+        {
+            printf( "\t\t| " );
+            for(int j=0; j<4 ;j++)
+                printf( "%9.4f ", M.m[i][j] );
+            printf( "|\n" );
+        }
+    }
     COLOR_msg( "   [OK]" );
-
 
 
     // ===================
@@ -373,23 +380,33 @@ int main(int argc, char** argv)
 
     printf( "\tdim    : %d x %d x %d x %d\n" , niiPEAKS->hdr->dim[1],    niiPEAKS->hdr->dim[2],    niiPEAKS->hdr->dim[3], niiPEAKS->hdr->dim[4] );
     printf( "\tpixdim : %.4f x %.4f x %.4f\n", niiPEAKS->hdr->pixdim[1], niiPEAKS->hdr->pixdim[2], niiPEAKS->hdr->pixdim[3] );
-    printf( "\tsform  : '%s'\n", nifti_xform_string( niiPEAKS->hdr->sform_code ) );
-    mat44 PEAKS_sform = niiPEAKS->hdr->sto_xyz;
-    for(int i=0; i<3 ;i++)
-    {
-        printf( "\t\t| " );
-        for(int j=0; j<4 ;j++)
-            printf( "%9.4f ", PEAKS_sform.m[i][j] );
-        printf( "|\n" );
-    }
-    printf( "\tqform  : '%s'\n", nifti_xform_string( niiPEAKS->hdr->qform_code ) );
+    printf( "\tqform  : %d\n", niiPEAKS->hdr->qform_code );
     mat44 PEAKS_qform = niiPEAKS->hdr->qto_xyz;
-    for(int i=0; i<3 ;i++)
+    if ( niiPEAKS->hdr->qform_code > 0 )
     {
-        printf( "\t\t| " );
-        for(int j=0; j<4 ;j++)
-            printf( "%9.4f ", PEAKS_qform.m[i][j] );
-        printf( "|\n" );
+        for(int i=0; i<3 ;i++)
+        {
+            printf( "\t\t| " );
+            for(int j=0; j<4 ;j++)
+                printf( "%9.4f ", PEAKS_qform.m[i][j] );
+            printf( "|\n" );
+        }
+    }
+    else
+    {
+        COLOR_warning( "This sould never happen!", "\t\t" );
+    }
+    printf( "\tsform  : %d\n", niiPEAKS->hdr->sform_code );
+    mat44 PEAKS_sform = niiPEAKS->hdr->sto_xyz;
+    if ( niiPEAKS->hdr->sform_code > 0 )
+    {
+        for(int i=0; i<3 ;i++)
+        {
+            printf( "\t\t| " );
+            for(int j=0; j<4 ;j++)
+                printf( "%9.4f ", PEAKS_sform.m[i][j] );
+            printf( "|\n" );
+        }
     }
 
     if ( niiPEAKS->hdr->dim[0] != 4 || niiPEAKS->hdr->dim[4]%3 != 0 )
@@ -414,23 +431,22 @@ int main(int argc, char** argv)
         niiPEAKS->hdr->qoffset_x != niiDWI->hdr->qoffset_x || niiPEAKS->hdr->qoffset_y != niiDWI->hdr->qoffset_y || niiPEAKS->hdr->qoffset_z != niiDWI->hdr->qoffset_z
        )
     {
-
         COLOR_warning( "The GEOMETRY does not match that of DWI images", "\t" );
     }
 
     // Read the affine matrix to rotate the vectors
     // NB: we need the inverse, but in this case inv=transpose
-    if ( niiPEAKS->hdr->sform_code != 0 )
-    {
-        for(int i=0; i<3 ;i++)
-        for(int j=0; j<3 ;j++)
-            PEAKS_affine[i][j] = PEAKS_sform.m[j][i];
-    }
-    else if ( niiPEAKS->hdr->qform_code != 0 )
+    if ( niiPEAKS->hdr->qform_code != 0 )
     {
         for(int i=0; i<3 ;i++)
         for(int j=0; j<3 ;j++)
             PEAKS_affine[i][j] = PEAKS_qform.m[j][i];
+    }
+    else if ( niiPEAKS->hdr->sform_code != 0 )
+    {
+        for(int i=0; i<3 ;i++)
+        for(int j=0; j<3 ;j++)
+            PEAKS_affine[i][j] = PEAKS_sform.m[j][i];
     }
     else {
         for(int i=0; i<3 ;i++)
@@ -438,6 +454,15 @@ int main(int argc, char** argv)
             PEAKS_affine[i][j] = 0;
         for(int i=0; i<3 ;i++)
             PEAKS_affine[i][i] = 1;
+    }
+
+    printf( "\tAffine used :\n" );
+    for(int i=0; i<3 ;i++)
+    {
+        printf( "\t\t| " );
+        for(int j=0; j<3 ;j++)
+            printf( "%9.4f ", PEAKS_affine[i][j] );
+        printf( "|\n" );
     }
 
     COLOR_msg( "   [OK]" );
