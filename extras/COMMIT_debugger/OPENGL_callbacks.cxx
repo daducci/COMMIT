@@ -35,7 +35,7 @@ void PrintConfig()
     printf( "\t- PEAKS_use_affine = %s\n", PEAKS_use_affine?"true":"false" );
     printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
     printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
-    printf( "\t- PEAKS_width = %.1f\n", PEAKS_width );
+    printf( "\t- LINE_width = %.1f\n", LINE_width );
     // printf( "\t- PEAKS_kolor = [ %.1f, %.1f ]\n", PEAKS_kolor_l, PEAKS_kolor_u );
     // printf( "\t- PEAKS_lut = %d\n", PEAKS_lut );
     printf( "\n" );
@@ -65,10 +65,14 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case '2': showPlane[1] = 1 - showPlane[1]; break;
         case '3': showPlane[2] = 1 - showPlane[2]; break;
         case '0': showAxes = 1 - showAxes; break;
+        case '-': zoom += 10.0; break;
+        case '+': zoom -= 10.0; break;
         case 'm': MAP_max_view = fmaxf(0.0,MAP_max_view-MAP_max*0.05); break;
         case 'M': MAP_max_view = fminf(MAP_max,MAP_max_view+MAP_max*0.05); break;
         case 'o': MAP_opacity = fmaxf(0.0,MAP_opacity-0.1); break;
         case 'O': MAP_opacity = fminf(1.0,MAP_opacity+0.1); break;
+        case 'w': LINE_width = fmaxf( 1,LINE_width-1); break;
+        case 'W': LINE_width = fminf(10,LINE_width+1); break;
         case 'r':
             translation.x	= translation.y = 0;
             rotation.x		= rotation.y = rotation.z = 0;
@@ -92,8 +96,6 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case 't': PEAKS_thr = fmaxf(PEAKS_thr - 0.1, 0.0); break;
         case 'T': PEAKS_thr = fminf(PEAKS_thr + 0.1, 1.0); break;
         case 'n': PEAKS_doNormalize = 1 - PEAKS_doNormalize; break;
-        case 'w': PEAKS_width = max(1,PEAKS_width-1); break;
-        case 'W': PEAKS_width = min(15,PEAKS_width+1); break;
 
         case 'f': if ( TRK_nTractsPlotted > 0 ) TRK_show = 1 - TRK_show; break;
         case 'c': TRK_crop = fmaxf( 0.0,TRK_crop-0.5); break;
@@ -139,39 +141,41 @@ void GLUT__menu( int id )
     {
         case   0: exit(0);
 
-        case 101: GLUT__keyboard('1'); break;
-        case 102: GLUT__keyboard('2'); break;
-        case 103: GLUT__keyboard('3'); break;
-        case 104: GLUT__keyboard('0'); break;
-        case 105: GLUT__keyboard('m'); break;
-        case 106: GLUT__keyboard('M'); break;
-        case 107: GLUT__keyboard('o'); break;
-        case 108: GLUT__keyboard('O'); break;
-        case 109: GLUT__keyboard('r'); break;
+        case 101: GLUT__keyboard('s'); break;
+        case 102: GLUT__keyboard('S'); break;
+        case 103: GLUT__keyboard('X'); break;
+        case 104: GLUT__keyboard('Y'); break;
+        case 105: GLUT__keyboard('Z'); break;
+        case 106: GLUT__keyboard('b'); break;
+        case 107: GLUT__keyboard('B'); break;
 
-        case 201: GLUT__keyboard('s'); break;
-        case 202: GLUT__keyboard('S'); break;
-        case 203: GLUT__keyboard('X'); break;
-        case 204: GLUT__keyboard('Y'); break;
-        case 205: GLUT__keyboard('Z'); break;
-        case 206: GLUT__keyboard('b'); break;
-        case 207: GLUT__keyboard('B'); break;
+        case 201: GLUT__keyboard('p'); break;
+        case 202: GLUT__keyboard('a'); break;
+        case 203: GLUT__keyboard('x'); break;
+        case 204: GLUT__keyboard('y'); break;
+        case 205: GLUT__keyboard('z'); break;
+        case 206: GLUT__keyboard('t'); break;
+        case 207: GLUT__keyboard('T'); break;
+        case 208: GLUT__keyboard('n'); break;
 
-        case 301: GLUT__keyboard('p'); break;
-        case 302: GLUT__keyboard('a'); break;
-        case 303: GLUT__keyboard('x'); break;
-        case 304: GLUT__keyboard('y'); break;
-        case 305: GLUT__keyboard('z'); break;
-        case 306: GLUT__keyboard('t'); break;
-        case 307: GLUT__keyboard('T'); break;
-        case 308: GLUT__keyboard('n'); break;
-        case 309: GLUT__keyboard('w'); break;
-        case 310: GLUT__keyboard('W'); break;
+        case 301: GLUT__keyboard('f'); break;
+        case 302: GLUT__keyboard('c'); break;
+        case 303: GLUT__keyboard('C'); break;
+        case 304: GLUT__keyboard(' '); break;
 
-        case 401: GLUT__keyboard('f'); break;
-        case 402: GLUT__keyboard('c'); break;
-        case 403: GLUT__keyboard('C'); break;
-        case 404: GLUT__keyboard(' '); break;
+        case 401: GLUT__keyboard('1'); break;
+        case 402: GLUT__keyboard('2'); break;
+        case 403: GLUT__keyboard('3'); break;
+        case 404: GLUT__keyboard('0'); break;
+        case 405: GLUT__keyboard('-'); break;
+        case 406: GLUT__keyboard('+'); break;
+        case 407: GLUT__keyboard('m'); break;
+        case 408: GLUT__keyboard('M'); break;
+        case 409: GLUT__keyboard('o'); break;
+        case 410: GLUT__keyboard('O'); break;
+        case 411: GLUT__keyboard('w'); break;
+        case 412: GLUT__keyboard('W'); break;
+        case 413: GLUT__keyboard('r'); break;
     }
 }
 
@@ -180,49 +184,51 @@ void GLUT__menu( int id )
 // ------------------------
 void GLUT__createMenu()
 {
-    int submenu_VIEW_id = glutCreateMenu( GLUT__menu );
-    glutAddMenuEntry("[1] Show/hide YZ plane",101);
-    glutAddMenuEntry("[2] Show/hide XZ plane",102);
-    glutAddMenuEntry("[3] Show/hide XY plane",103);
-    glutAddMenuEntry("[0] Show/hide axes",    104);
-    glutAddMenuEntry("[m] Decrease max value",105);
-    glutAddMenuEntry("[M] Increase max value",106);
-    glutAddMenuEntry("[o] Decrease opacity",  107);
-    glutAddMenuEntry("[O] Increase opacity",  108);
-    glutAddMenuEntry("[r] Reset view",        109);
-
     int submenu_SIGNAL_id = glutCreateMenu( GLUT__menu );
-    glutAddMenuEntry("[s] Show/hide",         201);
-    glutAddMenuEntry("[S] Change shell",      202);
-    glutAddMenuEntry("[X] Flip X axis",       203);
-    glutAddMenuEntry("[Y] Flip Y axis",       204);
-    glutAddMenuEntry("[Z] Flip Z axis",       205);
-    glutAddMenuEntry("[b] Decrease b0 thr",   206);
-    glutAddMenuEntry("[B] Increase b0 thr",   207);
+    glutAddMenuEntry("[s] Show/hide",         101);
+    glutAddMenuEntry("[S] Change shell",      102);
+    glutAddMenuEntry("[X] Flip X axis",       103);
+    glutAddMenuEntry("[Y] Flip Y axis",       104);
+    glutAddMenuEntry("[Z] Flip Z axis",       105);
+    glutAddMenuEntry("[b] Decrease b0 thr",   106);
+    glutAddMenuEntry("[B] Increase b0 thr",   107);
 
     int submenu_PEAKS_id = glutCreateMenu( GLUT__menu );
-    glutAddMenuEntry("[p] Show/hide",         301);
-    glutAddMenuEntry("[a] Use affine",        302);
-    glutAddMenuEntry("[x] Flip X axis",       303);
-    glutAddMenuEntry("[y] Flip Y axis",       304);
-    glutAddMenuEntry("[z[ Flip Z axis",       305);
-    glutAddMenuEntry("[t] Decrease threshold",306);
-    glutAddMenuEntry("[T] Increase threshold",307);
-    glutAddMenuEntry("[n] Normalize length",  308);
-    glutAddMenuEntry("[t] Decrease width",    309);
-    glutAddMenuEntry("[T] Increase width",    310);
+    glutAddMenuEntry("[p] Show/hide",         201);
+    glutAddMenuEntry("[a] Use affine",        202);
+    glutAddMenuEntry("[x] Flip X axis",       203);
+    glutAddMenuEntry("[y] Flip Y axis",       204);
+    glutAddMenuEntry("[z[ Flip Z axis",       205);
+    glutAddMenuEntry("[t] Decrease threshold",206);
+    glutAddMenuEntry("[T] Increase threshold",207);
+    glutAddMenuEntry("[n] Normalize length",  208);
 
     int submenu_FIBERS_id = glutCreateMenu( GLUT__menu );
-    glutAddMenuEntry("[f] Show/hide",         401);
-    glutAddMenuEntry("[c] Decrease crop size",402);
-    glutAddMenuEntry("[C] Increase crop size",403);
-    glutAddMenuEntry("[ ] Change crop mode",  404);
+    glutAddMenuEntry("[f] Show/hide",         301);
+    glutAddMenuEntry("[c] Decrease crop size",302);
+    glutAddMenuEntry("[C] Increase crop size",303);
+    glutAddMenuEntry("[ ] Change crop mode",  304);
+
+    int submenu_VIEW_id = glutCreateMenu( GLUT__menu );
+    glutAddMenuEntry("[1] Show/hide YZ plane",401);
+    glutAddMenuEntry("[2] Show/hide XZ plane",402);
+    glutAddMenuEntry("[3] Show/hide XY plane",403);
+    glutAddMenuEntry("[0] Show/hide axes",    404);
+    glutAddMenuEntry("[-] Decrease zoom",     405);
+    glutAddMenuEntry("[+] Increase zoom",     406);
+    glutAddMenuEntry("[m] Decrease max value",407);
+    glutAddMenuEntry("[M] Increase max value",408);
+    glutAddMenuEntry("[o] Decrease opacity",  409);
+    glutAddMenuEntry("[O] Increase opacity",  410);
+    glutAddMenuEntry("[t] Decrease width",    411);
+    glutAddMenuEntry("[T] Increase width",    412);
+    glutAddMenuEntry("[r] Reset view",        413);
 
     int menu_id = glutCreateMenu( GLUT__menu );
-    glutAddSubMenu("Axes",   submenu_VIEW_id);
-    glutAddSubMenu("Signal", submenu_SIGNAL_id);
-    glutAddSubMenu("Peaks",  submenu_PEAKS_id);
-    glutAddSubMenu("Fibers", submenu_FIBERS_id);
+    glutAddSubMenu("Signal",       submenu_SIGNAL_id);
+    glutAddSubMenu("Peaks",        submenu_PEAKS_id);
+    glutAddSubMenu("Fibers",       submenu_FIBERS_id);
+    glutAddSubMenu("View options", submenu_VIEW_id);
     glutAddMenuEntry("Quit", 0);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
@@ -324,7 +330,7 @@ void GLUT__mouse( GLint button, GLint state, GLint x, GLint y )
             start.x = x;
             start.y = y;
         }
-        else if ( button == GLUT_LEFT_BUTTON && glutGetModifiers() == GLUT_ACTIVE_CTRL )
+        else if ( button == GLUT_RIGHT_BUTTON )// && glutGetModifiers() == GLUT_ACTIVE_CTRL )
         {
             moving = 2;
             start.x = x;
@@ -475,8 +481,8 @@ void GLUT__display( void )
     if ( PEAKS_show || GLYPHS_show )
     {
         glDisable( GL_BLEND );
-        glLineWidth( PEAKS_width );
-        glPointSize( PEAKS_width );
+        glLineWidth( LINE_width );
+        glPointSize( LINE_width );
 
         glPushMatrix();
         glTranslatef(.5,.5,.5);
