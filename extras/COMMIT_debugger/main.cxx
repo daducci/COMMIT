@@ -29,7 +29,7 @@ float                    MAP_min, MAP_min_view, MAP_max, MAP_max_view;
 float 			         MAP_opacity = 0.1;//0.8;
 bool			         showPlane[3] = { false, false, true };
 bool                     showAxes = true;
-bool			         showHelp = false;
+bool			         isVerbose = true;
 
 NIFTI*                   niiPEAKS;
 int				         PEAKS_n;
@@ -585,7 +585,7 @@ int main(int argc, char** argv)
         }
 
         COLOR_msg( "   [OK]" );
-        printf( "\n" );
+        printf( "\n\n" );
     }
     else
     {

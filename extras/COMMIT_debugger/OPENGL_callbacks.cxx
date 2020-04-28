@@ -24,7 +24,7 @@ float ScreenX = 800, ScreenY = 600;
 
 void PrintConfig()
 {
-    if ( !showHelp )
+    if ( !isVerbose )
         return;
     printf( "=======================\n     CONFIGURATION     \n=======================\n" );
     printf( "\t- showPLANE = [ %d, %d, %d ]\n", showPlane[0], showPlane[1], showPlane[2] );
@@ -36,16 +36,195 @@ void PrintConfig()
     printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
     printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
     printf( "\t- PEAKS_width = %.1f\n", PEAKS_width );
-    printf( "\t- PEAKS_kolor = [ %.1f, %.1f ]\n", PEAKS_kolor_l, PEAKS_kolor_u );
-    printf( "\t- PEAKS_lut = %d\n", PEAKS_lut );
+    // printf( "\t- PEAKS_kolor = [ %.1f, %.1f ]\n", PEAKS_kolor_l, PEAKS_kolor_u );
+    // printf( "\t- PEAKS_lut = %d\n", PEAKS_lut );
     printf( "\n" );
-    printf( "\t- TRK_offset = [ %.1f %.1f %.1f]    (voxel-size units)\n", TRK_offset.x, TRK_offset.y, TRK_offset.z );
+    printf( "\t- TRK_offset = [ %.1f %.1f %.1f ]    (voxel-size units)\n", TRK_offset.x, TRK_offset.y, TRK_offset.z );
     printf( "\t- TRK_crop = %.1f  (voxel-size units)\n", TRK_crop );
     printf( "\n" );
     printf( "\t- GLYPHS_shell = %d (b=%.1f)\n", GLYPHS_shell, SCHEME_shells_b[GLYPHS_shell] );
     printf( "\t- GLYPHS_flip = [ %d, %d, %d ]\n", GLYPHS_flip[0], GLYPHS_flip[1], GLYPHS_flip[2] );
     printf( "\t- GLYPHS_b0_thr = %.1f\n", GLYPHS_b0_thr );
     printf( "\n" );
+}
+
+
+// KEYBOARD callback
+// -----------------
+void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
+{
+    bool doRedraw = true;
+    GLint modif = glutGetModifiers();
+    GLint ALT   = modif & GLUT_ACTIVE_ALT;
+
+    switch( key )
+    {
+        case 'v': isVerbose = 1 - isVerbose; break;
+
+        case '1': showPlane[0] = 1 - showPlane[0]; break;
+        case '2': showPlane[1] = 1 - showPlane[1]; break;
+        case '3': showPlane[2] = 1 - showPlane[2]; break;
+        case '0': showAxes = 1 - showAxes; break;
+        case 'm': MAP_max_view = fmaxf(0.0,MAP_max_view-MAP_max*0.05); break;
+        case 'M': MAP_max_view = fminf(MAP_max,MAP_max_view+MAP_max*0.05); break;
+        case 'o': MAP_opacity = fmaxf(0.0,MAP_opacity-0.1); break;
+        case 'O': MAP_opacity = fminf(1.0,MAP_opacity+0.1); break;
+        case 'r':
+            translation.x	= translation.y = 0;
+            rotation.x		= rotation.y = rotation.z = 0;
+            zoom			= 0;
+            OPENGL_utils::identity( rot );
+            break;
+
+        case 's': GLYPHS_show = 1 - GLYPHS_show; break;
+        case 'S': GLYPHS_shell = (GLYPHS_shell+1) % SCHEME_shells_idx.size(); break;
+        case 'X': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].x *= -1; break;
+        case 'Y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].y *= -1; break;
+        case 'Z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].z *= -1; break;
+        case 'b': GLYPHS_b0_thr = fmaxf(0.0,GLYPHS_b0_thr-10.0); break;
+        case 'B': GLYPHS_b0_thr = fminf(MAP_max,GLYPHS_b0_thr+10.0); break;
+
+        case 'p': PEAKS_show  = 1 - PEAKS_show; break;
+        case 'a': PEAKS_use_affine = 1 - PEAKS_use_affine; break;
+        case 'x': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
+        case 'y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
+        case 'z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
+        case 't': PEAKS_thr = fmaxf(PEAKS_thr - 0.1, 0.0); break;
+        case 'T': PEAKS_thr = fminf(PEAKS_thr + 0.1, 1.0); break;
+        case 'n': PEAKS_doNormalize = 1 - PEAKS_doNormalize; break;
+        case 'w': PEAKS_width = max(1,PEAKS_width-1); break;
+        case 'W': PEAKS_width = min(15,PEAKS_width+1); break;
+
+        case 'f': if ( TRK_nTractsPlotted > 0 ) TRK_show = 1 - TRK_show; break;
+        case 'c': TRK_crop = fmaxf( 0.0,TRK_crop-0.5); break;
+        case 'C': TRK_crop = fminf(max(dim.x,max(dim.y,dim.z)),TRK_crop+0.5); break;
+        case ' ': TRK_crop_mode = 1 - TRK_crop_mode; break;
+
+        // case 'j': PEAKS_kolor_l = fmaxf(PEAKS_kolor_l - 0.5,  0.0); break;
+        // case 'J': PEAKS_kolor_l = fminf(PEAKS_kolor_l + 0.5, PEAKS_kolor_u); break;
+        // case 'k': PEAKS_kolor_u = fmaxf(PEAKS_kolor_u - 0.5, PEAKS_kolor_l); break;
+        // case 'K': PEAKS_kolor_u = fminf(PEAKS_kolor_u + 0.5, 20.0); break;
+        // case 'l':
+        //     PEAKS_lut   = (PEAKS_lut+1) % 7;
+        //     switch( PEAKS_lut )
+        //     {
+        //         case 0 : PEAKS_lut_ptr = &COLORMAPS::hot;        break;
+        //         case 1 : PEAKS_lut_ptr = &COLORMAPS::parula;     break;
+        //         case 2 : PEAKS_lut_ptr = &COLORMAPS::greenToRed; break;
+        //         case 3 : PEAKS_lut_ptr = &COLORMAPS::polar;      break;
+        //         case 4 : PEAKS_lut_ptr = &COLORMAPS::dawn;       break;
+        //         case 5 : PEAKS_lut_ptr = &COLORMAPS::gnuplot;    break;
+        //         case 6 : PEAKS_lut_ptr = &COLORMAPS::rainbow;    break;
+        //     }
+        //     break;
+
+        case 27 : exit(0); break;
+
+        default: doRedraw = false;
+    }
+
+    if ( doRedraw )
+    {
+        PrintConfig();
+        glutPostRedisplay();
+    }
+}
+
+
+// MENU callback
+// -------------
+void GLUT__menu( int id ) 
+{
+    switch( id )
+    {
+        case   0: exit(0);
+
+        case 101: GLUT__keyboard('1'); break;
+        case 102: GLUT__keyboard('2'); break;
+        case 103: GLUT__keyboard('3'); break;
+        case 104: GLUT__keyboard('0'); break;
+        case 105: GLUT__keyboard('m'); break;
+        case 106: GLUT__keyboard('M'); break;
+        case 107: GLUT__keyboard('o'); break;
+        case 108: GLUT__keyboard('O'); break;
+        case 109: GLUT__keyboard('r'); break;
+
+        case 201: GLUT__keyboard('s'); break;
+        case 202: GLUT__keyboard('S'); break;
+        case 203: GLUT__keyboard('X'); break;
+        case 204: GLUT__keyboard('Y'); break;
+        case 205: GLUT__keyboard('Z'); break;
+        case 206: GLUT__keyboard('b'); break;
+        case 207: GLUT__keyboard('B'); break;
+
+        case 301: GLUT__keyboard('p'); break;
+        case 302: GLUT__keyboard('a'); break;
+        case 303: GLUT__keyboard('x'); break;
+        case 304: GLUT__keyboard('y'); break;
+        case 305: GLUT__keyboard('z'); break;
+        case 306: GLUT__keyboard('t'); break;
+        case 307: GLUT__keyboard('T'); break;
+        case 308: GLUT__keyboard('n'); break;
+        case 309: GLUT__keyboard('w'); break;
+        case 310: GLUT__keyboard('W'); break;
+
+        case 401: GLUT__keyboard('f'); break;
+        case 402: GLUT__keyboard('c'); break;
+        case 403: GLUT__keyboard('C'); break;
+        case 404: GLUT__keyboard(' '); break;
+    }
+}
+
+
+// Create the dropdown MENU
+// ------------------------
+void GLUT__createMenu()
+{
+    int submenu_VIEW_id = glutCreateMenu( GLUT__menu );
+    glutAddMenuEntry("[1] Show/hide YZ plane",101);
+    glutAddMenuEntry("[2] Show/hide XZ plane",102);
+    glutAddMenuEntry("[3] Show/hide XY plane",103);
+    glutAddMenuEntry("[0] Show/hide axes",    104);
+    glutAddMenuEntry("[m] Decrease max value",105);
+    glutAddMenuEntry("[M] Increase max value",106);
+    glutAddMenuEntry("[o] Decrease opacity",  107);
+    glutAddMenuEntry("[O] Increase opacity",  108);
+    glutAddMenuEntry("[r] Reset view",        109);
+
+    int submenu_SIGNAL_id = glutCreateMenu( GLUT__menu );
+    glutAddMenuEntry("[s] Show/hide",         201);
+    glutAddMenuEntry("[S] Change shell",      202);
+    glutAddMenuEntry("[X] Flip X axis",       203);
+    glutAddMenuEntry("[Y] Flip Y axis",       204);
+    glutAddMenuEntry("[Z] Flip Z axis",       205);
+    glutAddMenuEntry("[b] Decrease b0 thr",   206);
+    glutAddMenuEntry("[B] Increase b0 thr",   207);
+
+    int submenu_PEAKS_id = glutCreateMenu( GLUT__menu );
+    glutAddMenuEntry("[p] Show/hide",         301);
+    glutAddMenuEntry("[a] Use affine",        302);
+    glutAddMenuEntry("[x] Flip X axis",       303);
+    glutAddMenuEntry("[y] Flip Y axis",       304);
+    glutAddMenuEntry("[z[ Flip Z axis",       305);
+    glutAddMenuEntry("[t] Decrease threshold",306);
+    glutAddMenuEntry("[T] Increase threshold",307);
+    glutAddMenuEntry("[n] Normalize length",  308);
+    glutAddMenuEntry("[t] Decrease width",    309);
+    glutAddMenuEntry("[T] Increase width",    310);
+
+    int submenu_FIBERS_id = glutCreateMenu( GLUT__menu );
+    glutAddMenuEntry("[f] Show/hide",         401);
+    glutAddMenuEntry("[c] Decrease crop size",402);
+    glutAddMenuEntry("[C] Increase crop size",403);
+    glutAddMenuEntry("[ ] Change crop mode",  404);
+
+    int menu_id = glutCreateMenu( GLUT__menu );
+    glutAddSubMenu("Axes",   submenu_VIEW_id);
+    glutAddSubMenu("Signal", submenu_SIGNAL_id);
+    glutAddSubMenu("Peaks",  submenu_PEAKS_id);
+    glutAddSubMenu("Fibers", submenu_FIBERS_id);
+    glutAddMenuEntry("Quit", 0);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
 
@@ -62,99 +241,6 @@ void GLUT__reshape( GLint w, GLint h )
 
     glMatrixMode( GL_MODELVIEW );
     glViewport( 0, 0, w, h );
-}
-
-
-
-// KEYBOARD callback
-// -----------------
-void GLUT__keyboard( unsigned char key, GLint x, GLint y )
-{
-    bool doRedraw = true;
-    GLint modif = glutGetModifiers();
-    GLint ALT   = modif & GLUT_ACTIVE_ALT;
-
-    switch( key )
-    {
-        case 'h': showHelp = 1 - showHelp; break;
-
-        case '1': showPlane[0] = 1 - showPlane[0]; break;
-        case '2': showPlane[1] = 1 - showPlane[1]; break;
-        case '3': showPlane[2] = 1 - showPlane[2]; break;
-
-        case '0': showAxes = 1 - showAxes; break;
-
-        case 'a': PEAKS_use_affine = 1 - PEAKS_use_affine;  break;
-        case 'x': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
-        case 'y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
-        case 'z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
-
-        case 'X': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].x *= -1; break;
-        case 'Y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].y *= -1; break;
-        case 'Z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].z *= -1; break;
-
-        case 't': PEAKS_thr = fmaxf(PEAKS_thr - 0.1, 0.0); break;
-        case 'T': PEAKS_thr = fminf(PEAKS_thr + 0.1, 1.0); break;
-
-        case 'n': PEAKS_doNormalize = 1 - PEAKS_doNormalize; break;
-
-        case 'w': PEAKS_width = max(1,PEAKS_width-1); break;
-        case 'W': PEAKS_width = min(15,PEAKS_width+1); break;
-
-        case 'o': MAP_opacity = fmaxf(0.0,MAP_opacity-0.1); break;
-        case 'O': MAP_opacity = fminf(1.0,MAP_opacity+0.1); break;
-
-        case 'm': MAP_max_view = fmaxf(0.0,MAP_max_view-MAP_max*0.05); break;
-        case 'M': MAP_max_view = fminf(MAP_max,MAP_max_view+MAP_max*0.05); break;
-
-        case 'c': TRK_crop = fmaxf( 0.0,TRK_crop-0.5); break;
-        case 'C': TRK_crop = fminf(max(dim.x,max(dim.y,dim.z)),TRK_crop+0.5); break;
-        case ' ': TRK_crop_mode = 1 - TRK_crop_mode; break;
-
-        case 'f': if ( TRK_nTractsPlotted > 0 ) TRK_show = 1 - TRK_show; break;
-
-        case 's': GLYPHS_show = 1 - GLYPHS_show; break;
-        case 'S': GLYPHS_shell = (GLYPHS_shell+1) % SCHEME_shells_idx.size(); break;
-
-        case 'p': PEAKS_show  = 1 - PEAKS_show;  break;
-        case 'j': PEAKS_kolor_l = fmaxf(PEAKS_kolor_l - 0.5,  0.0); break;
-        case 'J': PEAKS_kolor_l = fminf(PEAKS_kolor_l + 0.5, PEAKS_kolor_u); break;
-        case 'k': PEAKS_kolor_u = fmaxf(PEAKS_kolor_u - 0.5, PEAKS_kolor_l); break;
-        case 'K': PEAKS_kolor_u = fminf(PEAKS_kolor_u + 0.5, 20.0); break;
-        case 'l':
-            PEAKS_lut   = (PEAKS_lut+1) % 7;
-            switch( PEAKS_lut )
-            {
-                case 0 : PEAKS_lut_ptr = &COLORMAPS::hot;        break;
-                case 1 : PEAKS_lut_ptr = &COLORMAPS::parula;     break;
-                case 2 : PEAKS_lut_ptr = &COLORMAPS::greenToRed; break;
-                case 3 : PEAKS_lut_ptr = &COLORMAPS::polar;      break;
-                case 4 : PEAKS_lut_ptr = &COLORMAPS::dawn;       break;
-                case 5 : PEAKS_lut_ptr = &COLORMAPS::gnuplot;    break;
-                case 6 : PEAKS_lut_ptr = &COLORMAPS::rainbow;    break;
-            }
-            break;
-
-        case 'b': GLYPHS_b0_thr = fmaxf(0.0,GLYPHS_b0_thr-10.0); break;
-        case 'B': GLYPHS_b0_thr = fminf(MAP_max,GLYPHS_b0_thr+10.0); break;
-
-        case 'r':
-            translation.x	= translation.y = 0;
-            rotation.x		= rotation.y = rotation.z = 0;
-            zoom			= 0;
-            OPENGL_utils::identity( rot );
-            break;
-
-        case 27 : exit(0); break;
-
-        default: doRedraw = false;
-    }
-
-    if ( doRedraw )
-    {
-        PrintConfig();
-        glutPostRedisplay();
-    }
 }
 
 
@@ -238,7 +324,7 @@ void GLUT__mouse( GLint button, GLint state, GLint x, GLint y )
             start.x = x;
             start.y = y;
         }
-        else if ( button == GLUT_RIGHT_BUTTON )
+        else if ( button == GLUT_LEFT_BUTTON && glutGetModifiers() == GLUT_ACTIVE_CTRL )
         {
             moving = 2;
             start.x = x;
@@ -256,7 +342,6 @@ void GLUT__mouse( GLint button, GLint state, GLint x, GLint y )
         moving = 0;
     }
 }
-
 
 
 // MOTION callback
@@ -946,6 +1031,8 @@ void OpenGL_init( int argc, char** argv )
     glutMotionFunc(   GLUT__motion );
 
     PrintConfig();
+
+    GLUT__createMenu();
 
     glutReshapeWindow( ScreenX-1, ScreenY-1 );
     glutReshapeWindow( ScreenX,   ScreenY   );
