@@ -27,7 +27,7 @@ blitz::Array<float,3>    MAP;
 VECTOR<int>		         VOXEL;
 float                    MAP_min, MAP_min_view, MAP_max, MAP_max_view;
 float 			         MAP_opacity = 0.1;//0.8;
-bool			         showPlane[3] = { false, false, true };
+bool			         showPlane[3] = { true, true, true };
 bool                     showAxes = true;
 bool			         isVerbose = true;
 

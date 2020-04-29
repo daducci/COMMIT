@@ -64,6 +64,37 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case '1': showPlane[0] = 1 - showPlane[0]; break;
         case '2': showPlane[1] = 1 - showPlane[1]; break;
         case '3': showPlane[2] = 1 - showPlane[2]; break;
+        case '4':
+            showPlane[0] = 1;
+            showPlane[1] = 0;
+            showPlane[2] = 0;
+            translation.x	= translation.y = 0;
+            rotation.x		= rotation.y = rotation.z = 0;
+            zoom			= 0;
+            OPENGL_utils::identity(rot1);
+            OPENGL_utils::rotateX(rot1, 90.0, rot2);
+            OPENGL_utils::rotateZ(rot2, 90.0, rot);
+            break;
+        case '5':
+            showPlane[0] = 0;
+            showPlane[1] = 1;
+            showPlane[2] = 0;
+            translation.x	= translation.y = 0;
+            rotation.x		= rotation.y = rotation.z = 0;
+            zoom			= 0;
+            OPENGL_utils::identity(rot1);
+            OPENGL_utils::rotateX(rot1, 90.0, rot);
+            break;
+        case '6':
+            showPlane[0] = 0;
+            showPlane[1] = 0;
+            showPlane[2] = 1;
+            translation.x	= translation.y = 0;
+            rotation.x		= rotation.y = rotation.z = 0;
+            zoom			= 0;
+            OPENGL_utils::identity( rot );
+            break;
+
         case '0': showAxes = 1 - showAxes; break;
         case '-': zoom += 10.0; break;
         case '+': zoom -= 10.0; break;
@@ -74,6 +105,7 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case 'w': LINE_width = fmaxf( 1,LINE_width-1); break;
         case 'W': LINE_width = fminf(10,LINE_width+1); break;
         case 'r':
+            showPlane[0] = showPlane[1] = showPlane[2] = 1;
             translation.x	= translation.y = 0;
             rotation.x		= rotation.y = rotation.z = 0;
             zoom			= 0;
@@ -166,16 +198,19 @@ void GLUT__menu( int id )
         case 401: GLUT__keyboard('1'); break;
         case 402: GLUT__keyboard('2'); break;
         case 403: GLUT__keyboard('3'); break;
-        case 404: GLUT__keyboard('0'); break;
-        case 405: GLUT__keyboard('-'); break;
-        case 406: GLUT__keyboard('+'); break;
-        case 407: GLUT__keyboard('m'); break;
-        case 408: GLUT__keyboard('M'); break;
-        case 409: GLUT__keyboard('o'); break;
-        case 410: GLUT__keyboard('O'); break;
-        case 411: GLUT__keyboard('w'); break;
-        case 412: GLUT__keyboard('W'); break;
-        case 413: GLUT__keyboard('r'); break;
+        case 404: GLUT__keyboard('4'); break;
+        case 405: GLUT__keyboard('5'); break;
+        case 406: GLUT__keyboard('6'); break;
+        case 407: GLUT__keyboard('0'); break;
+        case 408: GLUT__keyboard('-'); break;
+        case 409: GLUT__keyboard('+'); break;
+        case 410: GLUT__keyboard('m'); break;
+        case 411: GLUT__keyboard('M'); break;
+        case 412: GLUT__keyboard('o'); break;
+        case 413: GLUT__keyboard('O'); break;
+        case 414: GLUT__keyboard('w'); break;
+        case 415: GLUT__keyboard('W'); break;
+        case 416: GLUT__keyboard('r'); break;
     }
 }
 
@@ -213,16 +248,19 @@ void GLUT__createMenu()
     glutAddMenuEntry("[1] Show/hide YZ plane",401);
     glutAddMenuEntry("[2] Show/hide XZ plane",402);
     glutAddMenuEntry("[3] Show/hide XY plane",403);
-    glutAddMenuEntry("[0] Show/hide axes",    404);
-    glutAddMenuEntry("[-] Decrease zoom",     405);
-    glutAddMenuEntry("[+] Increase zoom",     406);
-    glutAddMenuEntry("[m] Decrease max value",407);
-    glutAddMenuEntry("[M] Increase max value",408);
-    glutAddMenuEntry("[o] Decrease opacity",  409);
-    glutAddMenuEntry("[O] Increase opacity",  410);
-    glutAddMenuEntry("[t] Decrease width",    411);
-    glutAddMenuEntry("[T] Increase width",    412);
-    glutAddMenuEntry("[r] Reset view",        413);
+    glutAddMenuEntry("[4] Reset to YZ plane", 404);
+    glutAddMenuEntry("[5] Reset to XZ plane", 405);
+    glutAddMenuEntry("[6] Reset to XY plane", 406);
+    glutAddMenuEntry("[0] Show/hide axes",    407);
+    glutAddMenuEntry("[-] Decrease zoom",     408);
+    glutAddMenuEntry("[+] Increase zoom",     409);
+    glutAddMenuEntry("[m] Decrease max value",410);
+    glutAddMenuEntry("[M] Increase max value",411);
+    glutAddMenuEntry("[o] Decrease opacity",  412);
+    glutAddMenuEntry("[O] Increase opacity",  413);
+    glutAddMenuEntry("[t] Decrease width",    414);
+    glutAddMenuEntry("[T] Increase width",    415);
+    glutAddMenuEntry("[r] Reset view",        416);
 
     int menu_id = glutCreateMenu( GLUT__menu );
     glutAddSubMenu("Signal",       submenu_SIGNAL_id);
@@ -324,18 +362,19 @@ void GLUT__mouse( GLint button, GLint state, GLint x, GLint y )
 {
     if (state == GLUT_DOWN)
     {
-        if ( button == GLUT_LEFT_BUTTON && glutGetModifiers() != GLUT_ACTIVE_ALT )
+        if ( button == GLUT_LEFT_BUTTON && glutGetModifiers() != GLUT_ACTIVE_CTRL )
         {
             moving = 1;
             start.x = x;
             start.y = y;
         }
-        else if ( button == GLUT_RIGHT_BUTTON )// && glutGetModifiers() == GLUT_ACTIVE_CTRL )
-        {
-            moving = 2;
-            start.x = x;
-            start.y = y;
-        }
+        // NOTE: does not work, issue with glutGetModifiers not getting CTRL
+        // else if ( button == GLUT_LEFT_BUTTON && glutGetModifiers() == GLUT_ACTIVE_CTRL )
+        // {
+        //     moving = 2;
+        //     start.x = x;
+        //     start.y = y;
+        // }
         else if ( (button == GLUT_MIDDLE_BUTTON) || (button == GLUT_LEFT_BUTTON && glutGetModifiers() == GLUT_ACTIVE_ALT) )
         {
             moving = 3;
