@@ -14,7 +14,7 @@ using namespace OPENGL_utils;
 
 /* global variables */
 GLfloat			id[16], rot[16], rot1[16], rot2[16], rot3[16];
-Vec3Df			rotation, translation;
+Vec3Df			translation;
 Vec3Di			start;
 GLint			moving;
 GLfloat			zoom;
@@ -58,13 +58,13 @@ void PrintConfig()
     drawString( "MAP" );
     sprintf( s, "   - value(%d,%d,%d) = %.2f", VOXEL.x, VOXEL.y, VOXEL.z, MAP(VOXEL.x, VOXEL.y, VOXEL.z) );
     drawString( s );
-    sprintf( s, "   - range = [ %.1f ... %.1f]", MAP_min_view, MAP_max_view );
+    sprintf( s, "   - range = [ %.1f ... %.1f ]", MAP_min_view, MAP_max_view );
     drawString( s );
     sprintf( s, "   - opacity = %.1f", MAP_opacity );
     drawString( s );
 
     drawString( "SIGNAL" );
-    sprintf( s, "   - shell = %d (b=%.1f)", GLYPHS_shell, SCHEME_shells_b[GLYPHS_shell] );
+    sprintf( s, "   - shell = %d/%d  (b=%.1f)", GLYPHS_shell+1, SCHEME_shells_b.size(), SCHEME_shells_b[GLYPHS_shell] );
     drawString( s );
     sprintf( s, "   - flip = [ %d, %d, %d ]", GLYPHS_flip[0], GLYPHS_flip[1], GLYPHS_flip[2] );
     drawString( s );
@@ -81,11 +81,14 @@ void PrintConfig()
     sprintf( s, "   - normalize = %s", PEAKS_doNormalize?"true":"false" );
     drawString( s );
 
-    drawString( "FIBERS" );
-    sprintf( s, "   - shift = [ %.1f %.1f %.1f ]  (voxels)", TRK_offset.x, TRK_offset.y, TRK_offset.z );
-    drawString( s );
-    sprintf( s, "   - slab thickness = %.1f  (voxels)", TRK_crop );
-    drawString( s );
+    if ( TRK_nTractsPlotted > 0 )
+    {
+        drawString( "FIBERS" );
+        sprintf( s, "   - shift = [ %.1f %.1f %.1f ]  (voxels)", TRK_offset.x, TRK_offset.y, TRK_offset.z );
+        drawString( s );
+        sprintf( s, "   - slab thickness = %.1f  (voxels)", TRK_crop );
+        drawString( s );
+    }
 
     glEnable (GL_DEPTH_TEST);     
     glMatrixMode(GL_PROJECTION);
@@ -113,7 +116,6 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
             showPlane[1] = 0;
             showPlane[2] = 0;
             translation.x	= translation.y = 0;
-            rotation.x		= rotation.y = rotation.z = 0;
             OPENGL_utils::identity(rot1);
             OPENGL_utils::rotateX(rot1, 90.0, rot2);
             OPENGL_utils::rotateZ(rot2, 90.0, rot);
@@ -123,7 +125,6 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
             showPlane[1] = 1;
             showPlane[2] = 0;
             translation.x	= translation.y = 0;
-            rotation.x		= rotation.y = rotation.z = 0;
             OPENGL_utils::identity(rot1);
             OPENGL_utils::rotateX(rot1, 90.0, rot);
             break;
@@ -132,7 +133,6 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
             showPlane[1] = 0;
             showPlane[2] = 1;
             translation.x	= translation.y = 0;
-            rotation.x		= rotation.y = rotation.z = 0;
             OPENGL_utils::identity( rot );
             break;
 
@@ -148,7 +148,6 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case 'r':
             showPlane[0] = showPlane[1] = showPlane[2] = 1;
             translation.x	= translation.y = 0;
-            rotation.x		= rotation.y = rotation.z = 0;
             zoom			= 0;
             OPENGL_utils::identity( rot );
             break;
@@ -432,19 +431,14 @@ void GLUT__motion( GLint x, GLint y )
 {
     if (moving==1)
     {
-        rotation.y = (start.x-x) / 1;
-        rotation.x = (start.y-y) / 1;
-
-        // porto il centro di rotazione nel baricentro
         OPENGL_utils::translate(id, 0,0,0, rot1);
 
-        OPENGL_utils::rotateY(id,rotation.y,rot3);
+        OPENGL_utils::rotateY(id,start.x-x,rot3);
         OPENGL_utils::matXMat(rot,rot1,rot2);
-        OPENGL_utils::rotateX(id,rotation.x,rot1);
+        OPENGL_utils::rotateX(id,start.y-y,rot1);
         OPENGL_utils::matXMat(rot2,rot1,rot);
         OPENGL_utils::matXMat(rot,rot3,rot2);
 
-        // riporto il centro di rotazione in pos. originale
         OPENGL_utils::translate(id, 0,0,0, rot1);
         OPENGL_utils::matXMat(rot2,rot1,rot);
 
@@ -1069,24 +1063,22 @@ void OpenGL_init( int argc, char** argv )
     gluPerspective(40.0f, (GLfloat)ScreenX / (GLfloat)ScreenY, 10.0f,1000.0f);
     glMatrixMode(GL_MODELVIEW);
     gluLookAt(
-        0.0, 0.0, 2*max(dim.x,dim.y) * (GLfloat)ScreenY / (GLfloat)ScreenX,
+        0.0, 0.0, 2.0*max(dim.x,dim.y) * (GLfloat)ScreenY/(GLfloat)ScreenX,
         0.0, 0.0, 0.0,
         0.0, 1.0, 0.0
     );
 
     translation.x	= translation.y = 0;
-    rotation.x		= rotation.y = rotation.z = 0;
     zoom			= 0;
     OPENGL_utils::identity( rot );
     OPENGL_utils::identity( id );
 
     // basic settings
-    // glEnable( GL_LINE_SMOOTH );
-    // glEnable( GL_POLYGON_SMOOTH );
-    // glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-    // glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
+    glEnable( GL_LINE_SMOOTH );
+    glEnable( GL_POLYGON_SMOOTH );
+    glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
+    glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
 
-// 	glEnable( GL_CULL_FACE );
     glEnable( GL_DEPTH_TEST );
     glClearColor( 0.1, 0.1, 0.1, 0.0 );
 

@@ -156,7 +156,11 @@ int main(int argc, char** argv)
         std::smatch reMatches;
 
         if ( !std::regex_match(string(line), reMatches, reVersion) )
-            throw "Header not found";
+        {
+            // no header found, assume standards BVECTOR format
+            SCHEME_version = 0;
+            fseek(pFile, -strlen(line), SEEK_CUR);
+        }
         else
         {
             if( strcmp(reMatches[1].str().c_str(),"0")==0 || strcmp(reMatches[1].str().c_str(),"BVECTOR")==0 )
