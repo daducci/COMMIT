@@ -23,15 +23,15 @@ float ScreenX, ScreenY;
 
 void drawString( const char *string )
 {
-    static int y = 300;
+    static int y = glutGet( GLUT_WINDOW_HEIGHT ) - 50;
     if ( string=="" )
-        y = 300;
+        y = glutGet( GLUT_WINDOW_HEIGHT ) - 50;
     else
     {
         glRasterPos2i(10, y);
         for (const char* c=string; *c != '\0'; c++) 
-            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
-        y -= 24;
+            glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
+        y -= 18;
     }
 }
 
@@ -51,18 +51,18 @@ void PrintConfig()
     glOrtho( 0, w, 0, h, -1, 1 );
     glDisable( GL_DEPTH_TEST ); 
 
-    // glColor4f(1, 1, 1,0.2);
-    // glBegin(GL_QUADS);
-    // glVertex2i(10,10);
-    // glVertex2i(200,10);
-    // glVertex2i(200,200);
-    // glVertex2i(10,200);
-    // glEnd();
-
     char s[1024];
     glColor3f(1, 1, 0);
-    
     drawString( "" ); // reset initial position
+
+    drawString( "MAP" );
+    sprintf( s, "   - value(%d,%d,%d) = %.2f", VOXEL.x, VOXEL.y, VOXEL.z, MAP(VOXEL.x, VOXEL.y, VOXEL.z) );
+    drawString( s );
+    sprintf( s, "   - range = [ %.1f ... %.1f]", MAP_min_view, MAP_max_view );
+    drawString( s );
+    sprintf( s, "   - opacity = %.1f", MAP_opacity );
+    drawString( s );
+
     drawString( "SIGNAL" );
     sprintf( s, "   - shell = %d (b=%.1f)", GLYPHS_shell, SCHEME_shells_b[GLYPHS_shell] );
     drawString( s );
@@ -87,12 +87,6 @@ void PrintConfig()
     sprintf( s, "   - slab thickness = %.1f  (voxels)", TRK_crop );
     drawString( s );
 
-    drawString( "MAP" );
-    sprintf( s, "   - range = [ %.1f ... %.1f]", MAP_min_view, MAP_max_view );
-    drawString( s );
-    sprintf( s, "   - opacity = %.1f", MAP_opacity );
-    drawString( s );
-
     glEnable (GL_DEPTH_TEST);     
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -106,8 +100,6 @@ void PrintConfig()
 void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
 {
     bool doRedraw = true;
-    GLint modif = glutGetModifiers();
-    GLint ALT   = modif & GLUT_ACTIVE_ALT;
 
     switch( key )
     {
@@ -163,17 +155,17 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
 
         case 's': GLYPHS_show = 1 - GLYPHS_show; break;
         case 'S': GLYPHS_shell = (GLYPHS_shell+1) % SCHEME_shells_idx.size(); break;
-        case 'X': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].x *= -1; break;
-        case 'Y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].y *= -1; break;
-        case 'Z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].z *= -1; break;
+        case 'x': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].x *= -1; break;
+        case 'y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].y *= -1; break;
+        case 'z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].z *= -1; break;
         case 'b': GLYPHS_b0_thr = fmaxf(0.0,GLYPHS_b0_thr-10.0); break;
         case 'B': GLYPHS_b0_thr = fminf(MAP_max,GLYPHS_b0_thr+10.0); break;
 
         case 'p': PEAKS_show  = 1 - PEAKS_show; break;
         case 'a': PEAKS_use_affine = 1 - PEAKS_use_affine; break;
-        case 'x': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
-        case 'y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
-        case 'z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
+        case 'X': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
+        case 'Y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
+        case 'Z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
         case 't': PEAKS_thr = fmaxf(PEAKS_thr - 0.1, 0.0); break;
         case 'T': PEAKS_thr = fminf(PEAKS_thr + 0.1, 1.0); break;
         case 'n': PEAKS_doNormalize = 1 - PEAKS_doNormalize; break;
@@ -221,17 +213,17 @@ void GLUT__menu( int id )
 
         case 101: GLUT__keyboard('s'); break;
         case 102: GLUT__keyboard('S'); break;
-        case 103: GLUT__keyboard('X'); break;
-        case 104: GLUT__keyboard('Y'); break;
-        case 105: GLUT__keyboard('Z'); break;
+        case 103: GLUT__keyboard('x'); break;
+        case 104: GLUT__keyboard('y'); break;
+        case 105: GLUT__keyboard('z'); break;
         case 106: GLUT__keyboard('b'); break;
         case 107: GLUT__keyboard('B'); break;
 
         case 201: GLUT__keyboard('p'); break;
         case 202: GLUT__keyboard('a'); break;
-        case 203: GLUT__keyboard('x'); break;
-        case 204: GLUT__keyboard('y'); break;
-        case 205: GLUT__keyboard('z'); break;
+        case 203: GLUT__keyboard('X'); break;
+        case 204: GLUT__keyboard('Y'); break;
+        case 205: GLUT__keyboard('Z'); break;
         case 206: GLUT__keyboard('t'); break;
         case 207: GLUT__keyboard('T'); break;
         case 208: GLUT__keyboard('n'); break;
@@ -269,18 +261,18 @@ void GLUT__createMenu()
     int submenu_SIGNAL_id = glutCreateMenu( GLUT__menu );
     glutAddMenuEntry("[s] Show/hide",         101);
     glutAddMenuEntry("[S] Change shell",      102);
-    glutAddMenuEntry("[X] Flip X axis",       103);
-    glutAddMenuEntry("[Y] Flip Y axis",       104);
-    glutAddMenuEntry("[Z] Flip Z axis",       105);
+    glutAddMenuEntry("[x] Flip X axis",       103);
+    glutAddMenuEntry("[y] Flip Y axis",       104);
+    glutAddMenuEntry("[z] Flip Z axis",       105);
     glutAddMenuEntry("[b] Decrease b0 thr",   106);
     glutAddMenuEntry("[B] Increase b0 thr",   107);
 
     int submenu_PEAKS_id = glutCreateMenu( GLUT__menu );
     glutAddMenuEntry("[p] Show/hide",         201);
     glutAddMenuEntry("[a] Use affine",        202);
-    glutAddMenuEntry("[x] Flip X axis",       203);
-    glutAddMenuEntry("[y] Flip Y axis",       204);
-    glutAddMenuEntry("[z[ Flip Z axis",       205);
+    glutAddMenuEntry("[X] Flip X axis",       203);
+    glutAddMenuEntry("[Y] Flip Y axis",       204);
+    glutAddMenuEntry("[Z] Flip Z axis",       205);
     glutAddMenuEntry("[t] Decrease threshold",206);
     glutAddMenuEntry("[T] Increase threshold",207);
     glutAddMenuEntry("[n] Normalize length",  208);
