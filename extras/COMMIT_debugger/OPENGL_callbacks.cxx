@@ -174,24 +174,7 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case 'C': TRK_crop = fminf(max(dim.x,max(dim.y,dim.z)),TRK_crop+0.5); break;
         case ' ': TRK_crop_mode = 1 - TRK_crop_mode; break;
 
-        // case 'j': PEAKS_kolor_l = fmaxf(PEAKS_kolor_l - 0.5,  0.0); break;
-        // case 'J': PEAKS_kolor_l = fminf(PEAKS_kolor_l + 0.5, PEAKS_kolor_u); break;
-        // case 'k': PEAKS_kolor_u = fmaxf(PEAKS_kolor_u - 0.5, PEAKS_kolor_l); break;
-        // case 'K': PEAKS_kolor_u = fminf(PEAKS_kolor_u + 0.5, 20.0); break;
-        // case 'l':
-        //     PEAKS_lut   = (PEAKS_lut+1) % 7;
-        //     switch( PEAKS_lut )
-        //     {
-        //         case 0 : PEAKS_lut_ptr = &COLORMAPS::hot;        break;
-        //         case 1 : PEAKS_lut_ptr = &COLORMAPS::parula;     break;
-        //         case 2 : PEAKS_lut_ptr = &COLORMAPS::greenToRed; break;
-        //         case 3 : PEAKS_lut_ptr = &COLORMAPS::polar;      break;
-        //         case 4 : PEAKS_lut_ptr = &COLORMAPS::dawn;       break;
-        //         case 5 : PEAKS_lut_ptr = &COLORMAPS::gnuplot;    break;
-        //         case 6 : PEAKS_lut_ptr = &COLORMAPS::rainbow;    break;
-        //     }
-        //     break;
-
+        case 'q':
         case 27 : exit(0); break;
 
         default: doRedraw = false;
@@ -208,7 +191,7 @@ void GLUT__menu( int id )
 {
     switch( id )
     {
-        case   0: exit(0);
+        case   0: GLUT__keyboard('q'); break;
 
         case 101: GLUT__keyboard('s'); break;
         case 102: GLUT__keyboard('S'); break;
@@ -339,30 +322,39 @@ void GLUT__specialkey( GLint key, GLint x, GLint y )
     bool doRedraw = true;
     GLint modif = glutGetModifiers();
     GLint ALT   = modif & GLUT_ACTIVE_ALT;
+    GLint CTRL  = modif & GLUT_ACTIVE_CTRL;
 
     switch( key )
     {
         case GLUT_KEY_LEFT:
             if ( ALT )
                 TRK_offset.x -= 0.5;
+            else if ( CTRL )
+                translation.x -= 2.0;
             else
                 VOXEL.x--;
             break;
         case GLUT_KEY_RIGHT:
             if ( ALT )
                 TRK_offset.x += 0.5;
+            else if ( CTRL )
+                translation.x += 2.0;
             else
                 VOXEL.x++;
             break;
         case GLUT_KEY_DOWN:
             if ( ALT )
                 TRK_offset.y -= 0.5;
+            else if ( CTRL )
+                translation.y -= 2.0;
             else
                 VOXEL.y--;
             break;
         case GLUT_KEY_UP:
             if ( ALT )
                 TRK_offset.y += 0.5;
+            else if ( CTRL )
+                translation.y += 2.0;
             else
                 VOXEL.y++;
             break;
@@ -634,14 +626,7 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
-                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
-                        else
-                        {
-                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
-                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
-                        }
-
+                        glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) ); 
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -742,14 +727,7 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
-                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
-                        else
-                        {
-                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
-                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
-                        }
-
+                        glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -851,14 +829,7 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
-                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
-                        else
-                        {
-                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
-                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
-                        }
-
+                        glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );

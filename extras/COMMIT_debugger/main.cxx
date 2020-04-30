@@ -30,18 +30,14 @@ float 			         MAP_opacity = 0.5;
 bool			         showPlane[3] = { true, true, true };
 bool                     showAxes = true;
 bool			         showConfig = true;
+float				     LINE_width = 2.0;
 
 NIFTI*                   niiPEAKS;
 int				         PEAKS_n;
 bool			         PEAKS_show = false;
-float				     LINE_width = 2.0;
 float			         PEAKS_thr = 0.0;
 bool			         PEAKS_doNormalize = false;
 bool			         PEAKS_flip[3] = {false, false, false};
-float			         PEAKS_kolor_l = 0.0;
-float			         PEAKS_kolor_u = 0.0;
-int			             PEAKS_lut = 0;
-float                    (*PEAKS_lut_ptr)[256][3] = &COLORMAPS::hot;
 bool			         PEAKS_use_affine = false;
 float                    PEAKS_affine[3][3];
 
