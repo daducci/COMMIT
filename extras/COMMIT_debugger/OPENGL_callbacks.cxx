@@ -1069,7 +1069,7 @@ void OpenGL_init( int argc, char** argv )
     gluPerspective(40.0f, (GLfloat)ScreenX / (GLfloat)ScreenY, 10.0f,1000.0f);
     glMatrixMode(GL_MODELVIEW);
     gluLookAt(
-        0.0, 0.0, max(dim.x,dim.y) * (GLfloat)ScreenX / (GLfloat)ScreenY,
+        0.0, 0.0, 2*max(dim.x,dim.y) * (GLfloat)ScreenY / (GLfloat)ScreenX,
         0.0, 0.0, 0.0,
         0.0, 1.0, 0.0
     );
