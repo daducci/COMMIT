@@ -21,15 +21,23 @@ GLfloat			zoom;
 
 float ScreenX, ScreenY;
 
-void drawString(char *string)
+void drawString( const char *string )
 {
-    for (char* c=string; *c != '\0'; c++) 
-        glutBitmapCharacter(GLUT_BITMAP_8_BY_13, *c); 
+    static int y = 300;
+    if ( string=="" )
+        y = 300;
+    else
+    {
+        glRasterPos2i(10, y);
+        for (const char* c=string; *c != '\0'; c++) 
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
+        y -= 24;
+    }
 }
 
-void PrintConfig_NEW()
+void PrintConfig()
 {
-    if ( !isVerbose )
+    if ( !showConfig )
         return;
 
     glMatrixMode(GL_PROJECTION);
@@ -38,46 +46,58 @@ void PrintConfig_NEW()
     glMatrixMode( GL_MODELVIEW ) ;
     glPushMatrix() ;
     glLoadIdentity() ;
-    // int w = glutGet( GLUT_WINDOW_WIDTH );
-    // int h = glutGet( GLUT_WINDOW_HEIGHT );
-    // glOrtho( 0, w, 0, h, -1, 1 );
+    int w = glutGet( GLUT_WINDOW_WIDTH );
+    int h = glutGet( GLUT_WINDOW_HEIGHT );
+    glOrtho( 0, w, 0, h, -1, 1 );
+    glDisable( GL_DEPTH_TEST ); 
 
-    // glDisable( GL_DEPTH_TEST ); 
+    // glColor4f(1, 1, 1,0.2);
+    // glBegin(GL_QUADS);
+    // glVertex2i(10,10);
+    // glVertex2i(200,10);
+    // glVertex2i(200,200);
+    // glVertex2i(10,200);
+    // glEnd();
 
-    // glColor3f(1, 0, 0);
+    char s[1024];
+    glColor3f(1, 1, 0);
+    
+    drawString( "" ); // reset initial position
+    drawString( "SIGNAL" );
+    sprintf( s, "   - shell = %d (b=%.1f)", GLYPHS_shell, SCHEME_shells_b[GLYPHS_shell] );
+    drawString( s );
+    sprintf( s, "   - flip = [ %d, %d, %d ]", GLYPHS_flip[0], GLYPHS_flip[1], GLYPHS_flip[2] );
+    drawString( s );
+    sprintf( s, "   - b0 thr = %.1f", GLYPHS_b0_thr );
+    drawString( s );
 
-    // glRasterPos2i(20, 20);
-    // char* string = "ciao";
-    // drawString( string );
+    drawString( "PEAKS" );
+    sprintf( s, "   - use affine = %s", PEAKS_use_affine?"true":"false" );
+    drawString( s );
+    sprintf( s, "   - flip = [ %d, %d, %d ]", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
+    drawString( s );
+    sprintf( s, "   - thr = %.1f", PEAKS_thr );
+    drawString( s );
+    sprintf( s, "   - normalize = %s", PEAKS_doNormalize?"true":"false" );
+    drawString( s );
 
-    // glEnable (GL_DEPTH_TEST);     
+    drawString( "FIBERS" );
+    sprintf( s, "   - shift = [ %.1f %.1f %.1f ]  (voxels)", TRK_offset.x, TRK_offset.y, TRK_offset.z );
+    drawString( s );
+    sprintf( s, "   - slab thickness = %.1f  (voxels)", TRK_crop );
+    drawString( s );
+
+    drawString( "MAP" );
+    sprintf( s, "   - range = [ %.1f ... %.1f]", MAP_min_view, MAP_max_view );
+    drawString( s );
+    sprintf( s, "   - opacity = %.1f", MAP_opacity );
+    drawString( s );
+
+    glEnable (GL_DEPTH_TEST);     
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-}
-
-void PrintConfig()
-{
-    if ( !isVerbose )
-        return;
-    printf( "=======================\n     CONFIGURATION     \n=======================\n" );
-    printf( "\t- showPLANE = [ %d, %d, %d ]\n", showPlane[0], showPlane[1], showPlane[2] );
-    printf( "\t- MAP_range = [ %.1f ... %.1f]\n", MAP_min_view, MAP_max_view );
-    printf( "\t- MAP_opacity = %.1f\n", MAP_opacity );
-    printf( "\n" );
-    printf( "\t- PEAKS_use_affine = %s\n", PEAKS_use_affine?"true":"false" );
-    printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
-    printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
-    printf( "\t- PEAKS_doNormalize = %s\n", PEAKS_doNormalize?"true":"false" );
-    printf( "\n" );
-    printf( "\t- TRK_offset = [ %.1f %.1f %.1f ]    (voxel-size units)\n", TRK_offset.x, TRK_offset.y, TRK_offset.z );
-    printf( "\t- TRK_crop = %.1f  (voxel-size units)\n", TRK_crop );
-    printf( "\n" );
-    printf( "\t- GLYPHS_shell = %d (b=%.1f)\n", GLYPHS_shell, SCHEME_shells_b[GLYPHS_shell] );
-    printf( "\t- GLYPHS_flip = [ %d, %d, %d ]\n", GLYPHS_flip[0], GLYPHS_flip[1], GLYPHS_flip[2] );
-    printf( "\t- GLYPHS_b0_thr = %.1f\n", GLYPHS_b0_thr );
-    printf( "\n" );
 }
 
 
@@ -91,7 +111,7 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
 
     switch( key )
     {
-        case 'v': isVerbose = 1 - isVerbose; break;
+        case 'l': showConfig = 1 - showConfig; break;
 
         case '1': showPlane[0] = 1 - showPlane[0]; break;
         case '2': showPlane[1] = 1 - showPlane[1]; break;
@@ -102,7 +122,6 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
             showPlane[2] = 0;
             translation.x	= translation.y = 0;
             rotation.x		= rotation.y = rotation.z = 0;
-            zoom			= 0;
             OPENGL_utils::identity(rot1);
             OPENGL_utils::rotateX(rot1, 90.0, rot2);
             OPENGL_utils::rotateZ(rot2, 90.0, rot);
@@ -113,7 +132,6 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
             showPlane[2] = 0;
             translation.x	= translation.y = 0;
             rotation.x		= rotation.y = rotation.z = 0;
-            zoom			= 0;
             OPENGL_utils::identity(rot1);
             OPENGL_utils::rotateX(rot1, 90.0, rot);
             break;
@@ -123,7 +141,6 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
             showPlane[2] = 1;
             translation.x	= translation.y = 0;
             rotation.x		= rotation.y = rotation.z = 0;
-            zoom			= 0;
             OPENGL_utils::identity( rot );
             break;
 
@@ -190,10 +207,7 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
     }
 
     if ( doRedraw )
-    {
-        PrintConfig();
         glutPostRedisplay();
-    }
 }
 
 
@@ -243,6 +257,7 @@ void GLUT__menu( int id )
         case 414: GLUT__keyboard('w'); break;
         case 415: GLUT__keyboard('W'); break;
         case 416: GLUT__keyboard('r'); break;
+        case 417: GLUT__keyboard('l'); break;
     }
 }
 
@@ -277,22 +292,23 @@ void GLUT__createMenu()
     glutAddMenuEntry("[ ] Change crop mode",  304);
 
     int submenu_VIEW_id = glutCreateMenu( GLUT__menu );
-    glutAddMenuEntry("[1] Show/hide YZ plane",401);
-    glutAddMenuEntry("[2] Show/hide XZ plane",402);
-    glutAddMenuEntry("[3] Show/hide XY plane",403);
-    glutAddMenuEntry("[4] Reset to YZ plane", 404);
-    glutAddMenuEntry("[5] Reset to XZ plane", 405);
-    glutAddMenuEntry("[6] Reset to XY plane", 406);
-    glutAddMenuEntry("[0] Show/hide axes",    407);
-    glutAddMenuEntry("[-] Decrease zoom",     408);
-    glutAddMenuEntry("[+] Increase zoom",     409);
-    glutAddMenuEntry("[m] Decrease max value",410);
-    glutAddMenuEntry("[M] Increase max value",411);
-    glutAddMenuEntry("[o] Decrease opacity",  412);
-    glutAddMenuEntry("[O] Increase opacity",  413);
-    glutAddMenuEntry("[t] Decrease width",    414);
-    glutAddMenuEntry("[T] Increase width",    415);
-    glutAddMenuEntry("[r] Reset view",        416);
+    glutAddMenuEntry("[1] Show/hide YZ plane", 401);
+    glutAddMenuEntry("[2] Show/hide XZ plane", 402);
+    glutAddMenuEntry("[3] Show/hide XY plane", 403);
+    glutAddMenuEntry("[4] Reset to YZ plane",  404);
+    glutAddMenuEntry("[5] Reset to XZ plane",  405);
+    glutAddMenuEntry("[6] Reset to XY plane",  406);
+    glutAddMenuEntry("[0] Show/hide axes",     407);
+    glutAddMenuEntry("[-] Decrease zoom",      408);
+    glutAddMenuEntry("[+] Increase zoom",      409);
+    glutAddMenuEntry("[m] Decrease max value", 410);
+    glutAddMenuEntry("[M] Increase max value", 411);
+    glutAddMenuEntry("[o] Decrease opacity",   412);
+    glutAddMenuEntry("[O] Increase opacity",   413);
+    glutAddMenuEntry("[t] Decrease line width",414);
+    glutAddMenuEntry("[T] Increase line width",415);
+    glutAddMenuEntry("[r] Reset view",         416);
+    glutAddMenuEntry("[l] Show/hide log",      417);
 
     int menu_id = glutCreateMenu( GLUT__menu );
     glutAddSubMenu("Signal",       submenu_SIGNAL_id);
@@ -380,10 +396,7 @@ void GLUT__specialkey( GLint key, GLint x, GLint y )
     VOXEL.z = min( VOXEL.z, dim.z-1 );
 
     if ( doRedraw )
-    {
-        PrintConfig();
         glutPostRedisplay();
-    }
 }
 
 
@@ -1040,7 +1053,7 @@ void GLUT__display( void )
     }
 
     glPopMatrix();
-    PrintConfig_NEW();
+    PrintConfig();
     glutSwapBuffers();
 }
 
@@ -1053,10 +1066,10 @@ void OpenGL_init( int argc, char** argv )
     glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
     ScreenX = 0.7*glutGet(GLUT_SCREEN_WIDTH);  if (ScreenX==0) ScreenX = 800;
     ScreenY = 0.7*glutGet(GLUT_SCREEN_HEIGHT); if (ScreenY==0) ScreenY = 600;
-    glutInitWindowSize( ScreenX, ScreenY );
+    glutInitWindowSize( ScreenX/2, ScreenY/2 );
     glutInitWindowPosition( 0.15*glutGet(GLUT_SCREEN_WIDTH), 0.15*glutGet(GLUT_SCREEN_HEIGHT) );
     glutCreateWindow( "COMMIT debugger" );
-    // glutReshapeWindow( ScreenX, ScreenY );
+    glutReshapeWindow( ScreenX, ScreenY );
 
     // Projection and model matrix
     glMatrixMode(GL_PROJECTION);
@@ -1106,8 +1119,6 @@ void OpenGL_init( int argc, char** argv )
     glutReshapeFunc(  GLUT__reshape );
     glutMouseFunc(    GLUT__mouse );
     glutMotionFunc(   GLUT__motion );
-
-    PrintConfig();
 
     GLUT__createMenu();
 

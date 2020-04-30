@@ -26,14 +26,14 @@ vector< vector<int> >    SCHEME_shells_idx;
 blitz::Array<float,3>    MAP;
 VECTOR<int>		         VOXEL;
 float                    MAP_min, MAP_min_view, MAP_max, MAP_max_view;
-float 			         MAP_opacity = 0.1;//0.8;
+float 			         MAP_opacity = 0.5;
 bool			         showPlane[3] = { true, true, true };
 bool                     showAxes = true;
-bool			         isVerbose = true;
+bool			         showConfig = true;
 
 NIFTI*                   niiPEAKS;
 int				         PEAKS_n;
-bool			         PEAKS_show = true;
+bool			         PEAKS_show = false;
 float				     LINE_width = 2.0;
 float			         PEAKS_thr = 0.0;
 bool			         PEAKS_doNormalize = true;
@@ -421,7 +421,7 @@ int main(int argc, char** argv)
         COLOR_error( "The DIMENSIONS do not match those of DWI images", "\t" );
         return EXIT_FAILURE;
     }
-    if ( abs(niiPEAKS->hdr->pixdim[1]-pixdim.x) > 1e-4 || abs(niiPEAKS->hdr->pixdim[2]-pixdim.y) > 1e-4 || abs(niiPEAKS->hdr->pixdim[3]-pixdim.z) > 1e-4 )
+    if ( abs(niiPEAKS->hdr->pixdim[1]-pixdim.x) > 1e-3 || abs(niiPEAKS->hdr->pixdim[2]-pixdim.y) > 1e-3 || abs(niiPEAKS->hdr->pixdim[3]-pixdim.z) > 1e-3 )
     {
         COLOR_warning( "The VOXEL SIZE does not match that of DWI images", "\t" );
     }
