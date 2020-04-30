@@ -19,7 +19,7 @@ Vec3Di			start;
 GLint			moving;
 GLfloat			zoom;
 
-float ScreenX = 800, ScreenY = 600;
+float ScreenX, ScreenY;
 
 
 void PrintConfig()
@@ -31,13 +31,10 @@ void PrintConfig()
     printf( "\t- MAP_range = [ %.1f ... %.1f]\n", MAP_min_view, MAP_max_view );
     printf( "\t- MAP_opacity = %.1f\n", MAP_opacity );
     printf( "\n" );
-    printf( "\t- PEAKS_doNormalize = %s\n", PEAKS_doNormalize?"true":"false" );
     printf( "\t- PEAKS_use_affine = %s\n", PEAKS_use_affine?"true":"false" );
     printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
     printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
-    printf( "\t- LINE_width = %.1f\n", LINE_width );
-    // printf( "\t- PEAKS_kolor = [ %.1f, %.1f ]\n", PEAKS_kolor_l, PEAKS_kolor_u );
-    // printf( "\t- PEAKS_lut = %d\n", PEAKS_lut );
+    printf( "\t- PEAKS_doNormalize = %s\n", PEAKS_doNormalize?"true":"false" );
     printf( "\n" );
     printf( "\t- TRK_offset = [ %.1f %.1f %.1f ]    (voxel-size units)\n", TRK_offset.x, TRK_offset.y, TRK_offset.z );
     printf( "\t- TRK_crop = %.1f  (voxel-size units)\n", TRK_crop );
@@ -1023,6 +1020,8 @@ void OpenGL_init( int argc, char** argv )
 {
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
+    ScreenX = glutGet(GLUT_SCREEN_WIDTH);  if (ScreenX==0) ScreenX = 800;
+    ScreenY = glutGet(GLUT_SCREEN_HEIGHT); if (ScreenY==0) ScreenY = 600;
     glutReshapeWindow( ScreenX, ScreenY );
     glutCreateWindow( "COMMIT debugger" );
 
