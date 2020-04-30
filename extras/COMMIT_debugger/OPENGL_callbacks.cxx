@@ -21,6 +21,41 @@ GLfloat			zoom;
 
 float ScreenX, ScreenY;
 
+void drawString(char *string)
+{
+    for (char* c=string; *c != '\0'; c++) 
+        glutBitmapCharacter(GLUT_BITMAP_8_BY_13, *c); 
+}
+
+void PrintConfig_NEW()
+{
+    if ( !isVerbose )
+        return;
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();             
+    glLoadIdentity();
+    glMatrixMode( GL_MODELVIEW ) ;
+    glPushMatrix() ;
+    glLoadIdentity() ;
+    // int w = glutGet( GLUT_WINDOW_WIDTH );
+    // int h = glutGet( GLUT_WINDOW_HEIGHT );
+    // glOrtho( 0, w, 0, h, -1, 1 );
+
+    // glDisable( GL_DEPTH_TEST ); 
+
+    // glColor3f(1, 0, 0);
+
+    // glRasterPos2i(20, 20);
+    // char* string = "ciao";
+    // drawString( string );
+
+    // glEnable (GL_DEPTH_TEST);     
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
 
 void PrintConfig()
 {
@@ -444,7 +479,6 @@ void GLUT__display( void )
     // center the FOV
     glTranslatef( -dim.x/2.0, -dim.y/2.0, -dim.z/2.0 );
 
-
     /* ============= */
     /* Draw the AXES */
     /* ============= */
@@ -509,7 +543,6 @@ void GLUT__display( void )
 
         glPopMatrix();
     }
-
 
     /* ============== */
     /* Draw the PEAKS */
@@ -856,8 +889,6 @@ void GLUT__display( void )
         glPopMatrix();
     }
 
-
-
     /* =================== */
     /* Draw the SCALAR MAP */
     /* =================== */
@@ -988,7 +1019,6 @@ void GLUT__display( void )
         glDisable(GL_POLYGON_OFFSET_FILL);
     }
 
-
     /* ====================== */
     /* Draw the CURRENT VOXEL */
     /* ====================== */
@@ -1010,6 +1040,7 @@ void GLUT__display( void )
     }
 
     glPopMatrix();
+    PrintConfig_NEW();
     glutSwapBuffers();
 }
 
@@ -1020,10 +1051,12 @@ void OpenGL_init( int argc, char** argv )
 {
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
-    ScreenX = glutGet(GLUT_SCREEN_WIDTH);  if (ScreenX==0) ScreenX = 800;
-    ScreenY = glutGet(GLUT_SCREEN_HEIGHT); if (ScreenY==0) ScreenY = 600;
-    glutReshapeWindow( ScreenX, ScreenY );
+    ScreenX = 0.7*glutGet(GLUT_SCREEN_WIDTH);  if (ScreenX==0) ScreenX = 800;
+    ScreenY = 0.7*glutGet(GLUT_SCREEN_HEIGHT); if (ScreenY==0) ScreenY = 600;
+    glutInitWindowSize( ScreenX, ScreenY );
+    glutInitWindowPosition( 0.15*glutGet(GLUT_SCREEN_WIDTH), 0.15*glutGet(GLUT_SCREEN_HEIGHT) );
     glutCreateWindow( "COMMIT debugger" );
+    // glutReshapeWindow( ScreenX, ScreenY );
 
     // Projection and model matrix
     glMatrixMode(GL_PROJECTION);
