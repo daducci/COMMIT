@@ -320,10 +320,15 @@ void GLUT__reshape( GLint w, GLint h )
 
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
-    gluPerspective( 45.0f, (GLfloat)w / (GLfloat)h, 1.0f, 1000.0f );
+    gluPerspective( 45.0f, (GLfloat)w / (GLfloat)h, 1.0f, 5000.0f );
 
     glMatrixMode( GL_MODELVIEW );
-    glViewport( 0, 0, w, h );
+    glLoadIdentity();
+    gluLookAt(
+        0.0, 0.0, 2.0 * max(pixdim.x*dim.x,pixdim.y*dim.y) * (GLfloat)ScreenY/(GLfloat)ScreenX, // eye point
+        0.0, 0.0, 0.0, // reference point
+        0.0, 1.0, 0.0  // up vector
+    );
 }
 
 
@@ -474,6 +479,7 @@ void GLUT__display( void )
     glPushMatrix();
     glTranslatef(translation.x, translation.y, -zoom);
     glMultMatrixf(rot);
+    glScalef( pixdim.x, pixdim.y, pixdim.z );
 
     // center the FOV
     glTranslatef( -dim.x/2.0, -dim.y/2.0, -dim.z/2.0 );
@@ -1060,13 +1066,14 @@ void OpenGL_init( int argc, char** argv )
     // Projection and model matrix
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(40.0f, (GLfloat)ScreenX / (GLfloat)ScreenY, 10.0f,1000.0f);
+    // gluPerspective( 40.0f, (GLfloat)ScreenX / (GLfloat)ScreenY, 10.0f, 1000.0f );
     glMatrixMode(GL_MODELVIEW);
-    gluLookAt(
-        0.0, 0.0, 2.0*max(dim.x,dim.y) * (GLfloat)ScreenY/(GLfloat)ScreenX,
-        0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0
-    );
+    glLoadIdentity();
+    // gluLookAt(
+    //     0.0, 0.0, 2.0*max(pixdim.x*dim.x,pixdim.y*dim.y) * (GLfloat)ScreenY/(GLfloat)ScreenX,
+    //     0.0, 0.0, 0.0,
+    //     0.0, 1.0, 0.0
+    // );
 
     translation.x	= translation.y = 0;
     zoom			= 0;
@@ -1106,7 +1113,5 @@ void OpenGL_init( int argc, char** argv )
 
     GLUT__createMenu();
 
-    glutReshapeWindow( ScreenX-1, ScreenY-1 );
-    glutReshapeWindow( ScreenX,   ScreenY   );
     glutMainLoop();
 }
