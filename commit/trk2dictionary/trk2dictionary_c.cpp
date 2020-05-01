@@ -118,13 +118,7 @@ int trk2dictionary(
 
     FILE* fpTractogram = fopen(str_filename,"rb"); //open 
     if (fpTractogram == NULL) return 0;
-
-    if ( isTRK ) { // SKIP header on .trk
-        fseek(fpTractogram,data_offset,SEEK_SET); //skip the first 1000 bytes in the .trk file
-    }
-    else { // SKIP header on .tck
-        fseek(fpTractogram,data_offset,SEEK_SET); //skip the first offset bytes in the .tck file
-    }
+    fseek(fpTractogram,data_offset,SEEK_SET); //skip header
 
     // set global variables
     dim.Set( Nx, Ny, Nz );
@@ -183,14 +177,8 @@ int trk2dictionary(
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
-        //read fibers in .trk or in .tck
-        if (isTRK) { // .trk file
-            N = read_fiberTRK( fpTractogram, fiber, n_scalars, n_properties );
-        }
-        else { // .tck file
-            N = read_fiberTCK( fpTractogram, fiber , affine );
-        }
-        
+        if (isTRK) N = read_fiberTRK( fpTractogram, fiber, n_scalars, n_properties );
+        else N = read_fiberTCK( fpTractogram, fiber , affine );
         fiberForwardModel( fiber, N, sectors, radii, weights, ptrHashTable  );
 
         kept = 0;
