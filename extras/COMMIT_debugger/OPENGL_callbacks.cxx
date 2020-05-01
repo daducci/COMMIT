@@ -467,14 +467,11 @@ void GLUT__display( void )
 {
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    // MOUSE translation + rotation
     glPushMatrix();
-    glTranslatef(translation.x, translation.y, -zoom);
-    glMultMatrixf(rot);
-    glScalef( pixdim.x, pixdim.y, pixdim.z );
-
-    // center the FOV
-    glTranslatef( -dim.x/2.0, -dim.y/2.0, -dim.z/2.0 );
+    glTranslatef(translation.x, translation.y, -zoom); // mouse translation + zoom
+    glMultMatrixf(rot); // mouse rotation    
+    glTranslatef( -pixdim.x*dim.x/2.0, -pixdim.y*dim.y/2.0, -pixdim.z*dim.z/2.0 ); // center the FOV
+    glScalef( pixdim.x, pixdim.y, pixdim.z ); // account for voxel size
 
     /* ============= */
     /* Draw the AXES */

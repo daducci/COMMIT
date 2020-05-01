@@ -468,7 +468,6 @@ int main(int argc, char** argv)
     COLOR_msg( "   [OK]" );
 
 
-
     // ===================
     // Reading TRACTS file
     // ===================
@@ -497,29 +496,20 @@ int main(int argc, char** argv)
         }
 
         TRK_skip = ceil( TRK_file.hdr.n_count / 25000.0 );
+        int N, n_s = TRK_file.hdr.n_scalars, n_p = TRK_file.hdr.n_properties;
+        FILE* fp = TRK_file.getFilePtr();
 
         // count how many points I need to store in memory
-        int N;
-        int n_s = TRK_file.hdr.n_scalars;
-        int n_p = TRK_file.hdr.n_properties;
-
-        int TractsRead = 0;
-        int CoordsRead = 0;
-        FILE* fp = TRK_file.getFilePtr();
+        int TractsRead = 0, CoordsRead = 0;
         fseek(fp, 1000, SEEK_SET);
         for(int f=0; f < TRK_file.hdr.n_count ; f++)
         {
+            fread( (char*)&N, 1, 4, fp );
+            fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
             if ( f%TRK_skip==0 )
             {
-                fread( (char*)&N, 1, 4, fp );
-                fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
                 TractsRead++;
                 CoordsRead += N;
-            }
-            else
-            {
-                fread( (char*)&N, 1, 4, fp );
-                fseek( fp, N*(3+n_s)*4 + n_p*4, SEEK_CUR );
             }
         }
         printf("\tin memory  : %d (%d points)\n" , TractsRead, CoordsRead );
@@ -548,7 +538,7 @@ int main(int argc, char** argv)
                     fread((char*)ptr, 1, 12, fp);
                     fseek( fp, n_s*4, SEEK_CUR );
 
-                    // coordinates
+                    // coordinates (later they will be scaled back to voxel size)
                     ptr[0] /= pixdim.x;
                     ptr[1] /= pixdim.y;
                     ptr[2] /= pixdim.z;
@@ -596,6 +586,7 @@ int main(int argc, char** argv)
     TRK_offset.x = 0;
     TRK_offset.y = 0;
     TRK_offset.z = 0;
+
 
     // ============
     // SETUP OpenGL
