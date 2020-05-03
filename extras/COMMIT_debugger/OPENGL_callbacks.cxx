@@ -66,6 +66,8 @@ void PrintConfig()
     drawString( "SIGNAL" );
     sprintf( s, "   - shell = %d/%d  (b=%.1f)", GLYPHS_shell+1, SCHEME_shells_b.size(), SCHEME_shells_b[GLYPHS_shell] );
     drawString( s );
+    sprintf( s, "   - use affine = %s", GLYPHS_use_affine?"true":"false" );
+    drawString( s );
     sprintf( s, "   - flip = [ %d, %d, %d ]", GLYPHS_flip[0], GLYPHS_flip[1], GLYPHS_flip[2] );
     drawString( s );
     sprintf( s, "   - b0 thr = %.1f", GLYPHS_b0_thr );
@@ -154,6 +156,7 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
 
         case 's': GLYPHS_show = 1 - GLYPHS_show; break;
         case 'S': GLYPHS_shell = (GLYPHS_shell+1) % SCHEME_shells_idx.size(); break;
+        case 'a': GLYPHS_use_affine = 1 - GLYPHS_use_affine; break;
         case 'x': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].x *= -1; break;
         case 'y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].y *= -1; break;
         case 'z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].z *= -1; break;
@@ -161,7 +164,7 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case 'B': GLYPHS_b0_thr = fminf(MAP_max,GLYPHS_b0_thr+10.0); break;
 
         case 'p': PEAKS_show  = 1 - PEAKS_show; break;
-        case 'a': PEAKS_use_affine = 1 - PEAKS_use_affine; break;
+        case 'A': PEAKS_use_affine = 1 - PEAKS_use_affine; break;
         case 'X': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
         case 'Y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
         case 'Z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
@@ -195,14 +198,15 @@ void GLUT__menu( int id )
 
         case 101: GLUT__keyboard('s'); break;
         case 102: GLUT__keyboard('S'); break;
-        case 103: GLUT__keyboard('x'); break;
-        case 104: GLUT__keyboard('y'); break;
-        case 105: GLUT__keyboard('z'); break;
-        case 106: GLUT__keyboard('b'); break;
-        case 107: GLUT__keyboard('B'); break;
+        case 103: GLUT__keyboard('a'); break;
+        case 104: GLUT__keyboard('x'); break;
+        case 105: GLUT__keyboard('y'); break;
+        case 106: GLUT__keyboard('z'); break;
+        case 107: GLUT__keyboard('b'); break;
+        case 108: GLUT__keyboard('B'); break;
 
         case 201: GLUT__keyboard('p'); break;
-        case 202: GLUT__keyboard('a'); break;
+        case 202: GLUT__keyboard('A'); break;
         case 203: GLUT__keyboard('X'); break;
         case 204: GLUT__keyboard('Y'); break;
         case 205: GLUT__keyboard('Z'); break;
@@ -243,15 +247,16 @@ void GLUT__createMenu()
     int submenu_SIGNAL_id = glutCreateMenu( GLUT__menu );
     glutAddMenuEntry("[s] Show/hide",         101);
     glutAddMenuEntry("[S] Change shell",      102);
-    glutAddMenuEntry("[x] Flip X axis",       103);
-    glutAddMenuEntry("[y] Flip Y axis",       104);
-    glutAddMenuEntry("[z] Flip Z axis",       105);
-    glutAddMenuEntry("[b] Decrease b0 thr",   106);
-    glutAddMenuEntry("[B] Increase b0 thr",   107);
+    glutAddMenuEntry("[a] Use affine",        103);
+    glutAddMenuEntry("[x] Flip X axis",       104);
+    glutAddMenuEntry("[y] Flip Y axis",       105);
+    glutAddMenuEntry("[z] Flip Z axis",       106);
+    glutAddMenuEntry("[b] Decrease b0 thr",   107);
+    glutAddMenuEntry("[B] Increase b0 thr",   108);
 
     int submenu_PEAKS_id = glutCreateMenu( GLUT__menu );
     glutAddMenuEntry("[p] Show/hide",         201);
-    glutAddMenuEntry("[a] Use affine",        202);
+    glutAddMenuEntry("[A] Use affine",        202);
     glutAddMenuEntry("[X] Flip X axis",       203);
     glutAddMenuEntry("[Y] Flip Y axis",       204);
     glutAddMenuEntry("[Z] Flip Z axis",       205);
@@ -640,10 +645,22 @@ void GLUT__display( void )
                         {
                             idx = SCHEME_shells_idx[GLYPHS_shell][d];
                             w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
-                            dir.x = w * SCHEME_dirs[idx].x;
-                            dir.y = w * SCHEME_dirs[idx].y;
-                            dir.z = w * SCHEME_dirs[idx].z;
-
+                            if ( GLYPHS_use_affine ) 
+                            {
+                                dir.x = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[0] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[1] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[2];
+                                dir.y = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[3] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[4] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[5];
+                                dir.z = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[6] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[7] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[8];
+                                normMax = dir.norm();
+                                dir.x *= w / normMax;
+                                dir.y *= w / normMax;
+                                dir.z *= w / normMax;
+                            }
+                            else
+                            {
+                                dir.x = w * SCHEME_dirs[idx].x;
+                                dir.y = w * SCHEME_dirs[idx].y;
+                                dir.z = w * SCHEME_dirs[idx].z;
+                            }
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -742,10 +759,22 @@ void GLUT__display( void )
                         {
                             idx = SCHEME_shells_idx[GLYPHS_shell][d];
                             w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
-                            dir.x = w * SCHEME_dirs[idx].x;
-                            dir.y = w * SCHEME_dirs[idx].y;
-                            dir.z = w * SCHEME_dirs[idx].z;
-
+                            if ( GLYPHS_use_affine ) 
+                            {
+                                dir.x = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[0] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[1] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[2];
+                                dir.y = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[3] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[4] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[5];
+                                dir.z = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[6] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[7] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[8];
+                                normMax = dir.norm();
+                                dir.x *= w / normMax;
+                                dir.y *= w / normMax;
+                                dir.z *= w / normMax;
+                            }
+                            else
+                            {
+                                dir.x = w * SCHEME_dirs[idx].x;
+                                dir.y = w * SCHEME_dirs[idx].y;
+                                dir.z = w * SCHEME_dirs[idx].z;
+                            }
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -844,9 +873,22 @@ void GLUT__display( void )
                         {
                             idx = SCHEME_shells_idx[GLYPHS_shell][d];
                             w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
-                            dir.x = w * SCHEME_dirs[idx].x;
-                            dir.y = w * SCHEME_dirs[idx].y;
-                            dir.z = w * SCHEME_dirs[idx].z;
+                            if ( GLYPHS_use_affine ) 
+                            {
+                                dir.x = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[0] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[1] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[2];
+                                dir.y = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[3] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[4] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[5];
+                                dir.z = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[6] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[7] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[8];
+                                normMax = dir.norm();
+                                dir.x *= w / normMax;
+                                dir.y *= w / normMax;
+                                dir.z *= w / normMax;
+                            }
+                            else
+                            {
+                                dir.x = w * SCHEME_dirs[idx].x;
+                                dir.y = w * SCHEME_dirs[idx].y;
+                                dir.z = w * SCHEME_dirs[idx].z;
+                            }
 
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );

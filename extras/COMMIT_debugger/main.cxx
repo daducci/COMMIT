@@ -1,4 +1,5 @@
 #include <NIFTI.h>
+#include <nifti1_io.h>
 #include <COLOR_ui.h>
 #include <TrackVis.h>
 #include <VECTOR.h>
@@ -56,6 +57,8 @@ bool 			         GLYPHS_show = false;
 int                      GLYPHS_shell = 0;
 bool			         GLYPHS_flip[3] = {false, false, false};
 float	                 GLYPHS_b0_thr = 50.0;
+bool			         GLYPHS_use_affine = false;
+float                    GLYPHS_affine[3][3];
 
 #include "OPENGL_callbacks.cxx"
 
@@ -102,33 +105,69 @@ int main(int argc, char** argv)
     printf( "\tdim    : %d x %d x %d x %d\n", dim.x, dim.y, dim.z, niiDWI->hdr->dim[4] );
     printf( "\tpixdim : %.4f x %.4f x %.4f\n", 	pixdim.x, pixdim.y, pixdim.z );
     printf( "\tqform  : %d\n", niiDWI->hdr->qform_code );
+    mat44 DWI_qform = niiDWI->hdr->qto_xyz;
     if ( niiDWI->hdr->qform_code > 0 )
     {
-        mat44 M = niiDWI->hdr->qto_xyz;
         for(int i=0; i<3 ;i++)
         {
             printf( "\t\t| " );
             for(int j=0; j<4 ;j++)
-                printf( "%9.4f ", M.m[i][j] );
+                printf( "%9.4f ", DWI_qform.m[i][j] );
             printf( "|\n" );
         }
     }
     else
     {
-        COLOR_warning( "This sould never happen!", "\t\t" );
+        COLOR_warning( "This should never happen!", "\t\t" );
     }
     printf( "\tsform  : %d\n", niiDWI->hdr->sform_code );
+    mat44 DWI_sform = niiDWI->hdr->sto_xyz;
     if ( niiDWI->hdr->sform_code > 0 )
     {
-        mat44 M = niiDWI->hdr->sto_xyz;
         for(int i=0; i<3 ;i++)
         {
             printf( "\t\t| " );
             for(int j=0; j<4 ;j++)
-                printf( "%9.4f ", M.m[i][j] );
+                printf( "%9.4f ", DWI_sform.m[i][j] );
             printf( "|\n" );
         }
     }
+
+    // Read the affine matrix to rotate the vectors
+    // NB: we need the inverse, but in this case inv=transpose
+    if ( niiDWI->hdr->qform_code != 0 )
+    {
+        for(int i=0; i<3 ;i++)
+        for(int j=0; j<3 ;j++)
+            GLYPHS_affine[i][j] = DWI_qform.m[j][i];
+    }
+    else if ( niiDWI->hdr->sform_code != 0 )
+    {
+        for(int i=0; i<3 ;i++)
+        for(int j=0; j<3 ;j++)
+            GLYPHS_affine[i][j] = DWI_sform.m[j][i];
+    }
+    else {
+        for(int i=0; i<3 ;i++)
+        for(int j=0; j<3 ;j++)
+            GLYPHS_affine[i][j] = 0;
+        for(int i=0; i<3 ;i++)
+            GLYPHS_affine[i][i] = 1;
+    }
+
+    mat33 tmp;
+    for(int i=0; i<3 ;i++)
+        for(int j=0; j<3 ;j++)
+            tmp.m[i][j] = GLYPHS_affine[i][j];
+    printf( "\tAffine used (%s):\n", nifti_mat33_determ(tmp)<0?"RADIOLOGICAL":"NEUROLOGICAL" );
+    for(int i=0; i<3 ;i++)
+    {
+        printf( "\t\t| " );
+        for(int j=0; j<3 ;j++)
+            printf( "%9.4f ", GLYPHS_affine[i][j] );
+        printf( "|\n" );
+    }
+
     COLOR_msg( "   [OK]" );
 
 
@@ -394,7 +433,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        COLOR_warning( "This sould never happen!", "\t\t" );
+        COLOR_warning( "This should never happen!", "\t\t" );
     }
     printf( "\tsform  : %d\n", niiPEAKS->hdr->sform_code );
     mat44 PEAKS_sform = niiPEAKS->hdr->sto_xyz;
