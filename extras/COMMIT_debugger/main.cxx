@@ -365,10 +365,11 @@ int main(int argc, char** argv)
     }
     else
     {
-        printf( "\tdata   : averaging b0 images\n" );
+        printf( "\tdata   : " );
 
         if ( SCHEME_idxB0.size() > 0 )
         {
+            printf( "taking first b0 image\n" );
             FLOAT32 MIN = (*niiDWI->img)(0,0,0,SCHEME_idxB0[0]);
             FLOAT32 MAX = MIN;
 
@@ -390,17 +391,16 @@ int main(int argc, char** argv)
             MAP_min	= MIN;
             MAP_min_view = 0;
             MAP_max	= MAP_max_view = MAX;
-
-            printf( "\tvalues : [%.2e ... %.2e]\n", MAP_min, MAP_max );
-            COLOR_msg( "   [OK]" );
         }
         else
         {
+            printf( "no b0 found\n" );
             MAP = 0;
             MAP_min	= MAP_min_view = 0;
             MAP_max	= MAP_max_view = 1;
-            COLOR_msg( "   [no b0 found]" );
         }
+        printf( "\tvalues : [%.2e ... %.2e]\n", MAP_min, MAP_max );
+        COLOR_msg( "   [OK]" );
     }
 
 
