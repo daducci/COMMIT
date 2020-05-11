@@ -32,32 +32,27 @@ opts = dict(name='commit-daducci',
 def get_extensions():
     # Cython extension to create the sparse data structure from a tractogram
     # for the computation of matrix-vector multiplications
-    ext1 = Extension(
-        name='commit.trk2dictionary',
-        sources=['commit/trk2dictionary/trk2dictionary.pyx'],
-        include_dirs=[get_include()],
-        extra_compile_args=['-w'],
-        extra_link_args=[],
-        language='c++',
-    )
+    ext1 = Extension(name='commit.trk2dictionary',
+                     sources=['commit/trk2dictionary/trk2dictionary.pyx'],
+                     include_dirs=[get_include()],
+                     extra_compile_args=['-w'],
+                     extra_link_args=[],
+                     language='c++')
 
-    ext2 = Extension(
-        name='commit.core',
-        sources=['commit/core.pyx'],
-        include_dirs=[get_include()],
-        extra_compile_args=['-w'],
-        extra_link_args=[],
-        language='c++',
-    )
+    ext2 = Extension(name='commit.core',
+                     sources=['commit/core.pyx'],
+                     include_dirs=[get_include()],
+                     extra_compile_args=['-w'],
+                     extra_link_args=[],
+                     language='c++')
 
-    ext3 = Extension(
-        name='commit.proximals',
-        sources=['commit/proximals.pyx'],
-        include_dirs=[get_include()],
-        extra_compile_args=['-w'],
-        extra_link_args=[],
-        language='c++',
-    )
+    ext3 = Extension(name='commit.proximals',
+                     sources=['commit/proximals.pyx'],
+                     include_dirs=[get_include()],
+                     extra_compile_args=['-w'],
+                     extra_link_args=[],
+                     language='c++')
+
     return [ext1, ext2, ext3]
 
 
