@@ -16,17 +16,18 @@ except ImportError:
         from numpy import get_include
         return get_include()
 
-opts = dict(name='commit',
-    version='1.3.7',
-    description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
-    author='Alessandro Daducci',
-    author_email='alessandro.daducci@univr.it',
-    url='https://github.com/daducci/COMMIT',
-    packages=['commit','commit.operator'],
-    setup_requires=['Cython==0.29.17', 'numpy==1.18.4'],
-    install_requires=['amico-daducci==1.2.2', 'dipy==1.1.1'],
-    package_data={'commit.operator':["*.*"]},
-)
+opts = dict(name='commit-daducci',
+            version='1.3.7',
+            description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
+            long_description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
+            author='Alessandro Daducci',
+            author_email='alessandro.daducci@univr.it',
+            url='https://github.com/daducci/COMMIT',
+            packages=['commit', 'commit.operator'],
+            setup_requires=['Cython==0.29.17', 'numpy==1.18.4'],
+            install_requires=['amico-daducci==1.2.2', 'dipy==1.1.1'],
+            package_data={'commit.operator': ["*.*"]})
+
 
 def get_extensions():
     # Cython extension to create the sparse data structure from a tractogram
