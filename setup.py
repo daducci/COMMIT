@@ -16,17 +16,6 @@ except ImportError:
         from numpy import get_include
         return get_include()
 
-with open('requirements.txt') as f:
-    required_dependencies = f.read().splitlines()
-    external_dependencies = []
-    for dependency in required_dependencies:
-        if dependency[0:2] == '-e':
-            repo_name = dependency.split('=')[-1]
-            repo_url = dependency[3:]
-            external_dependencies.append('{} @ {}'.format(repo_name, repo_url))
-        else:
-            external_dependencies.append(dependency)
-
 opts = dict(name='commit',
     version='1.3.7',
     description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
@@ -34,8 +23,8 @@ opts = dict(name='commit',
     author_email='alessandro.daducci@univr.it',
     url='https://github.com/daducci/COMMIT',
     packages=['commit','commit.operator'],
-    setup_requires=['cython', 'numpy'],
-    install_requires=external_dependencies,
+    setup_requires=['Cython==0.29.17', 'numpy==1.18.4'],
+    install_requires=['amico-daducci==1.2.2', 'dipy==1.1.1'],
     package_data={'commit.operator':["*.*"]},
 )
 
