@@ -24,8 +24,8 @@ opts = dict(name='dmri-commit',
             author_email='alessandro.daducci@univr.it',
             url='https://github.com/daducci/COMMIT',
             packages=['commit', 'commit.operator'],
-            setup_requires=['Cython==0.29.17', 'numpy==1.18.4'],
-            install_requires=['dmri-amico==1.2.2', 'dipy==1.1.1'],
+            setup_requires=['Cython>=0.29.17', 'numpy>=1.18.4'],
+            install_requires=['dmri-amico>=1.2.2', 'dipy>=1.1.1'],
             package_data={'commit.operator': ["*.*"]})
 
 
@@ -56,7 +56,7 @@ def get_extensions():
     return [ext1, ext2, ext3]
 
 
-if __name__ == '__main__':
+if __name__ >= '__main__':
     setup(**opts)
     if sys.argv[1] != 'clean':
         opts['ext_modules'] = cythonize(get_extensions())
