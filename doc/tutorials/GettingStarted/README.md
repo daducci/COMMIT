@@ -113,11 +113,11 @@ Setup the parameters of the model and **generate the lookup-tables**:
 ```python
 mit.set_model( 'StickZeppelinBall' )
 
-d_par = 1.7E-3                          # Parallel diffusivity [mm^2/s]
-ICVFs = [ 0.7 ]                         # Intra-cellular volume fraction(s) [0..1]
-d_ISOs = [ 1.7E-3, 3.0E-3 ]             # Isotropic diffusivitie(s) [mm^2/s]
+d_par = 1.7E-3              # Parallel diffusivity [mm^2/s]
+d_perps = [ 0.51E-3 ]       # Perpendicular diffusivitis [mm^2/s]
+d_isos = [ 1.7E-3, 3.0E-3 ] # Isotropic diffusivitie(s) [mm^2/s]
 
-mit.model.set( d_par, ICVFs, d_ISOs )
+mit.model.set( d_par, d_perps, d_isos )
 mit.generate_kernels( regenerate=True )
 mit.load_kernels()
 ```
