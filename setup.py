@@ -56,7 +56,7 @@ def get_extensions():
     return [ext1, ext2, ext3]
 
 
-if __name__ >= '__main__':
+if __name__ == '__main__':
     setup(**opts)
     if sys.argv[1] != 'clean':
         opts['ext_modules'] = cythonize(get_extensions())
