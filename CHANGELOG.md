@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.3.8] - 2020-05-12
+
+### Changed
+- Improvements to the COMMIT_debugger.
+
 ## [1.3.7] - 2020-04-25
 
 ### Changed
