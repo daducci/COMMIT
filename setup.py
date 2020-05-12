@@ -40,7 +40,7 @@ ext3 = Extension(
 
 setup(
     name='commit',
-    version='1.3.7',
+    version='1.3.8',
     description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
     author='Alessandro Daducci',
     author_email='alessandro.daducci@univr.it',
