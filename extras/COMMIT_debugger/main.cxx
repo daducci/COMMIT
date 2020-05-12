@@ -66,13 +66,13 @@ float                    GLYPHS_affine[3][3];
 /*----------------------------------------------------------------------------------------------------------------------------------*/
 int main(int argc, char** argv)
 {
-    TCLAP::CmdLine cmd("", ' ', "1.1");
+    TCLAP::CmdLine cmd("This tool allows one to display in a common 3D space all the objects (DWI data, streamlines etc...) used by COMMIT in order to spot possible incosistencies between the conventions of COMMIT and the software that generated the data, e.g. flip in some axes in the DWI data or in the peaks, spatial shift in the streamlines, whether the affine transformation was already applied to the data etc..", ' ', "1.1");
 
-    TCLAP::UnlabeledValueArg<string> argDWI(    "dwi","Filename of the DWI dataset [nifti]", true, "", "DWI", cmd );
-    TCLAP::UnlabeledValueArg<string> argSCHEME( "scheme","Filename of the scheme file [text]", true, "", "scheme", cmd );
-    TCLAP::ValueArg<string>          argMAP(    "m", "map", "Filename of background map [nifti]", false, "", "map", cmd );
-    TCLAP::ValueArg<string>          argTRK(    "f", "trk", "Filename of the fibers dataset [trk]", false, "", "fibers", cmd );
-    TCLAP::ValueArg<string>          argPEAKS(  "p", "peaks", "Filename of the PEAKS dataset [nifti]", false, "", "peaks", cmd );
+    TCLAP::UnlabeledValueArg<string> argDWI(    "dwi","Filename of the DWI dataset [4D NIFTI]", true, "", "DWI", cmd );
+    TCLAP::ValueArg<string>          argMAP(    "m", "map", "Background map [3D NIFTI]", false, "", "map", cmd );
+    TCLAP::ValueArg<string>          argPEAKS(  "p", "peaks", "Main diffusion directions for the extra-axonal part in each voxel [4D NIFTI]", false, "", "peaks", cmd );
+    TCLAP::ValueArg<string>          argTRK(    "f", "fibers", "Streamlines for the intra-axonal part [.TRK format]", false, "", "fibers", cmd );
+    TCLAP::UnlabeledValueArg<string> argSCHEME( "scheme","Acquisition scheme [text]", true, "", "scheme", cmd );
 
     try	{ cmd.parse( argc, argv ); }
     catch (TCLAP::ArgException &e) { cerr << "error: " << e.error() << " for arg " << e.argId() << endl; }
