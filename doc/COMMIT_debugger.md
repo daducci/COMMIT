@@ -1,11 +1,8 @@
-# COMMIT_debugger
+# How to "debug" your data
 
-This tool allows one to display, in a common 3D world, all objects considered in the COMMIT framework:
+This tool allows one to display in a common 3D space all the objects (DWI data, streamlines etc...) used by COMMIT in order to **spot possible incosistencies between the conventions** of COMMIT and the software that generated the data, e.g. flip in some axes in the DWI data or in the peaks, spatial shift in the streamlines, wheter the affine transformation was already applied to the data etc.
 
-- DWI data (4D NIFTI file)
-- its acquisition scheme (Camino format)
-- voxelwise main diffusion orientations (4D NIFTI file)
-- tractogram (TrackVis format only).
+**NB**: please note that this tool is very rudimental and is released only for debugging purposes.
 
 ![Application screenshot](https://github.com/daducci/COMMIT/blob/master/doc/COMMIT_debugger.jpg)
 
@@ -20,21 +17,15 @@ COMMIT_debugger \
     [-m <map>]
 ```
 
-- `dwi`, `scheme`: DWI data and corresponding scheme file.
-- `peaks`: major directions of the *hindered* water pools in each voxel.
-- `tracts`: tractogram to generate the *restricted* contributions of the tracts in each voxel.
+- `dwi`: DWI data (4D NIFTI file);
+- `scheme`: corresponding acquisition scheme (Camino format);
+- `peaks`: major directions of the *hindered* water pools in each voxel (4D NIFTI file);
+- `tracts`: tractogram to generate the *restricted* contributions of the tracts in each voxel (.TRK or .TCK file);
 - `map`: background map; default is one b0 computed from the DWI data.
 
 A **dropdown menu** will appear with right-click of the mouse.
 
-**NB**: please note that this tool is very rudimental and is released only for debugging purposes.
-
-
-
-
-## How to compile the code
-
-### Install dependencies
+## Install dependencies
 
 You need to install the following libraries:
 
@@ -45,7 +36,7 @@ You need to install the following libraries:
 
 Please follow the corresponding documentation to install these libraries on your platform. Our code was successfully tested on Linux (Ubuntu 14.04) and OSX (10.9 up to 10.15) systems.
 
-#### OSX with homebrew
+### OSX with homebrew
 
 If your're using [homebrew](https://brew.sh), then the following should work:
 
@@ -58,7 +49,7 @@ brew install niftilib
 
 The `OpenGL` and `GLUT` libraries are already provided by the operating system.
 
-###  Compile, build and install
+##  Compile, build and install
 
 Open the terminal and type:
 
