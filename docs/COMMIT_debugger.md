@@ -4,7 +4,7 @@ This tool allows one to display in a common 3D space all the objects (DWI data, 
 
 **NB**: please note that this tool is very rudimental and is released only for debugging purposes.
 
-![Application screenshot](https://github.com/daducci/COMMIT/blob/master/doc/COMMIT_debugger.jpg)
+![Application screenshot](https://github.com/daducci/COMMIT/blob/master/docs/COMMIT_debugger.jpg)
 
 ## Synopsis
 

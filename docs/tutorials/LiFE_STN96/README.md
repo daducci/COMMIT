@@ -163,7 +163,7 @@ yL = niiERR_L_img[ niiMASK_img>0 ]
 pylab.title( 'LiFE : %.1f%% +/- %.1f%%' % ( yL.mean(), yL.std() ) )
 ```
 
-![NRMSE for LiFE](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/LiFE_STN96/RESULTS_Fig1.png)
+![NRMSE for LiFE](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/LiFE_STN96/RESULTS_Fig1.png)
 
 The average fitting error is, in this case, pretty high, i.e. **69.7% ± 16.5%**. Also, we see that *LiFE* shows the highest errors in regions with crossing fibers and close to gray matter, as expected (see [this abstract](ISMRM_3148.pdf)).
 
@@ -182,7 +182,7 @@ yC = niiERR_C_img[ niiMASK_img>0 ]
 pylab.title( 'COMMIT : %.1f%% +/- %.1f%%' % ( yC.mean(), yC.std() ) )
 ```
 
-![NRMSE for COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/LiFE_STN96/RESULTS_Fig2.png)
+![NRMSE for COMMIT](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/LiFE_STN96/RESULTS_Fig2.png)
 
 The average fitting error is drastically reduced with *COMMIT*, i.e. (**19.3% ± 4.7%**). Also, a more homogeneous distribution of the errors can be observed, notably in crossing regions and in proximity to gray matter.
  
@@ -206,7 +206,7 @@ pylab.legend()
 pylab.title( 'Error distributions' )
 ```
 
-![Histograms comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/LiFE_STN96/RESULTS_Fig3.png)
+![Histograms comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/LiFE_STN96/RESULTS_Fig3.png)
 
 Also, we can directly compare their fitting errors *voxel-by-voxel* with the following scatter-plot:
 
@@ -224,7 +224,7 @@ pylab.ylabel( 'NRMSE [%] with COMMIT' )
 pylab.title( 'Error scatterplot' )
 ```
 
-![Scatterplot comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/LiFE_STN96/RESULTS_Fig4.png)
+![Scatterplot comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/LiFE_STN96/RESULTS_Fig4.png)
 
 As we can see, in all voxels the *COMMIT* model **always explains the data much better** than the *LiFE* model.
 
@@ -309,12 +309,12 @@ pylab.ylabel( 'RMSE [raw signal units] with COMMIT' )
 pylab.title( 'Error scatterplot' )
 ```
 
-![RMSE for LiFE](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/LiFE_STN96/RESULTS_Fig5.png)
+![RMSE for LiFE](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/LiFE_STN96/RESULTS_Fig5.png)
 
-![RMSE for COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/LiFE_STN96/RESULTS_Fig6.png)
+![RMSE for COMMIT](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/LiFE_STN96/RESULTS_Fig6.png)
 
-![Histogram comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/LiFE_STN96/RESULTS_Fig7.png)
+![Histogram comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/LiFE_STN96/RESULTS_Fig7.png)
 
-![Scatterplot comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/LiFE_STN96/RESULTS_Fig8.png)
+![Scatterplot comparison LiFE vs COMMIT](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/LiFE_STN96/RESULTS_Fig8.png)
 
 As we can see, the results essentially lead to the the same results, as previously highlighted using the *NRMSE* metric, de facto showing the **superiority of the *COMMIT* model in explaining the measured diffusion MRI signal** with respect to *LiFE*.

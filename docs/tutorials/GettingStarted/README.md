@@ -64,7 +64,7 @@ Please note that, in this particular example, in order to have all the data in t
 
 - apply a translation of half voxel to the fibers.
 
-![Flipping in the data](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/GettingStarted/debugger_screenshot2.jpg)
+![Flipping in the data](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/GettingStarted/debugger_screenshot2.jpg)
 
 ## Load the diffusion data
 
@@ -240,12 +240,12 @@ As shown in the output, the results are saved in the folder `Results_StickZeppel
 
 The following figure shows the **density of the tracts** [(Calamante et al., NeuroImage, 2010)](http://www.sciencedirect.com/science/article/pii/S1053811910009766) of the original tractogram (left) and of its optimized version (right):
 
-![Track-density](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/GettingStarted/density.png)
+![Track-density](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/GettingStarted/density.png)
 
 It is also possible to visualize voxelwise maps of the corresponding contributions of the **extra-cellular space** (left) and other **isotropic contaminations** (right):
 
-![Compartments](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/GettingStarted/compartments.png)
+![Compartments](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/GettingStarted/compartments.png)
 
 Finally, the **fitting error** in each voxel can also be inspected:
 
-![fitting error](https://github.com/daducci/COMMIT/blob/master/doc/tutorials/GettingStarted/NRMSE.png)
+![fitting error](https://github.com/daducci/COMMIT/blob/master/docs/tutorials/GettingStarted/NRMSE.png)
