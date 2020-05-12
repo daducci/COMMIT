@@ -66,13 +66,13 @@ float                    GLYPHS_affine[3][3];
 /*----------------------------------------------------------------------------------------------------------------------------------*/
 int main(int argc, char** argv)
 {
-    TCLAP::CmdLine cmd("", ' ', "1.0");
+    TCLAP::CmdLine cmd("", ' ', "1.1");
 
     TCLAP::UnlabeledValueArg<string> argDWI(    "dwi","Filename of the DWI dataset [nifti]", true, "", "DWI", cmd );
     TCLAP::UnlabeledValueArg<string> argSCHEME( "scheme","Filename of the scheme file [text]", true, "", "scheme", cmd );
-    TCLAP::UnlabeledValueArg<string> argPEAKS(  "peaks","Filename of the PEAKS dataset [nifti]", true, "", "peaks", cmd );
-    TCLAP::ValueArg<string>          argTRK(    "f", "trk", "Filename of the fibers dataset [trk]", false, "", "fibers", cmd );
     TCLAP::ValueArg<string>          argMAP(    "m", "map", "Filename of background map [nifti]", false, "", "map", cmd );
+    TCLAP::ValueArg<string>          argTRK(    "f", "trk", "Filename of the fibers dataset [trk]", false, "", "fibers", cmd );
+    TCLAP::ValueArg<string>          argPEAKS(  "p", "peaks", "Filename of the PEAKS dataset [nifti]", false, "", "peaks", cmd );
 
     try	{ cmd.parse( argc, argv ); }
     catch (TCLAP::ArgException &e) { cerr << "error: " << e.error() << " for arg " << e.argId() << endl; }
@@ -409,111 +409,121 @@ int main(int argc, char** argv)
     // ==================
     COLOR_msg( "-> Reading 'PEAKS' dataset:", "\n" );
 
-    niiPEAKS = new NIFTI;
-    niiPEAKS->open( PEAKS_filename, true );
-    if ( !niiPEAKS->isValid() )
+    if ( !PEAKS_filename.empty() )
     {
-        COLOR_error( "Unable to open the file", "\t" );
-        return false;
-    }
+        niiPEAKS = new NIFTI;
+        niiPEAKS->open( PEAKS_filename, true );
+        if ( !niiPEAKS->isValid() )
+        {
+            COLOR_error( "Unable to open the file", "\t" );
+            return false;
+        }
 
-    printf( "\tdim    : %d x %d x %d x %d\n" , niiPEAKS->hdr->dim[1],    niiPEAKS->hdr->dim[2],    niiPEAKS->hdr->dim[3], niiPEAKS->hdr->dim[4] );
-    printf( "\tpixdim : %.4f x %.4f x %.4f\n", niiPEAKS->hdr->pixdim[1], niiPEAKS->hdr->pixdim[2], niiPEAKS->hdr->pixdim[3] );
-    printf( "\tqform  : %d\n", niiPEAKS->hdr->qform_code );
-    mat44 PEAKS_qform = niiPEAKS->hdr->qto_xyz;
-    if ( niiPEAKS->hdr->qform_code > 0 )
-    {
+        if ( niiPEAKS->hdr->dim[0] != 4 || niiPEAKS->hdr->dim[4]%3 != 0 )
+        {
+            COLOR_error( "The size must be (*,*,*,3*k)", "\t" );
+            return EXIT_FAILURE;
+        }
+        PEAKS_n = niiPEAKS->hdr->dim[4]/3;
+
+        printf( "\tdim     : %d x %d x %d (%d peaks per voxel)\n" , niiPEAKS->hdr->dim[1], niiPEAKS->hdr->dim[2], niiPEAKS->hdr->dim[3], PEAKS_n );
+        printf( "\tpixdim  : %.4f x %.4f x %.4f\n", niiPEAKS->hdr->pixdim[1], niiPEAKS->hdr->pixdim[2], niiPEAKS->hdr->pixdim[3] );
+
+        printf( "\tqform   : %d\n", niiPEAKS->hdr->qform_code );
+        mat44 PEAKS_qform = niiPEAKS->hdr->qto_xyz;
+        if ( niiPEAKS->hdr->qform_code > 0 )
+        {
+            for(int i=0; i<3 ;i++)
+            {
+                printf( "\t\t| " );
+                for(int j=0; j<4 ;j++)
+                    printf( "%9.4f ", PEAKS_qform.m[i][j] );
+                printf( "|\n" );
+            }
+        }
+        else
+        {
+            COLOR_warning( "This should never happen!", "\t\t" );
+        }
+
+        printf( "\tsform  : %d\n", niiPEAKS->hdr->sform_code );
+        mat44 PEAKS_sform = niiPEAKS->hdr->sto_xyz;
+        if ( niiPEAKS->hdr->sform_code > 0 )
+        {
+            for(int i=0; i<3 ;i++)
+            {
+                printf( "\t\t| " );
+                for(int j=0; j<4 ;j++)
+                    printf( "%9.4f ", PEAKS_sform.m[i][j] );
+                printf( "|\n" );
+            }
+        }
+
+        if ( niiPEAKS->hdr->dim[1] != dim.x || niiPEAKS->hdr->dim[2] != dim.y || niiPEAKS->hdr->dim[3] != dim.z )
+        {
+            COLOR_error( "The DIMENSIONS do not match those of DWI images", "\t" );
+            return EXIT_FAILURE;
+        }
+        if ( abs(niiPEAKS->hdr->pixdim[1]-pixdim.x) > 1e-3 || abs(niiPEAKS->hdr->pixdim[2]-pixdim.y) > 1e-3 || abs(niiPEAKS->hdr->pixdim[3]-pixdim.z) > 1e-3 )
+        {
+            COLOR_warning( "The VOXEL SIZE does not match that of DWI images", "\t" );
+        }
+        if (
+            niiPEAKS->hdr->sform_code != niiDWI->hdr->sform_code || niiPEAKS->hdr->qform_code != niiDWI->hdr->qform_code || niiPEAKS->hdr->pixdim[0] != niiDWI->hdr->pixdim[0] ||
+            niiPEAKS->hdr->quatern_b != niiDWI->hdr->quatern_b || niiPEAKS->hdr->quatern_c != niiDWI->hdr->quatern_c || niiPEAKS->hdr->quatern_d != niiDWI->hdr->quatern_d ||
+            niiPEAKS->hdr->qoffset_x != niiDWI->hdr->qoffset_x || niiPEAKS->hdr->qoffset_y != niiDWI->hdr->qoffset_y || niiPEAKS->hdr->qoffset_z != niiDWI->hdr->qoffset_z
+        )
+        {
+            COLOR_warning( "The GEOMETRY does not match that of DWI images", "\t" );
+        }
+
+        // Read the affine matrix to rotate the vectors
+        // NB: we need the inverse, but in this case inv=transpose
+        if ( niiPEAKS->hdr->qform_code != 0 )
+        {
+            for(int i=0; i<3 ;i++)
+            for(int j=0; j<3 ;j++)
+                PEAKS_affine[i][j] = PEAKS_qform.m[j][i];
+        }
+        else if ( niiPEAKS->hdr->sform_code != 0 )
+        {
+            for(int i=0; i<3 ;i++)
+            for(int j=0; j<3 ;j++)
+                PEAKS_affine[i][j] = PEAKS_sform.m[j][i];
+        }
+        else {
+            for(int i=0; i<3 ;i++)
+            for(int j=0; j<3 ;j++)
+                PEAKS_affine[i][j] = 0;
+            for(int i=0; i<3 ;i++)
+                PEAKS_affine[i][i] = 1;
+        }
+
+        printf( "\tAffine used :\n" );
         for(int i=0; i<3 ;i++)
         {
             printf( "\t\t| " );
-            for(int j=0; j<4 ;j++)
-                printf( "%9.4f ", PEAKS_qform.m[i][j] );
+            for(int j=0; j<3 ;j++)
+                printf( "%9.4f ", PEAKS_affine[i][j] );
             printf( "|\n" );
         }
-    }
-    else
-    {
-        COLOR_warning( "This should never happen!", "\t\t" );
-    }
-    printf( "\tsform  : %d\n", niiPEAKS->hdr->sform_code );
-    mat44 PEAKS_sform = niiPEAKS->hdr->sto_xyz;
-    if ( niiPEAKS->hdr->sform_code > 0 )
-    {
-        for(int i=0; i<3 ;i++)
-        {
-            printf( "\t\t| " );
-            for(int j=0; j<4 ;j++)
-                printf( "%9.4f ", PEAKS_sform.m[i][j] );
-            printf( "|\n" );
-        }
-    }
 
-    if ( niiPEAKS->hdr->dim[0] != 4 || niiPEAKS->hdr->dim[4]%3 != 0 )
-    {
-        COLOR_error( "The size must be (*,*,*,3*k)", "\t" );
-        return EXIT_FAILURE;
-    }
-    PEAKS_n = niiPEAKS->hdr->dim[4]/3;
-
-    if ( niiPEAKS->hdr->dim[1] != dim.x || niiPEAKS->hdr->dim[2] != dim.y || niiPEAKS->hdr->dim[3] != dim.z )
-    {
-        COLOR_error( "The DIMENSIONS do not match those of DWI images", "\t" );
-        return EXIT_FAILURE;
-    }
-    if ( abs(niiPEAKS->hdr->pixdim[1]-pixdim.x) > 1e-3 || abs(niiPEAKS->hdr->pixdim[2]-pixdim.y) > 1e-3 || abs(niiPEAKS->hdr->pixdim[3]-pixdim.z) > 1e-3 )
-    {
-        COLOR_warning( "The VOXEL SIZE does not match that of DWI images", "\t" );
-    }
-    if (
-        niiPEAKS->hdr->sform_code != niiDWI->hdr->sform_code || niiPEAKS->hdr->qform_code != niiDWI->hdr->qform_code || niiPEAKS->hdr->pixdim[0] != niiDWI->hdr->pixdim[0] ||
-        niiPEAKS->hdr->quatern_b != niiDWI->hdr->quatern_b || niiPEAKS->hdr->quatern_c != niiDWI->hdr->quatern_c || niiPEAKS->hdr->quatern_d != niiDWI->hdr->quatern_d ||
-        niiPEAKS->hdr->qoffset_x != niiDWI->hdr->qoffset_x || niiPEAKS->hdr->qoffset_y != niiDWI->hdr->qoffset_y || niiPEAKS->hdr->qoffset_z != niiDWI->hdr->qoffset_z
-       )
-    {
-        COLOR_warning( "The GEOMETRY does not match that of DWI images", "\t" );
-    }
-
-    // Read the affine matrix to rotate the vectors
-    // NB: we need the inverse, but in this case inv=transpose
-    if ( niiPEAKS->hdr->qform_code != 0 )
-    {
-        for(int i=0; i<3 ;i++)
-        for(int j=0; j<3 ;j++)
-            PEAKS_affine[i][j] = PEAKS_qform.m[j][i];
-    }
-    else if ( niiPEAKS->hdr->sform_code != 0 )
-    {
-        for(int i=0; i<3 ;i++)
-        for(int j=0; j<3 ;j++)
-            PEAKS_affine[i][j] = PEAKS_sform.m[j][i];
+        COLOR_msg( "   [OK]" );
     }
     else {
-        for(int i=0; i<3 ;i++)
-        for(int j=0; j<3 ;j++)
-            PEAKS_affine[i][j] = 0;
-        for(int i=0; i<3 ;i++)
-            PEAKS_affine[i][i] = 1;
+        // no peaks are passed and won't be showed
+        COLOR_msg( "   [no peaks specified]" );
+        PEAKS_n = 0;
     }
-
-    printf( "\tAffine used :\n" );
-    for(int i=0; i<3 ;i++)
-    {
-        printf( "\t\t| " );
-        for(int j=0; j<3 ;j++)
-            printf( "%9.4f ", PEAKS_affine[i][j] );
-        printf( "|\n" );
-    }
-
-    COLOR_msg( "   [OK]" );
 
 
     // ===================
     // Reading TRACTS file
     // ===================
+    COLOR_msg( "-> Reading 'TRACTOGRAM':", "\n" );
+
     if ( !TRK_filename.empty() )
     {
-        COLOR_msg( "-> Reading 'TRK' dataset:", "\n" );
-
         TRK_file = TrackVis();
         if ( !TRK_file.open( TRK_filename ) )
         {
@@ -619,6 +629,7 @@ int main(int argc, char** argv)
     else
     {
         // no fibers are passed and won't be showed
+        COLOR_msg( "   [no streamlines specified]" );
         TRK_nTractsPlotted = 0;
     }
 

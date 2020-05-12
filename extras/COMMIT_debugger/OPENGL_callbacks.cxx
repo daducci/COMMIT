@@ -73,17 +73,20 @@ void PrintConfig()
     sprintf( s, "   - b0 thr = %.1f", GLYPHS_b0_thr );
     drawString( s );
 
-    drawString( "PEAKS" );
-    sprintf( s, "   - use affine = %s", PEAKS_use_affine?"true":"false" );
-    drawString( s );
-    sprintf( s, "   - flip = [ %d, %d, %d ]", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
-    drawString( s );
-    sprintf( s, "   - thr = %.1f", PEAKS_thr );
-    drawString( s );
-    sprintf( s, "   - normalize = %s", PEAKS_doNormalize?"true":"false" );
-    drawString( s );
+    if ( PEAKS_n>0 )
+    {
+        drawString( "PEAKS" );
+        sprintf( s, "   - use affine = %s", PEAKS_use_affine?"true":"false" );
+        drawString( s );
+        sprintf( s, "   - flip = [ %d, %d, %d ]", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
+        drawString( s );
+        sprintf( s, "   - thr = %.1f", PEAKS_thr );
+        drawString( s );
+        sprintf( s, "   - normalize = %s", PEAKS_doNormalize?"true":"false" );
+        drawString( s );
+    }
 
-    if ( TRK_nTractsPlotted > 0 )
+    if ( TRK_nTractsPlotted>0 )
     {
         drawString( "FIBERS" );
         sprintf( s, "   - shift = [ %.1f %.1f %.1f ]  (voxels)", TRK_offset.x, TRK_offset.y, TRK_offset.z );
@@ -163,7 +166,7 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case 'b': GLYPHS_b0_thr = fmaxf(0.0,GLYPHS_b0_thr-10.0); break;
         case 'B': GLYPHS_b0_thr = fminf(MAP_max,GLYPHS_b0_thr+10.0); break;
 
-        case 'p': PEAKS_show  = 1 - PEAKS_show; break;
+        case 'p': if ( PEAKS_n>0 ) PEAKS_show  = 1 - PEAKS_show; break;
         case 'A': PEAKS_use_affine = 1 - PEAKS_use_affine; break;
         case 'X': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
         case 'Y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
@@ -172,7 +175,7 @@ void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
         case 'T': PEAKS_thr = fminf(PEAKS_thr + 0.1, 1.0); break;
         case 'n': PEAKS_doNormalize = 1 - PEAKS_doNormalize; break;
 
-        case 'f': if ( TRK_nTractsPlotted > 0 ) TRK_show = 1 - TRK_show; break;
+        case 'f': if ( TRK_nTractsPlotted>0 ) TRK_show = 1 - TRK_show; break;
         case 'c': TRK_crop = fmaxf( 0.0,TRK_crop-0.5); break;
         case 'C': TRK_crop = fminf(max(dim.x,max(dim.y,dim.z)),TRK_crop+0.5); break;
         case ' ': TRK_crop_mode = 1 - TRK_crop_mode; break;
@@ -244,7 +247,9 @@ void GLUT__menu( int id )
 // ------------------------
 void GLUT__createMenu()
 {
-    int submenu_SIGNAL_id = glutCreateMenu( GLUT__menu );
+    int submenu_SIGNAL_id, submenu_PEAKS_id, submenu_FIBERS_id, submenu_VIEW_id;
+
+    submenu_SIGNAL_id = glutCreateMenu( GLUT__menu );
     glutAddMenuEntry("[s] Show/hide",         101);
     glutAddMenuEntry("[S] Change shell",      102);
     glutAddMenuEntry("[a] Use affine",        103);
@@ -254,23 +259,29 @@ void GLUT__createMenu()
     glutAddMenuEntry("[b] Decrease b0 thr",   107);
     glutAddMenuEntry("[B] Increase b0 thr",   108);
 
-    int submenu_PEAKS_id = glutCreateMenu( GLUT__menu );
-    glutAddMenuEntry("[p] Show/hide",         201);
-    glutAddMenuEntry("[A] Use affine",        202);
-    glutAddMenuEntry("[X] Flip X axis",       203);
-    glutAddMenuEntry("[Y] Flip Y axis",       204);
-    glutAddMenuEntry("[Z] Flip Z axis",       205);
-    glutAddMenuEntry("[t] Decrease threshold",206);
-    glutAddMenuEntry("[T] Increase threshold",207);
-    glutAddMenuEntry("[n] Normalize length",  208);
+    if ( PEAKS_n>0 )
+    {
+        submenu_PEAKS_id = glutCreateMenu( GLUT__menu );
+        glutAddMenuEntry("[p] Show/hide",         201);
+        glutAddMenuEntry("[A] Use affine",        202);
+        glutAddMenuEntry("[X] Flip X axis",       203);
+        glutAddMenuEntry("[Y] Flip Y axis",       204);
+        glutAddMenuEntry("[Z] Flip Z axis",       205);
+        glutAddMenuEntry("[t] Decrease threshold",206);
+        glutAddMenuEntry("[T] Increase threshold",207);
+        glutAddMenuEntry("[n] Normalize length",  208);
+    }
 
-    int submenu_FIBERS_id = glutCreateMenu( GLUT__menu );
-    glutAddMenuEntry("[f] Show/hide",         301);
-    glutAddMenuEntry("[c] Decrease crop size",302);
-    glutAddMenuEntry("[C] Increase crop size",303);
-    glutAddMenuEntry("[ ] Change crop mode",  304);
+    if ( TRK_nTractsPlotted>0 )
+    {
+        submenu_FIBERS_id = glutCreateMenu( GLUT__menu );
+        glutAddMenuEntry("[f] Show/hide",         301);
+        glutAddMenuEntry("[c] Decrease crop size",302);
+        glutAddMenuEntry("[C] Increase crop size",303);
+        glutAddMenuEntry("[ ] Change crop mode",  304);
+    }
 
-    int submenu_VIEW_id = glutCreateMenu( GLUT__menu );
+    submenu_VIEW_id = glutCreateMenu( GLUT__menu );
     glutAddMenuEntry("[1] Show/hide YZ plane", 401);
     glutAddMenuEntry("[2] Show/hide XZ plane", 402);
     glutAddMenuEntry("[3] Show/hide XY plane", 403);
@@ -290,9 +301,11 @@ void GLUT__createMenu()
     glutAddMenuEntry("[l] Show/hide log",      417);
 
     int menu_id = glutCreateMenu( GLUT__menu );
-    glutAddSubMenu("Signal",       submenu_SIGNAL_id);
-    glutAddSubMenu("Peaks",        submenu_PEAKS_id);
-    glutAddSubMenu("Fibers",       submenu_FIBERS_id);
+    glutAddSubMenu("Signal", submenu_SIGNAL_id);
+    if ( PEAKS_n>0 )
+        glutAddSubMenu("Peaks", submenu_PEAKS_id);
+    if ( TRK_nTractsPlotted>0 )
+        glutAddSubMenu("Fibers", submenu_FIBERS_id);
     glutAddSubMenu("View options", submenu_VIEW_id);
     glutAddMenuEntry("Quit", 0);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
