@@ -34,5 +34,5 @@ More information/documentation can be found in the [`docs`](docs/) folder.
 
 ## Getting started
 
-Tutorials are provided in the [`doc/tutorials`](docs/tutorials/) folder to help you get started with the COMMIT framework.
+Tutorials are provided in the [`docs/tutorials`](docs/tutorials/) folder to help you get started with the COMMIT framework.
 
