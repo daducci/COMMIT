@@ -1,6 +1,6 @@
 # External C++ tools
 
-This is a collection of additional tools that might be helpful during a tractogram evaluation with the COMMIT framework. At the moment, the following tool(s) are availablae:
+This is a collection of additional tools that might be helpful during a tractogram evaluation with the COMMIT framework. At the moment, the following tool(s) are available:
 
 - [COMMIT_debugger](#commit_debugger)
 
@@ -8,18 +8,18 @@ This is a collection of additional tools that might be helpful during a tractogr
 
 ## Install dependencies
 
-You will still need to install the following libraries:
+You need to install the following libraries:
 
 - [CMake](http://www.cmake.org/) to allow cross-platform compilation;
 - [Niftilib](https://sourceforge.net/projects/niftilib/) for reading/writing NIFTI files;
-- [Blitz++](http://sourceforge.net/projects/blitz/) for efficiently manipulating multi-dimensional arrays;
+- [Blitz++](http://sourceforge.net/projects/blitz/) for efficient manipulation of multi-dimensional arrays;
 - [OpenGL](https://www.opengl.org/) and [GLUT](https://www.opengl.org/resources/libraries/glut/) for 3D visualization.
 
 Please follow the corresponding documentation to install these libraries on your platform. Our code was successfully tested on Linux (Ubuntu 14.04) and OSX (10.9 up to 10.15) systems.
 
 ### OSX with homebrew
 
-If your're using [homebrew](https://brew.sh), then the following should do:
+If your're using [homebrew](https://brew.sh), then the following should work:
 
 ```bash
 brew tap brewsci/science
@@ -56,17 +56,16 @@ This will install the binaries into the `/usr/local/bin` folder. This installati
 
 ## COMMIT_debugger
 
-This tool allows one to display, in a common 3D world, all ingredients considered in the COMMIT framework:
+This tool allows one to display, in a common 3D world, all objects considered in the COMMIT framework:
 
 - DWI data (4D NIFTI file)
 - its acquisition scheme (Camino format)
 - voxelwise main diffusion orientations (4D NIFTI file)
-- tractogram (TrackVis format).
+- tractogram (TrackVis format only).
 
 **NB**: please note that this tool is very rudimental and is released only for debugging purposes.
 
-![Application screenshot](https://github.com/daducci/COMMIT/
-ob/master/doc/COMMIT_debugger.jpg)
+![Application screenshot](https://github.com/daducci/COMMIT/blob/master/doc/COMMIT_debugger.jpg)
 
 ### Synopsis
 
@@ -79,9 +78,9 @@ COMMIT_debugger \
     [-m <map>]
 ```
 
-- `dwi`, `scheme`: DWI data and corresponding scheme file. Only the signal from the outer shell is plotted.
-- `peaks`: directions to be interpreted as the major directions of the *hindered* water pools in each voxel.
+- `dwi`, `scheme`: DWI data and corresponding scheme file.
+- `peaks`: major directions of the *hindered* water pools in each voxel.
 - `tracts`: tractogram to generate the *restricted* contributions of the tracts in each voxel.
-- `map`: background map; default is the average b0 computed from the data.
+- `map`: background map; default is one b0 computed from the DWI data.
 
 A **dropdown menu** will appear with right-click of the mouse.
