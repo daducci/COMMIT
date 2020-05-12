@@ -3,7 +3,7 @@
 
 ### Which tractograms can I use with COMMIT?
 
-Any tractogram can be fed to the COMMIT framework, as long as each tract is represented as a polyline, i.e. sequence of consecutive segments. At the moment, however, COMMIT only reads tractograms in the [TrackVis](http://www.trackvis.org/docs/?subsect=fileformat) file format, but additional format will be accepted in the future. Meanwhile, several converters between file formats are available (e.g. [DIPY](http://dipy.org)); we apologize for this inconvenience.
+Any tractogram can be fed to the COMMIT framework, as long as each tract is represented as a polyline, i.e. sequence of consecutive segments. At the moment, however, COMMIT only reads tractograms in the [.TRK](http://www.trackvis.org/docs/?subsect=fileformat) and [.TCK](https://mrtrix.readthedocs.io/en/latest/getting_started/image_data.html#tracks-file-format-tck) file formats. For other formats, several converters are available, e.g. [DIPY](http://dipy.org).
 
 ### Where is the old MATLAB version?
 
