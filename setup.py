@@ -16,7 +16,7 @@ except ImportError:
         from numpy import get_include
         return get_include()
 
-opts = dict(name='commit-daducci',
+opts = dict(name='dmri-commit',
             version='1.3.7',
             description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
             long_description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
