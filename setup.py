@@ -25,7 +25,7 @@ opts = dict(name='dmri-commit',
             url='https://github.com/daducci/COMMIT',
             packages=['commit', 'commit.operator'],
             setup_requires=['Cython==0.29.17', 'numpy==1.18.4'],
-            install_requires=['amico-daducci==1.2.2', 'dipy==1.1.1'],
+            install_requires=['dmri-amico==1.2.2', 'dipy==1.1.1'],
             package_data={'commit.operator': ["*.*"]})
 
 
