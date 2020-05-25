@@ -37,26 +37,28 @@ class CustomBuildExtCommand(build_ext):
         # Add everything requires for build
         self.swig_opts = None
         self.include_dirs = [get_include()]
-        self.extensions = cythonize(self.extensions)
+        self.distribution.ext_modules = cythonize(self.distribution.ext_modules)
 
         # Call original build_ext command
         build_ext.finalize_options(self)
         build_ext.run(self)
 
-
+description = """ Convex Optimization Modeling for Microstructure Informed 
+Tractography (COMMIT)
+"""
 opts = dict(name='dmri-commit',
-            version='1.3.8.1',
-            description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
-            long_description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
+            version='1.3.8.4',
+            description=description,
+            long_description=description,
             author='Alessandro Daducci',
             author_email='alessandro.daducci@univr.it',
             url='https://github.com/daducci/COMMIT',
             packages=['commit', 'commit.operator'],
             cmdclass={'build_ext': CustomBuildExtCommand},
             ext_modules=get_extensions(),
-            setup_requires=['Cython>=0.29.17', 'numpy>=1.18.4'],
-            install_requires=['dmri-amico>=1.2.3', 'dipy>=1.1.0', 'Cython>=0.29.17', 'numpy>=1.18.4'],
+            setup_requires=['Cython>=0.29', 'numpy>=1.18'],
+            install_requires=['Cython>=0.29',
+                              'dmri-amico>=1.2.3', 'dipy>=1.1', 'numpy>=1.18'],
             package_data={'commit.operator': ["*.*"]})
 
 setup(**opts)
-
