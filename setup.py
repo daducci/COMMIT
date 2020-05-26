@@ -7,14 +7,17 @@ def get_extensions():
     # for the computation of matrix-vector multiplications
     ext1 = Extension(name='commit.trk2dictionary',
                      sources=['commit/trk2dictionary/trk2dictionary.pyx'],
+                     extra_compile_args=['-w'],
                      language='c++')
 
     ext2 = Extension(name='commit.core',
                      sources=['commit/core.pyx'],
+                     extra_compile_args=['-w'],
                      language='c++')
 
     ext3 = Extension(name='commit.proximals',
                      sources=['commit/proximals.pyx'],
+                     extra_compile_args=['-w'],
                      language='c++')
 
     return [ext1, ext2, ext3]
@@ -41,7 +44,7 @@ class CustomBuildExtCommand(build_ext):
 
 description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 opts = dict(name='dmri-commit',
-            version='1.3.8.5',
+            version='1.3.8.6',
             description=description,
             long_description=description,
             author='Alessandro Daducci',

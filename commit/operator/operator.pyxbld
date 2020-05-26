@@ -23,10 +23,11 @@ def make_ext(modname, pyxfilename):
         filename = "operator_noLUT.c"
     else :
         filename = "operator_withLUT.c"
+
     path = dirname(pyxfilename)
     utime( join(path,filename), None)
     return Extension(name=modname,
-                     sources=[pyxfilename,join(path,filename)],
+                     sources=[pyxfilename, join(path,filename)],
                      include_dirs=[numpy.get_include()],
                      define_macros = [('nTHREADS',config.nTHREADS), ('nIC',config.nIC), ('nEC',config.nEC), ('nISO',config.nISO)],
                      extra_compile_args=['-w', '-O3', '-Ofast'],
