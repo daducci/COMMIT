@@ -1,4 +1,5 @@
-Cython==0.29.17.*
-dipy==1.1.*
-dmri-amico==1.2.3.*
-setuptools==46.1.*
+Cython>=0.29
+dipy>=1.0
+dmri-amico>=1.2.3
+numpy>=1.12
+setuptools>=46.1

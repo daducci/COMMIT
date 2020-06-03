@@ -44,7 +44,7 @@ class CustomBuildExtCommand(build_ext):
 
 description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 opts = dict(name='dmri-commit',
-            version='1.3.8.7',
+            version='1.3.8.9',
             description=description,
             long_description=description,
             author='Alessandro Daducci',
@@ -53,9 +53,9 @@ opts = dict(name='dmri-commit',
             packages=['commit', 'commit.operator'],
             cmdclass={'build_ext': CustomBuildExtCommand},
             ext_modules=get_extensions(),
-            setup_requires=['Cython==0.29.*', 'numpy==1.18.*'],
-            install_requires=['Cython==0.29.*',
-                              'dmri-amico==1.2.3.*', 'dipy==1.1.*', 'numpy==1.18.*'],
+            setup_requires=['Cython>=0.29', 'numpy>=1.12'],
+            install_requires=['Cython>=0.29',
+                              'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
             package_data={'commit.operator': ["*.*"]})
 
 setup(**opts)
