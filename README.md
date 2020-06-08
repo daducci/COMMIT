@@ -28,11 +28,11 @@ Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran
 [Link to publisher](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6556527)
 
 ## Installation
-To install COMMIT, please refer to the [installation guide](doc/install.md).
+To install COMMIT, please refer to the [installation guide](docs/install.md).
 
-More information/documentation can be found in the [`doc`](doc/) folder.
+More information/documentation can be found in the [`docs`](docs/) folder.
 
 ## Getting started
 
-Tutorials are provided in the [`doc/tutorials`](doc/tutorials/) folder to help you get started with the COMMIT framework.
+Tutorials are provided in the [`docs/tutorials`](docs/tutorials/) folder to help you get started with the COMMIT framework.
 

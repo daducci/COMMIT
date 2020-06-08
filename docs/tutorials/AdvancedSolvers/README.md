@@ -9,7 +9,7 @@ x^* = \arg\min_{x\in R^n_+} \frac12 \|Ax-y\|_2^2 + \lambda_{IC}\Omega_{IC}(x) + 
 \end{equation}
 where $A$ is the COMMIT dictionary, $n$ is defined in such a way that the product $Ax$ makes sense and $y$ is the datum that we want to fit. The three regularisation terms allow us to exploit ***distinct penalties for each compartment***.
 
-*Note*: before exploring this tutorial, you should follow the [Getting Started](https://github.com/daducci/COMMIT/tree/master/doc/tutorials/GettingStarted) tutorial.
+*Note*: before exploring this tutorial, you should follow the [Getting Started](https://github.com/daducci/COMMIT/tree/master/docs/tutorials/GettingStarted) tutorial.
 
 
 ### Download and unpack the data

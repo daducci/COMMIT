@@ -2,10 +2,15 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.3.8] - 2020-05-25
+## [1.3.9] - 2020-06-09
 
 ### Changed
-- Modify setup.py and fix spams dependency
+- Modify setup.py and fix spams dependencies
+
+## [1.3.8] - 2020-05-12
+
+### Changed
+- Improvements to the COMMIT_debugger.
 
 ## [1.3.7] - 2020-04-25
 
