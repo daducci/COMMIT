@@ -9,3 +9,10 @@ ehthumbs.db
 Thumbs.db
 __pycache__/
 .vscode/
+.eggs/
+*.egg-info/
+*.so
+*.cpp
+dist/
+
+trk2dictionary.c
