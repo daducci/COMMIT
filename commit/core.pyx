@@ -629,7 +629,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self, regtikhonov=0.1 ) :
+    def build_operator( self, regtikhonov=0.0, Ltype=1 ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
@@ -656,7 +656,7 @@ cdef class Evaluation :
             import commit.operator.operator
         else :
             reload( sys.modules['commit.operator.operator'] )
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, regtikhonov )
+        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, regtikhonov, Ltype )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -672,17 +672,22 @@ cdef class Evaluation :
             raise RuntimeError( 'Data not loaded; call "load_data()" first.' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        #return y
-        """print(type(y))
-        print(y.shape)
-        print(y.shape[0])
-        print(self.KERNELS['wmr'].shape[0])
-        print(y.shape[0] + self.KERNELS['wmr'].shape[0])"""
-        y2 = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0], dtype=np.float64) #aqui resta
-        y2[0:y.shape[0]] = y
-        #print(y2.shape)
-        return y2
-        #"""
+
+        # add regularization part
+        if self.A.regtikhonov > 0.0:
+            if self.A.Ltype == 0:
+                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-1, dtype=np.float64)
+            elif self.A.Ltype == 1:
+                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-2, dtype=np.float64)
+            elif self.A.Ltype == 2:
+                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]+1, dtype=np.float64)
+            else:
+                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]  , dtype=np.float64)
+            
+            yL[0:y.shape[0]] = y
+            return yL
+        else:
+            return y
 
 
     def fit( self, tol_fun = 1e-3, tol_x = 1e-6, max_iter = 100, verbose = 1, x0 = None, regularisation = None ) :

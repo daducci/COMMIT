@@ -2246,42 +2246,8 @@ void COMMIT_At(
     return;
 }
 
-
-////////////////////////// L_2^z //////////////////////////
-void COMMIT_L(
-    int _nF, int _nIC, int _nV, int _nS, double _tikterm,
-    double *_vIN, double *_vOUT)
-{
-    for(int f = 0; f < _nF; f++){
-
-        _vOUT[_nV*_nS] += _tikterm*( -2*_vIN[f] + x[_nF + f] );
-
-        for(int r = 1; r < _nIC-1; r++){
-            _vOUT[_nV*_nS + r] += _tikterm*( _vIN[(r-1)*_nF + f] -2*_vIN[r*_nF + f] + _vIN[(r+1)*_nF + f] );
-        }
-
-        _vOUT[_nV*_nS + _nIC - 1] += _tikterm*( _vIN[(_nIC-2)*_nF + f] - 2*_vIN[(_nIC-1)*_nF + f] );
-    }
-}
-
-void COMMIT_Lt(
-    int _nF, int _nIC, int _nV, int _nS, double _tikterm,
-    double *_vIN, double *_vOUT)
-{
-    for(int f = 0; f < _nF; f++){
-        _vOUT[f] += _tikterm*( -2*_vIN[_nV*_nS] + _vIN[_nV*_nS + 1] );
-
-        for (int r = 0; r < _nIC-1; r++){
-            _vOUT[r*_nF + f] += _tikterm*( _vIN[_nV*_nS + (r-1)] - 2*_vIN[_nV*_nS + r] + _vIN[_nV*_nS + (r+1)] );
-        }
-        
-        _vOUT[(_nIC-1)*_nF + f] += _tikterm*( _vIN[_nV*_nS + (_nIC-2)] - 2*_vIN[_nV*_nS + (_nIC-1)] );
-    }
-}//*/
-
-/*
 ////////////////////////// L_1 //////////////////////////
-void COMMIT_L(
+void COMMIT_L1(
     int _nF, int _nIC, int _nV, int _nS, double _regterm,
     double *_vIN, double *_vOUT)
 {
@@ -2292,7 +2258,7 @@ void COMMIT_L(
     }
 }
 
-void COMMIT_Lt(
+void COMMIT_L1t(
     int _nF, int _nIC, int _nV, int _nS, double _regterm,
     double *_vIN, double *_vOUT)
 {
@@ -2305,10 +2271,9 @@ void COMMIT_Lt(
         _vOUT[_nF*(_nIC-1) + f] += _regterm*( _vIN[_nV*_nS + _nIC-2] );
     }
 }
-//*/
 
 ////////////////////////// L_2 //////////////////////////
-/*void COMMIT_L(
+void COMMIT_L2(
     int _nF, int _nIC, int _nV, int _nS, double _tikterm,
     double *_vIN, double *_vOUT)
 {
@@ -2319,7 +2284,7 @@ void COMMIT_Lt(
     }
 }
 
-void COMMIT_Lt(
+void COMMIT_L2t(
     int _nF, int _nIC, int _nV, int _nS, double _tikterm,
     double *_vIN, double *_vOUT)
 {
@@ -2336,4 +2301,51 @@ void COMMIT_Lt(
 
         _vOUT[(_nIC-1)*_nF + f] += _tikterm*( _vIN[_nV*_nS + (_nIC-3)] );
     }
-}//*/
+}
+
+////////////////////////// L_1^z //////////////////////////
+void COMMIT_L1z(
+    int _nF, int _nIC, int _nV, int _nS, double _tikterm,
+    double *_vIN, double *_vOUT)
+{
+    return;
+}
+
+void COMMIT_L1zt(
+        int _nF, int _nIC, int _nV, int _nS, double _tikterm,
+    double *_vIN, double *_vOUT)
+{
+    return;
+}
+
+////////////////////////// L_2^z //////////////////////////
+void COMMIT_L2z(
+    int _nF, int _nIC, int _nV, int _nS, double _tikterm,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+
+        _vOUT[_nV*_nS] += _tikterm*( -2*_vIN[f] + x[_nF + f] );
+
+        for(int r = 1; r < _nIC-1; r++){
+            _vOUT[_nV*_nS + r] += _tikterm*( _vIN[(r-1)*_nF + f] -2*_vIN[r*_nF + f] + _vIN[(r+1)*_nF + f] );
+        }
+
+        _vOUT[_nV*_nS + _nIC - 1] += _tikterm*( _vIN[(_nIC-2)*_nF + f] - 2*_vIN[(_nIC-1)*_nF + f] );
+    }
+}
+
+void COMMIT_L2zt(
+    int _nF, int _nIC, int _nV, int _nS, double _tikterm,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+        _vOUT[f] += _tikterm*( -2*_vIN[_nV*_nS] + _vIN[_nV*_nS + 1] );
+
+        for (int r = 0; r < _nIC-1; r++){
+            _vOUT[r*_nF + f] += _tikterm*( _vIN[_nV*_nS + (r-1)] - 2*_vIN[_nV*_nS + r] + _vIN[_nV*_nS + (r+1)] );
+        }
+        
+        _vOUT[(_nIC-1)*_nF + f] += _tikterm*( _vIN[_nV*_nS + (_nIC-2)] - 2*_vIN[_nV*_nS + (_nIC-1)] );
+    }
+}
