@@ -157,7 +157,7 @@ CudaLinearOperator::CudaLinearOperator(
     else            printf("[ CUDA ERROR ]\n");
 
     // alloc and transfer LUTs
-    printf("\t* loading LUT ... ");
+    printf("\t* loading LUTs ... ");
     cudaStatus = true;
     cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lutIC, size_lutic*sizeof(float32_t)) );
     cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lutIC, lutIC, size_lutic*sizeof(float32_t), cudaMemcpyHostToDevice) );
@@ -167,6 +167,29 @@ CudaLinearOperator::CudaLinearOperator(
 
     cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_lutISO, size_lutiso*sizeof(float32_t)) );
     cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_lutISO, lutISO, size_lutiso*sizeof(float32_t), cudaMemcpyHostToDevice) );
+    if (cudaStatus) printf("[ OK ]\n");
+    else            printf("[ CUDA ERROR ]\n");
+
+    // configure texture for LUTs
+    tex_lutIC.addressMode[0] = cudaAddressModeBorder;
+    tex_lutIC.addressMode[1] = cudaAddressModeBorder;
+    tex_lutIC.filterMode = cudaFilterModePoint;
+    tex_lutIC.normalized = false;
+
+    tex_lutEC.addressMode[0] = cudaAddressModeBorder;
+    tex_lutEC.addressMode[1] = cudaAddressModeBorder;
+    tex_lutEC.filterMode = cudaFilterModePoint;
+    tex_lutEC.normalized = false;
+
+    tex_lutISO.addressMode[0] = cudaAddressModeBorder;
+    tex_lutISO.addressMode[1] = cudaAddressModeBorder;
+    tex_lutISO.filterMode = cudaFilterModePoint;
+    tex_lutISO.normalized = false;
+
+    printf("\t* linking LUTs to a texture memory ... ");
+    cudaStatus = cudaStatus && cudaCheck( cudaBindTexture(NULL, tex_lutIC,  gpu_lutIC,  size_lutic  * sizeof(float32_t)) );
+    cudaStatus = cudaStatus && cudaCheck( cudaBindTexture(NULL, tex_lutEC,  gpu_lutEC,  size_lutec  * sizeof(float32_t)) );
+    cudaStatus = cudaStatus && cudaCheck( cudaBindTexture(NULL, tex_lutISO, gpu_lutISO, size_lutiso * sizeof(float32_t)) );
     if (cudaStatus) printf("[ OK ]\n");
     else            printf("[ CUDA ERROR ]\n");
 
@@ -237,6 +260,9 @@ void CudaLinearOperator::destroy(){
     cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_lutIC)  );
     cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_lutEC)  );
     cudaStatus = cudaStatus && cudaCheck( cudaFree(gpu_lutISO) );
+    cudaStatus = cudaStatus && cudaCheck( cudaUnbindTexture(tex_lutIC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaUnbindTexture(tex_lutEC)  );
+    cudaStatus = cudaStatus && cudaCheck( cudaUnbindTexture(tex_lutISO) );
     if (cudaStatus) printf("[ OK ]\n");
     else            printf("[ CUDA ERROR ]\n");
 
@@ -401,8 +427,8 @@ __global__ void multiply_Ax_ICpart(uint32_t*  voxelIDs,
 
         float64_t aux = 0.0;
         for(int j = 0; j < NUM_DIAMETERS; j++){
-            aux += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[(*fiber) + j*NUM_FIBERS];
-            //aux += tex1Dfetch(tex_lutIC, offset_lut + j*num_orientations*num_samples) * x[(*fiber) + j*num_fibers];
+            //aux += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[(*fiber) + j*NUM_FIBERS];
+            aux += tex1Dfetch(tex_lutIC, offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES) * x[(*fiber) + j*NUM_FIBERS];
         }
 
         sum += aux * (*length);
@@ -446,8 +472,8 @@ __global__ void multiply_Ax_ECpart(
         uint32_t offset_lut = (*orien)*NUM_SAMPLES + tid;
 
         for(int j = 0; j < NUM_ZEPPELINS; j++)
-            sum += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[target + j*NUM_PEAKS + i];
-            //sum += tex1Dfetch(tex_lutEC, offset_lut + j*num_orientations*num_samples) * x[target + j*num_excomps + i];
+            //sum += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[target + j*NUM_PEAKS + i];
+            sum += tex1Dfetch(tex_lutEC, offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES) * x[target + j*NUM_PEAKS + i];
 
         orien++;
     }
@@ -469,8 +495,8 @@ __global__ void multiply_Ax_ISOpart(
 
     float64_t sum = 0.0;
     for(int j = 0; j < NUM_BALLS; j++)
-        sum += (double)(lut[j*NUM_SAMPLES + tid])*x[target + j*NUM_VOXELS];
-        //sum += (double)(tex1Dfetch(tex_lutISO, j*num_samples + tid))*x[target + j*num_voxels];
+        //sum += (double)(lut[j*NUM_SAMPLES + tid])*x[target + j*NUM_VOXELS];
+        sum += (double)(tex1Dfetch(tex_lutISO, j*NUM_SAMPLES + tid))*x[target + j*NUM_VOXELS];
         
 
     y[bid*NUM_SAMPLES + tid] += sum;
@@ -512,8 +538,8 @@ __global__ void multiply_Aty_ICpart(
         orien  = orienICt  + offset;
         length = lengthICt + offset;
         for(int i = offset; i < nsegments; i++){
-            sum += ((float64_t)(*length)) *( (float64_t) lut[offset_lut + (*orien)*NUM_SAMPLES] )* y[(*voxel)*NUM_SAMPLES + tid];
-            //sum += ((float64_t)(*length)) *( (float64_t) tex1Dfetch(tex_lutIC, offset_lut + (*orient)*num_samples) )* y[(*voxel)*num_samples + tid];
+            //summ += ((float64_t)(*length)) *( (float64_t) lut[offset_lut + (*orien)*NUM_SAMPLES] )* y[(*voxel)*NUM_SAMPLES + tid];
+            sum += ((float64_t)(*length)) *( (float64_t) tex1Dfetch(tex_lutIC, offset_lut + (*orien)*NUM_SAMPLES) )* y[(*voxel)*NUM_SAMPLES + tid];
 
             voxel++;
             orien++;
@@ -567,8 +593,8 @@ __global__ void multiply_Aty_ECpart(
         voxel = voxelEC + offset;
         orien = orienEC + offset;
         for(int i = offset; i < ncompartments; i++){
-            //shmem[tid] =( (float64_t)tex1Dfetch(tex_lutEC, (*orient)*num_samples + offset_lut) )* y[(*voxel)*num_samples + tid];
-            shmem[tid] =( (float64_t)(lut[(*orien)*NUM_SAMPLES + offset_lut] ))* y[(*voxel)*NUM_SAMPLES + tid];
+            //shmem[tid] =( (float64_t)(lut[(*orien)*NUM_SAMPLES + offset_lut] ))* y[(*voxel)*NUM_SAMPLES + tid];
+            shmem[tid] =( (float64_t)tex1Dfetch(tex_lutEC, (*orien)*NUM_SAMPLES + offset_lut) )* y[(*voxel)*NUM_SAMPLES + tid];
             __syncthreads();
 
             if(tid < 256) shmem[tid] += shmem[tid + 256]; __syncthreads();
@@ -601,8 +627,8 @@ __global__ void multiply_Aty_ISOpart(float* lut, double* x, double* y){
     if(tid >= NUM_SAMPLES) return;
 
     for(int j = 0; j < NUM_BALLS; j++){
-        shmem[tid] =( (float64_t) lut[j*NUM_SAMPLES + tid] )* y[bid*NUM_SAMPLES + tid];
-        //shmem[tid] =( (float64_t) tex1Dfetch(tex_lutISO, j*num_samples + tid) )* y[bid*num_samples + tid];
+        //shmem[tid] =( (float64_t) lut[j*NUM_SAMPLES + tid] )* y[bid*NUM_SAMPLES + tid];
+        shmem[tid] =( (float64_t) tex1Dfetch(tex_lutISO, j*NUM_SAMPLES + tid) )* y[bid*NUM_SAMPLES + tid];
         __syncthreads();
 
         if(tid < 256) shmem[tid] += shmem[tid + 256]; __syncthreads();
