@@ -1,5 +1,10 @@
 #include "operator_withCUDA.cuh"
 
+// textures in GPU
+texture<float32_t, 1, cudaReadModeElementType> tex_lutIC;
+texture<float32_t, 1, cudaReadModeElementType> tex_lutEC;
+texture<float32_t, 1, cudaReadModeElementType> tex_lutISO;
+
 bool cudaCheck(cudaError_t cudaStatus){
     return cudaStatus == cudaSuccess;
 }

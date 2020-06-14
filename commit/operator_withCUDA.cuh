@@ -83,11 +83,6 @@ __constant__ int SIZE_LUTIC;
 __constant__ int SIZE_LUTEC;     
 __constant__ int SIZE_LUTISO;
 
-// textures in GPU
-texture<float32_t, 1, cudaReadModeElementType> tex_lutIC;
-texture<float32_t, 1, cudaReadModeElementType> tex_lutEC;
-texture<float32_t, 1, cudaReadModeElementType> tex_lutISO;
-
 // pointers to IC data in GPU memory
 static uint32_t*  gpu_voxelIC;
 static uint32_t*  gpu_fiberIC;
