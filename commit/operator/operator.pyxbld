@@ -1,4 +1,5 @@
 import numpy
+from os import utime
 from os.path import dirname, join
 from setuptools import Extension
 
@@ -25,6 +26,10 @@ def make_ext(modname, pyxfilename):
         filename = "operator_withLUT.c"
 
     path = dirname(pyxfilename)
+
+    if not config.locally:
+        utime( join(path,filename), None)
+
     return Extension(name=modname,
                      sources=[pyxfilename, join(path, filename)],
                      include_dirs=[numpy.get_include()],
