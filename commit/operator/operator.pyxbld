@@ -27,7 +27,7 @@ def make_ext(modname, pyxfilename):
 
     path = dirname(pyxfilename)
 
-    if not config.locally:
+    if not config.build_dir is None:
         utime( join(path,filename), None)
 
     return Extension(name=modname,

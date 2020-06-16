@@ -629,7 +629,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self, build_locally=False, build_dir=None ) :
+    def build_operator( self, build_dir=None ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
@@ -652,19 +652,17 @@ cdef class Evaluation :
 
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
-        config.nTHREADS = self.THREADS['n']
-        config.model    = self.model.id
-        config.nIC      = self.KERNELS['wmr'].shape[0]
-        config.nEC      = self.KERNELS['wmh'].shape[0]
-        config.nISO     = self.KERNELS['iso'].shape[0]
-        config.locally  = build_locally
+        config.nTHREADS   = self.THREADS['n']
+        config.model      = self.model.id
+        config.nIC        = self.KERNELS['wmr'].shape[0]
+        config.nEC        = self.KERNELS['wmh'].shape[0]
+        config.nISO       = self.KERNELS['iso'].shape[0]
+        config.build_dir  = build_dir
 
-        if build_locally:
-            if build_dir is None:
-                build_dir = getcwd()
+        if build_dir is not None:
             pyximport.install( reload_support=True, language_level=3, build_in_temp=True, build_dir=build_dir, inplace=False )
         else:
-            pyximport.install( reload_support=True, language_level=3)
+            pyximport.install( reload_support=True, language_level=3 )
 
         if not 'commit.operator.operator' in sys.modules :
             import commit.operator.operator
