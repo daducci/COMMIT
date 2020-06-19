@@ -1,6 +1,3 @@
-
-You can find the ipython notebook version of this tutorial [at this link](tutorial_solvers.ipynb).
-
 # Advanced solvers
 
 This tutorial shows how to exploit the advanced features of the COMMIT framework from the side of the **optimisation problem**. The general formulation is the following:
