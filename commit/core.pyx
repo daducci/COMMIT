@@ -878,12 +878,6 @@ cdef class Evaluation :
         # Configuration and results
         print( '\t* Configuration and results:' )
 
-        print( '\t\t- config.pickle... ', end='' )
-        sys.stdout.flush()
-        with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
-            pickle.dump( self.CONFIG, fid, protocol=2 )
-        print( '[ OK ]' )
-
         if save_opt_details:
             print( '\t\t- results.pickle... ', end='' )
             sys.stdout.flush()
