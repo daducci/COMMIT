@@ -876,7 +876,8 @@ cdef class Evaluation :
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # Configuration and results
-        print( '\t* Configuration and results:' )
+        if save_opt_details or save_coeff or save_est_dwi:
+            print( '\t* Configuration and results:' )
 
         if save_opt_details:
             print( '\t\t- results.pickle... ', end='' )
