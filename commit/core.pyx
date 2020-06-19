@@ -864,13 +864,13 @@ cdef class Evaluation :
         print( '   [ OK ]' )
 
         if self.get_config('doNormalizeMaps') :
-                niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine )
-                niiEC = nibabel.Nifti1Image(  niiEC_img /  ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
-                niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
+            niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine )
+            niiEC = nibabel.Nifti1Image(  niiEC_img /  ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
+            niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
         else:
-                niiIC = nibabel.Nifti1Image( niiIC_img, affine )
-                niiEC = nibabel.Nifti1Image( niiEC_img, affine )
-                niiISO = nibabel.Nifti1Image( niiISO_img, affine )
+            niiIC = nibabel.Nifti1Image( niiIC_img, affine )
+            niiEC = nibabel.Nifti1Image( niiEC_img, affine )
+            niiISO = nibabel.Nifti1Image( niiISO_img, affine )
 
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
@@ -890,8 +890,11 @@ cdef class Evaluation :
             print( '\t\t- Coefficients txt files... ', end='' )
             sys.stdout.flush()
             if len(self.KERNELS['wmr']) > 0 :
+                kept = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.bool_)
+                xic = np.zeros( kept.shape )
                 offset = nF * self.KERNELS['wmr'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[:offset], fmt='%12.5e')
+                xic[kept] = x[:offset]
+                np.savetxt(pjoin(RESULTS_path,'xic.txt'), xic, fmt='%12.5e')
             if len(self.KERNELS['wmh']) > 0 :
                 offset = nF * self.KERNELS['wmr'].shape[0]
                 np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[offset:offset+nE*len(self.KERNELS['wmh'])], fmt='%12.5e')
