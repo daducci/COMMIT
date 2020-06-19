@@ -2,6 +2,12 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.0] - 2020-06-19
+
+### Changed
+- trk2dictionary.run(): removed 'gen_trk' option
+- save_results(): default value for 'save_coeff' is now True
+
 ## [1.3.9] - 2020-06-09
 
 ### Changed

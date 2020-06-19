@@ -58,6 +58,7 @@ def load_dictionary_info(filename):
         else:
             return pickle.load( dictionary_info_file )
 
+
 cdef class Evaluation :
     """Class to hold all the information (data and parameters) when performing an
     evaluation with the COMMIT framework.
@@ -105,9 +106,9 @@ cdef class Evaluation :
         self.set_config('doNormalizeMaps', False)
 
 
-
     def set_config( self, key, value ) :
         self.CONFIG[ key ] = value
+
 
     def get_config( self, key ) :
         return self.CONFIG.get( key )
@@ -740,7 +741,7 @@ cdef class Evaluation :
         LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
-    def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = False, save_est_dwi = False ) :
+    def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = True, save_est_dwi = False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -755,8 +756,7 @@ cdef class Evaluation :
             (default : True)
         save_coeff : boolean
             Save the coefficients related to each compartment in txt files
-            and a pickle file containing the configuration details.
-            (default : False)
+            (default : True)
         save_est_dwi : boolean
             Save the estimated DW-MRI signal (default : False)
         """
