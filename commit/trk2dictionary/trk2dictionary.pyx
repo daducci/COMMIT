@@ -28,7 +28,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     fiber_shift = 0, min_seg_len = 1e-3, min_fiber_len = 5.0, points_to_skip = 0,
     vf_THR = 0.1, peaks_use_affine = False, flip_peaks = [False,False,False], 
     blur_radii = [], blur_samples = [], blur_sigma = 1.0,
-    gen_trk = True, filename_trk = None, TCK_ref_image = None, ndirs = 32761
+    filename_trk = None, TCK_ref_image = None, ndirs = 32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -82,10 +82,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     flip_peaks : list of three boolean
         If necessary, flips peak orientations along each axis (default : no flipping).
 
-    gen_trk : boolean
-        If True, create a tractogram in the 'path_out' folder (either .tck or .tck)
-        containing the streamlines actually considered in the dictionary (default : True)
-    
     blur_radii : list of float
         Translate each segment to given radii to assign a broader fiber contribution (default : [])
     
@@ -119,7 +115,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     dictionary_info['flip_peaks'] = flip_peaks
     dictionary_info['min_seg_len'] = min_seg_len
     dictionary_info['min_fiber_len'] = min_fiber_len
-    dictionary_info['gen_trk'] = gen_trk
     dictionary_info['blur_radii'] = blur_radii
     dictionary_info['blur_samples'] = blur_samples
     dictionary_info['blur_sigma'] = blur_sigma
@@ -366,26 +361,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
-
-    # create new TRK with only fibers in the WM mask
-    # create new dictionaty file (TRK or TCK) with only fibers in the WM mask
-    if gen_trk :
-        LOG('\n   * Generate tractogram matching the dictionary:')
-        fib = nibabel.streamlines.load( filename_tractogram, lazy_load=True )
-        hdr = fib.header
-
-        file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
-        streamlines_out = []
-        for i, f in enumerate(fib.streamlines):
-            if file_kept[i] :
-                streamlines_out.append( f )
-        hdr['count'] = len(streamlines_out) #set new number of fibers in the header
-        hdr['nb_streamlines'] = len(streamlines_out)
-
-        #create a output dictionary file (TRK or TCK) in path_out
-        tractogram_out = nibabel.streamlines.tractogram.Tractogram(streamlines=streamlines_out, affine_to_rasmm=fib.tractogram.affine_to_rasmm)
-        nibabel.streamlines.save( tractogram_out, join(path_out,'dictionary_TRK_fibers'+extension), header=hdr )
-        print( '     [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
 
     # save TDI and MASK maps
     if filename_mask is not None :
