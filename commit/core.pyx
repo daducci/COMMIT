@@ -755,8 +755,7 @@ cdef class Evaluation :
                 L[2]: np.array renormalisation of L[1]
             (default : True)
         save_coeff : boolean
-            Save the coefficients related to each compartment in txt files
-            (default : True)
+            Save the coefficients related to each compartment in txt files (default : True)
         save_est_dwi : boolean
             Save the estimated DW-MRI signal (default : False)
         """
@@ -879,6 +878,12 @@ cdef class Evaluation :
         # Configuration and results
         print( '\t* Configuration and results:' )
 
+        print( '\t\t- config.pickle... ', end='' )
+        sys.stdout.flush()
+        with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
+            pickle.dump( self.CONFIG, fid, protocol=2 )
+        print( '[ OK ]' )
+
         if save_opt_details:
             print( '\t\t- results.pickle... ', end='' )
             sys.stdout.flush()
@@ -901,8 +906,6 @@ cdef class Evaluation :
             if len(self.KERNELS['iso']) > 0 :
                 offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
                 np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[offset:], fmt='%12.5e')
-            with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
-                pickle.dump( self.CONFIG, fid, protocol=2 )
             print( '[ OK ]' )
 
         if save_est_dwi :
