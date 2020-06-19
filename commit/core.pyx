@@ -741,6 +741,39 @@ cdef class Evaluation :
         LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
+    def get_coeffs( self ):
+        """
+        Returns the coefficients, corresponding to the original optimisation problem,
+        i.e. the input tractogram to trk2dictionary, divided in three classes (ic, ec, iso).
+        """
+        if self.x is None :
+            ERROR( 'Model not fitted to the data; call "fit()" first' )
+
+        nF = self.DICTIONARY['IC']['nF']
+        nE = self.DICTIONARY['EC']['nE']
+        nV = self.DICTIONARY['nV']
+
+        if self.get_config('doNormalizeKernels') :
+            # renormalize the coefficients
+            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
+            norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
+            norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
+            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
+        else :
+            x = self.x
+
+        offset1 = nF * self.KERNELS['wmr'].shape[0]
+        offset2 = offset1 + +nE*self.KERNELS['wmh'].shape[0]
+        kept = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.bool_)
+        xic = np.zeros( kept.shape )
+        xic[kept] = x[:offset1]
+        xec = x[offset1:offset2]
+        xiso = x[offset2:]
+
+        return xic, xec, xiso
+
+
     def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = True, save_est_dwi = False ) :
         """Save the output (coefficients, errors, maps etc).
 
