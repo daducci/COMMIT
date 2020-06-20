@@ -764,9 +764,10 @@ cdef class Evaluation :
             x = self.x
 
         offset1 = nF * self.KERNELS['wmr'].shape[0]
-        offset2 = offset1 + +nE*self.KERNELS['wmh'].shape[0]
+        offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
         kept = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.bool_)
-        xic = np.zeros( kept.shape )
+        kept = np.tile( kept, self.KERNELS['wmr'].shape[0] )
+        xic = np.zeros( kept.size )
         xic[kept] = x[:offset1]
         xec = x[offset1:offset2]
         xiso = x[offset2:]
