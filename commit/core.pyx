@@ -923,18 +923,13 @@ cdef class Evaluation :
         if save_coeff:
             print( '\t\t- Coefficients txt files... ', end='' )
             sys.stdout.flush()
-            if len(self.KERNELS['wmr']) > 0 :
-                kept = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.bool_)
-                xic = np.zeros( kept.shape )
-                offset = nF * self.KERNELS['wmr'].shape[0]
-                xic[kept] = x[:offset]
+            xic, xec, xiso = self.get_coeffs()
+            if xic.size > 0 :
                 np.savetxt(pjoin(RESULTS_path,'xic.txt'), xic, fmt='%12.5e')
-            if len(self.KERNELS['wmh']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[offset:offset+nE*len(self.KERNELS['wmh'])], fmt='%12.5e')
-            if len(self.KERNELS['iso']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[offset:], fmt='%12.5e')
+            if xec.size > 0 :
+                np.savetxt(pjoin(RESULTS_path,'xec.txt'), xec, fmt='%12.5e')
+            if xiso.size > 0 :
+                np.savetxt(pjoin(RESULTS_path,'xiso.txt'), xiso, fmt='%12.5e')
             print( '[ OK ]' )
 
         if save_est_dwi :
