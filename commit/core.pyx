@@ -8,7 +8,7 @@ cimport numpy as np
 import time
 import glob
 import sys
-from os import makedirs, remove
+from os import makedirs, remove, getcwd
 from os.path import exists, join as pjoin, isfile
 import nibabel
 import pickle
@@ -17,7 +17,7 @@ import commit.solvers
 import amico.scheme
 import amico.lut
 import pyximport
-pyximport.install( reload_support=True, language_level=3 )
+
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
@@ -629,7 +629,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self ) :
+    def build_operator( self, build_dir=None ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case

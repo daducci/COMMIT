@@ -1,6 +1,6 @@
 # How to "debug" your data
 
-This tool allows one to display in a common 3D space all the objects (DWI data, streamlines etc...) used by COMMIT in order to **spot possible incosistencies between the conventions** of COMMIT and the software that generated the data, e.g. flip in some axes in the DWI data or in the peaks, spatial shift in the streamlines, wheter the affine transformation was already applied to the data etc.
+This tool allows one to display in a common 3D space all the objects used by COMMIT (DWI data, streamlines etc...) in order to **spot possible incosistencies between the conventions** of COMMIT and the software that generated the data, e.g. flip in some axes in the DWI data or in the peaks, spatial shift of the streamlines, whether the affine transformation was already applied to the data etc.
 
 **NB**: please note that this tool is very rudimental and is released only for debugging purposes.
 
@@ -12,7 +12,7 @@ This tool allows one to display in a common 3D space all the objects (DWI data, 
 COMMIT_debugger \
     <dwi> \
     <scheme> \
-    <peaks> \
+    [-p <peaks> ] \
     [-f <tracts>] \
     [-m <map>]
 ```
@@ -21,7 +21,7 @@ COMMIT_debugger \
 - `scheme`: corresponding acquisition scheme (Camino format);
 - `peaks`: major directions of the *hindered* water pools in each voxel (4D NIFTI file);
 - `tracts`: tractogram to generate the *restricted* contributions of the tracts in each voxel (.TRK or .TCK file);
-- `map`: background map; default is one b0 computed from the DWI data.
+- `map`: background map; default is a b0 computed from the DWI data.
 
 A **dropdown menu** will appear with right-click of the mouse.
 
