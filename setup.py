@@ -44,7 +44,7 @@ class CustomBuildExtCommand(build_ext):
 
 description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 opts = dict(name='dmri-commit',
-            version='1.3.9.3',
+            version='1.3.9.4',
             description=description,
             long_description=description,
             author='Alessandro Daducci',
