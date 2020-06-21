@@ -660,7 +660,7 @@ cdef class Evaluation :
         config.build_dir  = build_dir
 
         if build_dir is not None:
-            pyximport.install( reload_support=True, language_level=3, build_in_temp=False, build_dir=build_dir, inplace=False )
+            pyximport.install( reload_support=True, language_level=3, build_in_temp=True, build_dir=build_dir, inplace=False )
         else:
             pyximport.install( reload_support=True, language_level=3 )
 
