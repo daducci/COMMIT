@@ -2308,14 +2308,26 @@ void COMMIT_L1z(
     int _nF, int _nIC, int _nV, int _nS, double _tikterm,
     double *_vIN, double *_vOUT)
 {
-    return;
+    for(int f = 0; f < _nF; f++){
+        _vOUT[_nV*_nS] += _tikterm*( _vIN[f] );
+
+        for(int r = 1; r < _nIC; r++){
+            _vOUT[_nV*_nS + r] += _tikterm*( -_vIN[(r-1)*_nF + f] + _vIN[r*_nF + f] );
+        }
+
+        _vOUT[_nV*_nS + _nIC] += _tikterm*( -_vIN[(_nIC-1)*_nF + f] );
+    }
 }
 
 void COMMIT_L1zt(
         int _nF, int _nIC, int _nV, int _nS, double _tikterm,
     double *_vIN, double *_vOUT)
 {
-    return;
+    for(int f = 0; f < _nF; f++){
+        for(int r = 0; r < _nIC; r++){
+            _vOUT[r*_nF + f] += _tikterm*( _vIN[_nV*_nS + r] - _vIN[_nV*_nS + r + 1]);
+        }
+    }
 }
 
 ////////////////////////// L_2^z //////////////////////////
