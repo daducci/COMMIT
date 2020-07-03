@@ -543,7 +543,7 @@ __global__ void multiply_Aty_ICpart(
         orien  = orienICt  + offset;
         length = lengthICt + offset;
         for(int i = offset; i < nsegments; i++){
-            summ += ((float64_t)(*length)) *( (float64_t) lut[offset_lut + (*orien)*NUM_SAMPLES] )* y[(*voxel)*NUM_SAMPLES + tid];
+            sum += ((float64_t)(*length)) *( (float64_t) lut[offset_lut + (*orien)*NUM_SAMPLES] )* y[(*voxel)*NUM_SAMPLES + tid];
             //sum += ((float64_t)(*length)) *( (float64_t) tex1Dfetch(tex_lutIC, offset_lut + (*orien)*NUM_SAMPLES) )* y[(*voxel)*NUM_SAMPLES + tid];
 
             voxel++;
