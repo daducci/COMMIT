@@ -432,8 +432,8 @@ __global__ void multiply_Ax_ICpart(uint32_t*  voxelIDs,
 
         float64_t aux = 0.0;
         for(int j = 0; j < NUM_DIAMETERS; j++){
-            //aux += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[(*fiber) + j*NUM_FIBERS];
-            aux += tex1Dfetch(tex_lutIC, offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES) * x[(*fiber) + j*NUM_FIBERS];
+            aux += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[(*fiber) + j*NUM_FIBERS];
+            //aux += tex1Dfetch(tex_lutIC, offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES) * x[(*fiber) + j*NUM_FIBERS];
         }
 
         sum += aux * (*length);
@@ -477,8 +477,8 @@ __global__ void multiply_Ax_ECpart(
         uint32_t offset_lut = (*orien)*NUM_SAMPLES + tid;
 
         for(int j = 0; j < NUM_ZEPPELINS; j++)
-            //sum += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[target + j*NUM_PEAKS + i];
-            sum += tex1Dfetch(tex_lutEC, offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES) * x[target + j*NUM_PEAKS + i];
+            sum += (double)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES])*x[target + j*NUM_PEAKS + i];
+            //sum += tex1Dfetch(tex_lutEC, offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES) * x[target + j*NUM_PEAKS + i];
 
         orien++;
     }
@@ -500,8 +500,8 @@ __global__ void multiply_Ax_ISOpart(
 
     float64_t sum = 0.0;
     for(int j = 0; j < NUM_BALLS; j++)
-        //sum += (double)(lut[j*NUM_SAMPLES + tid])*x[target + j*NUM_VOXELS];
-        sum += (double)(tex1Dfetch(tex_lutISO, j*NUM_SAMPLES + tid))*x[target + j*NUM_VOXELS];
+        sum += (double)(lut[j*NUM_SAMPLES + tid])*x[target + j*NUM_VOXELS];
+        //sum += (double)(tex1Dfetch(tex_lutISO, j*NUM_SAMPLES + tid))*x[target + j*NUM_VOXELS];
         
 
     y[bid*NUM_SAMPLES + tid] += sum;
@@ -543,8 +543,8 @@ __global__ void multiply_Aty_ICpart(
         orien  = orienICt  + offset;
         length = lengthICt + offset;
         for(int i = offset; i < nsegments; i++){
-            //summ += ((float64_t)(*length)) *( (float64_t) lut[offset_lut + (*orien)*NUM_SAMPLES] )* y[(*voxel)*NUM_SAMPLES + tid];
-            sum += ((float64_t)(*length)) *( (float64_t) tex1Dfetch(tex_lutIC, offset_lut + (*orien)*NUM_SAMPLES) )* y[(*voxel)*NUM_SAMPLES + tid];
+            summ += ((float64_t)(*length)) *( (float64_t) lut[offset_lut + (*orien)*NUM_SAMPLES] )* y[(*voxel)*NUM_SAMPLES + tid];
+            //sum += ((float64_t)(*length)) *( (float64_t) tex1Dfetch(tex_lutIC, offset_lut + (*orien)*NUM_SAMPLES) )* y[(*voxel)*NUM_SAMPLES + tid];
 
             voxel++;
             orien++;
@@ -598,8 +598,8 @@ __global__ void multiply_Aty_ECpart(
         voxel = voxelEC + offset;
         orien = orienEC + offset;
         for(int i = offset; i < ncompartments; i++){
-            //shmem[tid] =( (float64_t)(lut[(*orien)*NUM_SAMPLES + offset_lut] ))* y[(*voxel)*NUM_SAMPLES + tid];
-            shmem[tid] =( (float64_t)tex1Dfetch(tex_lutEC, (*orien)*NUM_SAMPLES + offset_lut) )* y[(*voxel)*NUM_SAMPLES + tid];
+            shmem[tid] =( (float64_t)(lut[(*orien)*NUM_SAMPLES + offset_lut] ))* y[(*voxel)*NUM_SAMPLES + tid];
+            //shmem[tid] =( (float64_t)tex1Dfetch(tex_lutEC, (*orien)*NUM_SAMPLES + offset_lut) )* y[(*voxel)*NUM_SAMPLES + tid];
             __syncthreads();
 
             if(tid < 256) shmem[tid] += shmem[tid + 256]; __syncthreads();
@@ -632,8 +632,8 @@ __global__ void multiply_Aty_ISOpart(float* lut, double* x, double* y){
     if(tid >= NUM_SAMPLES) return;
 
     for(int j = 0; j < NUM_BALLS; j++){
-        //shmem[tid] =( (float64_t) lut[j*NUM_SAMPLES + tid] )* y[bid*NUM_SAMPLES + tid];
-        shmem[tid] =( (float64_t) tex1Dfetch(tex_lutISO, j*NUM_SAMPLES + tid) )* y[bid*NUM_SAMPLES + tid];
+        shmem[tid] =( (float64_t) lut[j*NUM_SAMPLES + tid] )* y[bid*NUM_SAMPLES + tid];
+        //shmem[tid] =( (float64_t) tex1Dfetch(tex_lutISO, j*NUM_SAMPLES + tid) )* y[bid*NUM_SAMPLES + tid];
         __syncthreads();
 
         if(tid < 256) shmem[tid] += shmem[tid + 256]; __syncthreads();
