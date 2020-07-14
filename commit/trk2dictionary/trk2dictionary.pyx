@@ -40,7 +40,8 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         Path to the tractogram (.trk or .tck) containing the streamlines to load.
         
     path_out : string
-        Path to the folder to store the sparse data structure.
+        Path to the folder to store the sparse data structure. If not specified (default),
+        a folder name "COMMIT" will be created in the folder containing the tractogram.
 
     filename_mask : string
         Path to a binary mask to restrict the analysis to specific areas. Segments
@@ -192,9 +193,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     # fiber-tracts from .trk
     print( '\t- Tractogram' )
     
-    if (path_out is None):
-        ERROR( '"path_out" not defined' )
-
     if (filename_trk is None and filename_tractogram is None):
         ERROR( '"filename_tractogram" not defined' )
 
@@ -205,8 +203,14 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         filename_tractogram = filename_trk
         WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
 
+    if (path_out is None):
+        path_out = os.path.dirname(filename_tractogram)
+        if not os.path.isdir(path_out):
+            ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
+        path_out = join(path_out,'COMMIT')
+
     if (gen_trk is not None ):
-        WARNING('"gen_trk" parameter is deprecated.')
+        WARNING('"gen_trk" parameter is deprecated')
     
     extension = splitext(filename_tractogram)[1]
     if (extension != ".trk" and extension != ".tck") :
@@ -353,7 +357,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     dictionary_info['blur_samples'] = blur_samples
     dictionary_info['blur_sigma'] = blur_sigma
     dictionary_info['ndirs'] = ndirs
-    with open( path_out + '/dictionary_info.pickle', 'wb+' ) as dictionary_info_file:
+    with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
     # calling actual C code
