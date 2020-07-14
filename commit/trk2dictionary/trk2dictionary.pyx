@@ -105,25 +105,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         for the streamlines that were pre-filtered in this function.
     """
 
-    filename = path_out + '/dictionary_info.pickle'
-    dictionary_info = {}
-    dictionary_info['filename_trk'] = filename_trk
-    dictionary_info['path_out'] = path_out
-    dictionary_info['filename_peaks'] = filename_peaks
-    dictionary_info['filename_mask'] = filename_mask
-    dictionary_info['do_intersect'] = do_intersect
-    dictionary_info['fiber_shift'] = fiber_shift
-    dictionary_info['points_to_skip'] = points_to_skip
-    dictionary_info['vf_THR'] = vf_THR
-    dictionary_info['peaks_use_affine'] = peaks_use_affine
-    dictionary_info['flip_peaks'] = flip_peaks
-    dictionary_info['min_seg_len'] = min_seg_len
-    dictionary_info['min_fiber_len'] = min_fiber_len
-    dictionary_info['blur_radii'] = blur_radii
-    dictionary_info['blur_samples'] = blur_samples
-    dictionary_info['blur_sigma'] = blur_sigma
-    dictionary_info['ndirs'] = ndirs
-
     # check the value of ndirs
     if not amico.lut.is_valid(ndirs):
         ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
@@ -354,8 +335,25 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if not exists( path_out ):
         makedirs( path_out )
 
-    # write dictionary info file
-    with open( filename, 'wb+' ) as dictionary_info_file:
+    # write dictionary information info file
+    dictionary_info = {}
+    dictionary_info['filename_tractogram'] = filename_tractogram
+    dictionary_info['path_out'] = path_out
+    dictionary_info['filename_peaks'] = filename_peaks
+    dictionary_info['filename_mask'] = filename_mask
+    dictionary_info['do_intersect'] = do_intersect
+    dictionary_info['fiber_shift'] = fiber_shift
+    dictionary_info['points_to_skip'] = points_to_skip
+    dictionary_info['vf_THR'] = vf_THR
+    dictionary_info['peaks_use_affine'] = peaks_use_affine
+    dictionary_info['flip_peaks'] = flip_peaks
+    dictionary_info['min_seg_len'] = min_seg_len
+    dictionary_info['min_fiber_len'] = min_fiber_len
+    dictionary_info['blur_radii'] = blur_radii
+    dictionary_info['blur_samples'] = blur_samples
+    dictionary_info['blur_sigma'] = blur_sigma
+    dictionary_info['ndirs'] = ndirs
+    with open( path_out + '/dictionary_info.pickle', 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
     # calling actual C code
