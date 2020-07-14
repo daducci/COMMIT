@@ -28,7 +28,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     fiber_shift = 0, min_seg_len = 1e-3, min_fiber_len = 5.0, points_to_skip = 0,
     vf_THR = 0.1, peaks_use_affine = False, flip_peaks = [False,False,False], 
     blur_radii = [], blur_samples = [], blur_sigma = 1.0,
-    filename_trk = None, TCK_ref_image = None, ndirs = 32761
+    filename_trk = None, gen_trk = None, TCK_ref_image = None, ndirs = 32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -39,9 +39,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     filename_tractogram : string
         Path to the tractogram (.trk or .tck) containing the streamlines to load.
         
-    filename_trk : string
-        DEPRECATED. Use filename_tractogram instead.
-
     path_out : string
         Path to the folder to store the sparse data structure.
 
@@ -99,6 +96,13 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
         each segment in a streamline (default : 32761)
+
+    filename_trk : string
+        DEPRECATED. Use filename_tractogram instead.
+
+    gen_trk : string
+        DEPRECATED. No tractogram will be saved any more, but the returned coefficients will account
+        for the streamlines that were pre-filtered in this function.
     """
 
     filename = path_out + '/dictionary_info.pickle'
@@ -219,6 +223,9 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if (filename_trk is not None and filename_tractogram is None):
         filename_tractogram = filename_trk
         WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
+
+    if (gen_trk is not None ):
+        WARNING('"gen_trk" parameter is deprecated.')
     
     extension = splitext(filename_tractogram)[1]
     if (extension != ".trk" and extension != ".tck") :
