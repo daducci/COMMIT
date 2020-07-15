@@ -5,7 +5,7 @@ import cython
 import numpy as np
 cimport numpy as np
 import nibabel
-from os.path import join, exists, splitext
+from os.path import join, exists, splitext, dirname, isdir
 from os import makedirs, remove
 import time
 import amico
@@ -39,14 +39,19 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     filename_tractogram : string
         Path to the tractogram (.trk or .tck) containing the streamlines to load.
         
+    TCK_ref_image: string
+        When loading a .tck tractogram, path to the NIFTI file containing the information about
+        the geometry to be used for the tractogram to load. If not specified, it will try to use
+        the information from filename_peaks or filename_mask.
+    
     path_out : string
-        Path to the folder to store the sparse data structure. If not specified (default),
-        a folder name "COMMIT" will be created in the folder containing the tractogram.
+        Path to the folder for storing the sparse data structure. If not specified (default),
+        a folder name "COMMIT" will be created in the same folder of the tractogram.
 
     filename_mask : string
-        Path to a binary mask to restrict the analysis to specific areas. Segments
-        outside this mask are discarded. If not specified (default), the mask is created from
-        all voxels intersected by the tracts.
+        Path to a binary mask for restricting the analysis to specific areas.
+        Segments outside this mask are discarded. If not specified (default),
+        the mask is created from all voxels intersected by the tracts.
 
     do_intersect : boolean
         If True then fiber segments that intersect voxel boundaries are splitted (default).
@@ -58,10 +63,10 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         The value is specified in voxel units, eg 0.5 translates by half voxel.
 
     min_seg_len : float
-        Discard segments <= than this length in mm (default : 1e-3)
+        Discard segments <= than this length in mm (default : 1e-3).
 
     min_fiber_len : float
-        Discard streamlines <= than this length in mm (default : 5.0)
+        Discard streamlines <= than this length in mm (default : 5.0).
 
     points_to_skip : integer
         If necessary, discard first points at beginning/end of a fiber (default : 0).
@@ -69,7 +74,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     filename_peaks : string
         Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
         The data matrix should be 4D with last dimension 3*N, where N is the number
-        of peaks in each voxel. (default : no extra-cellular contributions)
+        of peaks in each voxel. (default : no extra-cellular contributions).
 
     peaks_use_affine : boolean
         Whether to rotate the peaks according to the affine matrix (default : False).
@@ -81,22 +86,18 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         If necessary, flips peak orientations along each axis (default : no flipping).
 
     blur_radii : list of float
-        Translate each segment to given radii to assign a broader fiber contribution (default : [])
+        Translate each segment to given radii to assign a broader fiber contribution (default : []).
     
     blur_samples : list of integer
         Segments are duplicated along a circle at a given radius; this parameter controls the
-        number of samples to take over a given circle (defaut : [])
+        number of samples to take over a given circle (defaut : []).
 
     blur_sigma: float
-        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
-    
-    TCK_ref_image: string
-        Path to the NIFTI file containing the information about the geometry used for the tractogram .tck to load. 
-        If it is not specified, it will try to use the information of filename_peaks or filename_mask.
+        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0).
     
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
-        each segment in a streamline (default : 32761)
+        each segment in a streamline (default : 32761).
 
     filename_trk : string
         DEPRECATED. Use filename_tractogram instead.
@@ -204,8 +205,8 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
 
     if (path_out is None):
-        path_out = os.path.dirname(filename_tractogram)
-        if not os.path.isdir(path_out):
+        path_out = dirname(filename_tractogram)
+        if not isdir(path_out):
             ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
         path_out = join(path_out,'COMMIT')
 
