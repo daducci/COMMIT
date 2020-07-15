@@ -775,7 +775,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = True, save_est_dwi = False ) :
+    def save_results( self, path_suffix = None, save_est_dwi = False, save_coeff = None, save_opt_details = None ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -783,18 +783,20 @@ cdef class Evaluation :
         path_suffix : string
             Text to be appended to "Results" to create the output path (default : None)
         save_opt_details : boolean
-            Save everything in a pickle file containing the following list L:
-                L[0]: dictionary with all the configuration details
-                L[1]: np.array obtained through the optimisation process with the normalised kernels
-                L[2]: np.array renormalisation of L[1]
-            (default : True)
+            DEPRECATED. The details of the optimization and the coefficients are always saved.
         save_coeff : boolean
-            Save the coefficients related to each compartment in txt files (default : True)
+            DEPRECATED. The estimated weights for the streamlines are always saved.
         save_est_dwi : boolean
             Save the estimated DW-MRI signal (default : False)
         """
         if self.x is None :
             ERROR( 'Model not fitted to the data; call "fit()" first' )
+
+        if save_coeff is not None :
+            WARNING('"save_coeff" parameter is deprecated')
+
+        if save_opt_details is not None :
+            WARNING('"save_opt_details" parameter is deprecated')
 
         RESULTS_path = 'Results_' + self.model.id
         if path_suffix :
@@ -910,27 +912,28 @@ cdef class Evaluation :
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # Configuration and results
-        if save_opt_details or save_coeff or save_est_dwi:
-            print( '\t* Configuration and results:' )
+        print( '\t* Configuration and results:' )
 
-        if save_opt_details:
-            print( '\t\t- results.pickle... ', end='' )
-            sys.stdout.flush()
-            with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-                pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
-            print( '[ OK ]' )
+        # Save to a pickle file the following items:
+        #   item 0: dictionary with all the configuration details
+        #   item 1: np.array obtained through the optimisation process with the normalised kernels
+        #   item 2: np.array renormalisation of coeffs in item 1
+        print( '\t\t- results.pickle... ', end='' )
+        sys.stdout.flush()
+        with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
+            pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+        print( '[ OK ]' )
 
-        if save_coeff:
-            print( '\t\t- Coefficients txt files... ', end='' )
-            sys.stdout.flush()
-            xic, xec, xiso = self.get_coeffs()
-            if xic.size > 0 :
-                np.savetxt(pjoin(RESULTS_path,'xic.txt'), xic, fmt='%12.5e')
-            if xec.size > 0 :
-                np.savetxt(pjoin(RESULTS_path,'xec.txt'), xec, fmt='%12.5e')
-            if xiso.size > 0 :
-                np.savetxt(pjoin(RESULTS_path,'xiso.txt'), xiso, fmt='%12.5e')
-            print( '[ OK ]' )
+        print( '\t\t- Coefficients txt files... ', end='' )
+        sys.stdout.flush()
+        xic, xec, xiso = self.get_coeffs()
+        if xic.size > 0 :
+            np.savetxt(pjoin(RESULTS_path,'xic.txt'), xic, fmt='%12.5e')
+        if xec.size > 0 :
+            np.savetxt(pjoin(RESULTS_path,'xec.txt'), xec, fmt='%12.5e')
+        if xiso.size > 0 :
+            np.savetxt(pjoin(RESULTS_path,'xiso.txt'), xiso, fmt='%12.5e')
+        print( '[ OK ]' )
 
         if save_est_dwi :
             print( '\t\t- Estimated signal... ', end='' )

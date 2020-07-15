@@ -199,6 +199,8 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
 
     if (path_out is None):
         path_out = dirname(filename_tractogram)
+        if path_out == '':
+            path_out = '.'
         if not isdir(path_out):
             ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
         path_out = join(path_out,'COMMIT')
