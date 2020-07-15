@@ -24,11 +24,11 @@ cdef extern from "trk2dictionary_c.cpp":
     ) nogil
 
 
-cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, filename_mask = None, do_intersect = True,
-    fiber_shift = 0, min_seg_len = 1e-3, min_fiber_len = 5.0, points_to_skip = 0,
-    vf_THR = 0.1, peaks_use_affine = False, flip_peaks = [False,False,False], 
-    blur_radii = [], blur_samples = [], blur_sigma = 1.0,
-    filename_trk = None, gen_trk = None, TCK_ref_image = None, ndirs = 32761
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
+    fiber_shift=0, min_seg_len=1e-3, min_fiber_len=5.0, points_to_skip=0,
+    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
+    blur_radii=[], blur_samples=[], blur_sigma=1.0,
+    filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -187,17 +187,17 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if min_fiber_len < 0 :
         ERROR( '"min_fiber_len" must be >= 0' )
 
-    if (filename_trk is None and filename_tractogram is None):
+    if filename_trk is None and filename_tractogram is None:
         ERROR( '"filename_tractogram" not defined' )
 
-    if (filename_trk is not None and filename_tractogram is not None):
+    if filename_trk is not None and filename_tractogram is not None:
         WARNING('"filename_trk" will not be considered, "filename_tractogram" will be used')
 
-    if (filename_trk is not None and filename_tractogram is None):
+    if filename_trk is not None and filename_tractogram is None:
         filename_tractogram = filename_trk
         WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
 
-    if (path_out is None):
+    if path_out is None:
         path_out = dirname(filename_tractogram)
         if path_out == '':
             path_out = '.'
@@ -205,7 +205,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
             ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
         path_out = join(path_out,'COMMIT')
 
-    if (gen_trk is not None ):
+    if gen_trk is not None:
         WARNING('"gen_trk" parameter is deprecated')
 
     # create output path
@@ -222,14 +222,14 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     print( '\t- Tractogram' )
     
     extension = splitext(filename_tractogram)[1]
-    if (extension != ".trk" and extension != ".tck") :
+    if extension != ".trk" and extension != ".tck":
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
     try :
         hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
     except :
         ERROR( 'Tractogram file not found' )
         
-    if (extension == ".trk"):
+    if extension == ".trk":
         Nx = hdr['dimensions'][0]
         Ny = hdr['dimensions'][1]
         Nz = hdr['dimensions'][2]
@@ -242,7 +242,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         n_scalars = hdr['nb_scalars_per_point']
         n_properties = hdr['nb_properties_per_streamline']
 
-    if (extension == ".tck"):
+    if extension == ".tck":
         if TCK_ref_image is None:
             if filename_peaks is not None:
                 TCK_ref_image = filename_peaks
@@ -273,7 +273,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         ERROR( 'The max dim size is 2^16 voxels' )
     
     # get the affine matrix
-    if (extension == ".tck"):
+    if extension == ".tck":
         scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
         M = nii_hdr.get_best_affine()
 
