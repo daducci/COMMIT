@@ -774,7 +774,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, save_est_dwi=False, save_coeff=None, save_opt_details=None ) :
+    def save_results( self, path_suffix=None, stat_coeffs='sum', save_est_dwi=False, save_coeff=None, save_opt_details=None ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -783,6 +783,9 @@ cdef class Evaluation :
             Text to be appended to "Results" to create the output path (default : None)
         save_est_dwi : boolean
             Save the estimated DW-MRI signal (default : False)
+        stat_coeffs : string
+            Stat to be used if more coefficients are estimated for each streamline.
+            Options: 'sum', 'mean', 'median', 'min', 'max', 'all' (default : 'sum')
         save_opt_details : boolean
             DEPRECATED. The details of the optimization and the coefficients are always saved.
         save_coeff : boolean
@@ -913,6 +916,27 @@ cdef class Evaluation :
         # Configuration and results
         print( '\t* Configuration and results:' )
 
+        print( '\t\t- streamline_weights.txt... ', end='' )
+        sys.stdout.flush()
+        xic, _, _ = self.get_coeffs()
+        if stat_coeffs != 'all' and xic.size > 0 :
+            xic = np.reshape( xic, (-1,nF) )
+            if stat_coeffs == 'sum' :
+                xic = np.sum( xic, axis=0 )
+            elif stat_coeffs == 'mean' :
+                xic = np.mean( xic, axis=0 )
+            elif stat_coeffs == 'median' :
+                xic = np.median( xic, axis=0 )
+            elif stat_coeffs == 'min' :
+                xic = np.min( xic, axis=0 )
+            elif stat_coeffs == 'max' :
+                xic = np.max( xic, axis=0 )
+            else :
+                ERROR( 'Stat not allowed. Possible values: sum, mean, median, min, max, all.', prefix='\n' )
+        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%15.5e' )
+        self.set_config('stat_coeffs', stat_coeffs)
+        print( '[ OK ]' )
+
         # Save to a pickle file the following items:
         #   item 0: dictionary with all the configuration details
         #   item 1: np.array obtained through the optimisation process with the normalised kernels
@@ -921,17 +945,6 @@ cdef class Evaluation :
         sys.stdout.flush()
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
             pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
-        print( '[ OK ]' )
-
-        print( '\t\t- Coefficients txt files... ', end='' )
-        sys.stdout.flush()
-        xic, xec, xiso = self.get_coeffs()
-        if xic.size > 0 :
-            np.savetxt(pjoin(RESULTS_path,'xic.txt'), xic, fmt='%12.5e')
-        if xec.size > 0 :
-            np.savetxt(pjoin(RESULTS_path,'xec.txt'), xec, fmt='%12.5e')
-        if xiso.size > 0 :
-            np.savetxt(pjoin(RESULTS_path,'xiso.txt'), xiso, fmt='%12.5e')
         print( '[ OK ]' )
 
         if save_est_dwi :
