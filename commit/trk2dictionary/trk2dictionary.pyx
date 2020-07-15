@@ -187,13 +187,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if min_fiber_len < 0 :
         ERROR( '"min_fiber_len" must be >= 0' )
 
-    LOG( '\n   * Loading data:' )
-    cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
-    cdef short* ptrHashTable = &htable[0]
-
-    # fiber-tracts from .trk
-    print( '\t- Tractogram' )
-    
     if (filename_trk is None and filename_tractogram is None):
         ERROR( '"filename_tractogram" not defined' )
 
@@ -212,6 +205,19 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
 
     if (gen_trk is not None ):
         WARNING('"gen_trk" parameter is deprecated')
+
+    # create output path
+    print( '\t- Output written to "%s"' % path_out )
+    if not exists( path_out ):
+        makedirs( path_out )
+
+    # Load data from files
+    LOG( '\n   * Loading data:' )
+    cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
+    cdef short* ptrHashTable = &htable[0]
+
+    # Streamlines from tractogram
+    print( '\t- Tractogram' )
     
     extension = splitext(filename_tractogram)[1]
     if (extension != ".trk" and extension != ".tck") :
@@ -334,11 +340,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         Np = 0
         ptrPEAKS = NULL
         ptrAFFINE = NULL
-
-    # output path
-    print( '\t- Output written to "%s"' % path_out )
-    if not exists( path_out ):
-        makedirs( path_out )
 
     # write dictionary information info file
     dictionary_info = {}
