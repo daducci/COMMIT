@@ -781,11 +781,11 @@ cdef class Evaluation :
         ----------
         path_suffix : string
             Text to be appended to "Results" to create the output path (default : None)
-        save_est_dwi : boolean
-            Save the estimated DW-MRI signal (default : False)
         stat_coeffs : string
             Stat to be used if more coefficients are estimated for each streamline.
             Options: 'sum', 'mean', 'median', 'min', 'max', 'all' (default : 'sum')
+        save_est_dwi : boolean
+            Save the estimated DW-MRI signal (default : False)
         save_opt_details : boolean
             DEPRECATED. The details of the optimization and the coefficients are always saved.
         save_coeff : boolean
