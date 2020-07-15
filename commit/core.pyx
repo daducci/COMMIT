@@ -344,10 +344,9 @@ cdef class Evaluation :
             Folder containing the output of the trk2dictionary script (relative to subject path)
         use_mask : boolean
             If False (default) the optimization will be conducted only on the voxels actually
-            traversed by tracts. If True, the mask specified in trk2dictionary
-            (i.e. "filename_mask" parameter) will be used instead.
-            NB: if no mask was specified in trk2dictionary, the "tdi" and
-            "mask" masks are equivalent and this parameter is irrelevant.
+            traversed by tracts. If True, then all voxels present in the mask specified in 
+            trk2dictionary.run(), i.e. "filename_mask" parameter, will be used instead.
+            NB: if no mask was specified in trk2dictionary, this parameter is irrelevant.
         """
         if self.niiDWI is None :
             ERROR( 'Data not loaded; call "load_data()" first' )
