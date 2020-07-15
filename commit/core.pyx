@@ -335,14 +335,14 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    cpdef load_dictionary( self, path, use_mask=False ) :
+    cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
         ----------
         path : string
             Folder containing the output of the trk2dictionary script (relative to subject path)
-        use_mask : boolean
+        use_all_voxels_in_mask : boolean
             If False (default) the optimization will be conducted only on the voxels actually
             traversed by tracts. If True, then all voxels present in the mask specified in 
             trk2dictionary.run(), i.e. "filename_mask" parameter, will be used instead.
@@ -357,7 +357,7 @@ cdef class Evaluation :
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
         # load mask
-        self.set_config('dictionary_mask', 'mask' if use_mask else 'tdi' )
+        self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
         mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_%s.nii'%self.get_config('dictionary_mask'))
         if not exists( mask_filename ) :
             mask_filename += '.gz'
