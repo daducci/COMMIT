@@ -21,7 +21,7 @@ import pyximport
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
-def setup( lmax = 12, ndirs = 32761 ) :
+def setup( lmax=12, ndirs=32761 ) :
     """General setup/initialization of the COMMIT framework.
     
     Parameters
@@ -37,7 +37,7 @@ def setup( lmax = 12, ndirs = 32761 ) :
 
     amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
-def load_dictionary_info(filename):
+def load_dictionary_info( filename ):
     """Function to load dictionary info file
     
     Parameters
@@ -114,7 +114,7 @@ cdef class Evaluation :
         return self.CONFIG.get( key )
 
 
-    def load_data( self, dwi_filename = 'DWI.nii', scheme_filename = 'DWI.scheme', b0_thr = 0 ) :
+    def load_data( self, dwi_filename='DWI.nii', scheme_filename='DWI.scheme', b0_thr=0 ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
@@ -216,7 +216,7 @@ cdef class Evaluation :
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
 
-    def generate_kernels( self, regenerate = False, lmax = 12, ndirs = 32761 ) :
+    def generate_kernels( self, regenerate=False, lmax=12, ndirs=32761 ) :
         """Generate the high-resolution response functions for each compartment.
         Dispatch to the proper function, depending on the model.
 
@@ -335,7 +335,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    cpdef load_dictionary( self, path, use_mask = False ) :
+    cpdef load_dictionary( self, path, use_mask=False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
@@ -345,9 +345,9 @@ cdef class Evaluation :
         use_mask : boolean
             If False (default) the optimization will be conducted only on the voxels actually
             traversed by tracts. If True, the mask specified in trk2dictionary
-            (i.e. "filename_mask" paramater) will be used instead.
+            (i.e. "filename_mask" parameter) will be used instead.
             NB: if no mask was specified in trk2dictionary, the "tdi" and
-            "mask" masks are equivalent and this parameter is not influent.
+            "mask" masks are equivalent and this parameter is irrelevant.
         """
         if self.niiDWI is None :
             ERROR( 'Data not loaded; call "load_data()" first' )
@@ -482,7 +482,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def set_threads( self, n = None ) :
+    def set_threads( self, n=None ) :
         """Set the number of threads to use for the matrix-vector operations with A and A'.
 
         Parameters
@@ -686,7 +686,7 @@ cdef class Evaluation :
         return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
 
-    def fit( self, tol_fun = 1e-3, tol_x = 1e-6, max_iter = 100, verbose = 1, x0 = None, regularisation = None ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=1, x0=None, regularisation=None ) :
         """Fit the model to the data.
 
         Parameters
@@ -775,20 +775,28 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix = None, save_est_dwi = False, save_coeff = None, save_opt_details = None ) :
+    def save_results( self, path_suffix=None, save_est_dwi=False, save_coeff=None, save_opt_details=None ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
         ----------
         path_suffix : string
             Text to be appended to "Results" to create the output path (default : None)
+        save_est_dwi : boolean
+            Save the estimated DW-MRI signal (default : False)
         save_opt_details : boolean
             DEPRECATED. The details of the optimization and the coefficients are always saved.
         save_coeff : boolean
             DEPRECATED. The estimated weights for the streamlines are always saved.
-        save_est_dwi : boolean
-            Save the estimated DW-MRI signal (default : False)
         """
+        RESULTS_path = 'Results_' + self.model.id
+        if path_suffix :
+            self.set_config('path_suffix', path_suffix)
+            RESULTS_path = RESULTS_path + path_suffix
+
+        LOG( '\n-> Saving results to "%s/*":' % RESULTS_path )
+        tic = time.time()
+
         if self.x is None :
             ERROR( 'Model not fitted to the data; call "fit()" first' )
 
@@ -797,14 +805,6 @@ cdef class Evaluation :
 
         if save_opt_details is not None :
             WARNING('"save_opt_details" parameter is deprecated')
-
-        RESULTS_path = 'Results_' + self.model.id
-        if path_suffix :
-            self.set_config('path_suffix', path_suffix)
-            RESULTS_path = RESULTS_path + path_suffix
-
-        LOG( '\n-> Saving results to "%s/*":' % RESULTS_path )
-        tic = time.time()
 
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']

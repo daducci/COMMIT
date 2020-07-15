@@ -6,7 +6,7 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Changed
 - trk2dictionary.run(): removed 'gen_trk' option
-- save_results(): default value for 'save_coeff' is now True
+- save_results(): removed 'save_coeff' and 'save_opt_details'
 - added 'get_coeffs' function to get all estimated coefficients
 
 ## [1.3.9] - 2020-06-09
