@@ -4,11 +4,11 @@ This tutorial illustrates how to enable the CUDA GPU acceleration for faster mod
 
 ## Getting Started
 
-This tutorial takes as starting point the [getting starting](https://github.com/daducci/COMMIT/tree/master/docs/tutorials/GettingStarted) tutorial.
+This tutorial takes as starting point the [getting started](https://github.com/daducci/COMMIT/tree/master/docs/tutorials/GettingStarted) tutorial.
 
 ## Build the linear operator A on GPU
 
-Once the getting starting tutorial runs properly, focus on the commands `mit.set_threads()` and `mit.build_operator()`. The command `mit.set_threads()` allows to indicate (through the parameter `nthreads`) how many CPU threads will use COMMIT to build linear operator **A**. Then, the command `mit.build_operator()` builds **A** by using the same number of threads especified by `nthreads`. The GPU acceleration can be enabled by setting the parameter `nthreads` equal to zero in `mit.set_threads()`.
+Once the getting started tutorial runs properly, focus on the commands `mit.set_threads()` and `mit.build_operator()`. The command `mit.set_threads()` allows to indicate (through the parameter `nthreads`) how many CPU threads will use COMMIT to build linear operator **A**. Then, the command `mit.build_operator()` builds **A** by using the same number of threads especified by `nthreads`. The GPU acceleration can be enabled by setting the parameter `nthreads` equal to zero in `mit.set_threads()`.
 
 ```python
 nthreads = 0
