@@ -88,6 +88,9 @@ def customize_compiler_for_nvcc(self):
     # Inject our redefined _compile method into the class
     self._compile = _compile
 
+# Locate CUDA
+CUDA = locate_cuda()
+
 def get_extensions():
     # Cython extension to create the sparse data structure from a tractogram
     # for the computation of matrix-vector multiplications
@@ -105,6 +108,18 @@ def get_extensions():
                      sources=['commit/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
+
+    if CUDA != None:
+        ext4 = Extension(name='commit.cudaoperator',
+                        sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
+                        extra_compile_args= {'gcc':  ['-w'],
+                                            'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                        language = 'c++',
+                        library_dirs = [CUDA['lib64']],
+                        libraries = ['cudart'],
+                        runtime_library_dirs = [CUDA['lib64']])
+
+        return [ext1, ext2, ext3, ext4]
 
     return [ext1, ext2, ext3]
 
@@ -147,86 +162,49 @@ def get_extensions_with_cuda():
                      libraries = ['cudart'],
                      runtime_library_dirs = [CUDA['lib64']])
 
-# Locate CUDA
-CUDA = locate_cuda()
 
-if CUDA != None:
-    print('\n==========================================================')
-    print('CUDA detected. Installing COMMIT with GPU acceleration.')
-    print('==========================================================\n')
+#print('CUDA not detected. Installing COMMIT without GPU acceleration.')
 
-    class CustomCudaBuildExtCommand(build_ext):
-        """ build_ext command to use when CUDA is detected and numpy headers are needed. """
+class CustomBuildExtCommand(build_ext):
+    """ build_ext command to use when numpy headers are needed. """
 
+    if CUDA != None:
         def build_extensions(self):
             customize_compiler_for_nvcc(self.compiler)
             build_ext.build_extensions(self)
 
-        def run(self):
-            # Now that the requirements are installed, get everything from numpy
-            from Cython.Build import cythonize
-            from numpy import get_include
-            
-            # Add everything requires for build
-            self.swig_opts = None
-            self.include_dirs = [get_include(), CUDA['lib64']]
-            self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
-
-            # Call original build_ext command
-            build_ext.finalize_options(self)
-            build_ext.run(self)
-
-    description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
-
-    opts = dict(name='dmri-commit',
-                version='1.4.0.0',
-                description=description,
-                long_description=description,
-                author='Alessandro Daducci',
-                author_email='alessandro.daducci@univr.it',
-                url='https://github.com/daducci/COMMIT',
-                packages=['commit', 'commit.operator'],
-                cmdclass={'build_ext': CustomCudaBuildExtCommand},
-                ext_modules=get_extensions_with_cuda(),
-                setup_requires=['Cython>=0.29', 'numpy>=1.12'],
-                install_requires=['Cython>=0.29',
-                                  'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
-                package_data={'commit.operator': ["*.*"]})
-else:
-    print('CUDA not detected. Installing COMMIT without GPU acceleration.')
-
-    class CustomBuildExtCommand(build_ext):
-        """ build_ext command to use when numpy headers are needed. """
-
-        def run(self):
-            # Now that the requirements are installed, get everything from numpy
-            from Cython.Build import cythonize
-            from numpy import get_include
-            
-            # Add everything requires for build
-            self.swig_opts = None
+    def run(self):
+        # Now that the requirements are installed, get everything from numpy
+        from Cython.Build import cythonize
+        from numpy import get_include
+        
+        # Add everything requires for build
+        self.swig_opts = None
+        if CUDA == None:
             self.include_dirs = [get_include()]
-            self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
+        else:
+            self.include_dirs = [get_include(), CUDA['lib64']]
+        self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
 
-            # Call original build_ext command
-            build_ext.finalize_options(self)
-            build_ext.run(self)
+        # Call original build_ext command
+        build_ext.finalize_options(self)
+        build_ext.run(self)
 
-    description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
+description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 
-    opts = dict(name='dmri-commit',
-                version='1.3.9.2',
-                description=description,
-                long_description=description,
-                author='Alessandro Daducci',
-                author_email='alessandro.daducci@univr.it',
-                url='https://github.com/daducci/COMMIT',
-                packages=['commit', 'commit.operator'],
-                cmdclass={'build_ext': CustomBuildExtCommand},
-                ext_modules=get_extensions(),
-                setup_requires=['Cython>=0.29', 'numpy>=1.12'],
-                install_requires=['Cython>=0.29',
-                                  'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
-                package_data={'commit.operator': ["*.*"]})
+opts = dict(name='dmri-commit',
+            version='1.4.0.0',
+            description=description,
+            long_description=description,
+            author='Alessandro Daducci',
+            author_email='alessandro.daducci@univr.it',
+            url='https://github.com/daducci/COMMIT',
+            packages=['commit', 'commit.operator'],
+            cmdclass={'build_ext': CustomBuildExtCommand},
+            ext_modules=get_extensions(),
+            setup_requires=['Cython>=0.29', 'numpy>=1.12'],
+            install_requires=['Cython>=0.29',
+                                'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
+            package_data={'commit.operator': ["*.*"]})
 
 setup(**opts)
