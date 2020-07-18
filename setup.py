@@ -111,26 +111,31 @@ def get_extensions():
 def get_extensions_with_cuda():
     # Cython extension to create the sparse data structure from a tractogram
     # for the computation of matrix-vector multiplications
+    from numpy import get_include
+
     ext1 = Extension(name='commit.trk2dictionary',
                      sources=['commit/trk2dictionary/trk2dictionary.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
-                     language='c++')
+                     language='c++',
+                     include_dirs = [numpy_include])
 
     ext2 = Extension(name='commit.core',
                      sources=['commit/core.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
-                     language='c++')
+                     language='c++',
+                     include_dirs = [numpy_include])
 
     ext3 = Extension(name='commit.proximals',
                       sources=['commit/proximals.pyx'],
                       extra_compile_args= {'gcc':  ['-w'],
                                            'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                       extra_link_args=[],
-                      language='c++')
+                      language='c++',
+                      include_dirs = [numpy_include])
 
     ext4 = Extension(name='commit.cudaoperator',
                      sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
@@ -139,8 +144,8 @@ def get_extensions_with_cuda():
                      language = 'c++',
                      library_dirs = [CUDA['lib64']],
                      libraries = ['cudart'],
-                     runtime_library_dirs = [CUDA['lib64']])
-                     #include_dirs = [numpy_include, CUDA['include']]
+                     runtime_library_dirs = [CUDA['lib64']]
+                     include_dirs = [numpy_include, CUDA['include']])
 
 # Locate CUDA
 CUDA = locate_cuda()
@@ -155,7 +160,7 @@ if CUDA != None:
             customize_compiler_for_nvcc(self.compiler)
             build_ext.build_extensions(self)
 
-        def run(self):
+        """def run(self):
             # Now that the requirements are installed, get everything from numpy
             from Cython.Build import cythonize
             from numpy import get_include
@@ -167,7 +172,7 @@ if CUDA != None:
 
             # Call original build_ext command
             build_ext.finalize_options(self)
-            build_ext.run(self)
+            build_ext.run(self)"""
 
     description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 
