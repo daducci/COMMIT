@@ -25,7 +25,7 @@ Please follow the corresponding [documentation](http://cmic.cs.ucl.ac.uk/camino/
 
 ### Cuda toolkit (optional)
 
-COMMIT has GPU acceleration support for fast model fitting. In order to use COMMIT with GPU acceleration, it is necessary to install the [CUDA toolkit](https://docs.nvidia.com/cuda/cuda-quick-start-guide/index.html#introduction). Make sure to add CUDA and the CUDA libraries to the PATH. For example, if the CUDA Toolkit 11.0 was installed in the default folder (`/usr/local/cuda-11.0/`), run in a system shell
+COMMIT has GPU acceleration support for fast model fitting. In order to use COMMIT with GPU acceleration, it is necessary to install the [CUDA toolkit](https://docs.nvidia.com/cuda/cuda-quick-start-guide/index.html#introduction). After the installation of CUDA, make sure to add CUDA and the CUDA libraries to the PATH. For example, if the CUDA Toolkit 11.0 was installed in the default folder (`/usr/local/cuda-11.0/`), run in a system shell
 
 ```bash
 export PATH=/usr/local/cuda-11.0/bin${PATH:+:${PATH}}
@@ -40,6 +40,7 @@ export CUDAHOME=/usr/local/cuda-11.0/
 ```
 
 **NOTE:** Only NVIDIA GPUs with compute capability >= 5.0 are supported.
+
 **NOTE:** It is recommended to have the latest NVIDIA drivers installed.
 
 ## Install COMMIT
