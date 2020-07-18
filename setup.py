@@ -201,7 +201,7 @@ else:
             
             # Add everything requires for build
             self.swig_opts = None
-            self.include_dirs = [get_include(), CUDA['lib64']]
+            self.include_dirs = [get_include(), CUDA['include']]
             self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
 
             # Call original build_ext command
