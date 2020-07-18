@@ -144,7 +144,7 @@ def get_extensions_with_cuda():
                      language = 'c++',
                      library_dirs = [CUDA['lib64']],
                      libraries = ['cudart'],
-                     runtime_library_dirs = [CUDA['lib64']]
+                     runtime_library_dirs = [CUDA['lib64']],
                      include_dirs = [numpy_include, CUDA['include']])
 
 # Locate CUDA
