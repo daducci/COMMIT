@@ -149,7 +149,7 @@ if CUDA != None:
     print('CUDA detected. Installing COMMIT with GPU acceleration.')
 
     class CustomCudaBuildExtCommand(build_ext):
-    """ build_ext command to use when CUDA is detected and numpy headers are needed. """
+        """ build_ext command to use when CUDA is detected and numpy headers are needed. """
 
         def build_extensions(self):
             customize_compiler_for_nvcc(self.compiler)
@@ -189,7 +189,7 @@ else:
     print('CUDA not detected. Installing COMMIT without GPU acceleration.')
 
     class CustomBuildExtCommand(build_ext):
-    """ build_ext command to use when numpy headers are needed. """
+        """ build_ext command to use when numpy headers are needed. """
 
         def run(self):
             # Now that the requirements are installed, get everything from numpy
