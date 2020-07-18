@@ -119,7 +119,7 @@ def get_extensions_with_cuda():
                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
                      language='c++',
-                     include_dirs = [numpy_include])
+                     include_dirs = [get_include])
 
     ext2 = Extension(name='commit.core',
                      sources=['commit/core.pyx'],
@@ -127,7 +127,7 @@ def get_extensions_with_cuda():
                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
                      language='c++',
-                     include_dirs = [numpy_include])
+                     include_dirs = [get_include])
 
     ext3 = Extension(name='commit.proximals',
                       sources=['commit/proximals.pyx'],
@@ -135,7 +135,7 @@ def get_extensions_with_cuda():
                                            'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                       extra_link_args=[],
                       language='c++',
-                      include_dirs = [numpy_include])
+                      include_dirs = [get_include])
 
     ext4 = Extension(name='commit.cudaoperator',
                      sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
@@ -145,15 +145,15 @@ def get_extensions_with_cuda():
                      library_dirs = [CUDA['lib64']],
                      libraries = ['cudart'],
                      runtime_library_dirs = [CUDA['lib64']],
-                     include_dirs = [numpy_include, CUDA['include']])
+                     include_dirs = [get_include, CUDA['include']])
 
 # Locate CUDA
 CUDA = locate_cuda()
 
 if CUDA != None:
-    print('\n=====================================================')
+    print('\n==========================================================')
     print('CUDA detected. Installing COMMIT with GPU acceleration.')
-    print('=====================================================\n')
+    print('==========================================================\n')
 
     class CustomCudaBuildExtCommand(build_ext):
         """ build_ext command to use when CUDA is detected and numpy headers are needed. """
