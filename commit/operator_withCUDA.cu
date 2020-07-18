@@ -20,7 +20,7 @@ bool checkCompatibility(size_t required_mem, int gpu_id) {
         return false;
     }
 
-    cudaStatus = cudSetDevice(gpu_id);
+    cudaStatus = cudaSetDevice(gpu_id);
 
     if(cudaStatus == cudaSuccess){
         cudaDeviceProp gpu_properties;
