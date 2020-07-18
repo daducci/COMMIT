@@ -131,7 +131,7 @@ def get_extensions_with_cuda():
     ext1 = Extension(name='commit.trk2dictionary',
                      sources=['commit/trk2dictionary/trk2dictionary.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
-                                          'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                                          'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
                      language='c++')
                      #include_dirs = [get_include])
@@ -139,7 +139,7 @@ def get_extensions_with_cuda():
     ext2 = Extension(name='commit.core',
                      sources=['commit/core.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
-                                          'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                                          'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
                      language='c++')
                      #include_dirs = [get_include])
@@ -147,7 +147,7 @@ def get_extensions_with_cuda():
     ext3 = Extension(name='commit.proximals',
                       sources=['commit/proximals.pyx'],
                       extra_compile_args= {'gcc':  ['-w'],
-                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                                           'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                       extra_link_args=[],
                       language='c++')
                       #include_dirs = [get_include])
@@ -155,7 +155,7 @@ def get_extensions_with_cuda():
     ext4 = Extension(name='commit.cudaoperator',
                      sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
-                                          'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                                          'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      language = 'c++',
                      #include_dirs = [get_include, CUDA['include']],
                      library_dirs = [CUDA['lib64']],
