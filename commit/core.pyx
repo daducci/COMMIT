@@ -623,7 +623,7 @@ cdef class Evaluation :
 
             print( '[ OK ]' )
 
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def build_operator( self, build_dir=None ) :
