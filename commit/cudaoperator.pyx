@@ -44,7 +44,7 @@ cdef class CudaLinearOperator :
     with the COMMIT linear operator A in a CUDA GPU. The multiplications are done using CUDA C++ code
     that uses information from the DICTIONARY and KERNELS data structures.
     """
-    cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
+    cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs, gpu_id
     cdef public int adjoint, n1, n2
 
     cdef DICTIONARY
@@ -75,7 +75,7 @@ cdef class CudaLinearOperator :
     cdef unsigned int*   ISOthreadsT
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS, fcall = 0, gpu_id = 0 ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, fcall = 0 ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
@@ -89,6 +89,7 @@ cdef class CudaLinearOperator :
         self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
         self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
         self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
+        self.gpu_id     = THREADS['GPUID']          # id of the CUDA GPU
 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
@@ -151,7 +152,7 @@ cdef class CudaLinearOperator :
             self.nI,
             
             fcall,
-            gpu_id)
+            self.gpu_id)
 
         # create the transpose of the operator in GPU memory
         if fcall == 1:
