@@ -118,34 +118,34 @@ def get_extensions_with_cuda():
                      extra_compile_args= {'gcc':  ['-w'],
                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
-                     language='c++',
-                     include_dirs = [get_include])
+                     language='c++')
+                     #include_dirs = [get_include])
 
     ext2 = Extension(name='commit.core',
                      sources=['commit/core.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
-                     language='c++',
-                     include_dirs = [get_include])
+                     language='c++')
+                     #include_dirs = [get_include])
 
     ext3 = Extension(name='commit.proximals',
                       sources=['commit/proximals.pyx'],
                       extra_compile_args= {'gcc':  ['-w'],
                                            'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                       extra_link_args=[],
-                      language='c++',
-                      include_dirs = [get_include])
+                      language='c++')
+                      #include_dirs = [get_include])
 
     ext4 = Extension(name='commit.cudaoperator',
                      sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      language = 'c++',
+                     #include_dirs = [get_include, CUDA['include']],
                      library_dirs = [CUDA['lib64']],
                      libraries = ['cudart'],
-                     runtime_library_dirs = [CUDA['lib64']],
-                     include_dirs = [get_include, CUDA['include']])
+                     runtime_library_dirs = [CUDA['lib64']])
 
 # Locate CUDA
 CUDA = locate_cuda()
@@ -162,7 +162,7 @@ if CUDA != None:
             customize_compiler_for_nvcc(self.compiler)
             build_ext.build_extensions(self)
 
-        """def run(self):
+        def run(self):
             # Now that the requirements are installed, get everything from numpy
             from Cython.Build import cythonize
             from numpy import get_include
@@ -174,7 +174,7 @@ if CUDA != None:
 
             # Call original build_ext command
             build_ext.finalize_options(self)
-            build_ext.run(self)"""
+            build_ext.run(self)
 
     description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 
