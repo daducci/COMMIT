@@ -84,7 +84,7 @@ CudaLinearOperator::CudaLinearOperator(
     int nsegments,
     int nvoxels,      
     int nfibers,      
-    int nzeppelins,       
+    int npeaks,       
     int norientations,
     int nsamples,     
     int ndiameters,   
