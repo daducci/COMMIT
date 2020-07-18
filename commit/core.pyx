@@ -512,11 +512,11 @@ cdef class Evaluation :
             long t, tot, i1, i2, N, c
             int i
 
+        tic = time.time()
+
         if nthreads > 0:
             print( '\n-> Distributing workload to different threads:' )
             print( '\t* number of threads : %d' % nthreads )
-
-            tic = time.time()
 
             # Distribute load for the computation of A*x product
             print( '\t* A  operator... ', end="" )
