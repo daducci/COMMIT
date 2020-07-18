@@ -91,8 +91,6 @@ cdef class CudaLinearOperator :
         self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
         self.gpu_id     = THREADS['GPUID']          # id of the CUDA GPU
 
-        print('cuda gpu id: %d' % self.gpu_id)
-
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
         elif KERNELS['wmh'].size > 0 :

@@ -14,8 +14,6 @@ bool checkCompatibility(size_t required_mem, int gpu_id) {
     cudaError_t cudaStatus;
     
     cudaStatus = cudaGetDeviceCount(&num_gpus);
-    printf("num gpus %d\n", num_gpus);
-    printf("id gpu %d\n", gpu_id);
 
     if (num_gpus <= 0 || num_gpus <= gpu_id || cudaStatus != cudaSuccess) {
         printf("\t* the selected GPU does not exist or it is not detected \n");
