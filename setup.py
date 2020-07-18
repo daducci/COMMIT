@@ -162,6 +162,8 @@ def get_extensions_with_cuda():
                      libraries = ['cudart'],
                      runtime_library_dirs = [CUDA['lib64']])
 
+    return [ext1, ext2, ext3, ext4]
+
 if CUDA == None:
     extensions = get_extensions()
 else:
