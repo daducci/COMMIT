@@ -41,7 +41,7 @@ export CUDAHOME=/usr/local/cuda-11.0/
 
 **NOTE:** Only NVIDIA GPUs with compute capability >= 5.0 are supported.
 
-**NOTE:** It is recommended to have the latest NVIDIA drivers installed.
+**NOTE:** It is recommended to have the latest [NVIDIA drivers](https://www.nvidia.com/Download/index.aspx?lang=en-us) installed.
 
 ## Install COMMIT
 
