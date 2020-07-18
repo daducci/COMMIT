@@ -149,7 +149,7 @@ if CUDA != None:
     print('CUDA detected. Installing COMMIT with GPU acceleration.')
 
     class CustomCudaBuildExtCommand(build_ext):
-        """ build_ext command to use when CUDA is detected and numpy headers are needed. """
+    """ build_ext command to use when CUDA is detected and numpy headers are needed. """
 
         def build_extensions(self):
             customize_compiler_for_nvcc(self.compiler)
@@ -172,7 +172,7 @@ if CUDA != None:
     description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 
     opts = dict(name='dmri-commit',
-                version='1.3.9.2',
+                version='1.3.9.2-cuda',
                 description=description,
                 long_description=description,
                 author='Alessandro Daducci',
