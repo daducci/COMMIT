@@ -109,7 +109,7 @@ def get_extensions():
                      extra_compile_args=['-w'],
                      language='c++')
 
-    if CUDA != None:
+    """if CUDA != None:
         ext4 = Extension(name='commit.cudaoperator',
                         sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
                         extra_compile_args= {'gcc':  ['-w'],
@@ -119,7 +119,7 @@ def get_extensions():
                         libraries = ['cudart'],
                         runtime_library_dirs = [CUDA['lib64']])
 
-        return [ext1, ext2, ext3, ext4]
+        return [ext1, ext2, ext3, ext4]"""
 
     return [ext1, ext2, ext3]
 
@@ -162,8 +162,10 @@ def get_extensions_with_cuda():
                      libraries = ['cudart'],
                      runtime_library_dirs = [CUDA['lib64']])
 
-
-#print('CUDA not detected. Installing COMMIT without GPU acceleration.')
+if CUDA == None:
+    extensions = get_extensions()
+else:
+    extensions = get_extensions_with_cuda()
 
 class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """
@@ -201,7 +203,7 @@ opts = dict(name='dmri-commit',
             url='https://github.com/daducci/COMMIT',
             packages=['commit', 'commit.operator'],
             cmdclass={'build_ext': CustomBuildExtCommand},
-            ext_modules=get_extensions(),
+            ext_modules=extensions,
             setup_requires=['Cython>=0.29', 'numpy>=1.12'],
             install_requires=['Cython>=0.29',
                                 'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
