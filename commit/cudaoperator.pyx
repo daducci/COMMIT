@@ -30,6 +30,7 @@ cdef extern from "operator_withCUDA.cuh":
             int,
             int,
             
+            int,
             int)
 
         int   getCudaStatus()
@@ -39,9 +40,9 @@ cdef extern from "operator_withCUDA.cuh":
         void Tdot(np.float64_t*, np.float64_t*)
 
 cdef class CudaLinearOperator :
-    """This class is a wrapper to the C code for performing marix-vector multiplications
-    with the COMMIT linear operator A. The multiplications are done using C code
-    that uses information from the DICTIONARY, KERNELS and THREADS data structures.
+    """This class is a wrapper to the CUDA C++ code for performing marix-vector multiplications
+    with the COMMIT linear operator A in a CUDA GPU. The multiplications are done using CUDA C++ code
+    that uses information from the DICTIONARY and KERNELS data structures.
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
@@ -62,17 +63,19 @@ cdef class CudaLinearOperator :
     cdef float* LUT_EC
     cdef float* LUT_ISO
 
+    # pointer to the operator in GPU memory
+    cdef C_CudaLinearOperator* GPU_COMMIT_A
+
+    # these should be always None, they remain for compatibility
     cdef unsigned int*   ICthreads
     cdef unsigned int*   ECthreads
     cdef unsigned int*   ISOthreads
-
     cdef unsigned char*  ICthreadsT
     cdef unsigned int*   ECthreadsT
     cdef unsigned int*   ISOthreadsT
-    cdef C_CudaLinearOperator* A
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS, fcall = 0 ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, fcall = 0, gpu_id = 0 ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
@@ -123,7 +126,8 @@ cdef class CudaLinearOperator :
         cdef float [:, ::1] isoSFP = KERNELS['iso']
         self.LUT_ISO = &isoSFP[0,0]
 
-        self.A = new C_CudaLinearOperator(
+        # create the operator in GPU memory
+        self.GPU_COMMIT_A = new C_CudaLinearOperator(
             &ICv[0],
             &ICf[0],
             &ICo[0],
@@ -146,8 +150,10 @@ cdef class CudaLinearOperator :
             self.nT,
             self.nI,
             
-            fcall)
+            fcall,
+            gpu_id)
 
+        # create the transpose of the operator in GPU memory
         if fcall == 1:
             idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
 
@@ -166,7 +172,7 @@ cdef class CudaLinearOperator :
             self.ICv = &ICv[0]
             self.ICo = &ICo[0]
 
-            self.A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
+            self.GPU_COMMIT_A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
 
     @property
     def T( self ) :
@@ -208,14 +214,14 @@ cdef class CudaLinearOperator :
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
-            self.A.dot(&v_in[0], &v_out[0])
+            self.GPU_COMMIT_A.dot(&v_in[0], &v_out[0])
         else :
             # INVERSE PRODUCT A'*y
-            self.A.Tdot(&v_in[0], &v_out[0])
+            self.GPU_COMMIT_A.Tdot(&v_in[0], &v_out[0])
 
         return v_out
 
     def destroy( self ):
         """Free all memory of the CUDA GPU"""
-        self.A.destroy()
+        self.GPU_COMMIT_A.destroy()
 

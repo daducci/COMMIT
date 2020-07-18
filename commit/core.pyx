@@ -473,7 +473,7 @@ cdef class Evaluation :
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def set_threads( self, nthreads = None ) :
+    def set_threads( self, nthreads = None, select_gpu = 0 ) :
         """Set the number of threads to use for the matrix-vector operations with A and A'.
 
         Parameters
@@ -611,6 +611,8 @@ cdef class Evaluation :
                 if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
                     raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
+        else:
+            self.THREADS['GPUID'] = select_gpu
 
             print( '[ OK ]' )
 
@@ -649,7 +651,7 @@ cdef class Evaluation :
             self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
         else:
             import commit.cudaoperator
-            self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, fcall=1 )
+            self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, fcall=1, self.THREADS['GPUID'] )
 
         print( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 

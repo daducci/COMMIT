@@ -77,16 +77,12 @@ def customize_compiler_for_nvcc(self):
             self.set_executable('compiler_so', CUDA['nvcc'])
             # use only a subset of the extra_postargs, which are 1-1
             # translated from the extra_compile_args in the Extension class
-            print('\n--------nvcc aqui--------')
             print(type(extra_postargs))
             print(extra_postargs)
-            print('--------------------\n')
             postargs = extra_postargs['nvcc']
         else:
-            print('\n--------gcc aqui--------')
             print(type(extra_postargs))
             print(extra_postargs)
-            print('--------------------\n')
             postargs = extra_postargs['gcc']
 
         super(obj, src, ext, cc_args, postargs, pp_opts)
