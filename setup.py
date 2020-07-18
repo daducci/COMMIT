@@ -186,25 +186,25 @@ if CUDA == None:
             build_ext.run(self)
 else:
     class CustomBuildExtCommand(build_ext):
-    """ build_ext command to use when numpy headers are needed. """
+        """ build_ext command to use when numpy headers are needed. """
 
-    def build_extensions(self):
-        customize_compiler_for_nvcc(self.compiler)
-        build_ext.build_extensions(self)
+        def build_extensions(self):
+            customize_compiler_for_nvcc(self.compiler)
+            build_ext.build_extensions(self)
 
-    def run(self):
-        # Now that the requirements are installed, get everything from numpy
-        from Cython.Build import cythonize
-        from numpy import get_include
-        
-        # Add everything requires for build
-        self.swig_opts = None
-        self.include_dirs = [get_include(), CUDA['lib64']]
-        self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
+        def run(self):
+            # Now that the requirements are installed, get everything from numpy
+            from Cython.Build import cythonize
+            from numpy import get_include
+            
+            # Add everything requires for build
+            self.swig_opts = None
+            self.include_dirs = [get_include(), CUDA['lib64']]
+            self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
 
-        # Call original build_ext command
-        build_ext.finalize_options(self)
-        build_ext.run(self)
+            # Call original build_ext command
+            build_ext.finalize_options(self)
+            build_ext.run(self)
 
 description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 
