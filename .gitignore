@@ -1,2 +1,21 @@
 build
 .ipynb_checkpoints
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+__pycache__/
+.vscode/
+.eggs/
+*.egg-info/
+*.so
+*.cpp
+dist/
+
+trk2dictionary.c
+
+# Never modify line endings of our bash scripts
+*.sh -lf

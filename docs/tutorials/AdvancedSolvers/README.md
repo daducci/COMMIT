@@ -1,6 +1,3 @@
-
-You can find the ipython notebook version of this tutorial [at this link](tutorial_solvers.ipynb).
-
 # Advanced solvers
 
 This tutorial shows how to exploit the advanced features of the COMMIT framework from the side of the **optimisation problem**. The general formulation is the following:
@@ -9,7 +6,7 @@ x^* = \arg\min_{x\in R^n_+} \frac12 \|Ax-y\|_2^2 + \lambda_{IC}\Omega_{IC}(x) + 
 \end{equation}
 where $A$ is the COMMIT dictionary, $n$ is defined in such a way that the product $Ax$ makes sense and $y$ is the datum that we want to fit. The three regularisation terms allow us to exploit ***distinct penalties for each compartment***.
 
-*Note*: before exploring this tutorial, you should follow the [Getting Started](https://github.com/daducci/COMMIT/tree/master/doc/tutorials/GettingStarted) tutorial.
+*Note*: before exploring this tutorial, you should follow the [Getting Started](https://github.com/daducci/COMMIT/tree/master/docs/tutorials/GettingStarted) tutorial.
 
 
 ### Download and unpack the data
@@ -47,16 +44,17 @@ trk2dictionary.run(
 )
 
 import commit
+commit.core.setup() 
 mit = commit.Evaluation( '.', 'LausanneTwoShell' )
 mit.load_data( 'DWI.nii', 'DWI.scheme' )
 
 mit.set_model( 'StickZeppelinBall' )
 
-d_par = 1.7E-3              # Parallel diffusivity [mm^2/s]
-ICVFs = [ 0.7 ]             # Intra-cellular volume fraction(s) [0..1]
-d_ISOs = [ 1.7E-3, 3.0E-3 ] # Isotropic diffusivitie(s) [mm^2/s]
+d_par   = 1.7E-3            # Parallel diffusivity [mm^2/s]
+d_perps = [ 0.51E-3 ]       # Perpendicular diffusivitis [mm^2/s]
+d_isos = [ 1.7E-3, 3.0E-3 ] # Isotropic diffusivitie(s) [mm^2/s]
 
-mit.model.set( d_par, ICVFs, d_ISOs )
+mit.model.set( d_par, d_perps, d_isos )
 mit.generate_kernels( regenerate=True )
 mit.load_kernels()
 
@@ -84,11 +82,9 @@ qb = QuickBundles(threshold=threshold)
 clusters = qb.cluster(streamlines)
 
 import numpy as np
-structureIC = np.array([c.indices for c in clusters])
+structureIC = np.array([np.array(c.indices) for c in clusters])
 weightsIC   = np.array([1.0/np.sqrt(len(c)) for c in structureIC])
 ```
-
-Notice that we defined `structure_IC` as a `numpy.array` that contains a list of lists containing the indices associated to each group. We know it sounds a little bit bizarre but it computationally convenient.
 
 ### Define the regularisation term
 Each compartment must be regularised separately. The user can choose among the following penalties:
@@ -101,11 +97,9 @@ Each compartment must be regularised separately. The user can choose among the f
 
 - $\iota_{\ge 0}(x)$ : `commit.solvers.non_negative` (Default for all compartments)
 
-If the chosen regularisation for the IC compartment is $\sum_{g\in G}\|x_g\|_k$, we can define $k$ via the `group_norm` field, which must be one between
+If the chosen regularisation for the IC compartment is $\sum_{g\in G}\|x_g\|_k$, we can define $k$ via the `group_norm` field, which must be
 
-- $\|x\|_2$ : `commit.solvers.norm2` (Default)
-
-- $\|x\|_\infty$ : `commit.solvers.norminf`
+- $\|x\|_2$ : `commit.solvers.norm2`
 
 In this example we consider the following penalties:
 
@@ -152,6 +146,6 @@ mit.fit(regularisation=regterm, max_iter=1000)
 
 
 ```python
-suffix = 'IC'+str(regterm[0])+'EC'+str(regterm[1])+'ISO'+str(regterm[2])
+suffix = '_AdvancedSolvers'
 mit.save_results(path_suffix=suffix)
 ```

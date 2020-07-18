@@ -1,16 +1,12 @@
-from distutils.core import setup, Extension
-from Cython.Distutils import build_ext
-from Cython.Build import cythonize
-import numpy
-import amico
+#from distutils.core import setup, Extension
+#from Cython.Distutils import build_ext
+#from Cython.Build import cythonize
+#import numpy
+#import amico
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 import os
 from os.path import join as pjoin
-
-amico_version = amico.__version__.split('.')
-amico_version = [int(version_val) for version_val in amico_version]
-if amico_version[0] == 1 and amico_version[1] < 1:
-    raise RuntimeError( 'COMMIT requires AMICO v1.1.0 or above. Current AMICO version is %s' % amico.__version__ )
-
 
 # taken from npcuda
 def find_in_path(name, path):
@@ -92,147 +88,138 @@ def customize_compiler_for_nvcc(self):
     # Inject our redefined _compile method into the class
     self._compile = _compile
 
-# Obtain the numpy include directory. This logic works across numpy versions.
-try:
-    numpy_include = numpy.get_include()
-except AttributeError:
-    numpy_include = numpy.get_numpy_include()
+def get_extensions():
+    # Cython extension to create the sparse data structure from a tractogram
+    # for the computation of matrix-vector multiplications
+    ext1 = Extension(name='commit.trk2dictionary',
+                     sources=['commit/trk2dictionary/trk2dictionary.pyx'],
+                     extra_compile_args=['-w'],
+                     language='c++')
 
-# Try to locate CUDA
+    ext2 = Extension(name='commit.core',
+                     sources=['commit/core.pyx'],
+                     extra_compile_args=['-w'],
+                     language='c++')
+
+    ext3 = Extension(name='commit.proximals',
+                     sources=['commit/proximals.pyx'],
+                     extra_compile_args=['-w'],
+                     language='c++')
+
+    return [ext1, ext2, ext3]
+
+def get_extensions_with_cuda():
+    # Cython extension to create the sparse data structure from a tractogram
+    # for the computation of matrix-vector multiplications
+    ext1 = Extension(name='commit.trk2dictionary',
+                     sources=['commit/trk2dictionary/trk2dictionary.pyx'],
+                     extra_compile_args= {'gcc':  ['-w'],
+                                          'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                     extra_link_args=[],
+                     language='c++')
+
+    ext2 = Extension(name='commit.core',
+                     sources=['commit/core.pyx'],
+                     extra_compile_args= {'gcc':  ['-w'],
+                                          'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                     extra_link_args=[],
+                     language='c++')
+
+    ext3 = Extension(name='commit.proximals',
+                      sources=['commit/proximals.pyx'],
+                      extra_compile_args= {'gcc':  ['-w'],
+                                           'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                      extra_link_args=[],
+                      language='c++')
+
+    ext4 = Extension(name='commit.cudaoperator',
+                     sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
+                     extra_compile_args= {'gcc':  ['-w'],
+                                          'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
+                     language = 'c++',
+                     library_dirs = [CUDA['lib64']],
+                     libraries = ['cudart'],
+                     runtime_library_dirs = [CUDA['lib64']])
+                     #include_dirs = [numpy_include, CUDA['include']]
+
+# Locate CUDA
 CUDA = locate_cuda()
 
 if CUDA != None:
-    # Run the customize_compiler
-    class cuda_build_ext(build_ext):
+    print('CUDA detected. Installing COMMIT with GPU acceleration.')
+
+    class CustomCudaBuildExtCommand(build_ext):
+        """ build_ext command to use when CUDA is detected and numpy headers are needed. """
+
         def build_extensions(self):
             customize_compiler_for_nvcc(self.compiler)
             build_ext.build_extensions(self)
 
-    # Cython extension to create the sparse data structure from a tractogram
-    # for the computation of matrix-vector multiplications
-    trk2dictionary_ext = Extension(
-        name='commit.trk2dictionary',
-        sources=['commit/trk2dictionary/trk2dictionary.pyx'],
-        include_dirs=[numpy.get_include()],
-        extra_compile_args= {
-            'gcc': ['-w'],
-            'nvcc': [
-                '-arch=sm_30', '--ptxas-options=-v', '-c',
-                '--compiler-options', "'-fPIC'"
-                ]
-            },
-        extra_link_args=[],
-        language='c++',
-    )
+        def run(self):
+            # Now that the requirements are installed, get everything from numpy
+            from Cython.Build import cythonize
+            from numpy import get_include
+            
+            # Add everything requires for build
+            self.swig_opts = None
+            self.include_dirs = [get_include(), CUDA['lib64']]
+            self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
 
-    core_ext = Extension(
-        name='commit.core',
-        sources=['commit/core.pyx'],
-        include_dirs=[numpy.get_include()],
-        extra_compile_args= {
-            'gcc': ['-w'],
-            'nvcc': [
-                '-arch=sm_30', '--ptxas-options=-v', '-c',
-                '--compiler-options', "'-fPIC'"
-                ]
-            },
-        extra_link_args=[],
-        language='c++',
-    )
+            # Call original build_ext command
+            build_ext.finalize_options(self)
+            build_ext.run(self)
 
-    proximals_ext = Extension(
-        name='commit.proximals',
-        sources=['commit/proximals.pyx'],
-        include_dirs=[numpy.get_include()],
-        extra_compile_args= {
-            'gcc': ['-w'],
-            'nvcc': [
-                '-arch=sm_30', '--ptxas-options=-v', '-c',
-                '--compiler-options', "'-fPIC'"
-                ]
-            },
-        extra_link_args=[],
-        language='c++',
-    )
+    description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 
-    cudaoperator_ext = Extension(
-        name='commit.cudaoperator',
-        sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
-        library_dirs = [CUDA['lib64']],
-        libraries = ['cudart'],
-        language = 'c++',
-        runtime_library_dirs = [CUDA['lib64']],
-        # This syntax is specific to this build system
-        # we're only going to use certain compiler args with nvcc
-        # and not with gcc the implementation of this trick is in
-        # customize_compiler()
-        extra_compile_args= {
-            'gcc': ['-w'],
-            'nvcc': [
-                '-arch=sm_30', '--ptxas-options=-v', '-c',
-                '--compiler-options', "'-fPIC'"
-                ]
-            },
-        include_dirs = [numpy_include, CUDA['include']]
-    )
-
-    setup(
-        name='commit',
-        version='1.4.0',
-        description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
-        author='Alessandro Daducci',
-        author_email='alessandro.daducci@gmail.com',
-        url='https://github.com/daducci/COMMIT',
-        cmdclass = {'build_ext':cuda_build_ext},
-        ext_modules = [ trk2dictionary_ext, core_ext, proximals_ext, cudaoperator_ext ],
-        packages=['commit','commit.operator'],
-        package_data={
-            'commit.operator':["*.*"], # needed by pyximport to compile at runtime
-        },
-    )
+    opts = dict(name='dmri-commit',
+                version='1.3.9.2',
+                description=description,
+                long_description=description,
+                author='Alessandro Daducci',
+                author_email='alessandro.daducci@univr.it',
+                url='https://github.com/daducci/COMMIT',
+                packages=['commit', 'commit.operator'],
+                cmdclass={'build_ext': CustomCudaBuildExtCommand},
+                ext_modules=get_extensions(),
+                setup_requires=['Cython>=0.29', 'numpy>=1.12'],
+                install_requires=['Cython>=0.29',
+                                  'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
+                package_data={'commit.operator': ["*.*"]})
 else:
-    print('Installing CPU version')
+    print('CUDA not detected. Installing COMMIT without GPU acceleration.')
 
-    # Cython extension to create the sparse data structure from a tractogram
-    # for the computation of matrix-vector multiplications
-    ext1 = Extension(
-        name='commit.trk2dictionary',
-        sources=['commit/trk2dictionary/trk2dictionary.pyx'],
-        include_dirs=[numpy.get_include()],
-        extra_compile_args=['-w'],
-        extra_link_args=[],
-        language='c++',
-    )
+    class CustomBuildExtCommand(build_ext):
+    """ build_ext command to use when numpy headers are needed. """
 
-    ext2 = Extension(
-        name='commit.core',
-        sources=['commit/core.pyx'],
-        include_dirs=[numpy.get_include()],
-        extra_compile_args=['-w'],
-        extra_link_args=[],
-        language='c++',
-    )
+        def run(self):
+            # Now that the requirements are installed, get everything from numpy
+            from Cython.Build import cythonize
+            from numpy import get_include
+            
+            # Add everything requires for build
+            self.swig_opts = None
+            self.include_dirs = [get_include()]
+            self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
 
-    ext3 = Extension(
-        name='commit.proximals',
-        sources=['commit/proximals.pyx'],
-        include_dirs=[numpy.get_include()],
-        extra_compile_args=['-w'],
-        extra_link_args=[],
-        language='c++',
-    )
+            # Call original build_ext command
+            build_ext.finalize_options(self)
+            build_ext.run(self)
 
-    setup(
-        name='commit',
-        version='1.3.0',
-        description='Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)',
-        author='Alessandro Daducci',
-        author_email='alessandro.daducci@gmail.com',
-        url='https://github.com/daducci/COMMIT',
-        cmdclass = {'build_ext':build_ext},
-        ext_modules = [ ext1, ext2, ext3 ],
-        packages=['commit','commit.operator'],
-        package_data={
-            'commit.operator':["*.*"], # needed by pyximport to compile at runtime
-        },
-    )
+    description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
+
+    opts = dict(name='dmri-commit',
+                version='1.3.9.2',
+                description=description,
+                long_description=description,
+                author='Alessandro Daducci',
+                author_email='alessandro.daducci@univr.it',
+                url='https://github.com/daducci/COMMIT',
+                packages=['commit', 'commit.operator'],
+                cmdclass={'build_ext': CustomBuildExtCommand},
+                ext_modules=get_extensions(),
+                setup_requires=['Cython>=0.29', 'numpy>=1.12'],
+                install_requires=['Cython>=0.29',
+                                  'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
+                package_data={'commit.operator': ["*.*"]})
+
+setup(**opts)

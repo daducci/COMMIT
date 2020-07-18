@@ -76,7 +76,7 @@ void rotateX(GLfloat* m, GLfloat ang, GLfloat* result)
 }
 
 
-void translate(GLfloat* m,GLfloat x,GLfloat y,GLfloat z, GLfloat* result)
+void translate(GLfloat* m, GLfloat x,GLfloat y,GLfloat z, GLfloat* result)
 {
     static GLfloat matrix[16];
 
