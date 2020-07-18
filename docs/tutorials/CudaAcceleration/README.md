@@ -16,7 +16,7 @@ mit.set_threads( nthreads=nthreads )
 mit.build_operator()
 ```
 
-Once these commands area executed, COMMIT will build the linear operator ***A** but now on the GPU. The output should be something similar to this:
+Once these commands are executed, COMMIT will build the linear operator **A** but now on the GPU. The output should be something similar to this:
 
 ```
 -> Building linear operator A:
@@ -67,7 +67,7 @@ this is the GPU ID  -------> |   2  GeForce GTX TIT...  Off  | 0000:09:00.0     
 
 ## Clearing GPU memory
 
-The commands apart from the command `mit.set_threads()` remain the same. But in the case when the GPU acceleration was enabled, the method `mit.A.destroy()` has to the executed in order to clear the GPU memory and reset the GPU for the next evaluation. That is, add the following command to the end of the script:
+The commands apart from the command `mit.set_threads()` remain the same. But in the case when the GPU acceleration is enabled, the method `mit.A.destroy()` has to the executed in order to clear the GPU memory and reset the GPU for the next evaluation. That is, add the following command to the end of the script:
 
 ```python
 if nthreads == 0:
