@@ -151,7 +151,9 @@ def get_extensions_with_cuda():
 CUDA = locate_cuda()
 
 if CUDA != None:
+    print('\n=====================================================')
     print('CUDA detected. Installing COMMIT with GPU acceleration.')
+    print('=====================================================\n')
 
     class CustomCudaBuildExtCommand(build_ext):
         """ build_ext command to use when CUDA is detected and numpy headers are needed. """
@@ -177,7 +179,7 @@ if CUDA != None:
     description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 
     opts = dict(name='dmri-commit',
-                version='1.3.9.2-cuda',
+                version='1.4.0.0',
                 description=description,
                 long_description=description,
                 author='Alessandro Daducci',
@@ -185,7 +187,7 @@ if CUDA != None:
                 url='https://github.com/daducci/COMMIT',
                 packages=['commit', 'commit.operator'],
                 cmdclass={'build_ext': CustomCudaBuildExtCommand},
-                ext_modules=get_extensions(),
+                ext_modules=get_extensions_with_cuda(),
                 setup_requires=['Cython>=0.29', 'numpy>=1.12'],
                 install_requires=['Cython>=0.29',
                                   'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
