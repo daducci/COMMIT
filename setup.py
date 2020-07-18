@@ -167,13 +167,30 @@ if CUDA == None:
 else:
     extensions = get_extensions_with_cuda()
 
-class CustomBuildExtCommand(build_ext):
+if CUDA == None:
+    class CustomBuildExtCommand(build_ext):
+        """ build_ext command to use when numpy headers are needed. """
+
+        def run(self):
+            # Now that the requirements are installed, get everything from numpy
+            from Cython.Build import cythonize
+            from numpy import get_include
+            
+            # Add everything requires for build
+            self.swig_opts = None
+            self.include_dirs = [get_include()]
+            self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
+
+            # Call original build_ext command
+            build_ext.finalize_options(self)
+            build_ext.run(self)
+else:
+    class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """
 
-    if CUDA != None:
-        def build_extensions(self):
-            customize_compiler_for_nvcc(self.compiler)
-            build_ext.build_extensions(self)
+    def build_extensions(self):
+        customize_compiler_for_nvcc(self.compiler)
+        build_ext.build_extensions(self)
 
     def run(self):
         # Now that the requirements are installed, get everything from numpy
@@ -182,10 +199,7 @@ class CustomBuildExtCommand(build_ext):
         
         # Add everything requires for build
         self.swig_opts = None
-        if CUDA == None:
-            self.include_dirs = [get_include()]
-        else:
-            self.include_dirs = [get_include(), CUDA['lib64']]
+        self.include_dirs = [get_include(), CUDA['lib64']]
         self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
 
         # Call original build_ext command
