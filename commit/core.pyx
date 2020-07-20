@@ -387,8 +387,10 @@ cdef class Evaluation :
             ERROR( 'Dictionary is outdated. Execute "trk2dictionary" script first' )
 
         self.DICTIONARY['TRK'] = {}
+        self.DICTIONARY['TRK']['kept']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
         self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
         self.DICTIONARY['TRK']['len']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
+        
 
         self.DICTIONARY['IC'] = {}
         self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
@@ -764,10 +766,9 @@ cdef class Evaluation :
 
         offset1 = nF * self.KERNELS['wmr'].shape[0]
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
-        kept = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.bool_)
-        kept = np.tile( kept, self.KERNELS['wmr'].shape[0] )
+        kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0] )
         xic = np.zeros( kept.size )
-        xic[kept] = x[:offset1]
+        xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
         xiso = x[offset2:]
 
@@ -920,7 +921,7 @@ cdef class Evaluation :
         sys.stdout.flush()
         xic, _, _ = self.get_coeffs()
         if stat_coeffs != 'all' and xic.size > 0 :
-            xic = np.reshape( xic, (-1,nF) )
+            xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
             if stat_coeffs == 'sum' :
                 xic = np.sum( xic, axis=0 )
             elif stat_coeffs == 'mean' :
