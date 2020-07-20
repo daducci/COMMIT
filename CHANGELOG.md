@@ -2,6 +2,16 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.0.0] - 2020-07-20
+
+### Changed
+- trk2dictionary.run(): removed 'gen_trk' option
+- save_results(): removed 'save_coeff' and 'save_opt_details' parameters
+- save_results(): now saving only streamline_weights.txt (not anymore xic.txt, xec.txt, xiso.txt)
+- save_results(): added 'stat_coeffs' parameter for saving streamline weights
+- added 'get_coeffs()' function to get all estimated coefficients
+- load_dictionary(): renamed 'use_mask' to 'use_all_voxels_in_mask'
+
 ## [1.3.9] - 2020-06-09
 
 ### Changed

@@ -5,7 +5,7 @@ import cython
 import numpy as np
 cimport numpy as np
 import nibabel
-from os.path import join, exists, splitext
+from os.path import join, exists, splitext, dirname, isdir
 from os import makedirs, remove
 import time
 import amico
@@ -24,11 +24,11 @@ cdef extern from "trk2dictionary_c.cpp":
     ) nogil
 
 
-cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, filename_mask = None, do_intersect = True,
-    fiber_shift = 0, min_seg_len = 1e-3, min_fiber_len = 5.0, points_to_skip = 0,
-    vf_THR = 0.1, peaks_use_affine = False, flip_peaks = [False,False,False], 
-    blur_radii = [], blur_samples = [], blur_sigma = 1.0,
-    gen_trk = True, filename_trk = None, TCK_ref_image = None, ndirs = 32761
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
+    fiber_shift=0, min_seg_len=1e-3, min_fiber_len=5.0, points_to_skip=0,
+    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
+    blur_radii=[], blur_samples=[], blur_sigma=1.0,
+    filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -39,16 +39,19 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     filename_tractogram : string
         Path to the tractogram (.trk or .tck) containing the streamlines to load.
         
-    filename_trk : string
-        DEPRECATED. Use filename_tractogram instead.
-
+    TCK_ref_image: string
+        When loading a .tck tractogram, path to the NIFTI file containing the information about
+        the geometry to be used for the tractogram to load. If not specified, it will try to use
+        the information from filename_peaks or filename_mask.
+    
     path_out : string
-        Path to the folder to store the sparse data structure.
+        Path to the folder for storing the sparse data structure. If not specified (default),
+        a folder name "COMMIT" will be created in the same folder of the tractogram.
 
     filename_mask : string
-        Path to a binary mask to restrict the analysis to specific areas. Segments
-        outside this mask are discarded. If not specified (default), the mask is created from
-        all voxels intersected by the tracts.
+        Path to a binary mask for restricting the analysis to specific areas.
+        Segments outside this mask are discarded. If not specified (default),
+        the mask is created from all voxels intersected by the tracts.
 
     do_intersect : boolean
         If True then fiber segments that intersect voxel boundaries are splitted (default).
@@ -60,10 +63,10 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         The value is specified in voxel units, eg 0.5 translates by half voxel.
 
     min_seg_len : float
-        Discard segments <= than this length in mm (default : 1e-3)
+        Discard segments <= than this length in mm (default : 1e-3).
 
     min_fiber_len : float
-        Discard streamlines <= than this length in mm (default : 5.0)
+        Discard streamlines <= than this length in mm (default : 5.0).
 
     points_to_skip : integer
         If necessary, discard first points at beginning/end of a fiber (default : 0).
@@ -71,7 +74,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     filename_peaks : string
         Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
         The data matrix should be 4D with last dimension 3*N, where N is the number
-        of peaks in each voxel. (default : no extra-cellular contributions)
+        of peaks in each voxel. (default : no extra-cellular contributions).
 
     peaks_use_affine : boolean
         Whether to rotate the peaks according to the affine matrix (default : False).
@@ -82,48 +85,27 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     flip_peaks : list of three boolean
         If necessary, flips peak orientations along each axis (default : no flipping).
 
-    gen_trk : boolean
-        If True, create a tractogram in the 'path_out' folder (either .tck or .tck)
-        containing the streamlines actually considered in the dictionary (default : True)
-    
     blur_radii : list of float
-        Translate each segment to given radii to assign a broader fiber contribution (default : [])
+        Translate each segment to given radii to assign a broader fiber contribution (default : []).
     
     blur_samples : list of integer
         Segments are duplicated along a circle at a given radius; this parameter controls the
-        number of samples to take over a given circle (defaut : [])
+        number of samples to take over a given circle (defaut : []).
 
     blur_sigma: float
-        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
-    
-    TCK_ref_image: string
-        Path to the NIFTI file containing the information about the geometry used for the tractogram .tck to load. 
-        If it is not specified, it will try to use the information of filename_peaks or filename_mask.
+        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0).
     
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
-        each segment in a streamline (default : 32761)
-    """
+        each segment in a streamline (default : 32761).
 
-    filename = path_out + '/dictionary_info.pickle'
-    dictionary_info = {}
-    dictionary_info['filename_trk'] = filename_trk
-    dictionary_info['path_out'] = path_out
-    dictionary_info['filename_peaks'] = filename_peaks
-    dictionary_info['filename_mask'] = filename_mask
-    dictionary_info['do_intersect'] = do_intersect
-    dictionary_info['fiber_shift'] = fiber_shift
-    dictionary_info['points_to_skip'] = points_to_skip
-    dictionary_info['vf_THR'] = vf_THR
-    dictionary_info['peaks_use_affine'] = peaks_use_affine
-    dictionary_info['flip_peaks'] = flip_peaks
-    dictionary_info['min_seg_len'] = min_seg_len
-    dictionary_info['min_fiber_len'] = min_fiber_len
-    dictionary_info['gen_trk'] = gen_trk
-    dictionary_info['blur_radii'] = blur_radii
-    dictionary_info['blur_samples'] = blur_samples
-    dictionary_info['blur_sigma'] = blur_sigma
-    dictionary_info['ndirs'] = ndirs
+    filename_trk : string
+        DEPRECATED. Use filename_tractogram instead.
+
+    gen_trk : string
+        DEPRECATED. No tractogram will be saved any more, but the returned coefficients will account
+        for the streamlines that were pre-filtered in this function.
+    """
 
     # check the value of ndirs
     if not amico.lut.is_valid(ndirs):
@@ -205,35 +187,49 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if min_fiber_len < 0 :
         ERROR( '"min_fiber_len" must be >= 0' )
 
+    if filename_trk is None and filename_tractogram is None:
+        ERROR( '"filename_tractogram" not defined' )
+
+    if filename_trk is not None and filename_tractogram is not None:
+        WARNING('"filename_trk" will not be considered, "filename_tractogram" will be used')
+
+    if filename_trk is not None and filename_tractogram is None:
+        filename_tractogram = filename_trk
+        WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
+
+    if path_out is None:
+        path_out = dirname(filename_tractogram)
+        if path_out == '':
+            path_out = '.'
+        if not isdir(path_out):
+            ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
+        path_out = join(path_out,'COMMIT')
+
+    if gen_trk is not None:
+        WARNING('"gen_trk" parameter is deprecated')
+
+    # create output path
+    print( '\t- Output written to "%s"' % path_out )
+    if not exists( path_out ):
+        makedirs( path_out )
+
+    # Load data from files
     LOG( '\n   * Loading data:' )
     cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
     cdef short* ptrHashTable = &htable[0]
 
-    # fiber-tracts from .trk
+    # Streamlines from tractogram
     print( '\t- Tractogram' )
     
-    if (path_out is None):
-        ERROR( '"path_out" not defined' )
-
-    if (filename_trk is None and filename_tractogram is None):
-        ERROR( '"filename_tractogram" not defined' )
-
-    if (filename_trk is not None and filename_tractogram is not None):
-        WARNING('"filename_trk" will not be considered, "filename_tractogram" will be used')
-
-    if (filename_trk is not None and filename_tractogram is None):
-        filename_tractogram = filename_trk
-        WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
-    
     extension = splitext(filename_tractogram)[1]
-    if (extension != ".trk" and extension != ".tck") :
+    if extension != ".trk" and extension != ".tck":
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
     try :
         hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
     except :
         ERROR( 'Tractogram file not found' )
         
-    if (extension == ".trk"):
+    if extension == ".trk":
         Nx = hdr['dimensions'][0]
         Ny = hdr['dimensions'][1]
         Nz = hdr['dimensions'][2]
@@ -246,7 +242,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         n_scalars = hdr['nb_scalars_per_point']
         n_properties = hdr['nb_properties_per_streamline']
 
-    if (extension == ".tck"):
+    if extension == ".tck":
         if TCK_ref_image is None:
             if filename_peaks is not None:
                 TCK_ref_image = filename_peaks
@@ -277,7 +273,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         ERROR( 'The max dim size is 2^16 voxels' )
     
     # get the affine matrix
-    if (extension == ".tck"):
+    if extension == ".tck":
         scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
         M = nii_hdr.get_best_affine()
 
@@ -347,13 +343,25 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         ptrPEAKS = NULL
         ptrAFFINE = NULL
 
-    # output path
-    print( '\t- Output written to "%s"' % path_out )
-    if not exists( path_out ):
-        makedirs( path_out )
-
-    # write dictionary info file
-    with open( filename, 'wb+' ) as dictionary_info_file:
+    # write dictionary information info file
+    dictionary_info = {}
+    dictionary_info['filename_tractogram'] = filename_tractogram
+    dictionary_info['path_out'] = path_out
+    dictionary_info['filename_peaks'] = filename_peaks
+    dictionary_info['filename_mask'] = filename_mask
+    dictionary_info['do_intersect'] = do_intersect
+    dictionary_info['fiber_shift'] = fiber_shift
+    dictionary_info['points_to_skip'] = points_to_skip
+    dictionary_info['vf_THR'] = vf_THR
+    dictionary_info['peaks_use_affine'] = peaks_use_affine
+    dictionary_info['flip_peaks'] = flip_peaks
+    dictionary_info['min_seg_len'] = min_seg_len
+    dictionary_info['min_fiber_len'] = min_fiber_len
+    dictionary_info['blur_radii'] = blur_radii
+    dictionary_info['blur_samples'] = blur_samples
+    dictionary_info['blur_sigma'] = blur_sigma
+    dictionary_info['ndirs'] = ndirs
+    with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
     # calling actual C code
@@ -366,26 +374,6 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
-
-    # create new TRK with only fibers in the WM mask
-    # create new dictionaty file (TRK or TCK) with only fibers in the WM mask
-    if gen_trk :
-        LOG('\n   * Generate tractogram matching the dictionary:')
-        fib = nibabel.streamlines.load( filename_tractogram, lazy_load=True )
-        hdr = fib.header
-
-        file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
-        streamlines_out = []
-        for i, f in enumerate(fib.streamlines):
-            if file_kept[i] :
-                streamlines_out.append( f )
-        hdr['count'] = len(streamlines_out) #set new number of fibers in the header
-        hdr['nb_streamlines'] = len(streamlines_out)
-
-        #create a output dictionary file (TRK or TCK) in path_out
-        tractogram_out = nibabel.streamlines.tractogram.Tractogram(streamlines=streamlines_out, affine_to_rasmm=fib.tractogram.affine_to_rasmm)
-        nibabel.streamlines.save( tractogram_out, join(path_out,'dictionary_TRK_fibers'+extension), header=hdr )
-        print( '     [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
 
     # save TDI and MASK maps
     if filename_mask is not None :
@@ -405,51 +393,3 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     LOG( '\n   [ %.1f seconds ]' % ( time.time() - tic ) )
-
-
-cpdef convert_old_dictionary( path ):
-    """Perform the conversion of the files representing a dictionary, i.e. dictionary_*.dict,
-    from the old format to the new one, where the files *_{vx,vy,vz}.dict are replaced
-    by a single file *_v.dict (same for the files *_{ox,oy}.dict).
-
-    Parameters
-    ----------
-    path : string
-        Path to the folder containing the dictionary_*.dict files.
-    """
-    if not exists( join(path,'dictionary_IC_vx.dict') ):
-        ERROR( 'Folder does not contain dictionary files in the old format' )
-
-    niiTDI = nibabel.load( join(path,'dictionary_tdi.nii.gz') )
-    Nx, Ny, Nz = niiTDI.shape[:3]
-    x = np.fromfile( join(path,'dictionary_IC_vx.dict'), dtype=np.uint16 ).astype(np.uint32)
-    y = np.fromfile( join(path,'dictionary_IC_vy.dict'), dtype=np.uint16 ).astype(np.uint32)
-    z = np.fromfile( join(path,'dictionary_IC_vz.dict'), dtype=np.uint16 ).astype(np.uint32)
-    v = x + Nx * ( y + Ny * z )
-    v.tofile( join(path,'dictionary_IC_v.dict') )
-    remove( join(path,'dictionary_IC_vx.dict') )
-    remove( join(path,'dictionary_IC_vy.dict') )
-    remove( join(path,'dictionary_IC_vz.dict') )
-
-    x = np.fromfile( join(path,'dictionary_EC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
-    y = np.fromfile( join(path,'dictionary_EC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
-    z = np.fromfile( join(path,'dictionary_EC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
-    v = x + Nx * ( y + Ny * z )
-    v.tofile( join(path,'dictionary_EC_v.dict') )
-    remove( join(path,'dictionary_EC_vx.dict') )
-    remove( join(path,'dictionary_EC_vy.dict') )
-    remove( join(path,'dictionary_EC_vz.dict') )
-
-    x = np.fromfile( join(path,'dictionary_IC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
-    y = np.fromfile( join(path,'dictionary_IC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
-    v = y + 181 * x
-    v.tofile( join(path,'dictionary_IC_o.dict') )
-    remove( join(path,'dictionary_IC_ox.dict') )
-    remove( join(path,'dictionary_IC_oy.dict') )
-
-    x = np.fromfile( join(path,'dictionary_EC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
-    y = np.fromfile( join(path,'dictionary_EC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
-    v = y + 181 * x
-    v.tofile( join(path,'dictionary_EC_o.dict') )
-    remove( join(path,'dictionary_EC_ox.dict') )
-    remove( join(path,'dictionary_EC_oy.dict') )
