@@ -2,7 +2,7 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.4.0] - 2020-06-19
+## [1.4.0.0] - 2020-07-20
 
 ### Changed
 - trk2dictionary.run(): removed 'gen_trk' option
