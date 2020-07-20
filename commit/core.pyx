@@ -934,7 +934,7 @@ cdef class Evaluation :
                 xic = np.max( xic, axis=0 )
             else :
                 ERROR( 'Stat not allowed. Possible values: sum, mean, median, min, max, all.', prefix='\n' )
-        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%15.5e' )
+        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%.5e' )
         self.set_config('stat_coeffs', stat_coeffs)
         print( '[ OK ]' )
 
