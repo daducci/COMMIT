@@ -135,8 +135,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     print( '\t- Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY )
     print( '\t- Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ )
     print( '\t- Points to skip   = %d' % points_to_skip )
-    if min_seg_len >= 1e-2:
-        print( '\t- Min segment len  = %.2f mm' % min_seg_len )
+    if min_seg_len >= 1e-3:
+        print( '\t- Min segment len  = %.3f mm' % min_seg_len )
     else:
         print( '\t- Min segment len  = %.2e mm' % min_seg_len )
     print( '\t- Min fiber len    = %.2f mm' % min_fiber_len )
