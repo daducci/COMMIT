@@ -60,7 +60,7 @@ float*          ptrMASK;
 unsigned int    nPointsToSkip;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
-float           minSegLen, minFiberLen;
+float           minSegLen, minFiberLen, maxFiberLen;
 
 std::vector<double> radii;         // radii for the extrusion
 std::vector<double> weights;       // damping weight
@@ -80,7 +80,7 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine
 // =========================
 int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
-    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,
+    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len, float max_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
@@ -131,6 +131,7 @@ int trk2dictionary(
     doIntersect   = c > 0;
     minSegLen     = min_seg_len;
     minFiberLen   = min_fiber_len;
+    maxFiberLen   = max_fiber_len;
 
     radii.clear();
     sectors.clear();
@@ -185,7 +186,7 @@ int trk2dictionary(
         {
             for (fiberLen = 0, it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 fiberLen += it->second;
-            if ( fiberLen > minFiberLen )
+            if ( fiberLen > minFiberLen && fiberLen < maxFiberLen )
             {
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)

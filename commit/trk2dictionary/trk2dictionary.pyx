@@ -17,7 +17,7 @@ from amico.util import LOG, NOTE, WARNING, ERROR
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, 
-        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,
+        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
@@ -25,7 +25,7 @@ cdef extern from "trk2dictionary_c.cpp":
 
 
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
-    fiber_shift=0, min_seg_len=1e-3, min_fiber_len=5.0, points_to_skip=0,
+    fiber_shift=0, min_seg_len=1e-3, min_fiber_len=5.0, max_fiber_len=250.0, points_to_skip=0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
     blur_radii=[], blur_samples=[], blur_sigma=1.0,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
@@ -67,6 +67,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     min_fiber_len : float
         Discard streamlines <= than this length in mm (default : 5.0).
+
+    max_fiber_len : float
+        Discard streamlines >= than this length in mm (default : 250.0).
 
     points_to_skip : integer
         If necessary, discard first points at beginning/end of a fiber (default : 0).
@@ -133,7 +136,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     print( '\t- Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ )
     print( '\t- Points to skip   = %d' % points_to_skip )
     print( '\t- Min segment len  = %.2e mm' % min_seg_len )
-    print( '\t- Min fiber len    = %.2e mm' % min_fiber_len )
+    print( '\t- Min fiber len    = %.2f mm' % min_fiber_len )
+    print( '\t- Max fiber len    = %.2f mm' % max_fiber_len )
 
     # check blur params
     cdef :
@@ -186,6 +190,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( '"min_seg_len" must be >= 0' )
     if min_fiber_len < 0 :
         ERROR( '"min_fiber_len" must be >= 0' )
+    if max_fiber_len < min_fiber_len :
+        ERROR( '"max_fiber_len" must be >= "min_fiber_len"' )
 
     if filename_trk is None and filename_tractogram is None:
         ERROR( '"filename_tractogram" not defined' )
@@ -353,7 +359,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['do_intersect'] = do_intersect
     dictionary_info['fiber_shift'] = fiber_shift
     dictionary_info['min_seg_len'] = min_seg_len
-    dictionary_info['min_fiber_len'] = min_fiber_len    
+    dictionary_info['min_fiber_len'] = min_fiber_len
+    dictionary_info['max_fiber_len'] = max_fiber_len
     dictionary_info['points_to_skip'] = points_to_skip
     dictionary_info['vf_THR'] = vf_THR
     dictionary_info['peaks_use_affine'] = peaks_use_affine
@@ -368,7 +375,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # calling actual C code
     ret = trk2dictionary( filename_tractogram, data_offset,
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
-        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len, min_fiber_len,
+        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
         nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM, ndirs, ptrHashTable  );
