@@ -156,7 +156,6 @@ int trk2dictionary(
     filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len    = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len   = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept  = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_ndirs.dict";       FILE* pDict_ndirs     = fopen(filename.c_str(),"wb");
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
@@ -217,8 +216,6 @@ int trk2dictionary(
     }
     PROGRESS.close();
 
-    // write dictionary ndirs value
-    fwrite(&ndirs, 1, sizeof(unsigned short), pDict_ndirs);
     fclose( fpTractogram );
     fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
@@ -227,7 +224,6 @@ int trk2dictionary(
     fclose( pDict_IC_len );
     fclose( pDict_TRK_len );
     fclose( pDict_TRK_kept );
-    fclose( pDict_ndirs );
 
     printf("     [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
 

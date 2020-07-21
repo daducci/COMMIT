@@ -37,6 +37,7 @@ def setup( lmax=12, ndirs=32761 ) :
 
     amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
+
 def load_dictionary_info( filename ):
     """Function to load dictionary info file
     
@@ -356,6 +357,12 @@ cdef class Evaluation :
         self.DICTIONARY = {}
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
+        # check that ndirs of dictionary matches with that of the kernels
+        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
+        if dictionary_info['ndirs'] != self.get_config('ndirs'):
+            ERROR( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
+        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
+
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
         mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_%s.nii'%self.get_config('dictionary_mask'))
@@ -378,13 +385,6 @@ cdef class Evaluation :
         # ------------------------
         print( '\t* Segments from the tracts... ', end='' )
         sys.stdout.flush()
-
-        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
-
-        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
-
-        if self.DICTIONARY['ndirs'] != self.get_config('ndirs'):
-            ERROR( 'Dictionary is outdated. Execute "trk2dictionary" script first' )
 
         self.DICTIONARY['TRK'] = {}
         self.DICTIONARY['TRK']['kept']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
@@ -540,7 +540,7 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['IC'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                ERROR( 'Too many threads for the IC compartments to evaluate; try decreasing the number' )
+                ERROR( 'Too many threads for the IC compartments to evaluate; try decreasing the number', prefix='\n' )
         else :
             self.THREADS['IC'] = None
 
@@ -553,7 +553,7 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number' )
+                ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number', prefix='\n' )
         else :
             self.THREADS['EC'] = None
 
@@ -566,7 +566,7 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
+                ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number', prefix='\n' )
         else :
             self.THREADS['ISO'] = None
 
@@ -608,7 +608,7 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number' )
+                ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number', prefix='\n' )
         else :
             self.THREADS['ECt'] = None
 
@@ -622,7 +622,7 @@ cdef class Evaluation :
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
-                ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
+                ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number', prefix='\n' )
         else :
             self.THREADS['ISOt'] = None
 
@@ -946,7 +946,7 @@ cdef class Evaluation :
         sys.stdout.flush()
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
             pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
-        print( '[ OK ]' )
+        print( '        [ OK ]' )
 
         if save_est_dwi :
             print( '\t\t- Estimated signal... ', end='' )
