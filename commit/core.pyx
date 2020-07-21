@@ -75,7 +75,9 @@ cdef class Evaluation :
     cdef public A
     cdef public x
     cdef public CONFIG
-
+    cdef public w_map
+    cdef public w_map_img
+    
     def __init__( self, study_path, subject ) :
         """Setup the data structures with default values.
 
@@ -94,6 +96,7 @@ cdef class Evaluation :
         self.THREADS    = None # set by "set_threads" method
         self.A          = None # set by "build_operator" method
         self.x          = None # set by "fit" method
+        self.w_map      = None # set by "load_data" method or load_w_map method
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
@@ -206,6 +209,42 @@ cdef class Evaluation :
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
+
+    def load_w_map( self, w_map_filename ) :
+        """Load the voxel weighting map.
+
+        Parameters
+        ----------
+        w_map_filename : string
+            The file name of the voxel weighting map, relative to the subject folder 
+        
+        """
+
+        # Loading voxel weighting map
+        tic = time.time()
+        LOG( '\n-> Loading voxel weighting map:' )
+
+        if not exists( pjoin( self.get_config('DATA_path'), w_map_filename)  ) :            
+            WARNING( 'Voxel weighting map not found' )
+        
+        # print( '\t* Loading voxel weighting map:' )
+        self.set_config('w_map_filename', w_map_filename)
+        self.w_map  = nibabel.load( pjoin( self.get_config('DATA_path'), w_map_filename) )
+        self.w_map_img = self.w_map.get_data().astype(np.float32)
+        self.w_map_img = np.repeat(self.w_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
+        hdr = self.w_map.header if nibabel.__version__ >= '2.0.0' else self.w_map.get_header()
+        self.set_config('w_map_dim', self.w_map_img.shape[0:3])
+        self.set_config('w_map_pixdim', tuple( hdr.get_zooms()[:3] ))
+        print( '\t\t- dim    = %d x %d x %d x %d' % self.w_map_img.shape )
+        print( '\t\t- pixdim = %.3f x %.3f x %.3f' % self.get_config('pixdim') )
+
+
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        
+        if ( self.get_config('dim') != self.get_config('w_map_dim') or 
+                self.get_config('pixdim') != self.get_config('w_map_pixdim') ):
+            WARNING( 'Dataset does not have the same geometry as the tractogram' )
+        
 
     def set_model( self, model_name ) :
         """Set the model to use to describe the signal contributions in each voxel.
@@ -727,6 +766,25 @@ cdef class Evaluation :
         return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
 
+    def get_w_map_vector( self ):
+        """
+        Returns the 'voxel weighting map' in a numpy array that corresponds to the diagonal 
+        of the matrix W of the optimisation problem, 
+            ||W (Ax - y) ||_2^2
+        that must match with vector 'y' 
+        NB: this can be run only after having loaded the dictionary and the data.
+        """
+        if self.w_map is None :
+            # WARNING( 'Data not loaded; call "load_w_map()" first' )
+            return None
+
+        if self.DICTIONARY is None :
+            ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
+        
+        return self.w_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
+
+
     def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=1, x0=None, regularisation=None ) :
         """Fit the model to the data.
 
@@ -774,7 +832,7 @@ cdef class Evaluation :
         t = time.time()
         LOG( '\n-> Fit model:' )
 
-        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation)
+        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, w_map = self.get_w_map_vector())
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t

@@ -9,6 +9,7 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Added
 - core.pyx: Add to the function build_operator the parameter build_dir
+- Added the possibility to specify a voxel confidence map
 
 ### Changed
 - core.pyx: The function build_operator checks if the LUT configuration 
