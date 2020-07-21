@@ -346,20 +346,21 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # write dictionary information info file
     dictionary_info = {}
     dictionary_info['filename_tractogram'] = filename_tractogram
+    dictionary_info['TCK_ref_image'] = TCK_ref_image
     dictionary_info['path_out'] = path_out
     dictionary_info['filename_peaks'] = filename_peaks
     dictionary_info['filename_mask'] = filename_mask
     dictionary_info['do_intersect'] = do_intersect
     dictionary_info['fiber_shift'] = fiber_shift
+    dictionary_info['min_seg_len'] = min_seg_len
+    dictionary_info['min_fiber_len'] = min_fiber_len    
     dictionary_info['points_to_skip'] = points_to_skip
     dictionary_info['vf_THR'] = vf_THR
     dictionary_info['peaks_use_affine'] = peaks_use_affine
     dictionary_info['flip_peaks'] = flip_peaks
-    dictionary_info['min_seg_len'] = min_seg_len
-    dictionary_info['min_fiber_len'] = min_fiber_len
     dictionary_info['blur_radii'] = blur_radii
     dictionary_info['blur_samples'] = blur_samples
-    dictionary_info['blur_sigma'] = blur_sigma
+    dictionary_info['blur_sigma'] = blur_sigma    
     dictionary_info['ndirs'] = ndirs
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
