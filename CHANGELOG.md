@@ -2,6 +2,18 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+
+## [1.4.3.1] - 2020-10-22
+
+### Changed
+- core.pyx()
+- load_w_map(): Load the voxel weighting map from nii file
+- get_w_map_vector(): Returns the 'voxel weighting map' in a numpy array 
+
+- solvers.py()
+- solve(): Added the parameter W_map
+- fista_W(): function to perform the optimization with the weight map
+
 ## [1.4.3] - 2020-10-22
 
 ### Added
