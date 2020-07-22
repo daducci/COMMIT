@@ -966,6 +966,35 @@ cdef class Evaluation :
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
 
+
+        
+        if self.w_map is not None:
+            w_map_vox = np.reshape( self.w_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
+            
+            print( '\t\t- RMSE with w...  ', end='' )        
+            sys.stdout.flush()
+            tmp = np.sqrt( np.mean((w_map_vox*(y_mea-y_est))**2,axis=1) )
+            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+            niiMAP_hdr['cal_min'] = 0
+            niiMAP_hdr['cal_max'] = tmp.max()
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE_w.nii.gz') )
+            print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
+
+            print( '\t\t- NRMSE with w... ', end='' )
+            sys.stdout.flush()
+            tmp = np.sum(y_mea**2,axis=1)
+            idx = np.where( tmp < 1E-12 )
+            tmp[ idx ] = 1
+            tmp = np.sqrt( np.sum((w_map_vox*(y_mea-y_est))**2,axis=1) / tmp )
+            tmp[ idx ] = 0
+            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+            niiMAP_hdr['cal_min'] = 0
+            niiMAP_hdr['cal_max'] = 1
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE_w.nii.gz') )
+            print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
+
+
+
         # Map of compartment contributions
         print( '\t* Voxelwise contributions:' )
 
