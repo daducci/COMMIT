@@ -14,6 +14,7 @@ All notable changes to COMMIT will be documented in this file.
 ### Added
 - added 'get_coeffs()' function to get all estimated coefficients
 - save_results(): added 'stat_coeffs' parameter for saving streamline weights
+- trk2dictionary.run(): added 'max_fiber_len' parameter to discard long streamlines
 
 ## [1.3.9] - 2020-06-09
 
