@@ -143,8 +143,9 @@ cdef class Evaluation :
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
         self.set_config('dim', self.niiDWI_img.shape[0:3])
         self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
-        print( '\t\t- dim    = %d x %d x %d x %d' % self.niiDWI_img.shape )
-        print( '\t\t- pixdim = %.3f x %.3f x %.3f' % self.get_config('pixdim') )
+        print( '\t\t- dim    : %d x %d x %d x %d' % self.niiDWI_img.shape )
+        print( '\t\t- pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim') )
+        print( '\t\t- values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
 
         print( '\t* Acquisition scheme:' )
         self.set_config('scheme_filename', scheme_filename)
@@ -179,8 +180,8 @@ cdef class Evaluation :
                 b0[ idx ] = 0
                 for i in xrange(self.scheme.nS) :
                     self.niiDWI_img[:,:,:,i] *= b0
+                print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
                 del idx, b0
-                print( '[ OK ]' )
             else :
                 WARNING( 'There are no b0 volumes for normalization' )
 
@@ -199,9 +200,7 @@ cdef class Evaluation :
             sys.stdout.flush()
             mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
             self.niiDWI_img = self.niiDWI_img - mean
-
-        # print some statistics on signal values
-        print( '\t* Signal values: min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
+            print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
