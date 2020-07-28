@@ -2,7 +2,7 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.4.0.0] - 2020-07-20
+## [1.4.0.0] - 2020-07-28
 
 ### Changed
 - trk2dictionary.run(): removed 'gen_trk' option
@@ -16,6 +16,7 @@ All notable changes to COMMIT will be documented in this file.
 - added 'get_coeffs()' function to get all estimated coefficients
 - save_results(): added 'stat_coeffs' parameter for saving streamline weights
 - trk2dictionary.run(): added 'max_fiber_len' parameter to discard long streamlines
+- load_data(): added 'b0_min_signal' to discard voxels with very low signal
 
 ## [1.3.9] - 2020-06-09
 

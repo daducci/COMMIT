@@ -115,7 +115,7 @@ cdef class Evaluation :
         return self.CONFIG.get( key )
 
 
-    def load_data( self, dwi_filename='DWI.nii', scheme_filename='DWI.scheme', b0_thr=0 ) :
+    def load_data( self, dwi_filename='DWI.nii', scheme_filename='DWI.scheme', b0_thr=0, b0_min_signal=0 ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
@@ -126,6 +126,8 @@ cdef class Evaluation :
             The file name of the corresponding acquisition scheme (default : 'DWI.scheme')
         b0_thr : float
             The threshold below which a b-value is considered a b0 (default : 0)
+        b0_min_signal : float
+            Crop to zero the signal in voxels where the b0 <= b0_min_signal * mean(b0[b0>0]) (default : 0)
         """
 
         # Loading data and acquisition scheme
@@ -170,22 +172,24 @@ cdef class Evaluation :
             if self.scheme.b0_count > 0 :
                 print( '\t* Normalizing to b0... ', end='' )
                 sys.stdout.flush()
-                mean = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
-                idx = mean <= 0
-                mean[ idx ] = 1
-                mean = 1 / mean
-                mean[ idx ] = 0
+                b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
+                idx = b0 <= b0_min_signal * b0[b0>0].mean()
+                b0[ idx ] = 1
+                b0 = 1.0 / b0
+                b0[ idx ] = 0
                 for i in xrange(self.scheme.nS) :
-                    self.niiDWI_img[:,:,:,i] *= mean
+                    self.niiDWI_img[:,:,:,i] *= b0
+                del idx, b0
+                print( '[ OK ]' )
             else :
-                print( '\t* There are no b0 volume(s) for normalization...', end='' )
-            print( '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() ) )
+                WARNING( 'There are no b0 volumes for normalization' )
 
         if self.scheme.b0_count > 1 :
             if self.get_config('doMergeB0') :
                 print( '\t* Merging multiple b0 volume(s)... ', end='' )
                 mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                 self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
+                del mean
             else :
                 print( '\t* Keeping all b0 volume(s)... ', end='' )
             print( '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
@@ -195,7 +199,9 @@ cdef class Evaluation :
             sys.stdout.flush()
             mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
             self.niiDWI_img = self.niiDWI_img - mean
-            print( '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() ) )
+
+        # print some statistics on signal values
+        print( '\t* Signal values: min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -378,7 +384,7 @@ cdef class Evaluation :
              abs(self.get_config('pixdim')[0]-niiMASK_hdr['pixdim'][1])>1e-3 or
              abs(self.get_config('pixdim')[1]-niiMASK_hdr['pixdim'][2])>1e-3 or
              abs(self.get_config('pixdim')[2]-niiMASK_hdr['pixdim'][3])>1e-3 ) :
-            print( '  [WARNING] dictionary does not have the same geometry as the dataset' )
+            WARNING( 'Dictionary does not have the same geometry as the dataset' )
         self.DICTIONARY['MASK'] = (niiMASK.get_data() > 0).astype(np.uint8)
 
         # segments from the tracts
