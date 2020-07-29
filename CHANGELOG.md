@@ -2,13 +2,12 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.4.0.0] - 2020-07-28
+## [1.4.0.0] - 2020-07-29
 
 ### Changed
 - trk2dictionary.run(): removed 'gen_trk' option
 - save_results(): removed 'save_coeff' and 'save_opt_details' parameters
 - save_results(): now saving only streamline_weights.txt (not anymore xic.txt, xec.txt, xiso.txt)
-- save_results(): added '_' before appending 'path_suffix' string
 - load_dictionary(): renamed 'use_mask' to 'use_all_voxels_in_mask'
 - Removed unused 'dictionary_ndirs.dict' file
 
