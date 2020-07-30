@@ -2,7 +2,7 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.4.0.0] - 2020-07-29
+## [1.4.0.0] - 2020-07-30
 
 ### Changed
 - trk2dictionary.run(): removed 'gen_trk' option
@@ -10,6 +10,7 @@ All notable changes to COMMIT will be documented in this file.
 - save_results(): now saving only streamline_weights.txt (not anymore xic.txt, xec.txt, xiso.txt)
 - load_dictionary(): renamed 'use_mask' to 'use_all_voxels_in_mask'
 - Removed unused 'dictionary_ndirs.dict' file
+- trk2dictionary.run(): 'min_fiber_len' defaults to 0.0 for backward compatibility
 
 ### Added
 - added 'get_coeffs()' function to get all estimated coefficients
