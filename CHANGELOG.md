@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.0.2] - 2020-08-03
+
+### Changed
+- Fix COMMIT debugger installation
+
 ## [1.4.0.1] - 2020-08-03
 
 ### Changed
