@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.0.1] - 2020-08-03
+
+### Changed
+- Updated the installation guide.
+
 ## [1.4.0.0] - 2020-07-30
 
 ### Changed

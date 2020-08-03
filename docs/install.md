@@ -1,35 +1,33 @@
 # Installation
 
+COMMIT is written in [Python](https://www.python.org/) and requires Python 3; version 2 is no longer supported. Also, COMMIT internally makes use of several libraries, e.g.:
+- [AMICO](https://github.com/daducci/AMICO) for the generation/rotation of the response functions;
+- [DIPY](http://dipy.org) to handle the diffusion data;
+- [NiBabel](https://nipy.org/nibabel/) to read/write neuroimaging file formats;
+- [Cython](http://cython.org/) to compile parts of the code.
 
-## Install dependencies
+The following installation procedures will install all these required libraries. In case of problems with a package, please refer to the corresponding website or write us for assistance.
 
-### Python and DIPY
 
-COMMIT is written in [Python](https://www.python.org/) and it internally makes use of the [DIPY](http://dipy.org) library. Also, some parts of the code require to be compiled and this is done via the [Cython](http://cython.org/) module.
-Please install and configure all these packages by following the guidelines on the corresponding websites.
+## Install from PYPI
 
-> COMMIT was **succesfully tested** on:  
-  - OSX 10.10, [Anaconda](http://docs.continuum.io/anaconda/) Python distribution and DIPY 0.9.0dev.
+Open the system shell and run:
 
-### AMICO
+```bash
+pip install dmri-commit
+```
 
-COMMIT shares the code for the generation/rotation of the response-function lookup tables with [AMICO](https://github.com/daducci/AMICO). Please install AMICO following the instructions [here](https://github.com/daducci/AMICO).
+This will download and install COMMIT from the [Python Package Index](https://pypi.org).
 
-> NB: in order to use COMMIT, it is only necessary to install the Python code; no additional modules (e.g. SPAMS and NODDI) are required.
+### Import from sources
 
-### Camino toolkit
-
-Depending on the forward-model employed, COMMIT can require the [Camino](http://camino.org.uk) toolkit to generate the response functions, e.g. in case of the `Cylinder-Zeppelin-Ball` model.
-
-Please follow the corresponding [documentation](http://cmic.cs.ucl.ac.uk/camino//index.php?n=Main.Installation) to install Camino and make sure to include the folder containing the script `datasynth` in your system path.
-
-## Install COMMIT
-
-Open the system shell, go to the folder where you downloaded this repository and run:
+To be sure of having the lastest updates, download the source code from this repository, open the system shell and go to the folder where you downloaded this repository, and run:
 
 ```bash
 pip install .
 ```
+
+## Import COMMIT
 
 COMMIT is now available in your Python interpreter and can be imported as usual:
 
@@ -37,10 +35,17 @@ COMMIT is now available in your Python interpreter and can be imported as usual:
 import commit
 ```
 
-### Uninstall COMMIT
+## Uninstall COMMIT
 
 Open the system shell and run:
 
 ```bash
-pip uninstall commit
+pip uninstall dmri-commit
 ```
+
+## Notes
+
+1. In order to use COMMIT, it is only necessary to install the Python code; no additional modules (e.g. SPAMS and NODDI) are required.
+
+2. Depending on the forward-model employed, COMMIT may require the [Camino](http://camino.org.uk) toolkit to generate the response functions, e.g., in case of the `Cylinder-Zeppelin-Ball` model. Please follow the corresponding [documentation](http://cmic.cs.ucl.ac.uk/camino//index.php?n=Main.Installation) to install Camino and make sure to include the folder containing the script `datasynth` in your system path.
+
