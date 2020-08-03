@@ -49,6 +49,22 @@ brew install niftilib
 
 The `OpenGL` and `GLUT` libraries are already provided by the operating system.
 
+### LINUX with apt-get
+
+If your're using LINUX with apt-get, then the following should work:
+
+```bash
+sudo apt-get install nifti-bin
+sudo apt-get install libnifti2
+sudo apt-get install libnifti-dev
+sudo apt-get install freeglut3-dev
+sudo apt-get install libblitz0-dev
+```
+
+The `OpenGL` libraries are already provided by the operating system.
+
+If you have problems installing `Blitz++`, follow the instructions at https://github.com/blitzpp/blitz
+
 ##  Compile, build and install
 
 Open the terminal and type:
