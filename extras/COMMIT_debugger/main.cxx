@@ -190,7 +190,8 @@ int main(int argc, char** argv)
         std::regex reVersion("^VERSION: (.*)\\s*$");
         std::smatch reMatches;
 
-        if ( !std::regex_match(string(line), reMatches, reVersion) )
+        std::string str_line = string(line);
+        if ( !std::regex_match(str_line, reMatches, reVersion) )
         {
             // no header found, assume standards BVECTOR format
             SCHEME_version = 0;
@@ -226,12 +227,13 @@ int main(int argc, char** argv)
         float       x, y, z, b, G, D, d;
         while( fgets(line, 1000, pFile) )
         {
-            if( std::regex_match(string(line), reMatches, reEMPTY) )
+            std::string str_line = string(line);
+            if( std::regex_match(str_line, reMatches, reEMPTY) )
                 continue;   // skip empty lines
 
             if( SCHEME_version == 0 )
             {
-                if ( !std::regex_match(string(line), reMatches, reVERSION0) )
+                if ( !std::regex_match(str_line, reMatches, reVERSION0) )
                     throw "Wrong row format";
                 x = std::atof( reMatches[1].str().c_str() );
                 y = std::atof( reMatches[2].str().c_str() );
@@ -244,7 +246,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                if ( !std::regex_match(string(line), reMatches, reVERSION1) )
+                if ( !std::regex_match(str_line, reMatches, reVERSION1) )
                     throw "Wrong row format";
                 x = std::atof( reMatches[1].str().c_str() );
                 y = std::atof( reMatches[2].str().c_str() );
