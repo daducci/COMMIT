@@ -1081,7 +1081,7 @@ void OpenGL_init( int argc, char** argv )
     glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
     ScreenX = 0.7*glutGet(GLUT_SCREEN_WIDTH);  if (ScreenX==0) ScreenX = 800;
     ScreenY = 0.7*glutGet(GLUT_SCREEN_HEIGHT); if (ScreenY==0) ScreenY = 600;
-    glutInitWindowSize( ScreenX/2, ScreenY/2 );
+    glutInitWindowSize( ScreenX, ScreenY );
     glutInitWindowPosition( 0.15*glutGet(GLUT_SCREEN_WIDTH), 0.15*glutGet(GLUT_SCREEN_HEIGHT) );
     glutCreateWindow( "COMMIT debugger" );
     glutReshapeWindow( ScreenX, ScreenY );
@@ -1089,14 +1089,8 @@ void OpenGL_init( int argc, char** argv )
     // Projection and model matrix
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    // gluPerspective( 40.0f, (GLfloat)ScreenX / (GLfloat)ScreenY, 10.0f, 1000.0f );
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    // gluLookAt(
-    //     0.0, 0.0, 2.0*max(pixdim.x*dim.x,pixdim.y*dim.y) * (GLfloat)ScreenY/(GLfloat)ScreenX,
-    //     0.0, 0.0, 0.0,
-    //     0.0, 1.0, 0.0
-    // );
 
     translation.x	= translation.y = 0;
     zoom			= 0;
@@ -1124,7 +1118,7 @@ void OpenGL_init( int argc, char** argv )
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
     GLfloat global_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-    glEnable ( GL_COLOR_MATERIAL );	// use glColor3f() to colorize polygons
+    glEnable ( GL_COLOR_MATERIAL );
 
     // register CALLBACKS and open window
     glutKeyboardFunc( GLUT__keyboard );
