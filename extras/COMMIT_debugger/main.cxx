@@ -542,8 +542,7 @@ int main(int argc, char** argv)
         if ( TRK_file.hdr.dim[0] != dim.x || TRK_file.hdr.dim[1] != dim.y || TRK_file.hdr.dim[2] != dim.z ||
              abs(TRK_file.hdr.voxel_size[0]-pixdim.x) > 1e-4 || abs(TRK_file.hdr.voxel_size[1]-pixdim.y) > 1e-4 || abs(TRK_file.hdr.voxel_size[2]-pixdim.z) > 1e-4 )
         {
-            COLOR_error( "The GEOMETRY does not match those of DWI images", "\t" );
-            return EXIT_FAILURE;
+            COLOR_warning( "The GEOMETRY does not match those of DWI images", "\t" );
         }
 
         TRK_skip = ceil( TRK_file.hdr.n_count / 25000.0 );
