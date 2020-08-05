@@ -17,9 +17,9 @@ These weights can be easily estimated by solving a convenient **global convex op
 
 ## How to cite COMMIT
 
-**A new method for accurate in vivo mapping of human brain connections using microstructural and anatomical information**
-Simona Schiavi, Mario Ocampo-Pineda, Muhamed Barakovic, Laurent Petit, ProfileMaxime Descoteaux, Jean-Philippe Thiran, Alessandro Daducci
-*Science Advances* Vol. 6, no. 31, eaba8245, 2020
+**A new method for accurate in vivo mapping of human brain connections using microstructural and anatomical information**  
+Simona Schiavi, Mario Ocampo-Pineda, Muhamed Barakovic, Laurent Petit, Maxime Descoteaux, Jean-Philippe Thiran, Alessandro Daducci  
+*Science Advances* Vol. 6, no. 31, eaba8245, 2020  
 [Link to publisher](https://advances.sciencemag.org/content/6/31/eaba8245)
 
 **COMMIT: Convex Optimization Modeling for Microstructure Informed Tractography**  
