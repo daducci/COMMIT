@@ -494,6 +494,8 @@ void GLUT__display( void )
     glTranslatef( -pixdim.x*dim.x/2.0, -pixdim.y*dim.y/2.0, -pixdim.z*dim.z/2.0 ); // center the FOV
     glScalef( pixdim.x, pixdim.y, pixdim.z ); // account for voxel size
 
+    glEnable(GL_MULTISAMPLE_ARB);
+
     /* ============= */
     /* Draw the AXES */
     /* ============= */
