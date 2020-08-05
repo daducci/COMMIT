@@ -21,6 +21,7 @@ GLfloat			zoom;
 
 float ScreenX, ScreenY;
 
+
 void drawString( const char *string )
 {
     static int y = glutGet( GLUT_WINDOW_HEIGHT ) - 50;
@@ -34,6 +35,7 @@ void drawString( const char *string )
         y -= 18;
     }
 }
+
 
 void PrintConfig()
 {
@@ -319,14 +321,16 @@ void GLUT__reshape( GLint w, GLint h )
     ScreenX = w;
     ScreenY = h;
 
+    glViewport( 0, 0, w, h );
+
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
-    gluPerspective( 45.0f, (GLfloat)w / (GLfloat)h, 1.0f, 5000.0f );
+    gluPerspective( 45.0f, ScreenX/ScreenY, 1.0f, 5000.0f );
 
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity();
     gluLookAt(
-        0.0, 0.0, 2.0 * max(pixdim.x*dim.x,pixdim.y*dim.y) * (GLfloat)ScreenY/(GLfloat)ScreenX, // eye point
+        0.0, 0.0, 2.0 * max(pixdim.x*dim.x,pixdim.y*dim.y) * ScreenY/ScreenX, // eye point
         0.0, 0.0, 0.0, // reference point
         0.0, 1.0, 0.0  // up vector
     );
@@ -404,7 +408,6 @@ void GLUT__specialkey( GLint key, GLint x, GLint y )
     if ( doRedraw )
         glutPostRedisplay();
 }
-
 
 
 // MOUSE callback
@@ -539,16 +542,16 @@ void GLUT__display( void )
                       )
                     )
                 {
-                    glColor3f(  *ptrc++, *ptrc++, *ptrc++ );
-                    glVertex3f( *ptr++,  *ptr++,  *ptr++  );
+                    glColor3f(  ptrc[0], ptrc[1], ptrc[2] );
+                    glVertex3f( ptr[0],  ptr[1],  ptr[2]  );
                 }
                 else
                 {
                     glEnd();
                     glBegin(GL_LINE_STRIP);
-                    ptr  += 3;
-                    ptrc += 3;
                 }
+                ptr  += 3;
+                ptrc += 3;
             }
             glEnd();
         }
@@ -1084,7 +1087,6 @@ void OpenGL_init( int argc, char** argv )
     glutInitWindowSize( ScreenX, ScreenY );
     glutInitWindowPosition( 0.15*glutGet(GLUT_SCREEN_WIDTH), 0.15*glutGet(GLUT_SCREEN_HEIGHT) );
     glutCreateWindow( "COMMIT debugger" );
-    glutReshapeWindow( ScreenX, ScreenY );
 
     // Projection and model matrix
     glMatrixMode(GL_PROJECTION);
