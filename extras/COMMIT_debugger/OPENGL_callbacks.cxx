@@ -1081,7 +1081,7 @@ void GLUT__display( void )
 void OpenGL_init( int argc, char** argv )
 {
     glutInit( &argc, argv );
-    glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
+    glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE );
     ScreenX = 0.7*glutGet(GLUT_SCREEN_WIDTH);  if (ScreenX==0) ScreenX = 800;
     ScreenY = 0.7*glutGet(GLUT_SCREEN_HEIGHT); if (ScreenY==0) ScreenY = 600;
     glutInitWindowSize( ScreenX, ScreenY );
@@ -1098,12 +1098,6 @@ void OpenGL_init( int argc, char** argv )
     zoom			= 0;
     OPENGL_utils::identity( rot );
     OPENGL_utils::identity( id );
-
-    // basic settings
-    glEnable( GL_LINE_SMOOTH );
-    glEnable( GL_POLYGON_SMOOTH );
-    glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-    glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
 
     glEnable( GL_DEPTH_TEST );
     glClearColor( 0.1, 0.1, 0.1, 0.0 );
