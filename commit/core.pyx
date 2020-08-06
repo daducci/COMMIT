@@ -231,7 +231,8 @@ cdef class Evaluation :
         self.set_config('w_map_filename', w_map_filename)
         self.w_map  = nibabel.load( pjoin( self.get_config('DATA_path'), w_map_filename) )
         self.w_map_img = self.w_map.get_data().astype(np.float32)
-        self.w_map_img = np.repeat(self.w_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
+        if self.w_map_img.ndim == 3 :
+            self.w_map_img = np.repeat(self.w_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
         hdr = self.w_map.header if nibabel.__version__ >= '2.0.0' else self.w_map.get_header()
         self.set_config('w_map_dim', self.w_map_img.shape[0:3])
         self.set_config('w_map_pixdim', tuple( hdr.get_zooms()[:3] ))
@@ -245,6 +246,8 @@ cdef class Evaluation :
                 self.get_config('pixdim') != self.get_config('w_map_pixdim') ):
             WARNING( 'Dataset does not have the same geometry as the tractogram' )
         
+        if(self.w_map_img.shape != self.niiDWI_img.shape):
+            WARNING( 'Dataset does not have the same geometry as the weighting map' )
 
     def set_model( self, model_name ) :
         """Set the model to use to describe the signal contributions in each voxel.
