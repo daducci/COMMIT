@@ -32,12 +32,17 @@ Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran
 *IEEE 10th International Symposium on Biomedical Imaging (ISBI)* 524-527, 2013  
 [Link to publisher](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6556527)
 
-## Installation
-To install COMMIT, please refer to the [installation guide](docs/install.md).
+## Documentation
 
-More information/documentation can be found in the [`docs`](docs/) folder.
+More information/documentation can be found in the [wiki pages](https://github.com/daducci/COMMIT/wiki/Home).
 
-## Getting started
+For questions, request assistance, suggest enhancements or new ideas as well as for reporting bugs, please open an [issue](https://github.com/daducci/COMMIT/issues).
 
-Tutorials are provided in the [`docs/tutorials`](docs/tutorials/) folder to help you get started with the COMMIT framework.
+### Installation
+
+To install COMMIT, please refer to the [installation guide](https://github.com/daducci/COMMIT/wiki/Installation).
+
+### Getting started
+
+Have a look at [this tutorial](https://github.com/daducci/COMMIT/wiki/Getting-started) which will help you to get started with the COMMIT framework.
 
