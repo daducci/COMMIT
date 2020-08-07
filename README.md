@@ -15,34 +15,16 @@ These weights can be easily estimated by solving a convenient **global convex op
 - **Low memory** consumption using optimized sparse data structures, e.g. it can easily run on a standard laptop with 8GB RAM a full-brain tractogram from the HCP data (1M fibers, 3 shells, 1.25 mm^3 resolution).
 - **Soon**: **GPU implementation** for even faster model fitting.
 
-## How to cite COMMIT
-
-**A new method for accurate in vivo mapping of human brain connections using microstructural and anatomical information**  
-Simona Schiavi, Mario Ocampo-Pineda, Muhamed Barakovic, Laurent Petit, Maxime Descoteaux, Jean-Philippe Thiran, Alessandro Daducci  
-*Science Advances* Vol. 6, no. 31, eaba8245, 2020  
-[Link to publisher](https://advances.sciencemag.org/content/6/31/eaba8245)
-
-**COMMIT: Convex Optimization Modeling for Microstructure Informed Tractography**  
-Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran  
-*IEEE Transactions on Medical Imaging* 34(1) 246-257, 2015  
-[Link to publisher](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6884830)
-
-**A convex optimization framework for global tractography**  
-Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran  
-*IEEE 10th International Symposium on Biomedical Imaging (ISBI)* 524-527, 2013  
-[Link to publisher](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6556527)
 
 ## Documentation
 
-More information/documentation can be found in the [wiki pages](https://github.com/daducci/COMMIT/wiki/Home).
-
-For questions, request assistance, suggest enhancements or new ideas as well as for reporting bugs, please open an [issue](https://github.com/daducci/COMMIT/issues).
+More information/documentation, as well as a series of tutorials, can be found in the [wiki pages](https://github.com/daducci/COMMIT/wiki/Home).
 
 ### Installation
 
-To install COMMIT, please refer to the [installation guide](https://github.com/daducci/COMMIT/wiki/Installation).
+To install COMMIT, refer to the [installation guide](https://github.com/daducci/COMMIT/wiki/Installation).
 
 ### Getting started
 
-Have a look at [this tutorial](https://github.com/daducci/COMMIT/wiki/Getting-started) which will help you to get started with the COMMIT framework.
+To get started with the COMMIT framework, have a look at [this tutorial](https://github.com/daducci/COMMIT/wiki/Getting-started), which will guide you through the main steps of the processing.
 
