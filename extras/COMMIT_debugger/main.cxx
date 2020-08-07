@@ -66,7 +66,7 @@ float                    GLYPHS_affine[3][3];
 /*----------------------------------------------------------------------------------------------------------------------------------*/
 int main(int argc, char** argv)
 {
-    TCLAP::CmdLine cmd("This tool allows one to display in a common 3D space all the objects (DWI data, streamlines etc...) used by COMMIT in order to spot possible incosistencies between the conventions of COMMIT and the software that generated the data, e.g. flip in some axes in the DWI data or in the peaks, spatial shift in the streamlines, whether the affine transformation was already applied to the data etc..", ' ', "1.1");
+    TCLAP::CmdLine cmd("This tool allows one to display in a common 3D space all the objects (DWI data, streamlines etc...) used by COMMIT in order to spot possible incosistencies between the conventions of COMMIT and the software that generated the data, e.g. flip in some axes in the DWI data or in the peaks, spatial shift in the streamlines, whether the affine transformation was already applied to the data etc..", ' ', "1.2");
 
     TCLAP::UnlabeledValueArg<string> argDWI(    "dwi","Filename of the DWI dataset [4D NIFTI]", true, "", "DWI", cmd );
     TCLAP::ValueArg<string>          argMAP(    "m", "map", "Background map [3D NIFTI]", false, "", "map", cmd );
