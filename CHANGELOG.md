@@ -2,6 +2,12 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.0.3] - 2020-08-07
+
+### Fixed
+- COMMIT_debugger: compilation problem
+- COMMIT_debugger: wrong visualization in Linux
+
 ## [1.4.0.2] - 2020-08-07
 
 ### Changed

@@ -190,7 +190,8 @@ int main(int argc, char** argv)
         std::regex reVersion("^VERSION: (.*)\\s*$");
         std::smatch reMatches;
 
-        if ( !std::regex_match(string(line), reMatches, reVersion) )
+        std::string str_line = string(line);
+        if ( !std::regex_match(str_line, reMatches, reVersion) )
         {
             // no header found, assume standards BVECTOR format
             SCHEME_version = 0;
@@ -226,12 +227,13 @@ int main(int argc, char** argv)
         float       x, y, z, b, G, D, d;
         while( fgets(line, 1000, pFile) )
         {
-            if( std::regex_match(string(line), reMatches, reEMPTY) )
+            std::string str_line = string(line);
+            if( std::regex_match(str_line, reMatches, reEMPTY) )
                 continue;   // skip empty lines
 
             if( SCHEME_version == 0 )
             {
-                if ( !std::regex_match(string(line), reMatches, reVERSION0) )
+                if ( !std::regex_match(str_line, reMatches, reVERSION0) )
                     throw "Wrong row format";
                 x = std::atof( reMatches[1].str().c_str() );
                 y = std::atof( reMatches[2].str().c_str() );
@@ -244,7 +246,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                if ( !std::regex_match(string(line), reMatches, reVERSION1) )
+                if ( !std::regex_match(str_line, reMatches, reVERSION1) )
                     throw "Wrong row format";
                 x = std::atof( reMatches[1].str().c_str() );
                 y = std::atof( reMatches[2].str().c_str() );
@@ -540,8 +542,7 @@ int main(int argc, char** argv)
         if ( TRK_file.hdr.dim[0] != dim.x || TRK_file.hdr.dim[1] != dim.y || TRK_file.hdr.dim[2] != dim.z ||
              abs(TRK_file.hdr.voxel_size[0]-pixdim.x) > 1e-4 || abs(TRK_file.hdr.voxel_size[1]-pixdim.y) > 1e-4 || abs(TRK_file.hdr.voxel_size[2]-pixdim.z) > 1e-4 )
         {
-            COLOR_error( "The GEOMETRY does not match those of DWI images", "\t" );
-            return EXIT_FAILURE;
+            COLOR_warning( "The GEOMETRY does not match those of DWI images", "\t" );
         }
 
         TRK_skip = ceil( TRK_file.hdr.n_count / 25000.0 );
