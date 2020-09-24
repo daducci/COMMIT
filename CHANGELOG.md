@@ -5,7 +5,8 @@ All notable changes to COMMIT will be documented in this file.
 ## [1.4.0.4] - 2020-09-24
 
 ### Fixed
-- Bug in the blur functionality
+- trk2dictionary.run(): bug in the blurring functionality
+- trk2dictionary.run(): 'blur_sigma' defaults to 0
 
 ## [1.4.0.3] - 2020-08-07
 
