@@ -178,17 +178,17 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else :
         print( '\t- Blur fibers:' )
         print( '\t\t- sigma = %.3f' % blur_sigma )
-        print( '\t\t- radii =   [', end="" )
+        print( '\t\t- radii =   [ ', end="" )
         for i in xrange( 1, blurRadii.size ) :
-            print( '%.3f' % blurRadii[i], end="" )
+            print( '%.3f ' % blurRadii[i], end="" )
         print( ']' )
-        print( '\t\t- samples = [', end="" )
-        for i in xrange( 1, blurSamples.size ) :
-            print( '%5d' % blurSamples[i], end="" )
-        print( ']' )
-        print( '\t\t- weights = [', end="" )
+        print( '\t\t- weights = [ ', end="" )
         for i in xrange( 1, blurWeights.size ) :
-            print( '%.3f' % blurWeights[i], end="" )
+            print( '%.3f ' % blurWeights[i], end="" )
+        print( ']' )
+        print( '\t\t- samples = [ ', end="" )
+        for i in xrange( 1, blurSamples.size ) :
+            print( '%5d ' % blurSamples[i], end="" )
         print( ']' )
 
     ptrBlurRadii   = &blurRadii[0]
