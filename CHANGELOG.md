@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.0.4] - 2020-09-24
+
+### Fixed
+- Bug in the blur functionality
+
 ## [1.4.0.3] - 2020-08-07
 
 ### Fixed

@@ -27,7 +27,7 @@ cdef extern from "trk2dictionary_c.cpp":
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0, points_to_skip=0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
-    blur_radii=[], blur_samples=[], blur_sigma=1.0,
+    blur_radii=[], blur_samples=[], blur_sigma=0.0,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
@@ -96,7 +96,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         number of samples to take over a given circle (defaut : []).
 
     blur_sigma: float
-        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0).
+        The contributions of the segments at different radii are damped as a Gaussian (default : 0.0).
     
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
