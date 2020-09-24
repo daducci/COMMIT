@@ -52,7 +52,8 @@ class segInVoxKey
 };
 
 // global variables (to avoid passing them at each call)
-std::map<segKey,float> FiberSegments;
+std::map<segKey,float>  FiberSegments;
+float                   FiberLen;
 
 Vector<int>     dim;
 Vector<float>   pixdim;
@@ -70,7 +71,7 @@ double              radiusSigma;   // modulates the impact of each segment as fu
 
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vector<int> sectors, std::vector<double> radii, std::vector<double> weight, short* ptrHashTable );
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, double w, short* ptrHashTable );
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable );
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine[4][4]);
 
@@ -90,7 +91,7 @@ int trk2dictionary(
     /*     IC compartments     */
     /*=========================*/
     float          fiber[3][MAX_FIB_LEN];
-    float          fiberNorm, fiberLen;
+    float          fiberNorm;
     unsigned int   N, totICSegments = 0, totFibers = 0, v;
     unsigned short o;
     unsigned char  kept;
@@ -173,7 +174,7 @@ int trk2dictionary(
             }
         }
     }
-    
+
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
@@ -184,9 +185,7 @@ int trk2dictionary(
         kept = 0;
         if ( FiberSegments.size() > 0 )
         {
-            for (fiberLen = 0, it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
-                fiberLen += it->second;
-            if ( fiberLen > minFiberLen && fiberLen < maxFiberLen )
+            if ( FiberLen > minFiberLen && FiberLen < maxFiberLen )
             {
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
@@ -202,12 +201,12 @@ int trk2dictionary(
                     inVoxKey.set( it->first.x, it->first.y, it->first.z );
                     FiberNorm[inVoxKey] += it->second;
                 }
-                for (fiberNorm = 0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
+                for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
                     fiberNorm += pow(itNorm->second,2);
                 fiberNorm = sqrt(fiberNorm);
                 FiberNorm.clear();
                 fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
-                fwrite( &fiberLen,   1, 4, pDict_TRK_len );
+                fwrite( &FiberLen,   1, 4, pDict_TRK_len );
                 totICSegments += FiberSegments.size();
                 totFibers++;
                 kept = 1;
@@ -340,6 +339,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
     static double         len, t, alpha, w, R;
     static int            i, j, k;
 
+    FiberLen = 0.0;
     FiberSegments.clear();
     if ( pts <= 2*nPointsToSkip )
         return;
@@ -397,7 +397,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                 S2m.z = S2.z + R*n.z;
 
                 if ( doIntersect==false )
-                    segmentForwardModel( S1m, S2m, weights[k], ptrHashTable );
+                    segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
                 else
                     while( 1 )
                     {
@@ -411,7 +411,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                             )
                         {
                             // same voxel, no need to compute intersections
-                            segmentForwardModel( S1m, S2m, weights[k], ptrHashTable );
+                            segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
                             break;
                         }
 
@@ -427,13 +427,13 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                         {
                             // add the portion S1P, and then reiterate
                             P.Set( S1m.x + t*dir.x, S1m.y + t*dir.y, S1m.z + t*dir.z );
-                            segmentForwardModel( S1m, P, weights[k], ptrHashTable );
+                            segmentForwardModel( S1m, P, k, weights[k], ptrHashTable );
                             S1m.Set( P.x, P.y, P.z );
                         }
                         else
                         {
                             // add the segment S1S2 and stop iterating
-                            segmentForwardModel( S1m, S2m, weights[k], ptrHashTable );
+                            segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
                             break;
                         }
                     }
@@ -446,7 +446,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
 /********************************************************************************************************************/
 /*                                                segmentForwardModel                                               */
 /********************************************************************************************************************/
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, double w, short* ptrHashTable )
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable )
 {
     static Vector<int>    vox;
     static Vector<double> dir, dirTrue;
@@ -490,6 +490,8 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, do
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );
     FiberSegments[key] += w * len;
+    if ( k==0 ) // fiber length computed only from origianl segments
+        FiberLen += len;
 }
 
 

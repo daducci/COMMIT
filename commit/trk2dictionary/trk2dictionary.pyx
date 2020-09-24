@@ -27,7 +27,7 @@ cdef extern from "trk2dictionary_c.cpp":
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0, points_to_skip=0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
-    blur_radii=[], blur_samples=[], blur_sigma=1.0,
+    blur_radii=[], blur_samples=[], blur_sigma=0.0,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
@@ -96,7 +96,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         number of samples to take over a given circle (defaut : []).
 
     blur_sigma: float
-        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0).
+        The contributions of the segments at different radii are damped as a Gaussian (default : 0.0).
     
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
@@ -158,31 +158,37 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( 'Number of radii and samples must match' )
 
     # convert to numpy arrays (add fake radius for original segment)
-    nBlurRadii = len(blur_radii)+1
-    blurRadii = np.array( [0.0]+blur_radii, np.double )
-    blurSamples = np.array( [1]+blur_samples, np.int32 )
+    if blur_sigma == 0:
+        nBlurRadii = 1
+        blurRadii = np.array( [0.0], np.double )
+        blurSamples = np.array( [1], np.int32 )
+        blurWeights = np.array( [1], np.double )
+    else:
+        nBlurRadii = len(blur_radii)+1
+        blurRadii = np.array( [0.0]+blur_radii, np.double )
+        blurSamples = np.array( [1]+blur_samples, np.int32 )
 
-    # compute weights for gaussian damping
-    blurWeights = np.empty_like( blurRadii )
-    for i in xrange(nBlurRadii):
-        blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
+        # compute weights for gaussian damping
+        blurWeights = np.empty_like( blurRadii )
+        for i in xrange(nBlurRadii):
+            blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
 
     if nBlurRadii == 1 :
         print( '\t- Do not blur fibers' )
     else :
         print( '\t- Blur fibers:' )
         print( '\t\t- sigma = %.3f' % blur_sigma )
-        print( '\t\t- radii =   [', end="" )
+        print( '\t\t- radii =   [ ', end="" )
         for i in xrange( 1, blurRadii.size ) :
-            print( '%.3f' % blurRadii[i], end="" )
+            print( '%.3f ' % blurRadii[i], end="" )
         print( ']' )
-        print( '\t\t- samples = [', end="" )
-        for i in xrange( 1, blurSamples.size ) :
-            print( '%5d' % blurSamples[i], end="" )
-        print( ']' )
-        print( '\t\t- weights = [', end="" )
+        print( '\t\t- weights = [ ', end="" )
         for i in xrange( 1, blurWeights.size ) :
-            print( '%.3f' % blurWeights[i], end="" )
+            print( '%.3f ' % blurWeights[i], end="" )
+        print( ']' )
+        print( '\t\t- samples = [ ', end="" )
+        for i in xrange( 1, blurSamples.size ) :
+            print( '%5d ' % blurSamples[i], end="" )
         print( ']' )
 
     ptrBlurRadii   = &blurRadii[0]
