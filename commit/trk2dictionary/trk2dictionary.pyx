@@ -158,14 +158,20 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( 'Number of radii and samples must match' )
 
     # convert to numpy arrays (add fake radius for original segment)
-    nBlurRadii = len(blur_radii)+1
-    blurRadii = np.array( [0.0]+blur_radii, np.double )
-    blurSamples = np.array( [1]+blur_samples, np.int32 )
+    if blur_sigma == 0:
+        nBlurRadii = 1
+        blurRadii = np.array( [0.0], np.double )
+        blurSamples = np.array( [1], np.int32 )
+        blurWeights = np.array( [1], np.double )
+    else:
+        nBlurRadii = len(blur_radii)+1
+        blurRadii = np.array( [0.0]+blur_radii, np.double )
+        blurSamples = np.array( [1]+blur_samples, np.int32 )
 
-    # compute weights for gaussian damping
-    blurWeights = np.empty_like( blurRadii )
-    for i in xrange(nBlurRadii):
-        blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
+        # compute weights for gaussian damping
+        blurWeights = np.empty_like( blurRadii )
+        for i in xrange(nBlurRadii):
+            blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
 
     if nBlurRadii == 1 :
         print( '\t- Do not blur fibers' )
