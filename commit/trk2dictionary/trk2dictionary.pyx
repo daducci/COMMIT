@@ -127,6 +127,16 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else :
         ERROR( '"fiber_shift" must be a scalar or a vector with 3 elements' )
 
+    # check for invalid parameters
+    if len(blur_radii) != len(blur_samples) :
+        ERROR( 'The number of blur radii and blur samples must match' )
+    
+    if np.count_nonzero( blur_radii<=0 ):
+        ERROR( 'A blur radius was <= 0; only positive radii can be used' )
+
+    if np.count_nonzero( blur_samples<1 ):
+        ERROR( 'Please specify at least 1 sample per blur radius' )
+
     tic = time.time()
     LOG( '\n-> Creating the dictionary from tractogram:' )
     
@@ -154,20 +164,21 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         int nBlurRadii
         float [:] ArrayInvM
         float* ptrArrayInvM
-
-    if len(blur_radii) != len(blur_samples) :
-        ERROR( 'Number of radii and samples must match' )
-
-    # convert to numpy arrays (add fake radius for original segment)
+    
+    # convert to numpy arrays (and add fake radius for original segment)
     if blur_sigma == 0:
         nBlurRadii = 1
         blurRadii = np.array( [0.0], np.double )
         blurSamples = np.array( [1], np.int32 )
         blurWeights = np.array( [1], np.double )
     else:
+        if type(blur_radii)==list:
+            blur_radii = np.ndarray(blur_radii, np.double)
+        if type(blur_samples)==list:
+            blur_samples = np.ndarray(blur_samples, np.int32)
         nBlurRadii = len(blur_radii)+1
-        blurRadii = np.array( [0.0]+blur_radii, np.double )
-        blurSamples = np.array( [1]+blur_samples, np.int32 )
+        blurRadii = np.insert( blur_radii, 0, 0.0 ).astype(np.double)
+        blurSamples = np.insert( blur_samples, 0, 1 ).astype(np.int32)
 
         # compute weights for gaussian damping
         blurWeights = np.empty_like( blurRadii )
