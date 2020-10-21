@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.0.5] - 2020-10-21
+
+### Fixed
+- operator.pyxbld: Changed the condition to create a new operator.
+
 ## [1.4.0.4] - 2020-09-24
 
 ### Fixed
