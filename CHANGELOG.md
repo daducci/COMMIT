@@ -2,6 +2,15 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.1] - 2020-10-21
+
+### Fixed
+- operator.pyxbld: Changed the condition to create a new operator
+
+### Added
+- COMMIT version is stored in results.pickle
+- COMMIT version is stored in output NIFTI files
+
 ## [1.4.0.4] - 2020-09-24
 
 ### Fixed

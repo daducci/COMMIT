@@ -11,6 +11,7 @@ import time
 import amico
 import pickle
 from amico.util import LOG, NOTE, WARNING, ERROR
+from pkg_resources import get_distribution
 
 
 # Interface to actual C code
@@ -401,12 +402,16 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         affine = np.diag( [Px, Py, Pz, 1] )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img, affine )
+    nii_hdr = niiTDI.header if nibabel.__version__ >= '2.0.0' else niiTDI.get_header()
+    nii_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
 
     if filename_mask is not None :
         niiMASK = nibabel.Nifti1Image( niiMASK_img, affine )
     else :
         niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), affine )
+    nii_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
+    nii_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     LOG( '\n   [ %.1f seconds ]' % ( time.time() - tic ) )

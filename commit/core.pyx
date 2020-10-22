@@ -17,6 +17,7 @@ import commit.solvers
 import amico.scheme
 import amico.lut
 import pyximport
+from pkg_resources import get_distribution
 
 from amico.util import LOG, NOTE, WARNING, ERROR
 
@@ -96,6 +97,7 @@ cdef class Evaluation :
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
+        self.set_config('version', get_distribution('dmri-commit').version)
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
         self.set_config('DATA_path', pjoin( study_path, subject ))
@@ -641,6 +643,12 @@ cdef class Evaluation :
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
             the data is changed in self.DICTIONARY, self.KERNELS or self.THREADS.
+
+        Parameters
+        ----------
+        build_dir : string
+            The folder in which to store the compiled files. If None, they will end up
+            in the .pyxbld directory in the user’s home directory (default : None)
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
@@ -664,12 +672,8 @@ cdef class Evaluation :
         config.nIC        = self.KERNELS['wmr'].shape[0]
         config.nEC        = self.KERNELS['wmh'].shape[0]
         config.nISO       = self.KERNELS['iso'].shape[0]
-        config.build_dir  = build_dir
 
-        if build_dir is not None:
-            pyximport.install( reload_support=True, language_level=3, build_in_temp=True, build_dir=build_dir, inplace=False )
-        else:
-            pyximport.install( reload_support=True, language_level=3 )
+        pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
         if not 'commit.operator.operator' in sys.modules :
             import commit.operator.operator
@@ -813,7 +817,7 @@ cdef class Evaluation :
 
         if save_opt_details is not None :
             WARNING('"save_opt_details" parameter is deprecated')
-
+        
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
@@ -846,6 +850,7 @@ cdef class Evaluation :
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
+        niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
@@ -907,13 +912,13 @@ cdef class Evaluation :
         print( '   [ OK ]' )
 
         if self.get_config('doNormalizeMaps') :
-            niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine )
-            niiEC = nibabel.Nifti1Image(  niiEC_img /  ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
-            niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
+            niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine, header=niiMAP_hdr )
+            niiEC = nibabel.Nifti1Image(  niiEC_img /  ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine, header=niiMAP_hdr )
+            niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine, header=niiMAP_hdr )
         else:
-            niiIC = nibabel.Nifti1Image( niiIC_img, affine )
-            niiEC = nibabel.Nifti1Image( niiEC_img, affine )
-            niiISO = nibabel.Nifti1Image( niiISO_img, affine )
+            niiIC = nibabel.Nifti1Image(  niiIC_img,  affine, header=niiMAP_hdr )
+            niiEC = nibabel.Nifti1Image(  niiEC_img,  affine, header=niiMAP_hdr )
+            niiISO = nibabel.Nifti1Image( niiISO_img, affine, header=niiMAP_hdr )
 
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
