@@ -817,7 +817,7 @@ cdef class Evaluation :
 
         if save_opt_details is not None :
             WARNING('"save_opt_details" parameter is deprecated')
-
+        
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
@@ -850,6 +850,7 @@ cdef class Evaluation :
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
+        niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
@@ -911,13 +912,13 @@ cdef class Evaluation :
         print( '   [ OK ]' )
 
         if self.get_config('doNormalizeMaps') :
-            niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine )
-            niiEC = nibabel.Nifti1Image(  niiEC_img /  ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
-            niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
+            niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine, header=niiMAP_hdr )
+            niiEC = nibabel.Nifti1Image(  niiEC_img /  ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine, header=niiMAP_hdr )
+            niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine, header=niiMAP_hdr )
         else:
-            niiIC = nibabel.Nifti1Image( niiIC_img, affine )
-            niiEC = nibabel.Nifti1Image( niiEC_img, affine )
-            niiISO = nibabel.Nifti1Image( niiISO_img, affine )
+            niiIC = nibabel.Nifti1Image(  niiIC_img,  affine, header=niiMAP_hdr )
+            niiEC = nibabel.Nifti1Image(  niiEC_img,  affine, header=niiMAP_hdr )
+            niiISO = nibabel.Nifti1Image( niiISO_img, affine, header=niiMAP_hdr )
 
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )

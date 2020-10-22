@@ -9,6 +9,7 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Added
 - COMMIT version is stored in results.pickle
+- COMMIT version is stored in output NIFTI files
 
 ## [1.4.0.4] - 2020-09-24
 
