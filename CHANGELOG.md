@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.3] - 2020-10-22
+
+### Added
+- store model parameters to results.pickle
+
 ## [1.4.2] - 2020-10-22
 
 ### Fixed
