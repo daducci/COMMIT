@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.2] - 2020-10-22
+
+### Fixed
+- trk2dictionary.run(): check for invalid parameters passed to the blur
+
 ## [1.4.1] - 2020-10-21
 
 ### Fixed
