@@ -7,6 +7,9 @@ All notable changes to COMMIT will be documented in this file.
 ### Fixed
 - operator.pyxbld: Changed the condition to create a new operator
 
+### Added
+- COMMIT version is stored in results.pickle
+
 ## [1.4.0.4] - 2020-09-24
 
 ### Fixed
