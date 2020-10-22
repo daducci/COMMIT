@@ -664,12 +664,8 @@ cdef class Evaluation :
         config.nIC        = self.KERNELS['wmr'].shape[0]
         config.nEC        = self.KERNELS['wmh'].shape[0]
         config.nISO       = self.KERNELS['iso'].shape[0]
-        config.build_dir  = build_dir
 
-        if build_dir is not None:
-            pyximport.install( reload_support=True, language_level=3, build_in_temp=True, build_dir=build_dir, inplace=False )
-        else:
-            pyximport.install( reload_support=True, language_level=3 )
+        pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
         if not 'commit.operator.operator' in sys.modules :
             import commit.operator.operator
