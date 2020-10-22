@@ -641,6 +641,12 @@ cdef class Evaluation :
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
             the data is changed in self.DICTIONARY, self.KERNELS or self.THREADS.
+
+        Parameters
+        ----------
+        build_dir : string
+            The folder in which to store the compiled files. If None, they will end up in
+            the .pyxbld directory in the user’s home directory (default : None)
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
