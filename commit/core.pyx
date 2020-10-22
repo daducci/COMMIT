@@ -247,6 +247,7 @@ cdef class Evaluation :
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
+        self.set_config('model', self.model.get_params())
         self.model.scheme = self.scheme
 
         LOG( '\n-> Simulating with "%s" model:' % self.model.name )
