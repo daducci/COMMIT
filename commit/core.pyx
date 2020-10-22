@@ -17,6 +17,7 @@ import commit.solvers
 import amico.scheme
 import amico.lut
 import pyximport
+from pkg_resources import get_distribution
 
 from amico.util import LOG, NOTE, WARNING, ERROR
 
@@ -96,6 +97,7 @@ cdef class Evaluation :
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
+        self.set_config('version', get_distribution('dmri-commit').version)
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
         self.set_config('DATA_path', pjoin( study_path, subject ))
@@ -645,8 +647,8 @@ cdef class Evaluation :
         Parameters
         ----------
         build_dir : string
-            The folder in which to store the compiled files. If None, they will end up in
-            the .pyxbld directory in the user’s home directory (default : None)
+            The folder in which to store the compiled files. If None, they will end up
+            in the .pyxbld directory in the user’s home directory (default : None)
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
