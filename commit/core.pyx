@@ -250,12 +250,15 @@ cdef class Evaluation :
             if (self.get_config('pixdim') != self.get_config('confidence_map_pixdim') ):
                 ERROR( 'Dataset does not have the same geometry (voxel size) as the tractogram' )
             
-            if(self.confidence_map_img.shape != self.niiDWI_img.shape):
+            if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
 
-            return self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        
+            confidence_map = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
+            if (confidence_map.min() < 0. or confidence_map.max() > 1.)
+                ERROR( 'Confidence map must be between 0. and 1.' )
+
+            return confidence_map
 
 
     def set_model( self, model_name ) :
