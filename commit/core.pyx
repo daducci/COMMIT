@@ -220,7 +220,7 @@ cdef class Evaluation :
         
         """
         if confidence_map_filename is None:
-            return 1.0
+            return np.array(1.0)
         else:
             # Loading confidence map
             tic = time.time()
@@ -255,7 +255,7 @@ cdef class Evaluation :
 
             confidence_map = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
-            if (confidence_map.min() < 0. or confidence_map.max() > 1.)
+            if (confidence_map.min() < 0. or confidence_map.max() > 1.):
                 ERROR( 'Confidence map must be between 0. and 1.' )
 
             return confidence_map
