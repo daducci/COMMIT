@@ -3,16 +3,14 @@
 All notable changes to COMMIT will be documented in this file.
 
 
-## [1.4.3.1] - 2020-10-22
+## [1.4.5] - 2020-10-23
+
+### Added
+- core.load_confidence_map(): Load the confidence map from nii file
 
 ### Changed
-- core.pyx()
-- load_w_map(): Load the voxel weighting map from nii file
-- get_w_map_vector(): Returns the 'voxel weighting map' in a numpy array 
-
-- solvers.py()
-- solve(): Added the parameter W_map
-- fista_W(): function to perform the optimization with the weight map
+- solvers.solve(): Added parameter confidence_map
+- solvers.fista(): Changed to perform the optimization with the confidence_map
 
 ## [1.4.3] - 2020-10-22
 
