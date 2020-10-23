@@ -982,7 +982,7 @@ cdef class Evaluation :
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = tmp.max()
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE_w.nii.gz') )
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE_conf.nii.gz') )
             print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
 
             print( '\t\t- NRMSE with w... ', end='' )
@@ -995,7 +995,7 @@ cdef class Evaluation :
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = 1
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE_w.nii.gz') )
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE_conf.nii.gz') )
             print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
 
 
