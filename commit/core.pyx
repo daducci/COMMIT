@@ -219,8 +219,16 @@ cdef class Evaluation :
             The file name of the confidence map, relative to the subject folder 
         
         """
+
+        self.confidence_map  = None
+        self.confidence_map_img = None
+        self.set_config('confidence_map_filename', None)
+        self.set_config('confidence_map_dim', None)
+        self.set_config('confidence_map_pixdim', None)
+
         if confidence_map_filename is None:
             return np.array(1.0)
+
         else:
             # Loading confidence map
             tic = time.time()
@@ -229,7 +237,6 @@ cdef class Evaluation :
             if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :            
                 ERROR( 'Confidence map not found' )
             
-            # print( '\t* Loading confidence map:' )
             self.set_config('confidence_map_filename', confidence_map_filename)
             self.confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
             self.confidence_map_img = self.confidence_map.get_data().astype(np.float64)
