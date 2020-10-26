@@ -6,11 +6,7 @@ All notable changes to COMMIT will be documented in this file.
 ## [1.5.0] - 2020-10-23
 
 ### Added
-- core.load_confidence_map(): Load the confidence map from nii file
-
-### Changed
-- solvers.solve(): Added parameter confidence_map
-- solvers.fista(): Changed to perform the optimization with the confidence_map
+- Added the possibility to specify a voxel confidence map
 
 ## [1.4.3] - 2020-10-22
 
