@@ -736,7 +736,7 @@ cdef class Evaluation :
         self.set_config('confidence_map_pixdim', None)
 
         if confidence_map_filename is None:
-            confidence_map = np.array(1.0)
+            confidence_array = np.array(1.0)
 
         else:
             # Loading confidence map
@@ -747,11 +747,11 @@ cdef class Evaluation :
                 ERROR( 'Confidence map not found' )
             
             self.set_config('confidence_map_filename', confidence_map_filename)
-            confidence_map_nib  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
-            self.confidence_map_img = confidence_map_nib.get_data().astype(np.float64)
+            confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
+            self.confidence_map_img = confidence_map.get_data().astype(np.float64)
             if self.confidence_map_img.ndim == 3 :
                 self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
-            hdr = confidence_map_nib.header if nibabel.__version__ >= '2.0.0' else confidence_map_nib.get_header()
+            hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
             self.set_config('confidence_map_dim', self.confidence_map_img.shape[0:3])
             self.set_config('confidence_map_pixdim', tuple( hdr.get_zooms()[:3] ))
             print( '\t\t- dim    : %d x %d x %d x %d' % self.confidence_map_img.shape )
@@ -769,7 +769,7 @@ cdef class Evaluation :
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
 
-            confidence_map = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+            confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
             if (confidence_map.min() < 0. or confidence_map.max() > 1.):
                 ERROR( 'Confidence map must be between 0. and 1.' )
@@ -793,7 +793,7 @@ cdef class Evaluation :
         t = time.time()
         LOG( '\n-> Fit model:' )
 
-        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_map = confidence_map)
+        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
