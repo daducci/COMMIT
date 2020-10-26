@@ -87,14 +87,14 @@ cdef class Evaluation :
         subject : string
             The path (relative to previous folder) to the subject folder
         """
-        self.niiDWI     = None # set by "load_data" method
-        self.scheme     = None # set by "load_data" method
-        self.model      = None # set by "set_model" method
-        self.KERNELS    = None # set by "load_kernels" method
-        self.DICTIONARY = None # set by "load_dictionary" method
-        self.THREADS    = None # set by "set_threads" method
-        self.A          = None # set by "build_operator" method
-        self.x          = None # set by "fit" method
+        self.niiDWI             = None # set by "load_data" method
+        self.scheme             = None # set by "load_data" method
+        self.model              = None # set by "set_model" method
+        self.KERNELS            = None # set by "load_kernels" method
+        self.DICTIONARY         = None # set by "load_dictionary" method
+        self.THREADS            = None # set by "set_threads" method
+        self.A                  = None # set by "build_operator" method
+        self.x                  = None # set by "fit" method
         self.confidence_map_img = None # set by "fit" method
 
         # store all the parameters of an evaluation with COMMIT
@@ -762,8 +762,6 @@ cdef class Evaluation :
         # Confidence map.
         self.confidence_map_img = None
         self.set_config('confidence_map_filename', None)
-        self.set_config('confidence_map_dim', None)
-        self.set_config('confidence_map_pixdim', None)
 
         if confidence_map_filename is None:
             confidence_array = np.array(1.0)
@@ -782,18 +780,18 @@ cdef class Evaluation :
             if self.confidence_map_img.ndim == 3 :
                 self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
             hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
-            self.set_config('confidence_map_dim', self.confidence_map_img.shape[0:3])
-            self.set_config('confidence_map_pixdim', tuple( hdr.get_zooms()[:3] ))
+            confidence_map_dim = self.confidence_map_img.shape[0:3]
+            confidence_map_pixdim = tuple( hdr.get_zooms()[:3] )
             print( '\t\t- dim    : %d x %d x %d x %d' % self.confidence_map_img.shape )
-            print( '\t\t- pixdim : %.3f x %.3f x %.3f' % self.get_config('confidence_map_pixdim') )
+            print( '\t\t- pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim )
 
 
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
             
-            if ( self.get_config('dim') != self.get_config('confidence_map_dim') ):
+            if ( self.get_config('dim') != confidence_map_dim ):
                 ERROR( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
 
-            if (self.get_config('pixdim') != self.get_config('confidence_map_pixdim') ):
+            if (self.get_config('pixdim') != confidence_map_pixdim ):
                 ERROR( 'Dataset does not have the same geometry (voxel size) as the tractogram' )
             
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
@@ -960,23 +958,23 @@ cdef class Evaluation :
 
         
         if self.confidence_map_img is not None:
-            confidence_map_vox = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
+            confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
             
-            print( '\t\t- RMSE with w...  ', end='' )        
+            print( '\t\t- RMSE considering the confidence map...  ', end='' )        
             sys.stdout.flush()
-            tmp = np.sqrt( np.mean((confidence_map_vox*(y_mea-y_est))**2,axis=1) )
+            tmp = np.sqrt( np.mean((confidence_array*(y_mea-y_est))**2,axis=1) )
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = tmp.max()
             nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE_conf.nii.gz') )
             print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
 
-            print( '\t\t- NRMSE with w... ', end='' )
+            print( '\t\t- NRMSE considering the confidence map... ', end='' )
             sys.stdout.flush()
             tmp = np.sum(y_mea**2,axis=1)
             idx = np.where( tmp < 1E-12 )
             tmp[ idx ] = 1
-            tmp = np.sqrt( np.sum((confidence_map_vox*(y_mea-y_est))**2,axis=1) / tmp )
+            tmp = np.sqrt( np.sum((confidence_array*(y_mea-y_est))**2,axis=1) / tmp )
             tmp[ idx ] = 0
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
