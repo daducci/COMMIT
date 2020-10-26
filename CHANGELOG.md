@@ -4,8 +4,12 @@ All notable changes to COMMIT will be documented in this file.
 
 ## [1.4.5] - 2020-12-29
 
+<<<<<<< HEAD
 ### Fixed
 - operator.pyxbld: Changed the condition to create a new operator
+=======
+## [1.5.0] - 2020-10-23
+>>>>>>> Remove load_confidence_map function, the code was move inside fit
 
 ### Added
 - core.pyx: Add to the function build_operator the parameter build_dir
