@@ -3,7 +3,7 @@
 All notable changes to COMMIT will be documented in this file.
 
 
-## [1.4.5] - 2020-10-23
+## [1.5.0] - 2020-10-23
 
 ### Added
 - core.load_confidence_map(): Load the confidence map from nii file

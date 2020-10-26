@@ -75,7 +75,6 @@ cdef class Evaluation :
     cdef public A
     cdef public x
     cdef public CONFIG
-    cdef public confidence_map
     cdef public confidence_map_img
     
     def __init__( self, study_path, subject ) :
@@ -96,7 +95,7 @@ cdef class Evaluation :
         self.THREADS    = None # set by "set_threads" method
         self.A          = None # set by "build_operator" method
         self.x          = None # set by "fit" method
-        self.confidence_map      = None # set by "load_data" method or load_confidence_map method
+        self.confidence_map_img = None # set by "fit" method
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
@@ -208,64 +207,6 @@ cdef class Evaluation :
             print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
-
-
-    def load_confidence_map( self, confidence_map_filename ) :
-        """Load the confidence map.
-
-        Parameters
-        ----------
-        confidence_map_filename : string
-            The file name of the confidence map, relative to the subject folder 
-        
-        """
-
-        self.confidence_map  = None
-        self.confidence_map_img = None
-        self.set_config('confidence_map_filename', None)
-        self.set_config('confidence_map_dim', None)
-        self.set_config('confidence_map_pixdim', None)
-
-        if confidence_map_filename is None:
-            return np.array(1.0)
-
-        else:
-            # Loading confidence map
-            tic = time.time()
-            LOG( '\n-> Loading confidence map:' )
-
-            if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :            
-                ERROR( 'Confidence map not found' )
-            
-            self.set_config('confidence_map_filename', confidence_map_filename)
-            self.confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
-            self.confidence_map_img = self.confidence_map.get_data().astype(np.float64)
-            if self.confidence_map_img.ndim == 3 :
-                self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
-            hdr = self.confidence_map.header if nibabel.__version__ >= '2.0.0' else self.confidence_map.get_header()
-            self.set_config('confidence_map_dim', self.confidence_map_img.shape[0:3])
-            self.set_config('confidence_map_pixdim', tuple( hdr.get_zooms()[:3] ))
-            print( '\t\t- dim    : %d x %d x %d x %d' % self.confidence_map_img.shape )
-            print( '\t\t- pixdim : %.3f x %.3f x %.3f' % self.get_config('confidence_map_pixdim') )
-
-
-            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
-            
-            if ( self.get_config('dim') != self.get_config('confidence_map_dim') ):
-                ERROR( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
-
-            if (self.get_config('pixdim') != self.get_config('confidence_map_pixdim') ):
-                ERROR( 'Dataset does not have the same geometry (voxel size) as the tractogram' )
-            
-            if (self.confidence_map_img.shape != self.niiDWI_img.shape):
-                ERROR( 'Dataset does not have the same geometry as the DWI signal' )
-
-            confidence_map = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-
-            if (confidence_map.min() < 0. or confidence_map.max() > 1.):
-                ERROR( 'Confidence map must be between 0. and 1.' )
-
-            return confidence_map
 
 
     def set_model( self, model_name ) :
@@ -788,7 +729,52 @@ cdef class Evaluation :
         if self.A is None :
             ERROR( 'Operator not built; call "build_operator()" first' )
         
-        confidence_map = self.load_confidence_map(confidence_map_filename)
+        # Confidence map.
+        self.confidence_map_img = None
+        self.set_config('confidence_map_filename', None)
+        self.set_config('confidence_map_dim', None)
+        self.set_config('confidence_map_pixdim', None)
+
+        if confidence_map_filename is None:
+            confidence_map = np.array(1.0)
+
+        else:
+            # Loading confidence map
+            tic = time.time()
+            LOG( '\n-> Loading confidence map:' )
+
+            if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :            
+                ERROR( 'Confidence map not found' )
+            
+            self.set_config('confidence_map_filename', confidence_map_filename)
+            confidence_map_nib  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
+            self.confidence_map_img = confidence_map_nib.get_data().astype(np.float64)
+            if self.confidence_map_img.ndim == 3 :
+                self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
+            hdr = confidence_map_nib.header if nibabel.__version__ >= '2.0.0' else confidence_map_nib.get_header()
+            self.set_config('confidence_map_dim', self.confidence_map_img.shape[0:3])
+            self.set_config('confidence_map_pixdim', tuple( hdr.get_zooms()[:3] ))
+            print( '\t\t- dim    : %d x %d x %d x %d' % self.confidence_map_img.shape )
+            print( '\t\t- pixdim : %.3f x %.3f x %.3f' % self.get_config('confidence_map_pixdim') )
+
+
+            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            
+            if ( self.get_config('dim') != self.get_config('confidence_map_dim') ):
+                ERROR( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
+
+            if (self.get_config('pixdim') != self.get_config('confidence_map_pixdim') ):
+                ERROR( 'Dataset does not have the same geometry (voxel size) as the tractogram' )
+            
+            if (self.confidence_map_img.shape != self.niiDWI_img.shape):
+                ERROR( 'Dataset does not have the same geometry as the DWI signal' )
+
+            confidence_map = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
+            if (confidence_map.min() < 0. or confidence_map.max() > 1.):
+                ERROR( 'Confidence map must be between 0. and 1.' )
+
+           
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
@@ -943,7 +929,7 @@ cdef class Evaluation :
 
 
         
-        if self.confidence_map is not None:
+        if self.confidence_map_img is not None:
             confidence_map_vox = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
             
             print( '\t\t- RMSE with w...  ', end='' )        
