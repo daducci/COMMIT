@@ -244,7 +244,7 @@ def evaluate_model(y, A, x, regularisation = None):
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 
-def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None, confidence_map = None):
+def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None, confidence_array = None):
     """
     Solve the regularised least squares problem
 
@@ -265,9 +265,9 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
         x0 = np.zeros(A.shape[1])
 
    
-    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_map)
+    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
 
-def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, confidence_map) :
+def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, confidence_array) :
     """
     Solve the regularised least squares problem
 
@@ -287,7 +287,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
     
     xhat = x0.copy()
     x = np.zeros_like(xhat)
-    res = confidence_map * (A.dot(xhat) -y.copy()) 
+    res = confidence_array * (A.dot(xhat) - y.copy()) 
     
     proximal( xhat )
     reg_term = omega( xhat )
@@ -296,11 +296,11 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
     told = 1
     beta = 0.9
     prev_x = xhat.copy()
-    grad = np.asarray(At.dot(confidence_map * res))
+    grad = np.asarray(At.dot(confidence_array * res))
     qfval = prev_obj
 
     # Step size computation
-    L = ( np.linalg.norm( confidence_map * A.dot(grad) ) / np.linalg.norm(grad) )**2
+    L = ( np.linalg.norm( confidence_array * A.dot(grad) ) / np.linalg.norm(grad) )**2
     mu = 1.9 / L
 
     # Main loop
@@ -324,7 +324,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
         # Check stepsize
         tmp = x-xhat
         q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-        res = confidence_map * ( A.dot(x) - y )
+        res = confidence_array * ( A.dot(x) - y )
         res_norm = np.linalg.norm(res)
         curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -341,7 +341,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
             # Check stepsize
             tmp = x-xhat
             q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-            res = confidence_map * ( A.dot(x) - y )
+            res = confidence_array * ( A.dot(x) - y )
             res_norm = np.linalg.norm(res)
             curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -374,10 +374,10 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
         xhat = x + (told-1)/t * (x - prev_x)
 
         # Gradient computation
-        res = confidence_map * ( A.dot(xhat) - y )
+        res = confidence_array * ( A.dot(xhat) - y )
         xarr = np.asarray(x)
 
-        grad = np.asarray(At.dot(confidence_map * res))
+        grad = np.asarray(At.dot(confidence_array * res))
 
         # Update variables
         iter += 1
