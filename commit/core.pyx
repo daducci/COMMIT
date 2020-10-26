@@ -801,7 +801,7 @@ cdef class Evaluation :
 
             confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
-            if (confidence_map.min() < 0. or confidence_map.max() > 1.):
+            if (confidence_array.min() < 0. or confidence_array.max() > 1.):
                 ERROR( 'Confidence map must be between 0. and 1.' )
 
            
