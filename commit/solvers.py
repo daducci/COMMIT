@@ -271,7 +271,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
     """
     Solve the regularised least squares problem
 
-        argmin_x 0.5*|| W ( Ax-y ) ||_2^2 + Omega(x)
+        argmin_x 0.5*|| sqrt(W) ( Ax-y ) ||_2^2 + Omega(x)
 
     with the FISTA algorithm described in [1].
 
@@ -300,7 +300,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
     qfval = prev_obj
 
     # Step size computation
-    L = ( np.linalg.norm( confidence_array * A.dot(grad) ) / np.linalg.norm(grad) )**2
+    L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     mu = 1.9 / L
 
     # Main loop
