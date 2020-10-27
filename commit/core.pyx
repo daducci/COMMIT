@@ -717,6 +717,13 @@ cdef class Evaluation :
             Check the documentation of commit.solvers.init_regularisation to see
             how to properly define the wanted mathematical formulation
             ( default : None )
+        confidence_map_filename : 
+            Path to the NIFTI file containing a confidence map, 
+            relative to the subject folder. The file can be 3D or 4D in 
+            the same space as the dwi_filename used (dim and voxel size).
+            It should have float values between [0.0,1.0]. 
+            (default : None)
+
         """
         if self.niiDWI is None :
             ERROR( 'Data not loaded; call "load_data()" first' )
