@@ -284,10 +284,10 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
     """
 
     # Initialization
-    
+    sqrt_W = np.sqrt(confidence_array)
     xhat = x0.copy()
     x = np.zeros_like(xhat)
-    res = confidence_array * (A.dot(xhat) - y.copy()) 
+    res = sqrt_W * (A.dot(xhat) - y.copy()) 
     
     proximal( xhat )
     reg_term = omega( xhat )
@@ -296,11 +296,11 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
     told = 1
     beta = 0.9
     prev_x = xhat.copy()
-    grad = np.asarray(At.dot(confidence_array * res))
+    grad = np.asarray(At.dot(sqrt_W * res))
     qfval = prev_obj
 
     # Step size computation
-    L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
+    L = ( np.linalg.norm( sqrt_W * A.dot(grad) ) / np.linalg.norm(grad) )**2
     mu = 1.9 / L
 
     # Main loop
@@ -324,7 +324,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
         # Check stepsize
         tmp = x-xhat
         q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-        res = confidence_array * ( A.dot(x) - y )
+        res = sqrt_W * ( A.dot(x) - y )
         res_norm = np.linalg.norm(res)
         curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -341,7 +341,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
             # Check stepsize
             tmp = x-xhat
             q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-            res = confidence_array * ( A.dot(x) - y )
+            res = sqrt_W * ( A.dot(x) - y )
             res_norm = np.linalg.norm(res)
             curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -374,10 +374,10 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
         xhat = x + (told-1)/t * (x - prev_x)
 
         # Gradient computation
-        res = confidence_array * ( A.dot(xhat) - y )
+        res = sqrt_W * ( A.dot(xhat) - y )
         xarr = np.asarray(x)
 
-        grad = np.asarray(At.dot(confidence_array * res))
+        grad = np.asarray(At.dot(sqrt_W * res))
 
         # Update variables
         iter += 1
