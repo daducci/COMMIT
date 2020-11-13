@@ -52,7 +52,8 @@ class segInVoxKey
 };
 
 // global variables (to avoid passing them at each call)
-std::map<segKey,float> FiberSegments;
+std::map<segKey,float>  FiberSegments;
+float                   FiberLen;
 
 Vector<int>     dim;
 Vector<float>   pixdim;
@@ -60,7 +61,7 @@ float*          ptrMASK;
 unsigned int    nPointsToSkip;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
-float           minSegLen, minFiberLen;
+float           minSegLen, minFiberLen, maxFiberLen;
 
 std::vector<double> radii;         // radii for the extrusion
 std::vector<double> weights;       // damping weight
@@ -70,7 +71,7 @@ double              radiusSigma;   // modulates the impact of each segment as fu
 
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vector<int> sectors, std::vector<double> radii, std::vector<double> weight, short* ptrHashTable );
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, double w, short* ptrHashTable );
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable );
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine[4][4]);
 
@@ -80,7 +81,7 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine
 // =========================
 int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
-    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,
+    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len, float max_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
@@ -90,7 +91,7 @@ int trk2dictionary(
     /*     IC compartments     */
     /*=========================*/
     float          fiber[3][MAX_FIB_LEN];
-    float          fiberNorm, fiberLen;
+    float          fiberNorm;
     unsigned int   N, totICSegments = 0, totFibers = 0, v;
     unsigned short o;
     unsigned char  kept;
@@ -131,6 +132,7 @@ int trk2dictionary(
     doIntersect   = c > 0;
     minSegLen     = min_seg_len;
     minFiberLen   = min_fiber_len;
+    maxFiberLen   = max_fiber_len;
 
     radii.clear();
     sectors.clear();
@@ -156,7 +158,6 @@ int trk2dictionary(
     filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len    = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len   = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept  = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_ndirs.dict";       FILE* pDict_ndirs     = fopen(filename.c_str(),"wb");
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
@@ -173,7 +174,7 @@ int trk2dictionary(
             }
         }
     }
-    
+
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
@@ -184,9 +185,7 @@ int trk2dictionary(
         kept = 0;
         if ( FiberSegments.size() > 0 )
         {
-            for (fiberLen = 0, it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
-                fiberLen += it->second;
-            if ( fiberLen > minFiberLen )
+            if ( FiberLen > minFiberLen && FiberLen < maxFiberLen )
             {
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
@@ -202,12 +201,12 @@ int trk2dictionary(
                     inVoxKey.set( it->first.x, it->first.y, it->first.z );
                     FiberNorm[inVoxKey] += it->second;
                 }
-                for (fiberNorm = 0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
+                for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
                     fiberNorm += pow(itNorm->second,2);
                 fiberNorm = sqrt(fiberNorm);
                 FiberNorm.clear();
                 fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
-                fwrite( &fiberLen,   1, 4, pDict_TRK_len );
+                fwrite( &FiberLen,   1, 4, pDict_TRK_len );
                 totICSegments += FiberSegments.size();
                 totFibers++;
                 kept = 1;
@@ -217,8 +216,6 @@ int trk2dictionary(
     }
     PROGRESS.close();
 
-    // write dictionary ndirs value
-    fwrite(&ndirs, 1, sizeof(unsigned short), pDict_ndirs);
     fclose( fpTractogram );
     fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
@@ -227,7 +224,6 @@ int trk2dictionary(
     fclose( pDict_IC_len );
     fclose( pDict_TRK_len );
     fclose( pDict_TRK_kept );
-    fclose( pDict_ndirs );
 
     printf("     [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
 
@@ -343,6 +339,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
     static double         len, t, alpha, w, R;
     static int            i, j, k;
 
+    FiberLen = 0.0;
     FiberSegments.clear();
     if ( pts <= 2*nPointsToSkip )
         return;
@@ -400,7 +397,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                 S2m.z = S2.z + R*n.z;
 
                 if ( doIntersect==false )
-                    segmentForwardModel( S1m, S2m, weights[k], ptrHashTable );
+                    segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
                 else
                     while( 1 )
                     {
@@ -414,7 +411,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                             )
                         {
                             // same voxel, no need to compute intersections
-                            segmentForwardModel( S1m, S2m, weights[k], ptrHashTable );
+                            segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
                             break;
                         }
 
@@ -430,13 +427,13 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                         {
                             // add the portion S1P, and then reiterate
                             P.Set( S1m.x + t*dir.x, S1m.y + t*dir.y, S1m.z + t*dir.z );
-                            segmentForwardModel( S1m, P, weights[k], ptrHashTable );
+                            segmentForwardModel( S1m, P, k, weights[k], ptrHashTable );
                             S1m.Set( P.x, P.y, P.z );
                         }
                         else
                         {
                             // add the segment S1S2 and stop iterating
-                            segmentForwardModel( S1m, S2m, weights[k], ptrHashTable );
+                            segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
                             break;
                         }
                     }
@@ -449,7 +446,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
 /********************************************************************************************************************/
 /*                                                segmentForwardModel                                               */
 /********************************************************************************************************************/
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, double w, short* ptrHashTable )
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable )
 {
     static Vector<int>    vox;
     static Vector<double> dir, dirTrue;
@@ -493,6 +490,8 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, do
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );
     FiberSegments[key] += w * len;
+    if ( k==0 ) // fiber length computed only from origianl segments
+        FiberLen += len;
 }
 
 

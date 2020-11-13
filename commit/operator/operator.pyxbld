@@ -24,7 +24,6 @@ def make_ext(modname, pyxfilename):
         filename = "operator_noLUT.c"
     else:
         filename = "operator_withLUT.c"
-
     path = dirname(pyxfilename)
 
     if config.build_dir is None:

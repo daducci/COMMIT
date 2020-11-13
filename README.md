@@ -15,24 +15,16 @@ These weights can be easily estimated by solving a convenient **global convex op
 - **Low memory** consumption using optimized sparse data structures, e.g. it can easily run on a standard laptop with 8GB RAM a full-brain tractogram from the HCP data (1M fibers, 3 shells, 1.25 mm^3 resolution).
 - **Soon**: **GPU implementation** for even faster model fitting.
 
-## How to cite COMMIT
 
-**COMMIT: Convex Optimization Modeling for Microstructure Informed Tractography**  
-Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran  
-*IEEE Transactions on Medical Imaging* 34(1) 246-257, 2015  
-[Link to publisher](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6884830)
+## Documentation
 
-**A convex optimization framework for global tractography**  
-Alessandro Daducci, Alessandro Dal Palú, Alia Lemkaddem, Jean-Philippe Thiran  
-*IEEE 10th International Symposium on Biomedical Imaging (ISBI)* 524-527, 2013  
-[Link to publisher](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6556527)
+More information/documentation, as well as a series of tutorials, can be found in the [wiki pages](https://github.com/daducci/COMMIT/wiki/Home).
 
-## Installation
-To install COMMIT, please refer to the [installation guide](docs/install.md).
+### Installation
 
-More information/documentation can be found in the [`docs`](docs/) folder.
+To install COMMIT, refer to the [installation guide](https://github.com/daducci/COMMIT/wiki/Installation).
 
-## Getting started
+### Getting started
 
-Tutorials are provided in the [`docs/tutorials`](docs/tutorials/) folder to help you get started with the COMMIT framework.
+To get started with the COMMIT framework, have a look at [this tutorial](https://github.com/daducci/COMMIT/wiki/Getting-started), which will guide you through the main steps of the processing.
 

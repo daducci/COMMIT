@@ -5,30 +5,31 @@ import cython
 import numpy as np
 cimport numpy as np
 import nibabel
-from os.path import join, exists, splitext
+from os.path import join, exists, splitext, dirname, isdir
 from os import makedirs, remove
 import time
 import amico
 import pickle
 from amico.util import LOG, NOTE, WARNING, ERROR
+from pkg_resources import get_distribution
 
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, 
-        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,
+        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
     ) nogil
 
 
-cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, filename_mask = None, do_intersect = True,
-    fiber_shift = 0, min_seg_len = 1e-3, min_fiber_len = 5.0, points_to_skip = 0,
-    vf_THR = 0.1, peaks_use_affine = False, flip_peaks = [False,False,False], 
-    blur_radii = [], blur_samples = [], blur_sigma = 1.0,
-    gen_trk = True, filename_trk = None, TCK_ref_image = None, ndirs = 32761
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
+    fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0, points_to_skip=0,
+    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
+    blur_radii=[], blur_samples=[], blur_sigma=0.0,
+    filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -39,16 +40,19 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     filename_tractogram : string
         Path to the tractogram (.trk or .tck) containing the streamlines to load.
         
-    filename_trk : string
-        DEPRECATED. Use filename_tractogram instead.
-
+    TCK_ref_image: string
+        When loading a .tck tractogram, path to the NIFTI file containing the information about
+        the geometry to be used for the tractogram to load. If not specified, it will try to use
+        the information from filename_peaks or filename_mask.
+    
     path_out : string
-        Path to the folder to store the sparse data structure.
+        Path to the folder for storing the sparse data structure. If not specified (default),
+        a folder name "COMMIT" will be created in the same folder of the tractogram.
 
     filename_mask : string
-        Path to a binary mask to restrict the analysis to specific areas. Segments
-        outside this mask are discarded. If not specified (default), the mask is created from
-        all voxels intersected by the tracts.
+        Path to a binary mask for restricting the analysis to specific areas.
+        Segments outside this mask are discarded. If not specified (default),
+        the mask is created from all voxels intersected by the tracts.
 
     do_intersect : boolean
         If True then fiber segments that intersect voxel boundaries are splitted (default).
@@ -60,10 +64,13 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         The value is specified in voxel units, eg 0.5 translates by half voxel.
 
     min_seg_len : float
-        Discard segments <= than this length in mm (default : 1e-3)
+        Discard segments <= than this length in mm (default : 1e-3).
 
     min_fiber_len : float
-        Discard streamlines <= than this length in mm (default : 5.0)
+        Discard streamlines <= than this length in mm (default : 0.0).
+
+    max_fiber_len : float
+        Discard streamlines >= than this length in mm (default : 250.0).
 
     points_to_skip : integer
         If necessary, discard first points at beginning/end of a fiber (default : 0).
@@ -71,7 +78,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     filename_peaks : string
         Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
         The data matrix should be 4D with last dimension 3*N, where N is the number
-        of peaks in each voxel. (default : no extra-cellular contributions)
+        of peaks in each voxel. (default : no extra-cellular contributions).
 
     peaks_use_affine : boolean
         Whether to rotate the peaks according to the affine matrix (default : False).
@@ -82,48 +89,27 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     flip_peaks : list of three boolean
         If necessary, flips peak orientations along each axis (default : no flipping).
 
-    gen_trk : boolean
-        If True, create a tractogram in the 'path_out' folder (either .tck or .tck)
-        containing the streamlines actually considered in the dictionary (default : True)
-    
     blur_radii : list of float
-        Translate each segment to given radii to assign a broader fiber contribution (default : [])
+        Translate each segment to given radii to assign a broader fiber contribution (default : []).
     
     blur_samples : list of integer
         Segments are duplicated along a circle at a given radius; this parameter controls the
-        number of samples to take over a given circle (defaut : [])
+        number of samples to take over a given circle (defaut : []).
 
     blur_sigma: float
-        The contributions of the segments at different radii are damped as a Gaussian (default : 1.0)    
-    
-    TCK_ref_image: string
-        Path to the NIFTI file containing the information about the geometry used for the tractogram .tck to load. 
-        If it is not specified, it will try to use the information of filename_peaks or filename_mask.
+        The contributions of the segments at different radii are damped as a Gaussian (default : 0.0).
     
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
-        each segment in a streamline (default : 32761)
-    """
+        each segment in a streamline (default : 32761).
 
-    filename = path_out + '/dictionary_info.pickle'
-    dictionary_info = {}
-    dictionary_info['filename_trk'] = filename_trk
-    dictionary_info['path_out'] = path_out
-    dictionary_info['filename_peaks'] = filename_peaks
-    dictionary_info['filename_mask'] = filename_mask
-    dictionary_info['do_intersect'] = do_intersect
-    dictionary_info['fiber_shift'] = fiber_shift
-    dictionary_info['points_to_skip'] = points_to_skip
-    dictionary_info['vf_THR'] = vf_THR
-    dictionary_info['peaks_use_affine'] = peaks_use_affine
-    dictionary_info['flip_peaks'] = flip_peaks
-    dictionary_info['min_seg_len'] = min_seg_len
-    dictionary_info['min_fiber_len'] = min_fiber_len
-    dictionary_info['gen_trk'] = gen_trk
-    dictionary_info['blur_radii'] = blur_radii
-    dictionary_info['blur_samples'] = blur_samples
-    dictionary_info['blur_sigma'] = blur_sigma
-    dictionary_info['ndirs'] = ndirs
+    filename_trk : string
+        DEPRECATED. Use filename_tractogram instead.
+
+    gen_trk : string
+        DEPRECATED. No tractogram will be saved any more, but the returned coefficients will account
+        for the streamlines that were pre-filtered in this function.
+    """
 
     # check the value of ndirs
     if not amico.lut.is_valid(ndirs):
@@ -141,6 +127,22 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     else :
         ERROR( '"fiber_shift" must be a scalar or a vector with 3 elements' )
 
+    # check for invalid parameters in the blur
+    if type(blur_radii)==list:
+        blur_radii = np.ndarray(blur_radii, np.double)
+    if type(blur_samples)==list:
+        blur_samples = np.ndarray(blur_samples, np.int32)
+
+    if blur_sigma > 0 :
+        if blur_radii.size != blur_samples.size :
+            ERROR( 'The number of blur radii and blur samples must match' )
+
+        if np.count_nonzero( blur_radii<=0 ):
+            ERROR( 'A blur radius was <= 0; only positive radii can be used' )
+
+        if np.count_nonzero( blur_samples<1 ):
+            ERROR( 'Please specify at least 1 sample per blur radius' )
+
     tic = time.time()
     LOG( '\n-> Creating the dictionary from tractogram:' )
     
@@ -150,8 +152,12 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
     print( '\t- Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY )
     print( '\t- Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ )
     print( '\t- Points to skip   = %d' % points_to_skip )
-    print( '\t- Min segment len  = %.2e mm' % min_seg_len )
-    print( '\t- Min fiber len    = %.2e mm' % min_fiber_len )
+    if min_seg_len >= 1e-3:
+        print( '\t- Min segment len  = %.3f mm' % min_seg_len )
+    else:
+        print( '\t- Min segment len  = %.2e mm' % min_seg_len )
+    print( '\t- Min fiber len    = %.2f mm' % min_fiber_len )
+    print( '\t- Max fiber len    = %.2f mm' % max_fiber_len )
 
     # check blur params
     cdef :
@@ -164,36 +170,39 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         int nBlurRadii
         float [:] ArrayInvM
         float* ptrArrayInvM
+    
+    # convert to numpy arrays (and add fake radius for original segment)
+    if blur_sigma == 0:
+        nBlurRadii = 1
+        blurRadii = np.array( [0.0], np.double )
+        blurSamples = np.array( [1], np.int32 )
+        blurWeights = np.array( [1], np.double )
+    else:
+        nBlurRadii = len(blur_radii)+1
+        blurRadii = np.insert( blur_radii, 0, 0.0 ).astype(np.double)
+        blurSamples = np.insert( blur_samples, 0, 1 ).astype(np.int32)
 
-    if len(blur_radii) != len(blur_samples) :
-        ERROR( 'Number of radii and samples must match' )
-
-    # convert to numpy arrays (add fake radius for original segment)
-    nBlurRadii = len(blur_radii)+1
-    blurRadii = np.array( [0.0]+blur_radii, np.double )
-    blurSamples = np.array( [1]+blur_samples, np.int32 )
-
-    # compute weights for gaussian damping
-    blurWeights = np.empty_like( blurRadii )
-    for i in xrange(nBlurRadii):
-        blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
+        # compute weights for gaussian damping
+        blurWeights = np.empty_like( blurRadii )
+        for i in xrange(nBlurRadii):
+            blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
 
     if nBlurRadii == 1 :
         print( '\t- Do not blur fibers' )
     else :
         print( '\t- Blur fibers:' )
         print( '\t\t- sigma = %.3f' % blur_sigma )
-        print( '\t\t- radii =   [', end="" )
+        print( '\t\t- radii =   [ ', end="" )
         for i in xrange( 1, blurRadii.size ) :
-            print( '%.3f' % blurRadii[i], end="" )
+            print( '%.3f ' % blurRadii[i], end="" )
         print( ']' )
-        print( '\t\t- samples = [', end="" )
-        for i in xrange( 1, blurSamples.size ) :
-            print( '%5d' % blurSamples[i], end="" )
-        print( ']' )
-        print( '\t\t- weights = [', end="" )
+        print( '\t\t- weights = [ ', end="" )
         for i in xrange( 1, blurWeights.size ) :
-            print( '%.3f' % blurWeights[i], end="" )
+            print( '%.3f ' % blurWeights[i], end="" )
+        print( ']' )
+        print( '\t\t- samples = [ ', end="" )
+        for i in xrange( 1, blurSamples.size ) :
+            print( '%5d ' % blurSamples[i], end="" )
         print( ']' )
 
     ptrBlurRadii   = &blurRadii[0]
@@ -204,36 +213,52 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         ERROR( '"min_seg_len" must be >= 0' )
     if min_fiber_len < 0 :
         ERROR( '"min_fiber_len" must be >= 0' )
+    if max_fiber_len < min_fiber_len :
+        ERROR( '"max_fiber_len" must be >= "min_fiber_len"' )
 
+    if filename_trk is None and filename_tractogram is None:
+        ERROR( '"filename_tractogram" not defined' )
+
+    if filename_trk is not None and filename_tractogram is not None:
+        WARNING('"filename_trk" will not be considered, "filename_tractogram" will be used')
+
+    if filename_trk is not None and filename_tractogram is None:
+        filename_tractogram = filename_trk
+        WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
+
+    if path_out is None:
+        path_out = dirname(filename_tractogram)
+        if path_out == '':
+            path_out = '.'
+        if not isdir(path_out):
+            ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
+        path_out = join(path_out,'COMMIT')
+
+    if gen_trk is not None:
+        WARNING('"gen_trk" parameter is deprecated')
+
+    # create output path
+    print( '\t- Output written to "%s"' % path_out )
+    if not exists( path_out ):
+        makedirs( path_out )
+
+    # Load data from files
     LOG( '\n   * Loading data:' )
     cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
     cdef short* ptrHashTable = &htable[0]
 
-    # fiber-tracts from .trk
+    # Streamlines from tractogram
     print( '\t- Tractogram' )
     
-    if (path_out is None):
-        ERROR( '"path_out" not defined' )
-
-    if (filename_trk is None and filename_tractogram is None):
-        ERROR( '"filename_tractogram" not defined' )
-
-    if (filename_trk is not None and filename_tractogram is not None):
-        WARNING('"filename_trk" will not be considered, "filename_tractogram" will be used')
-
-    if (filename_trk is not None and filename_tractogram is None):
-        filename_tractogram = filename_trk
-        WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
-    
     extension = splitext(filename_tractogram)[1]
-    if (extension != ".trk" and extension != ".tck") :
+    if extension != ".trk" and extension != ".tck":
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
     try :
         hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
     except :
         ERROR( 'Tractogram file not found' )
         
-    if (extension == ".trk"):
+    if extension == ".trk":
         Nx = hdr['dimensions'][0]
         Ny = hdr['dimensions'][1]
         Nz = hdr['dimensions'][2]
@@ -246,7 +271,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         n_scalars = hdr['nb_scalars_per_point']
         n_properties = hdr['nb_properties_per_streamline']
 
-    if (extension == ".tck"):
+    if extension == ".tck":
         if TCK_ref_image is None:
             if filename_peaks is not None:
                 TCK_ref_image = filename_peaks
@@ -277,7 +302,7 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         ERROR( 'The max dim size is 2^16 voxels' )
     
     # get the affine matrix
-    if (extension == ".tck"):
+    if extension == ".tck":
         scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
         M = nii_hdr.get_best_affine()
 
@@ -347,45 +372,39 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         ptrPEAKS = NULL
         ptrAFFINE = NULL
 
-    # output path
-    print( '\t- Output written to "%s"' % path_out )
-    if not exists( path_out ):
-        makedirs( path_out )
-
-    # write dictionary info file
-    with open( filename, 'wb+' ) as dictionary_info_file:
+    # write dictionary information info file
+    dictionary_info = {}
+    dictionary_info['filename_tractogram'] = filename_tractogram
+    dictionary_info['TCK_ref_image'] = TCK_ref_image
+    dictionary_info['path_out'] = path_out
+    dictionary_info['filename_peaks'] = filename_peaks
+    dictionary_info['filename_mask'] = filename_mask
+    dictionary_info['do_intersect'] = do_intersect
+    dictionary_info['fiber_shift'] = fiber_shift
+    dictionary_info['min_seg_len'] = min_seg_len
+    dictionary_info['min_fiber_len'] = min_fiber_len
+    dictionary_info['max_fiber_len'] = max_fiber_len
+    dictionary_info['points_to_skip'] = points_to_skip
+    dictionary_info['vf_THR'] = vf_THR
+    dictionary_info['peaks_use_affine'] = peaks_use_affine
+    dictionary_info['flip_peaks'] = flip_peaks
+    dictionary_info['blur_radii'] = blur_radii
+    dictionary_info['blur_samples'] = blur_samples
+    dictionary_info['blur_sigma'] = blur_sigma    
+    dictionary_info['ndirs'] = ndirs
+    with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
     # calling actual C code
     ret = trk2dictionary( filename_tractogram, data_offset,
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
-        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len, min_fiber_len,
+        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
         nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM, ndirs, ptrHashTable  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
-
-    # create new TRK with only fibers in the WM mask
-    # create new dictionaty file (TRK or TCK) with only fibers in the WM mask
-    if gen_trk :
-        LOG('\n   * Generate tractogram matching the dictionary:')
-        fib = nibabel.streamlines.load( filename_tractogram, lazy_load=True )
-        hdr = fib.header
-
-        file_kept = np.fromfile( join(path_out,'dictionary_TRK_kept.dict'), dtype=np.bool_ )
-        streamlines_out = []
-        for i, f in enumerate(fib.streamlines):
-            if file_kept[i] :
-                streamlines_out.append( f )
-        hdr['count'] = len(streamlines_out) #set new number of fibers in the header
-        hdr['nb_streamlines'] = len(streamlines_out)
-
-        #create a output dictionary file (TRK or TCK) in path_out
-        tractogram_out = nibabel.streamlines.tractogram.Tractogram(streamlines=streamlines_out, affine_to_rasmm=fib.tractogram.affine_to_rasmm)
-        nibabel.streamlines.save( tractogram_out, join(path_out,'dictionary_TRK_fibers'+extension), header=hdr )
-        print( '     [ %d fibers kept ]' % np.count_nonzero( file_kept ) )
 
     # save TDI and MASK maps
     if filename_mask is not None :
@@ -396,60 +415,16 @@ cpdef run( filename_tractogram = None, path_out = None, filename_peaks = None, f
         affine = np.diag( [Px, Py, Pz, 1] )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img, affine )
+    nii_hdr = niiTDI.header if nibabel.__version__ >= '2.0.0' else niiTDI.get_header()
+    nii_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
 
     if filename_mask is not None :
         niiMASK = nibabel.Nifti1Image( niiMASK_img, affine )
     else :
         niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), affine )
+    nii_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
+    nii_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     LOG( '\n   [ %.1f seconds ]' % ( time.time() - tic ) )
-
-
-cpdef convert_old_dictionary( path ):
-    """Perform the conversion of the files representing a dictionary, i.e. dictionary_*.dict,
-    from the old format to the new one, where the files *_{vx,vy,vz}.dict are replaced
-    by a single file *_v.dict (same for the files *_{ox,oy}.dict).
-
-    Parameters
-    ----------
-    path : string
-        Path to the folder containing the dictionary_*.dict files.
-    """
-    if not exists( join(path,'dictionary_IC_vx.dict') ):
-        ERROR( 'Folder does not contain dictionary files in the old format' )
-
-    niiTDI = nibabel.load( join(path,'dictionary_tdi.nii.gz') )
-    Nx, Ny, Nz = niiTDI.shape[:3]
-    x = np.fromfile( join(path,'dictionary_IC_vx.dict'), dtype=np.uint16 ).astype(np.uint32)
-    y = np.fromfile( join(path,'dictionary_IC_vy.dict'), dtype=np.uint16 ).astype(np.uint32)
-    z = np.fromfile( join(path,'dictionary_IC_vz.dict'), dtype=np.uint16 ).astype(np.uint32)
-    v = x + Nx * ( y + Ny * z )
-    v.tofile( join(path,'dictionary_IC_v.dict') )
-    remove( join(path,'dictionary_IC_vx.dict') )
-    remove( join(path,'dictionary_IC_vy.dict') )
-    remove( join(path,'dictionary_IC_vz.dict') )
-
-    x = np.fromfile( join(path,'dictionary_EC_vx.dict'), dtype=np.uint8 ).astype(np.uint32)
-    y = np.fromfile( join(path,'dictionary_EC_vy.dict'), dtype=np.uint8 ).astype(np.uint32)
-    z = np.fromfile( join(path,'dictionary_EC_vz.dict'), dtype=np.uint8 ).astype(np.uint32)
-    v = x + Nx * ( y + Ny * z )
-    v.tofile( join(path,'dictionary_EC_v.dict') )
-    remove( join(path,'dictionary_EC_vx.dict') )
-    remove( join(path,'dictionary_EC_vy.dict') )
-    remove( join(path,'dictionary_EC_vz.dict') )
-
-    x = np.fromfile( join(path,'dictionary_IC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
-    y = np.fromfile( join(path,'dictionary_IC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
-    v = y + 181 * x
-    v.tofile( join(path,'dictionary_IC_o.dict') )
-    remove( join(path,'dictionary_IC_ox.dict') )
-    remove( join(path,'dictionary_IC_oy.dict') )
-
-    x = np.fromfile( join(path,'dictionary_EC_ox.dict'), dtype=np.uint8 ).astype(np.uint16)
-    y = np.fromfile( join(path,'dictionary_EC_oy.dict'), dtype=np.uint8 ).astype(np.uint16)
-    v = y + 181 * x
-    v.tofile( join(path,'dictionary_EC_o.dict') )
-    remove( join(path,'dictionary_EC_ox.dict') )
-    remove( join(path,'dictionary_EC_oy.dict') )
