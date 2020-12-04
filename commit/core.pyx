@@ -676,8 +676,11 @@ cdef class Evaluation :
         config.nEC        = self.KERNELS['wmh'].shape[0]
         config.nISO       = self.KERNELS['iso'].shape[0]
         config.build_dir  = build_dir
-        if build_dir is not None and isdir(build_dir) and not len(listdir(build_dir)) == 0:
-            ERROR( '\nbuild_dir is not empty, unsafe build option.' )
+        if build_dir is not None:
+            if isdir(build_dir) and not len(listdir(build_dir)) == 0:
+                ERROR( '\nbuild_dir is not empty, unsafe build option.' )
+            else:
+                WARNING( '\nUsing build_dir, always quit your python console between COMMIT Evaluation.' )
 
         pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
