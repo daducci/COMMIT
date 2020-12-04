@@ -9,7 +9,7 @@ import time
 import glob
 import sys
 from os import makedirs, remove, getcwd, listdir
-from os.path import exists, join as pjoin, isfile
+from os.path import exists, join as pjoin, isfile, isdir
 import nibabel
 import pickle
 import commit.models
@@ -676,7 +676,7 @@ cdef class Evaluation :
         config.nEC        = self.KERNELS['wmh'].shape[0]
         config.nISO       = self.KERNELS['iso'].shape[0]
         config.build_dir  = build_dir
-        if not len(listdir(build_dir)) == 0:
+        if build_dir is not None and isdir(build_dir) and not len(listdir(build_dir)) == 0:
             ERROR( '\nbuild_dir is not empty, unsafe build option.' )
 
         pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
