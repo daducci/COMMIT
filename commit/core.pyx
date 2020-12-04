@@ -8,7 +8,7 @@ cimport numpy as np
 import time
 import glob
 import sys
-from os import makedirs, remove, getcwd
+from os import makedirs, remove, getcwd, listdir
 from os.path import exists, join as pjoin, isfile
 import nibabel
 import pickle
@@ -650,6 +650,8 @@ cdef class Evaluation :
         build_dir : string
             The folder in which to store the compiled files. If None, they will end up
             in the .pyxbld directory in the user’s home directory (default : None)
+            It is recommanded to always use temporary directory and to delete content
+            between each build.
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
@@ -673,6 +675,9 @@ cdef class Evaluation :
         config.nIC        = self.KERNELS['wmr'].shape[0]
         config.nEC        = self.KERNELS['wmh'].shape[0]
         config.nISO       = self.KERNELS['iso'].shape[0]
+        config.build_dir  = build_dir
+        if not len(listdir(build_dir)) == 0:
+            ERROR( '\nbuild_dir is not empty, unsafe build option.' )
 
         pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
