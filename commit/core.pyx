@@ -718,10 +718,10 @@ cdef class Evaluation :
             how to properly define the wanted mathematical formulation
             ( default : None )
         confidence_map_filename : 
-            Path to the NIFTI file containing a confidence map, 
+            Path to the NIFTI file containing a confidence map on the data, 
             relative to the subject folder. The file can be 3D or 4D in 
             the same space as the dwi_filename used (dim and voxel size).
-            It should have float values between [0.0,1.0]. 
+            It should contain float values between [0.0,1.0]. 
             (default : None)
 
         """
@@ -754,6 +754,10 @@ cdef class Evaluation :
             self.set_config('confidence_map_filename', confidence_map_filename)
             confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
             self.confidence_map_img = confidence_map.get_data().astype(np.float64)
+
+            if confidence_map_img.ndim not in [3,4]:
+                ERROR( 'Confidence map must be 3D or 4D dataset' )
+
             if self.confidence_map_img.ndim == 3 :
                 self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
             hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
@@ -762,14 +766,13 @@ cdef class Evaluation :
             print( '\t\t- dim    : %d x %d x %d x %d' % self.confidence_map_img.shape )
             print( '\t\t- pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim )
 
-
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
             
             if ( self.get_config('dim') != confidence_map_dim ):
                 ERROR( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
 
             if (self.get_config('pixdim') != confidence_map_pixdim ):
-                ERROR( 'Dataset does not have the same geometry (voxel size) as the tractogram' )
+                ERROR( 'Dataset does not have the same geometry (voxel size) as the DWI signal' )
             
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
@@ -778,8 +781,6 @@ cdef class Evaluation :
 
             if (confidence_array.min() < 0. or confidence_array.max() > 1.):
                 ERROR( 'Confidence map must be between 0. and 1.' )
-
-           
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
@@ -931,8 +932,6 @@ cdef class Evaluation :
         niiMAP_hdr['cal_max'] = 1
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
-
-
         
         if self.confidence_map_img is not None:
             confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
@@ -943,7 +942,7 @@ cdef class Evaluation :
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = tmp.max()
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE_conf.nii.gz') )
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE_adjusted.nii.gz') )
             print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
 
             print( '\t\t- NRMSE considering the confidence map... ', end='' )
@@ -956,10 +955,8 @@ cdef class Evaluation :
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = 1
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE_conf.nii.gz') )
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE_adjusted.nii.gz') )
             print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
-
-
 
         # Map of compartment contributions
         print( '\t* Voxelwise contributions:' )
