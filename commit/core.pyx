@@ -34,7 +34,7 @@ def setup( lmax=12, ndirs=32761 ) :
     """
 
     if not amico.lut.is_valid(ndirs):
-        ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+        ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
 
     amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
@@ -240,7 +240,7 @@ cdef class Evaluation :
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
         """
         if not amico.lut.is_valid(ndirs):
-            ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+            ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
         if self.scheme is None :
             ERROR( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :

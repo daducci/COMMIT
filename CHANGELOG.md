@@ -3,10 +3,14 @@
 All notable changes to COMMIT will be documented in this file.
 
 
-## [1.5.0] - 2020-10-23
+## [1.4.5] - 2020-10-23
 
 ### Added
 - Added the possibility to specify a voxel confidence map
+## [1.4.4] - 2020-10-28
+ 
+### Changed
+- Option to set one single direction in the resolution of the LUT
 
 ## [1.4.3] - 2020-10-22
 
@@ -107,6 +111,7 @@ All notable changes to COMMIT will be documented in this file.
 ### Fixed
 - Minor cleanup.
 
+
 ## [1.3.2] - 2020-03-27
 
 ### Added
@@ -115,10 +120,12 @@ All notable changes to COMMIT will be documented in this file.
 ### Fixed
 - Bug while saving coefficients in save_results.
 
+
 ## [1.3.1] - 2020-03-27
 
 ### Fixed
 - Improved the loading of the streamlines in trk2dictionary
+
 
 ## [1.3] - 2019-10-30
 
