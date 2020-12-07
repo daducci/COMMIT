@@ -266,6 +266,7 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
 
    
     return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
+    # return fista2( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, None)
 
 def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, confidence_array) :
     """
@@ -378,6 +379,167 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
         xarr = np.asarray(x)
 
         grad = np.asarray(At.dot(sqrt_W * res))
+
+        # Update variables
+        iter += 1
+        prev_obj = curr_obj
+        prev_x = x.copy()
+        told = t
+        qfval = 0.5 * np.linalg.norm(res)**2
+
+
+    if verbose >= 1 :
+        print( "< Stopping criterion: %s >" % criterion )
+
+    opt_details = {}
+    opt_details['residual'] = 0.5*res_norm**2
+    opt_details['regterm'] = reg_term_x
+    opt_details['cost_function'] = curr_obj
+    opt_details['abs_cost'] = abs_obj
+    opt_details['rel_cost'] = rel_obj
+    opt_details['abs_x'] = abs_x
+    opt_details['rel _x'] = rel_x
+    opt_details['iterations'] = iter
+    opt_details['stopping_criterion'] = criterion
+
+    return x, opt_details
+
+
+def fista2( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, confidence_array) :
+    """
+    Solve the regularised least squares problem
+
+        argmin_x 0.5*|| sqrt(W) ( Ax-y ) ||_2^2 + Omega(x)
+
+    with the FISTA algorithm described in [1].
+
+    The penalty term and its proximal operator must be defined in such a way
+    that they already contain the regularisation parameter.
+
+    References:
+        [1] Beck & Teboulle - `A Fast Iterative Shrinkage Thresholding
+            Algorithm for Linear Inverse Problems`
+    """
+
+    # Initialization
+    if confidence_array is not None:
+        sqrt_W = np.sqrt(confidence_array)
+    else:
+        sqrt_W = None
+    xhat = x0.copy()
+    x = np.zeros_like(xhat)
+    if sqrt_W is not None:
+        res = sqrt_W * (A.dot(xhat) - y.copy()) 
+    else:
+        res = A.dot(xhat) - y.copy() 
+
+    proximal( xhat )
+    reg_term = omega( xhat )
+    prev_obj = 0.5 * np.linalg.norm(res)**2 + reg_term
+
+    told = 1
+    beta = 0.9
+    prev_x = xhat.copy()
+    if sqrt_W is not None:
+        grad = np.asarray(At.dot(sqrt_W * res))
+    else:
+        grad = np.asarray(At.dot(res))
+    qfval = prev_obj
+
+    # Step size computation
+    if sqrt_W is not None:
+        L = ( np.linalg.norm( sqrt_W * A.dot(grad) ) / np.linalg.norm(grad) )**2
+    else:    
+        L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
+    mu = 1.9 / L
+
+    # Main loop
+    if verbose >= 1 :
+        print()
+        print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
+        print( "------|--------------------------------|-----------------------------------------------|------------------------------" )
+    iter = 1
+    while True :
+        if verbose >= 1 :
+            print( "%4d  |" % iter, end="" )
+            sys.stdout.flush()
+
+        # Smooth step
+        x = xhat - mu*grad
+
+        # Non-smooth step
+        proximal( x )
+        reg_term_x = omega( x )
+
+        # Check stepsize
+        tmp = x-xhat
+        q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
+        if sqrt_W is not None:
+            res = sqrt_W * ( A.dot(x) - y )
+        else:
+            res = A.dot(x) - y
+        res_norm = np.linalg.norm(res)
+        curr_obj = 0.5 * res_norm**2 + reg_term_x
+
+        # Backtracking
+        while curr_obj > q :
+            # Smooth step
+            mu = beta*mu
+            x = xhat - mu*grad
+
+            # Non-smooth step
+            proximal( x )
+            reg_term_x = omega( x )
+
+            # Check stepsize
+            tmp = x-xhat
+            q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
+            if sqrt_W is not None:
+                res = sqrt_W * ( A.dot(x) - y )
+            else:
+                res = A.dot(x) - y
+            res_norm = np.linalg.norm(res)
+            curr_obj = 0.5 * res_norm**2 + reg_term_x
+
+        # Global stopping criterion
+        abs_obj = abs(curr_obj - prev_obj)
+        rel_obj = abs_obj / curr_obj
+        abs_x   = np.linalg.norm(x - prev_x)
+        rel_x   = abs_x / ( np.linalg.norm(x) + eps )
+        if verbose >= 1 :
+            print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
+
+        if abs_obj < eps :
+            criterion = "Absolute tolerance on the objective"
+            break
+        elif rel_obj < tol_fun :
+            criterion = "Relative tolerance on the objective"
+            break
+        elif abs_x < eps :
+            criterion = "Absolute tolerance on the unknown"
+            break
+        elif rel_x < tol_x :
+            criterion = "Relative tolerance on the unknown"
+            break
+        elif iter >= max_iter :
+            criterion = "Maximum number of iterations"
+            break
+
+        # FISTA update
+        t = 0.5 * ( 1 + sqrt(1+4*told**2) )
+        xhat = x + (told-1)/t * (x - prev_x)
+
+        # Gradient computation
+        if sqrt_W is not None:
+            res = sqrt_W * ( A.dot(xhat) - y )
+        else:
+            res = A.dot(xhat) - y
+        xarr = np.asarray(x)
+
+        if sqrt_W is not None:
+            grad = np.asarray(At.dot(sqrt_W * res))
+        else:
+            grad = np.asarray(At.dot(res))
 
         # Update variables
         iter += 1

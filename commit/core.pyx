@@ -772,6 +772,7 @@ cdef class Evaluation :
 
         if confidence_map_filename is None:
             confidence_array = np.array(1.0)
+            # confidence_array = self.get_y() * 0. + 1.
 
         else:
             # Loading confidence map
