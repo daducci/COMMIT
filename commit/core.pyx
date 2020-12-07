@@ -785,7 +785,7 @@ cdef class Evaluation :
             confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
             self.confidence_map_img = confidence_map.get_data().astype(np.float64)
 
-            if confidence_map_img.ndim not in [3,4]:
+            if self.confidence_map_img.ndim not in [3,4]:
                 ERROR( 'Confidence map must be 3D or 4D dataset' )
 
             if self.confidence_map_img.ndim == 3 :
