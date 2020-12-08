@@ -2,11 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-
-## [1.4.5] - 2020-10-23
+## [1.5.0] - 2020-10-23
 
 ### Added
 - Added the possibility to specify a voxel confidence map
+
 ## [1.4.4] - 2020-10-28
  
 ### Changed
