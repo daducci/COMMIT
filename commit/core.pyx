@@ -766,15 +766,12 @@ cdef class Evaluation :
         if self.A is None :
             ERROR( 'Operator not built; call "build_operator()" first' )
         
-        # Confidence map.
+        # Confidence map
         self.confidence_map_img = None
         self.set_config('confidence_map_filename', None)
+        confidence_array = None
 
-        if confidence_map_filename is None:
-            confidence_array = np.array(1.0)
-            # confidence_array = self.get_y() * 0. + 1.
-
-        else:
+        if confidence_map_filename is not None:
             # Loading confidence map
             tic = time.time()
             LOG( '\n-> Loading confidence map:' )
@@ -789,7 +786,8 @@ cdef class Evaluation :
             if self.confidence_map_img.ndim not in [3,4]:
                 ERROR( 'Confidence map must be 3D or 4D dataset' )
 
-            if self.confidence_map_img.ndim == 3 :
+            if self.confidence_map_img.ndim == 3:
+                print( '\t* Extending the confidence map volume to match the DWI signal volume(s)... ' )                
                 self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
             hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
             confidence_map_dim = self.confidence_map_img.shape[0:3]
