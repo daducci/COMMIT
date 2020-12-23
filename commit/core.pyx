@@ -648,10 +648,10 @@ cdef class Evaluation :
         Parameters
         ----------
         build_dir : string
-            The folder in which to store the compiled files. If None, they will end up
-            in the .pyxbld directory in the user’s home directory (default : None)
-            It is recommanded to always use temporary directory and to delete content
-            between each build.
+            The folder in which to store the compiled files. 
+            If None (default), they will end up in the .pyxbld directory in the user’s home directory.
+            If using this option, it is recommended to use a temporary directory, quit your python 
+                console between each build, and delete the content of the temporary directory.
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
