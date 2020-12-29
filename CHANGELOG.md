@@ -13,6 +13,7 @@ All notable changes to COMMIT will be documented in this file.
 ### Changed
 - core.pyx: The function build_operator checks if the LUT configuration 
             changed before build a new operator
+- trk2dictionary.run(): removed 'points_to_skip' option
 
 ## [1.4.4] - 2020-10-28
  

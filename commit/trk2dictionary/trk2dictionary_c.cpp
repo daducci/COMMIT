@@ -58,7 +58,6 @@ float                   FiberLen;
 Vector<int>     dim;
 Vector<float>   pixdim;
 float*          ptrMASK;
-unsigned int    nPointsToSkip;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
 float           minSegLen, minFiberLen, maxFiberLen;
@@ -81,7 +80,7 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine
 // =========================
 int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
-    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len, float max_fiber_len,
+    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
@@ -124,7 +123,6 @@ int trk2dictionary(
     // set global variables
     dim.Set( Nx, Ny, Nz );
     pixdim.Set( Px, Py, Pz );
-    nPointsToSkip = points_to_skip;
     fiberShiftXmm = fiber_shiftX * pixdim.x; // shift in mm for the coordinates
     fiberShiftYmm = fiber_shiftY * pixdim.y;
     fiberShiftZmm = fiber_shiftZ * pixdim.z;
@@ -341,10 +339,10 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
 
     FiberLen = 0.0;
     FiberSegments.clear();
-    if ( pts <= 2*nPointsToSkip )
+    if ( pts <= 2 )
         return;
 
-    for(i=nPointsToSkip; i<pts-1-nPointsToSkip ;i++)
+    for(i=0; i<pts-1 ;i++)
     {
         // original segment to be processed
         S1.Set( fiber[0][i]   + fiberShiftXmm, fiber[1][i]   + fiberShiftYmm, fiber[2][i]   + fiberShiftZmm );
