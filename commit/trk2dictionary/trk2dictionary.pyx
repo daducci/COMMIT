@@ -127,11 +127,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # check for invalid parameters in the blur
     if type(blur_radii)==list:
         blur_radii = np.array(blur_radii, np.double)
-    else:
+    elif type(blur_radii)!=np.ndarray:
         ERROR( '"blur_radii" must be a list of floats' )
     if type(blur_samples)==list:
         blur_samples = np.array(blur_samples, np.int32)
-    else:
+    elif type(blur_samples)!=np.ndarray:
         ERROR( '"blur_samples" must be a list of integers' )
 
     if blur_sigma > 0 :

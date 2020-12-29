@@ -6,6 +6,8 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Fixed
 - operator.pyxbld: Changed the condition to create a new operator
+- trk2dictionary.run(): fixed bug in computing the blur
+- trk2dictionary.run(): fixed bug with blur parameters
 
 ### Added
 - core.pyx: Add to the function build_operator the parameter build_dir
