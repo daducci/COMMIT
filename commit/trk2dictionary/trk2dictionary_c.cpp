@@ -346,7 +346,9 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
         return;
 
     // create duplicate points on circles
-    S1.Set( fiber[0][0]+fiberShiftXmm, fiber[1][0]+fiberShiftYmm, fiber[2][0]+fiberShiftZmm );
+    S1.x = fiber[0][0]+fiberShiftXmm;
+    S1.y = fiber[1][0]+fiberShiftYmm;
+    S1.z = fiber[2][0]+fiberShiftZmm;
     dir2.x = (fiber[0][1]+fiberShiftXmm) - S1.x;
     dir2.y = (fiber[1][1]+fiberShiftYmm) - S1.y;
     dir2.z = (fiber[2][1]+fiberShiftZmm) - S1.z;
@@ -355,8 +357,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
     n.y = dir2.z-dir2.x;
     n.z = dir2.x-dir2.y;
     n.Normalize();
-    i = 0;
-    for(k=0; k<(int)radii.size() ;k++)
+    for(i=0, k=0; k<(int)radii.size() ;k++)
     {
         // quaternion (q.x, q.y, q.z, w) for rotation
         alpha = 2.0*M_PI/sectors[k];
@@ -393,7 +394,9 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
     {
         /* get the intersection plane */
         // S2 = point on plane
-        S2.Set( fiber[0][i]+fiberShiftXmm, fiber[1][i]+fiberShiftYmm, fiber[2][i]+fiberShiftZmm );
+        S2.x = fiber[0][i]+fiberShiftXmm;
+        S2.y = fiber[1][i]+fiberShiftYmm;
+        S2.z = fiber[2][i]+fiberShiftZmm;
 
         // n = normal to plane
         dir1.x = S2.x - (fiber[0][i-1]+fiberShiftXmm);
@@ -422,15 +425,16 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
         n.z /= dot;
 
         /* translate points */
-        kk = 0;
-        for(k=0; k<(int)radii.size() ;k++)
+        for(kk=0, k=0; k<(int)radii.size() ;k++)
         {
-            if ( weights[k] < 1e-3 )
-                continue;
-
             for(j=0; j<sectors[k]; j++, kk++)
             {
-                P_old.Set(P[kk].x, P[kk].y, P[kk].z);
+                if ( weights[k] < 1e-3 )
+                    continue;
+
+                P_old.x = P[kk].x;
+                P_old.y = P[kk].y;
+                P_old.z = P[kk].z;
                 len = (S2.x-P_old.x)*n.x + (S2.y-P_old.y)*n.y + (S2.z-P_old.z)*n.z;
                 if ( len>0 )
                 {
@@ -443,8 +447,12 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                         segmentForwardModel( P_old, P[kk], k, weights[k], ptrHashTable );
                     else
                     {
-                        S1m.Set( P_old.x, P_old.y, P_old.z );
-                        S2m.Set( P[kk].x, P[kk].y, P[kk].z );
+                        S1m.x = P_old.x;
+                        S1m.y = P_old.y;
+                        S1m.z = P_old.z;
+                        S2m.x = P[kk].x;
+                        S2m.y = P[kk].y;
+                        S2m.z = P[kk].z;
                         while( 1 )
                         {
                             len = sqrt( pow(S2m.x-S1m.x,2) + pow(S2m.y-S1m.y,2) + pow(S2m.z-S1m.z,2) ); // in mm
@@ -472,9 +480,13 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                             if ( rayBoxIntersection( S1m, dir1, vmin, vmax, t ) && t>0 && t<len )
                             {
                                 // add the portion S1P, and then reiterate
-                                P_int.Set( S1m.x + t*dir1.x, S1m.y + t*dir1.y, S1m.z + t*dir1.z );
+                                P_int.x = S1m.x + t*dir1.x;
+                                P_int.y = S1m.y + t*dir1.y;
+                                P_int.z = S1m.z + t*dir1.z;
                                 segmentForwardModel( S1m, P_int, k, weights[k], ptrHashTable );
-                                S1m.Set( P_int.x, P_int.y, P_int.z );
+                                S1m.x = P_int.x;
+                                S1m.y = P_int.y;
+                                S1m.z = P_int.z;
                             }
                             else
                             {
@@ -488,103 +500,6 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
             }
         }
     }
-
-    // for(i=0; i<pts-1 ;i++)
-    // {
-    //     // original segment to be processed
-    //     S1.Set( fiber[0][i]   + fiberShiftXmm, fiber[1][i]   + fiberShiftYmm, fiber[2][i]   + fiberShiftZmm );
-    //     S2.Set( fiber[0][i+1] + fiberShiftXmm, fiber[1][i+1] + fiberShiftYmm, fiber[2][i+1] + fiberShiftZmm );
-    //     dir.x = S2.x-S1.x;
-    //     dir.y = S2.y-S1.y;
-    //     dir.z = S2.z-S1.z;
-    //     dir.Normalize();
-
-    //     // get a normal to the vector to move
-    //     n.x = dir.y-dir.z;
-    //     n.y = dir.z-dir.x;
-    //     n.z = dir.x-dir.y;
-    //     n.Normalize();
-
-    //     /* assign contribution(s) */
-    //     for(k=0; k<(int)radii.size() ;k++)
-    //     {
-    //         if ( weights[k] < 1e-3 )
-    //             continue;
-
-    //         R = radii[k];
-
-    //         // quaternion (q.x, q.y, q.z, w) for rotation
-    //         alpha = 2.0*M_PI/sectors[k];
-    //         w = sin(alpha/2.0);
-    //         q.x = dir.x * w;
-    //         q.y = dir.y * w;
-    //         q.z = dir.z * w;
-    //         w = cos(alpha/2.0);
-    //         for(j=0; j<sectors[k] ;j++)
-    //         {
-    //             // rotate the segment's normal
-    //             qxn.x = 2.0 * ( q.y * n.z - q.z * n.y );
-    //             qxn.y = 2.0 * ( q.z * n.x - q.x * n.z );
-    //             qxn.z = 2.0 * ( q.x * n.y - q.y * n.x );
-    //             qxqxn.x = q.y * qxn.z - q.z * qxn.y;
-    //             qxqxn.y = q.z * qxn.x - q.x * qxn.z;
-    //             qxqxn.z = q.x * qxn.y - q.y * qxn.x;
-    //             n.x += w * qxn.x + qxqxn.x;
-    //             n.y += w * qxn.y + qxqxn.y;
-    //             n.z += w * qxn.z + qxqxn.z;
-
-    //             // move the segment
-    //             S1m.x = S1.x + R*n.x;
-    //             S1m.y = S1.y + R*n.y;
-    //             S1m.z = S1.z + R*n.z;
-    //             S2m.x = S2.x + R*n.x;
-    //             S2m.y = S2.y + R*n.y;
-    //             S2m.z = S2.z + R*n.z;
-
-    //             if ( doIntersect==false )
-    //                 segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
-    //             else
-    //                 while( 1 )
-    //                 {
-    //                     len = sqrt( pow(S2m.x-S1m.x,2) + pow(S2m.y-S1m.y,2) + pow(S2m.z-S1m.z,2) ); // in mm
-    //                     if ( len <= minSegLen )
-    //                         break;
-                        
-    //                     if ( floor(S1m.x/pixdim.x)==floor(S2m.x/pixdim.x) &&
-    //                          floor(S1m.y/pixdim.y)==floor(S2m.y/pixdim.y) &&
-    //                          floor(S1m.z/pixdim.z)==floor(S2m.z/pixdim.z)
-    //                         )
-    //                     {
-    //                         // same voxel, no need to compute intersections
-    //                         segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
-    //                         break;
-    //                     }
-
-    //                     // compute AABB of the first point (in mm)
-    //                     vmin.x = floor( (S1m.x + 1e-6*dir.x)/pixdim.x ) * pixdim.x;
-    //                     vmin.y = floor( (S1m.y + 1e-6*dir.y)/pixdim.y ) * pixdim.y;
-    //                     vmin.z = floor( (S1m.z + 1e-6*dir.z)/pixdim.z ) * pixdim.z;
-    //                     vmax.x = vmin.x + pixdim.x;
-    //                     vmax.y = vmin.y + pixdim.y;
-    //                     vmax.z = vmin.z + pixdim.z;
-
-    //                     if ( rayBoxIntersection( S1m, dir, vmin, vmax, t ) && t>0 && t<len )
-    //                     {
-    //                         // add the portion S1P, and then reiterate
-    //                         P.Set( S1m.x + t*dir.x, S1m.y + t*dir.y, S1m.z + t*dir.z );
-    //                         segmentForwardModel( S1m, P, k, weights[k], ptrHashTable );
-    //                         S1m.Set( P.x, P.y, P.z );
-    //                     }
-    //                     else
-    //                     {
-    //                         // add the segment S1S2 and stop iterating
-    //                         segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
-    //                         break;
-    //                     }
-    //                 }
-    //         }
-    //     }
-    // }
 }
 
 
