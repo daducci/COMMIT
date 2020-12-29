@@ -2,6 +2,18 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.5] - 2020-12-29
+
+### Fixed
+- operator.pyxbld: Changed the condition to create a new operator
+
+### Added
+- core.pyx: Add to the function build_operator the parameter build_dir
+
+### Changed
+- core.pyx: The function build_operator checks if the LUT configuration 
+            changed before build a new operator
+
 ## [1.4.4] - 2020-10-28
  
 ### Changed
