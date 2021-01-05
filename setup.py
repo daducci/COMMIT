@@ -104,24 +104,11 @@ def get_extensions():
                      extra_compile_args=['-w'],
                      language='c++')
 
-    """if CUDA != None:
-        ext4 = Extension(name='commit.cudaoperator',
-                        sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
-                        extra_compile_args= {'gcc':  ['-w'],
-                                            'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
-                        language = 'c++',
-                        library_dirs = [CUDA['lib64']],
-                        libraries = ['cudart'],
-                        runtime_library_dirs = [CUDA['lib64']])
-
-        return [ext1, ext2, ext3, ext4]"""
-
     return [ext1, ext2, ext3]
 
 def get_extensions_with_cuda():
     # Cython extension to create the sparse data structure from a tractogram
     # for the computation of matrix-vector multiplications
-    from numpy import get_include
 
     ext1 = Extension(name='commit.trk2dictionary',
                      sources=['commit/trk2dictionary/trk2dictionary.pyx'],
@@ -129,7 +116,6 @@ def get_extensions_with_cuda():
                                           'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
                      language='c++')
-                     #include_dirs = [get_include])
 
     ext2 = Extension(name='commit.core',
                      sources=['commit/core.pyx'],
@@ -137,7 +123,6 @@ def get_extensions_with_cuda():
                                           'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      extra_link_args=[],
                      language='c++')
-                     #include_dirs = [get_include])
 
     ext3 = Extension(name='commit.proximals',
                       sources=['commit/proximals.pyx'],
@@ -145,14 +130,12 @@ def get_extensions_with_cuda():
                                            'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                       extra_link_args=[],
                       language='c++')
-                      #include_dirs = [get_include])
 
     ext4 = Extension(name='commit.cudaoperator',
                      sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
                                           'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      language = 'c++',
-                     #include_dirs = [get_include, CUDA['include']],
                      library_dirs = [CUDA['lib64']],
                      libraries = ['cudart'],
                      runtime_library_dirs = [CUDA['lib64']])

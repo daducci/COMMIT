@@ -499,6 +499,9 @@ cdef class Evaluation :
         nthreads : integer
             Number of threads to use (nthreads = None ---> all the CPU threads available in the system
                                       nthreads = 0    ---> enable CUDA GPU acceleration)
+        select_gpu : integer
+            GPU ID of the Nvidia GPU where COMMIT will be executed, default=0 and it is only required if nthreads=0
+            (To show a list of Nvidia GPUs and their IDs, open a system shell and run the command 'nvidia-smi')
         """
         if nthreads is None :
             # Set to the number of CPUs in the system
@@ -509,7 +512,7 @@ cdef class Evaluation :
                 nthreads = 1
 
         if nthreads < 0 or nthreads > 255 :
-            raise RuntimeError( 'Number of threads must be between 0 and 255' )
+            ERROR( 'Number of threads must be between 0 and 255' )
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.KERNELS is None :
@@ -517,13 +520,8 @@ cdef class Evaluation :
 
         self.THREADS = {}
         self.THREADS['n'] = nthreads
-        self.THREADS['IC'] = None
-        self.THREADS['EC'] = None
-        self.THREADS['ISO'] = None
-        self.THREADS['ICt'] = None
-        self.THREADS['ECt'] = None
-        self.THREADS['ISOt'] = None
-        self.THREADS['GPUID'] = select_gpu
+        if nthreads == 0:
+            self.THREADS['GPUID'] = select_gpu
 
         cdef :
             long [:] C
@@ -533,12 +531,19 @@ cdef class Evaluation :
         tic = time.time()
 
         if nthreads > 0:
-            print( '\n-> Distributing workload to different threads:' )
+            LOG( '\n-> Distributing workload to different threads:' )
             print( '\t* number of threads : %d' % nthreads )
 
             # Distribute load for the computation of A*x product
-            print( '\t* A  operator... ', end="" )
+            print( '\t* A  operator... ', end='' )
             sys.stdout.flush()
+
+            self.THREADS['IC']   = None
+            self.THREADS['EC']   = None
+            self.THREADS['ISO']  = None
+            self.THREADS['ICt']  = None
+            self.THREADS['ECt']  = None
+            self.THREADS['ISOt'] = None
 
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['IC'] = np.zeros( nthreads+1, dtype=np.uint32 )
@@ -558,7 +563,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['IC'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    raise RuntimeError( 'Too many threads for the IC compartments to evaluate; try decreasing the number.' )
+                    ERROR( 'Too many threads for the IC compartments to evaluate; try decreasing the number.' )
 
             if self.DICTIONARY['EC']['nE'] > 0 :
                 self.THREADS['EC'] = np.zeros( nthreads+1, dtype=np.uint32 )
@@ -569,7 +574,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    raise RuntimeError( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
+                    ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
 
             if self.DICTIONARY['nV'] > 0 :
                 self.THREADS['ISO'] = np.zeros( nthreads+1, dtype=np.uint32 )
@@ -580,7 +585,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
+                    ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
 
             print( '[ OK ]' )
 
@@ -617,7 +622,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    raise RuntimeError( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
+                    ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number.' )
 
             if self.DICTIONARY['nV'] > 0 :
                 self.THREADS['ISOt'] = np.zeros( nthreads+1, dtype=np.uint32 )
@@ -629,7 +634,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    raise RuntimeError( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
+                    ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number.' )
 
             print( '[ OK ]' )
 
