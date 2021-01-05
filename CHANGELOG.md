@@ -1,6 +1,13 @@
-
 # Change Log
 All notable changes to COMMIT will be documented in this file.
+
+## [1.5.0] - 2021-01-04
+
+### Changed
+- setup.py: Add compilation for .cu files
+
+### Added
+- GPU acceleration with CUDA for faster model fitting
 
 ## [1.4.5] - 2020-12-29
 
