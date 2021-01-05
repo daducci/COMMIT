@@ -8,8 +8,8 @@ cimport numpy as np
 import time
 import glob
 import sys
-from os import makedirs, remove, getcwd
-from os.path import exists, join as pjoin, isfile
+from os import makedirs, remove, getcwd, listdir
+from os.path import exists, join as pjoin, isfile, isdir
 import nibabel
 import pickle
 import commit.models
@@ -17,11 +17,12 @@ import commit.solvers
 import amico.scheme
 import amico.lut
 import pyximport
+from pkg_resources import get_distribution
 
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
-def setup( lmax = 12, ndirs = 32761 ) :
+def setup( lmax=12, ndirs=32761 ) :
     """General setup/initialization of the COMMIT framework.
     
     Parameters
@@ -33,11 +34,12 @@ def setup( lmax = 12, ndirs = 32761 ) :
     """
 
     if not amico.lut.is_valid(ndirs):
-        ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+        ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
 
     amico.lut.precompute_rotation_matrices( lmax, ndirs )
 
-def load_dictionary_info(filename):
+
+def load_dictionary_info( filename ):
     """Function to load dictionary info file
     
     Parameters
@@ -57,6 +59,7 @@ def load_dictionary_info(filename):
             return result_aux
         else:
             return pickle.load( dictionary_info_file )
+
 
 cdef class Evaluation :
     """Class to hold all the information (data and parameters) when performing an
@@ -94,6 +97,7 @@ cdef class Evaluation :
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
+        self.set_config('version', get_distribution('dmri-commit').version)
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
         self.set_config('DATA_path', pjoin( study_path, subject ))
@@ -105,15 +109,15 @@ cdef class Evaluation :
         self.set_config('doNormalizeMaps', False)
 
 
-
     def set_config( self, key, value ) :
         self.CONFIG[ key ] = value
+
 
     def get_config( self, key ) :
         return self.CONFIG.get( key )
 
 
-    def load_data( self, dwi_filename = 'DWI.nii', scheme_filename = 'DWI.scheme', b0_thr = 0 ) :
+    def load_data( self, dwi_filename='DWI.nii', scheme_filename='DWI.scheme', b0_thr=0, b0_min_signal=0 ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
@@ -124,6 +128,8 @@ cdef class Evaluation :
             The file name of the corresponding acquisition scheme (default : 'DWI.scheme')
         b0_thr : float
             The threshold below which a b-value is considered a b0 (default : 0)
+        b0_min_signal : float
+            Crop to zero the signal in voxels where the b0 <= b0_min_signal * mean(b0[b0>0]) (default : 0)
         """
 
         # Loading data and acquisition scheme
@@ -139,8 +145,9 @@ cdef class Evaluation :
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
         self.set_config('dim', self.niiDWI_img.shape[0:3])
         self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
-        print( '\t\t- dim    = %d x %d x %d x %d' % self.niiDWI_img.shape )
-        print( '\t\t- pixdim = %.3f x %.3f x %.3f' % self.get_config('pixdim') )
+        print( '\t\t- dim    : %d x %d x %d x %d' % self.niiDWI_img.shape )
+        print( '\t\t- pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim') )
+        print( '\t\t- values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
 
         print( '\t* Acquisition scheme:' )
         self.set_config('scheme_filename', scheme_filename)
@@ -168,22 +175,24 @@ cdef class Evaluation :
             if self.scheme.b0_count > 0 :
                 print( '\t* Normalizing to b0... ', end='' )
                 sys.stdout.flush()
-                mean = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
-                idx = mean <= 0
-                mean[ idx ] = 1
-                mean = 1 / mean
-                mean[ idx ] = 0
+                b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
+                idx = b0 <= b0_min_signal * b0[b0>0].mean()
+                b0[ idx ] = 1
+                b0 = 1.0 / b0
+                b0[ idx ] = 0
                 for i in xrange(self.scheme.nS) :
-                    self.niiDWI_img[:,:,:,i] *= mean
+                    self.niiDWI_img[:,:,:,i] *= b0
+                print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
+                del idx, b0
             else :
-                print( '\t* There are no b0 volume(s) for normalization...', end='' )
-            print( '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() ) )
+                WARNING( 'There are no b0 volumes for normalization' )
 
         if self.scheme.b0_count > 1 :
             if self.get_config('doMergeB0') :
                 print( '\t* Merging multiple b0 volume(s)... ', end='' )
                 mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                 self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
+                del mean
             else :
                 print( '\t* Keeping all b0 volume(s)... ', end='' )
             print( '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
@@ -193,7 +202,7 @@ cdef class Evaluation :
             sys.stdout.flush()
             mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
             self.niiDWI_img = self.niiDWI_img - mean
-            print( '[ min=%.2f,  mean=%.2f, max=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.mean(), self.niiDWI_img.max() ) )
+            print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -215,7 +224,7 @@ cdef class Evaluation :
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
 
-    def generate_kernels( self, regenerate = False, lmax = 12, ndirs = 32761 ) :
+    def generate_kernels( self, regenerate=False, lmax=12, ndirs=32761 ) :
         """Generate the high-resolution response functions for each compartment.
         Dispatch to the proper function, depending on the model.
 
@@ -229,7 +238,7 @@ cdef class Evaluation :
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
         """
         if not amico.lut.is_valid(ndirs):
-            ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+            ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
         if self.scheme is None :
             ERROR( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
@@ -238,6 +247,7 @@ cdef class Evaluation :
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
+        self.set_config('model', self.model.get_params())
         self.model.scheme = self.scheme
 
         LOG( '\n-> Simulating with "%s" model:' % self.model.name )
@@ -334,19 +344,18 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    cpdef load_dictionary( self, path, use_mask = False ) :
+    cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
         ----------
         path : string
             Folder containing the output of the trk2dictionary script (relative to subject path)
-        use_mask : boolean
+        use_all_voxels_in_mask : boolean
             If False (default) the optimization will be conducted only on the voxels actually
-            traversed by tracts. If True, the mask specified in trk2dictionary
-            (i.e. "filename_mask" paramater) will be used instead.
-            NB: if no mask was specified in trk2dictionary, the "tdi" and
-            "mask" masks are equivalent and this parameter is not influent.
+            traversed by tracts. If True, then all voxels present in the mask specified in 
+            trk2dictionary.run(), i.e. "filename_mask" parameter, will be used instead.
+            NB: if no mask was specified in trk2dictionary, this parameter is irrelevant.
         """
         if self.niiDWI is None :
             ERROR( 'Data not loaded; call "load_data()" first' )
@@ -356,8 +365,14 @@ cdef class Evaluation :
         self.DICTIONARY = {}
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
+        # check that ndirs of dictionary matches with that of the kernels
+        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
+        if dictionary_info['ndirs'] != self.get_config('ndirs'):
+            ERROR( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
+        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
+
         # load mask
-        self.set_config('dictionary_mask', 'mask' if use_mask else 'tdi' )
+        self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
         mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_%s.nii'%self.get_config('dictionary_mask'))
         if not exists( mask_filename ) :
             mask_filename += '.gz'
@@ -371,7 +386,7 @@ cdef class Evaluation :
              abs(self.get_config('pixdim')[0]-niiMASK_hdr['pixdim'][1])>1e-3 or
              abs(self.get_config('pixdim')[1]-niiMASK_hdr['pixdim'][2])>1e-3 or
              abs(self.get_config('pixdim')[2]-niiMASK_hdr['pixdim'][3])>1e-3 ) :
-            print( '  [WARNING] dictionary does not have the same geometry as the dataset' )
+            WARNING( 'Dictionary does not have the same geometry as the dataset' )
         self.DICTIONARY['MASK'] = (niiMASK.get_data() > 0).astype(np.uint8)
 
         # segments from the tracts
@@ -379,16 +394,11 @@ cdef class Evaluation :
         print( '\t* Segments from the tracts... ', end='' )
         sys.stdout.flush()
 
-        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
-
-        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
-
-        if self.DICTIONARY['ndirs'] != self.get_config('ndirs'):
-            ERROR( 'Dictionary is outdated. Execute "trk2dictionary" script first' )
-
         self.DICTIONARY['TRK'] = {}
+        self.DICTIONARY['TRK']['kept']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
         self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
         self.DICTIONARY['TRK']['len']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
+        
 
         self.DICTIONARY['IC'] = {}
         self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
@@ -631,6 +641,14 @@ cdef class Evaluation :
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
             the data is changed in self.DICTIONARY, self.KERNELS or self.THREADS.
+
+        Parameters
+        ----------
+        build_dir : string
+            The folder in which to store the compiled files. 
+            If None (default), they will end up in the .pyxbld directory in the user’s home directory.
+            If using this option, it is recommended to use a temporary directory, quit your python 
+                console between each build, and delete the content of the temporary directory.
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
@@ -649,23 +667,46 @@ cdef class Evaluation :
 
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
-        config.nTHREADS   = self.THREADS['n']
-        config.model      = self.model.id
-        config.nIC        = self.KERNELS['wmr'].shape[0]
-        config.nEC        = self.KERNELS['wmh'].shape[0]
-        config.nISO       = self.KERNELS['iso'].shape[0]
-        config.build_dir  = build_dir
 
-        if build_dir is not None:
-            pyximport.install( reload_support=True, language_level=3, build_in_temp=True, build_dir=build_dir, inplace=False )
-        else:
-            pyximport.install( reload_support=True, language_level=3 )
+        compilation_is_needed = False
+        
+        if config.nTHREADS is None or config.nTHREADS != self.THREADS['n']:
+            compilation_is_needed = True
+        if config.nIC is None or config.nIC != self.KERNELS['wmr'].shape[0]:
+            compilation_is_needed = True
+        if config.model is None or config.model != self.model.id:
+            compilation_is_needed = True        
+        if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
+            compilation_is_needed = True                
+        if config.nISO is None or config.nISO != self.KERNELS['iso'].shape[0]:
+            compilation_is_needed = True        
+        if config.build_dir != build_dir:
+            compilation_is_needed = True        
 
-        if not 'commit.operator.operator' in sys.modules :
-            import commit.operator.operator
-        else :
-            reload( sys.modules['commit.operator.operator'] )
+        if compilation_is_needed or not 'commit.operator.operator' in sys.modules :       
 
+            if build_dir is not None:
+                if isdir(build_dir) and not len(listdir(build_dir)) == 0:
+                    ERROR( '\nbuild_dir is not empty, unsafe build option.' )
+                elif config.nTHREADS is not None:
+                    ERROR( '\nThe parameter build_dir has changed, unsafe build option.' )
+                else:
+                    WARNING( '\nUsing build_dir, always quit your python console between COMMIT Evaluation.' )
+
+            config.nTHREADS   = self.THREADS['n']
+            config.model      = self.model.id
+            config.nIC        = self.KERNELS['wmr'].shape[0]
+            config.nEC        = self.KERNELS['wmh'].shape[0]
+            config.nISO       = self.KERNELS['iso'].shape[0]
+            config.build_dir  = build_dir
+
+            pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
+
+            if not 'commit.operator.operator' in sys.modules :
+                import commit.operator.operator
+            else :
+                reload( sys.modules['commit.operator.operator'] )
+            
         if self.THREADS['n'] > 0:
             self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
         else:
@@ -687,7 +728,7 @@ cdef class Evaluation :
         return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
 
-    def fit( self, tol_fun = 1e-3, tol_x = 1e-6, max_iter = 100, verbose = 1, x0 = None, regularisation = None ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=1, x0=None, regularisation=None ) :
         """Fit the model to the data.
 
         Parameters
@@ -742,29 +783,56 @@ cdef class Evaluation :
         LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
-    def save_results( self, path_suffix = None, save_opt_details = True, save_coeff = False, save_est_dwi = False ) :
+    def get_coeffs( self ):
+        """
+        Returns the coefficients, corresponding to the original optimisation problem,
+        i.e. the input tractogram to trk2dictionary, divided in three classes (ic, ec, iso).
+        """
+        if self.x is None :
+            ERROR( 'Model not fitted to the data; call "fit()" first' )
+
+        nF = self.DICTIONARY['IC']['nF']
+        nE = self.DICTIONARY['EC']['nE']
+        nV = self.DICTIONARY['nV']
+
+        if self.get_config('doNormalizeKernels') :
+            # renormalize the coefficients
+            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
+            norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
+            norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
+            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
+        else :
+            x = self.x
+
+        offset1 = nF * self.KERNELS['wmr'].shape[0]
+        offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
+        kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0] )
+        xic = np.zeros( kept.size )
+        xic[kept==1] = x[:offset1]
+        xec = x[offset1:offset2]
+        xiso = x[offset2:]
+
+        return xic, xec, xiso
+
+
+    def save_results( self, path_suffix=None, stat_coeffs='sum', save_est_dwi=False, save_coeff=None, save_opt_details=None ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
         ----------
         path_suffix : string
             Text to be appended to "Results" to create the output path (default : None)
-        save_opt_details : boolean
-            Save everything in a pickle file containing the following list L:
-                L[0]: dictionary with all the configuration details
-                L[1]: np.array obtained through the optimisation process with the normalised kernels
-                L[2]: np.array renormalisation of L[1]
-            (default : True)
-        save_coeff : boolean
-            Save the coefficients related to each compartment in txt files
-            and a pickle file containing the configuration details.
-            (default : False)
+        stat_coeffs : string
+            Stat to be used if more coefficients are estimated for each streamline.
+            Options: 'sum', 'mean', 'median', 'min', 'max', 'all' (default : 'sum')
         save_est_dwi : boolean
             Save the estimated DW-MRI signal (default : False)
+        save_opt_details : boolean
+            DEPRECATED. The details of the optimization and the coefficients are always saved.
+        save_coeff : boolean
+            DEPRECATED. The estimated weights for the streamlines are always saved.
         """
-        if self.x is None :
-            ERROR( 'Model not fitted to the data; call "fit()" first' )
-
         RESULTS_path = 'Results_' + self.model.id
         if path_suffix :
             self.set_config('path_suffix', path_suffix)
@@ -773,6 +841,15 @@ cdef class Evaluation :
         LOG( '\n-> Saving results to "%s/*":' % RESULTS_path )
         tic = time.time()
 
+        if self.x is None :
+            ERROR( 'Model not fitted to the data; call "fit()" first' )
+
+        if save_coeff is not None :
+            WARNING('"save_coeff" parameter is deprecated')
+
+        if save_opt_details is not None :
+            WARNING('"save_opt_details" parameter is deprecated')
+        
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
@@ -805,6 +882,7 @@ cdef class Evaluation :
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
+        niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
@@ -866,13 +944,13 @@ cdef class Evaluation :
         print( '   [ OK ]' )
 
         if self.get_config('doNormalizeMaps') :
-                niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine )
-                niiEC = nibabel.Nifti1Image(  niiEC_img /  ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
-                niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine )
+            niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine, header=niiMAP_hdr )
+            niiEC = nibabel.Nifti1Image(  niiEC_img /  ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine, header=niiMAP_hdr )
+            niiISO = nibabel.Nifti1Image( niiISO_img / ( niiIC_img + niiEC_img + niiISO_img + 1E-16), affine, header=niiMAP_hdr )
         else:
-                niiIC = nibabel.Nifti1Image( niiIC_img, affine )
-                niiEC = nibabel.Nifti1Image( niiEC_img, affine )
-                niiISO = nibabel.Nifti1Image( niiISO_img, affine )
+            niiIC = nibabel.Nifti1Image(  niiIC_img,  affine, header=niiMAP_hdr )
+            niiEC = nibabel.Nifti1Image(  niiEC_img,  affine, header=niiMAP_hdr )
+            niiISO = nibabel.Nifti1Image( niiISO_img, affine, header=niiMAP_hdr )
 
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
@@ -881,28 +959,36 @@ cdef class Evaluation :
         # Configuration and results
         print( '\t* Configuration and results:' )
 
-        if save_opt_details:
-            print( '\t\t- results.pickle... ', end='' )
-            sys.stdout.flush()
-            with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-                pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
-            print( '[ OK ]' )
+        print( '\t\t- streamline_weights.txt... ', end='' )
+        sys.stdout.flush()
+        xic, _, _ = self.get_coeffs()
+        if stat_coeffs != 'all' and xic.size > 0 :
+            xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
+            if stat_coeffs == 'sum' :
+                xic = np.sum( xic, axis=0 )
+            elif stat_coeffs == 'mean' :
+                xic = np.mean( xic, axis=0 )
+            elif stat_coeffs == 'median' :
+                xic = np.median( xic, axis=0 )
+            elif stat_coeffs == 'min' :
+                xic = np.min( xic, axis=0 )
+            elif stat_coeffs == 'max' :
+                xic = np.max( xic, axis=0 )
+            else :
+                ERROR( 'Stat not allowed. Possible values: sum, mean, median, min, max, all.', prefix='\n' )
+        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%.5e' )
+        self.set_config('stat_coeffs', stat_coeffs)
+        print( '[ OK ]' )
 
-        if save_coeff:
-            print( '\t\t- Coefficients txt files... ', end='' )
-            sys.stdout.flush()
-            if len(self.KERNELS['wmr']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xic.txt'), x[:offset], fmt='%12.5e')
-            if len(self.KERNELS['wmh']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xec.txt'), x[offset:offset+nE*len(self.KERNELS['wmh'])], fmt='%12.5e')
-            if len(self.KERNELS['iso']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-                np.savetxt(pjoin(RESULTS_path,'xiso.txt'), x[offset:], fmt='%12.5e')
-            with open( pjoin(RESULTS_path,'config.pickle'), 'wb+' ) as fid :
-                pickle.dump( self.CONFIG, fid, protocol=2 )
-            print( '[ OK ]' )
+        # Save to a pickle file the following items:
+        #   item 0: dictionary with all the configuration details
+        #   item 1: np.array obtained through the optimisation process with the normalised kernels
+        #   item 2: np.array renormalisation of coeffs in item 1
+        print( '\t\t- results.pickle... ', end='' )
+        sys.stdout.flush()
+        with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
+            pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+        print( '        [ OK ]' )
 
         if save_est_dwi :
             print( '\t\t- Estimated signal... ', end='' )

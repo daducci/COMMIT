@@ -21,6 +21,7 @@ GLfloat			zoom;
 
 float ScreenX, ScreenY;
 
+
 void drawString( const char *string )
 {
     static int y = glutGet( GLUT_WINDOW_HEIGHT ) - 50;
@@ -34,6 +35,7 @@ void drawString( const char *string )
         y -= 18;
     }
 }
+
 
 void PrintConfig()
 {
@@ -319,14 +321,16 @@ void GLUT__reshape( GLint w, GLint h )
     ScreenX = w;
     ScreenY = h;
 
+    glViewport( 0, 0, w, h );
+
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
-    gluPerspective( 45.0f, (GLfloat)w / (GLfloat)h, 1.0f, 5000.0f );
+    gluPerspective( 45.0f, ScreenX/ScreenY, 1.0f, 5000.0f );
 
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity();
     gluLookAt(
-        0.0, 0.0, 2.0 * max(pixdim.x*dim.x,pixdim.y*dim.y) * (GLfloat)ScreenY/(GLfloat)ScreenX, // eye point
+        0.0, 0.0, 2.0 * max(pixdim.x*dim.x,pixdim.y*dim.y) * ScreenY/ScreenX, // eye point
         0.0, 0.0, 0.0, // reference point
         0.0, 1.0, 0.0  // up vector
     );
@@ -404,7 +408,6 @@ void GLUT__specialkey( GLint key, GLint x, GLint y )
     if ( doRedraw )
         glutPostRedisplay();
 }
-
 
 
 // MOUSE callback
@@ -491,6 +494,8 @@ void GLUT__display( void )
     glTranslatef( -pixdim.x*dim.x/2.0, -pixdim.y*dim.y/2.0, -pixdim.z*dim.z/2.0 ); // center the FOV
     glScalef( pixdim.x, pixdim.y, pixdim.z ); // account for voxel size
 
+    glEnable(GL_MULTISAMPLE_ARB);
+
     /* ============= */
     /* Draw the AXES */
     /* ============= */
@@ -539,16 +544,16 @@ void GLUT__display( void )
                       )
                     )
                 {
-                    glColor3f(  *ptrc++, *ptrc++, *ptrc++ );
-                    glVertex3f( *ptr++,  *ptr++,  *ptr++  );
+                    glColor3f(  ptrc[0], ptrc[1], ptrc[2] );
+                    glVertex3f( ptr[0],  ptr[1],  ptr[2]  );
                 }
                 else
                 {
                     glEnd();
                     glBegin(GL_LINE_STRIP);
-                    ptr  += 3;
-                    ptrc += 3;
                 }
+                ptr  += 3;
+                ptrc += 3;
             }
             glEnd();
         }
@@ -1078,36 +1083,23 @@ void GLUT__display( void )
 void OpenGL_init( int argc, char** argv )
 {
     glutInit( &argc, argv );
-    glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
+    glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_MULTISAMPLE );
     ScreenX = 0.7*glutGet(GLUT_SCREEN_WIDTH);  if (ScreenX==0) ScreenX = 800;
     ScreenY = 0.7*glutGet(GLUT_SCREEN_HEIGHT); if (ScreenY==0) ScreenY = 600;
-    glutInitWindowSize( ScreenX/2, ScreenY/2 );
+    glutInitWindowSize( ScreenX, ScreenY );
     glutInitWindowPosition( 0.15*glutGet(GLUT_SCREEN_WIDTH), 0.15*glutGet(GLUT_SCREEN_HEIGHT) );
     glutCreateWindow( "COMMIT debugger" );
-    glutReshapeWindow( ScreenX, ScreenY );
 
     // Projection and model matrix
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    // gluPerspective( 40.0f, (GLfloat)ScreenX / (GLfloat)ScreenY, 10.0f, 1000.0f );
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    // gluLookAt(
-    //     0.0, 0.0, 2.0*max(pixdim.x*dim.x,pixdim.y*dim.y) * (GLfloat)ScreenY/(GLfloat)ScreenX,
-    //     0.0, 0.0, 0.0,
-    //     0.0, 1.0, 0.0
-    // );
 
     translation.x	= translation.y = 0;
     zoom			= 0;
     OPENGL_utils::identity( rot );
     OPENGL_utils::identity( id );
-
-    // basic settings
-    glEnable( GL_LINE_SMOOTH );
-    glEnable( GL_POLYGON_SMOOTH );
-    glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-    glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
 
     glEnable( GL_DEPTH_TEST );
     glClearColor( 0.1, 0.1, 0.1, 0.0 );
@@ -1124,7 +1116,7 @@ void OpenGL_init( int argc, char** argv )
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
     GLfloat global_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-    glEnable ( GL_COLOR_MATERIAL );	// use glColor3f() to colorize polygons
+    glEnable ( GL_COLOR_MATERIAL );
 
     // register CALLBACKS and open window
     glutKeyboardFunc( GLUT__keyboard );

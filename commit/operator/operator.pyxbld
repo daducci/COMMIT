@@ -24,10 +24,9 @@ def make_ext(modname, pyxfilename):
         filename = "operator_noLUT.c"
     else:
         filename = "operator_withLUT.c"
-
     path = dirname(pyxfilename)
 
-    if not config.build_dir is None:
+    if config.build_dir is None:
         utime( join(path,filename), None)
 
     return Extension(name=modname,

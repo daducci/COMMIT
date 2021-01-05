@@ -2,13 +2,79 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.4.0] - 2020-07-18
+## [1.4.5] - 2020-12-29
 
-### Changed
-- Modify setup.py to add support for .cu files
+### Fixed
+- operator.pyxbld: Changed the condition to create a new operator
 
 ### Added
-- GPU acceleration with CUDA for faster model fitting
+- core.pyx: Add to the function build_operator the parameter build_dir
+
+### Changed
+- core.pyx: The function build_operator checks if the LUT configuration 
+            changed before build a new operator
+
+## [1.4.4] - 2020-10-28
+ 
+### Changed
+- Option to set one single direction in the resolution of the LUT
+
+## [1.4.3] - 2020-10-22
+
+### Added
+- store model parameters to results.pickle
+
+## [1.4.2] - 2020-10-22
+
+### Fixed
+- trk2dictionary.run(): check for invalid parameters passed to the blur
+
+## [1.4.1] - 2020-10-21
+
+### Fixed
+- operator.pyxbld: Changed the condition to create a new operator
+
+### Added
+- COMMIT version is stored in results.pickle
+- COMMIT version is stored in output NIFTI files
+
+## [1.4.0.4] - 2020-09-24
+
+### Fixed
+- trk2dictionary.run(): bug in the blurring functionality
+- trk2dictionary.run(): 'blur_sigma' defaults to 0
+
+## [1.4.0.3] - 2020-08-07
+
+### Fixed
+- COMMIT_debugger: compilation problem
+- COMMIT_debugger: wrong visualization in Linux
+
+## [1.4.0.2] - 2020-08-07
+
+### Changed
+- Moved the documentation to the Wiki
+
+## [1.4.0.1] - 2020-08-03
+
+### Changed
+- Updated the installation guide
+
+## [1.4.0.0] - 2020-07-30
+
+### Changed
+- trk2dictionary.run(): removed 'gen_trk' option
+- save_results(): removed 'save_coeff' and 'save_opt_details' parameters
+- save_results(): now saving only streamline_weights.txt (not anymore xic.txt, xec.txt, xiso.txt)
+- load_dictionary(): renamed 'use_mask' to 'use_all_voxels_in_mask'
+- Removed unused 'dictionary_ndirs.dict' file
+- trk2dictionary.run(): 'min_fiber_len' defaults to 0.0 for backward compatibility
+
+### Added
+- added 'get_coeffs()' function to get all estimated coefficients
+- save_results(): added 'stat_coeffs' parameter for saving streamline weights
+- trk2dictionary.run(): added 'max_fiber_len' parameter to discard long streamlines
+- load_data(): added 'b0_min_signal' to discard voxels with very low signal
 
 ## [1.3.9] - 2020-06-09
 
@@ -52,6 +118,7 @@ All notable changes to COMMIT will be documented in this file.
 ### Fixed
 - Minor cleanup.
 
+
 ## [1.3.2] - 2020-03-27
 
 ### Added
@@ -60,10 +127,12 @@ All notable changes to COMMIT will be documented in this file.
 ### Fixed
 - Bug while saving coefficients in save_results.
 
+
 ## [1.3.1] - 2020-03-27
 
 ### Fixed
 - Improved the loading of the streamlines in trk2dictionary
+
 
 ## [1.3] - 2019-10-30
 

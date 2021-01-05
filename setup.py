@@ -211,7 +211,7 @@ else:
 description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 
 opts = dict(name='dmri-commit',
-            version='1.4.0.0',
+            version='1.5.0',
             description=description,
             long_description=description,
             author='Alessandro Daducci',
@@ -221,8 +221,7 @@ opts = dict(name='dmri-commit',
             cmdclass={'build_ext': CustomBuildExtCommand},
             ext_modules=extensions,
             setup_requires=['Cython>=0.29', 'numpy>=1.12'],
-            install_requires=['Cython>=0.29',
-                                'dmri-amico>=1.2.3', 'dipy>=1.0', 'numpy>=1.12'],
+            install_requires=['Cython>=0.29', 'dmri-amico>=1.2.6', 'dipy>=1.0', 'numpy>=1.12'],
             package_data={'commit.operator': ["*.*"]})
 
 setup(**opts)
