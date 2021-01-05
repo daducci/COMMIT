@@ -1,14 +1,9 @@
-#from distutils.core import setup, Extension
-#from Cython.Distutils import build_ext
-#from Cython.Build import cythonize
-#import numpy
-#import amico
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 import os
 from os.path import join as pjoin
 
-# taken from npcuda
+# taken from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
 def find_in_path(name, path):
     """Find a file in a search path"""
 
