@@ -408,7 +408,7 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
         self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
 
-        # reorder the segments based on the "v" field
+        # reorder the segments based, first, on the "v" field and after based on the "o" field
         idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['v'])] )
         self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
         self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
@@ -439,7 +439,7 @@ cdef class Evaluation :
         self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
         self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
-        # reorder the segments based on the "v" field
+        # reorder the segments based, first, on the "v" field and after based on the "o" field
         idx = np.lexsort( [np.array(self.DICTIONARY['EC']['o']), np.array(self.DICTIONARY['EC']['v'])] )
         self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
         self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
