@@ -361,46 +361,46 @@ void CudaLinearOperator::dot(float64_t* v_in, float64_t* v_out){
     
     // Copy vector x to the GPU
     cudaMemcpy(gpu_x, v_in, ncols*sizeof(double), cudaMemcpyHostToDevice);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 
     // Multiply IC part in the GPU
     multiply_Ax_ICpart<<<nvoxels, 1024>>>(gpu_voxelIC, gpu_fiberIC, gpu_orienIC, gpu_lengthIC, gpu_segmentsPerBlockIC, gpu_offsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 
     // Multiply EC part in the GPU
     multiply_Ax_ECpart<<<nvoxels, 512>>>(gpu_voxelEC, gpu_orienEC, gpu_segmentsPerBlockEC, gpu_offsetPerBlockEC, gpu_lutEC, gpu_x, gpu_y);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 
     // Multiply ISO part in the GPU
     multiply_Ax_ISOpart<<<nvoxels, 512>>>(gpu_lutISO, gpu_x, gpu_y);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 
     // Copy back result to CPU
     cudaMemcpy(v_out, gpu_y, nrows*sizeof(double), cudaMemcpyDeviceToHost);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 }
 
 void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     
     // Copy vector y to the GPU
     cudaMemcpy(gpu_y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 
     // Multiply IC part in the GPU
     multiply_Aty_ICpart<<<nfibers, 512>>>(gpu_TvoxelIC, gpu_TfiberIC, gpu_TorienIC, gpu_TlengthIC, gpu_TfibersPerBlockIC, gpu_ToffsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 
     // Multiply EC part in the GPU
     multiply_Aty_ECpart<<<nvoxels, 512>>>(gpu_voxelEC, gpu_orienEC, gpu_segmentsPerBlockEC, gpu_offsetPerBlockEC, gpu_lutEC, gpu_x, gpu_y);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 
     // Multiply ISO part in the GPU
     multiply_Aty_ISOpart<<<nvoxels, 512>>>(gpu_lutISO, gpu_x, gpu_y);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 
     // Copy back result to CPU
     cudaMemcpy(v_out, gpu_x, ncols*sizeof(double), cudaMemcpyDeviceToHost);
-    cudaCheckLastError();
+    //cudaCheckLastError();
 }
 
 // ------------------------------------------------------- KERNELS ------------------------------------------------------- //

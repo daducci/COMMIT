@@ -10,8 +10,8 @@ from commit.operator import config
 
 def make_ext(modname, pyxfilename):
 
-    if (config.nTHREADS is None or config.nTHREADS < 0 or config.nTHREADS > 255):
-        raise RuntimeError('config.nTHREADS must be between 0 and 255')
+    if (config.nTHREADS is None or config.nTHREADS < 1 or config.nTHREADS > 255):
+        raise RuntimeError('config.nTHREADS must be between 1 and 255')
     if (config.nIC is None or config.nIC < 0 or config.nIC > 20):
         raise RuntimeError('config.nIC must be in the range [0..20]')
     if (config.nEC is None or config.nEC < 0 or config.nEC > 20):
