@@ -111,7 +111,7 @@ CudaLinearOperator::CudaLinearOperator(
     this->nvoxels   = nvoxels;
     this->nfibers   = nfibers;
     this->nrows     = nvoxels * nsamples;
-    this->ncols     = nfibers*ndiameters + nzeppelins*nzeppelins + nvoxels*nballs;
+    this->ncols     = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
 
     if (fcall == 1) {
         int size_lutic  = ndiameters*norientations*nsamples;
