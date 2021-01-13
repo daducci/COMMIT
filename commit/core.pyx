@@ -808,8 +808,8 @@ cdef class Evaluation :
 
             confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
-            if (confidence_array.min() < 0. or confidence_array.max() > 1.):
-                ERROR( 'Confidence map must be between 0. and 1.' )
+            if (confidence_map.min() < 0. or confidence_map.max() > 1.):
+                confidence_map = (confidence_map - confidence_map.min())/(confidence_map.max()-confidence_map.min())
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
