@@ -19,6 +19,7 @@ typedef double float64_t;
 // ====================================================
 bool cudaCheck(cudaError_t cudaStatus);
 bool checkCompatibility(size_t required_mem, int gpu_id);
+void cudaCheckLastError();
 
 // ====================================================
 // Function to preprocess data for GPU
@@ -153,6 +154,7 @@ class CudaLinearOperator {
 
     // CUDA GPU status
     bool cudaStatus;
+    int  cudaError;
 
     public:
         CudaLinearOperator(

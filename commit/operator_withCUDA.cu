@@ -53,6 +53,16 @@ bool checkCompatibility(size_t required_mem, int gpu_id) {
     }
 }
 
+void cudaCheckLastError()
+{
+    cudaError_t err = cudaGetLastError();
+
+    if(err != cudaSuccess){
+        printf("CUDA Error: %s\n", cudaGetErrorString(err));
+        exit(-1);
+    }
+}
+
 void preprocessDataForGPU(uint32_t* data, int NUM_COMPARTMENTS, uint32_t* compartmentsPerBlock, uint32_t* offsetPerBlock, int NUM_BLOCKS){
 
     // fill arrays with zeros
@@ -128,7 +138,7 @@ CudaLinearOperator::CudaLinearOperator(
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTEC,       &size_lutec,    sizeof(int)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMemcpyToSymbol(SIZE_LUTISO,      &size_lutiso,   sizeof(int)) );
         if (cudaStatus) printf("[ OK ]\n");
-        else            printf("[ CUDA ERROR ]\n");
+        else            cudaError = 1;
 
         // alloc memory in GPU for vectors x and y
         printf("\t* vectors x&y ... ");
@@ -136,7 +146,7 @@ CudaLinearOperator::CudaLinearOperator(
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_x, ncols*sizeof(float64_t)) );
         cudaStatus = cudaStatus && cudaCheck( cudaMalloc((void**)&gpu_y, nrows*sizeof(float64_t)) );
         if (cudaStatus) printf("[ OK ]\n");
-        else            printf("[ CUDA ERROR ]\n");
+        else            cudaError = 2;
 
         // pre-process data for GPU
         printf("\t* pre-processing ... ");
@@ -165,7 +175,7 @@ CudaLinearOperator::CudaLinearOperator(
         free(segmentsPerBlock);
         free(offsetPerBlock);
         if (cudaStatus) printf("[ OK ]\n");
-        else            printf("[ CUDA ERROR ]\n");
+        else            cudaError = 3;
 
         // alloc and transfer LUTs
         printf("\t* loading LUTs ... ");
@@ -208,7 +218,7 @@ CudaLinearOperator::CudaLinearOperator(
         }
 
         if (cudaStatus) printf("[ OK ]\n");
-        else            printf("[ CUDA ERROR ]\n");
+        else            cudaError = 4;
 
 
         // alloc and transfer operator A
@@ -351,36 +361,46 @@ void CudaLinearOperator::dot(float64_t* v_in, float64_t* v_out){
     
     // Copy vector x to the GPU
     cudaMemcpy(gpu_x, v_in, ncols*sizeof(double), cudaMemcpyHostToDevice);
+    cudaCheckLastError();
 
     // Multiply IC part in the GPU
     multiply_Ax_ICpart<<<nvoxels, 1024>>>(gpu_voxelIC, gpu_fiberIC, gpu_orienIC, gpu_lengthIC, gpu_segmentsPerBlockIC, gpu_offsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
+    cudaCheckLastError();
 
     // Multiply EC part in the GPU
     multiply_Ax_ECpart<<<nvoxels, 512>>>(gpu_voxelEC, gpu_orienEC, gpu_segmentsPerBlockEC, gpu_offsetPerBlockEC, gpu_lutEC, gpu_x, gpu_y);
+    cudaCheckLastError();
 
     // Multiply ISO part in the GPU
     multiply_Ax_ISOpart<<<nvoxels, 512>>>(gpu_lutISO, gpu_x, gpu_y);
+    cudaCheckLastError();
 
     // Copy back result to CPU
     cudaMemcpy(v_out, gpu_y, nrows*sizeof(double), cudaMemcpyDeviceToHost);
+    cudaCheckLastError();
 }
 
 void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
     
     // Copy vector y to the GPU
     cudaMemcpy(gpu_y, v_in, nrows*sizeof(double), cudaMemcpyHostToDevice);
+    cudaCheckLastError();
 
     // Multiply IC part in the GPU
     multiply_Aty_ICpart<<<nfibers, 512>>>(gpu_TvoxelIC, gpu_TfiberIC, gpu_TorienIC, gpu_TlengthIC, gpu_TfibersPerBlockIC, gpu_ToffsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
+    cudaCheckLastError();
 
     // Multiply EC part in the GPU
     multiply_Aty_ECpart<<<nvoxels, 512>>>(gpu_voxelEC, gpu_orienEC, gpu_segmentsPerBlockEC, gpu_offsetPerBlockEC, gpu_lutEC, gpu_x, gpu_y);
+    cudaCheckLastError();
 
     // Multiply ISO part in the GPU
     multiply_Aty_ISOpart<<<nvoxels, 512>>>(gpu_lutISO, gpu_x, gpu_y);
+    cudaCheckLastError();
 
     // Copy back result to CPU
     cudaMemcpy(v_out, gpu_x, ncols*sizeof(double), cudaMemcpyDeviceToHost);
+    cudaCheckLastError();
 }
 
 // ------------------------------------------------------- KERNELS ------------------------------------------------------- //
