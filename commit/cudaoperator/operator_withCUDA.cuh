@@ -18,7 +18,7 @@ typedef double float64_t;
 // Util functions to check CUDA GPU compatibility
 // ====================================================
 bool cudaCheck(cudaError_t cudaStatus);
-static void checkCompatibility(uint64_t required_mem, int gpu_id);
+void checkCompatibility(uint64_t required_mem, int gpu_id);
 void cudaCheckLastError();
 
 // ====================================================

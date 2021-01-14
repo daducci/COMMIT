@@ -9,7 +9,7 @@ bool cudaCheck(cudaError_t cudaStatus){
     return cudaStatus == cudaSuccess;
 }
 
-static void checkCompatibility(size_t required_mem, int gpu_id) {
+void checkCompatibility(uint64_t required_mem, int gpu_id) {
     int num_gpus;
     cudaError_t cudaStatus;
     
