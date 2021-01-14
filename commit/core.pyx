@@ -809,7 +809,6 @@ cdef class Evaluation :
             cMAX = np.max(self.confidence_map_img)
             cMIN = np.min(self.confidence_map_img)
             if ( cMIN < 0. or cMAX > 1. ):                
-                WARNING('\n Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [0,1] linearly' % ( cMIN, cMAX ) )
                 LOG ( '\n Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [0,1] linearly' % ( cMIN, cMAX ) )
                 self.confidence_map_img = ( self.confidence_map_img - cMIN ) / ( cMAX - cMIN )
 
