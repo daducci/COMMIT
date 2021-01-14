@@ -806,13 +806,14 @@ cdef class Evaluation :
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
 
-            confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-
-            with np.max(confidence_map_img) as cMAX, (np.min(confidence_map_img) as cMIN:
+            cMAX = np.max(confidence_map_img)
+            cMIN = np.min(confidence_map_img)
             if (cMIN < 0. or cMAX > 1.):                
                 WARNING('\n Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [0,1] linearly' % (cMIN, cMAX))
                 LOG ( '\n Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [0,1] linearly' % (cMIN, cMAX) )
-                confidence_map = (confidence_map - cMIN)/(cMAX-cMIN)
+                confidence_map_img = (confidence_map_img - cMIN)/(cMAX-cMIN)
+
+            confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
