@@ -716,7 +716,7 @@ cdef class Evaluation :
             self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )        
         else:
             import commit.cudaoperator
-            self.A = commit.cudaoperator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, fcall=1 )
+            self.A = commit.cudaoperator.operator.CudaLinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, fcall=1 )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
