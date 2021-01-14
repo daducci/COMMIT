@@ -4,6 +4,10 @@
 import cython
 import numpy as np
 cimport numpy as np
+from amico.util import ERROR, LOG
+
+cdef extern from "operator_withCUDA.cuh":
+    void checkCompatibility(np.uint64_t, int)
 
 cdef extern from "operator_withCUDA.cuh":
     cdef cppclass C_CudaLinearOperator "CudaLinearOperator":
@@ -63,8 +67,8 @@ cdef class CudaLinearOperator :
     cdef float* LUT_EC
     cdef float* LUT_ISO
 
-    # pointer to the operator in GPU memory
-    cdef C_CudaLinearOperator* GPU_COMMIT_A
+    # pointer to this operator in GPU memory
+    cdef C_CudaLinearOperator* thisptr
 
     # these should be always None, they remain for compatibility
     cdef unsigned int*   ICthreads
@@ -127,8 +131,12 @@ cdef class CudaLinearOperator :
         cdef float [:, ::1] isoSFP = KERNELS['iso']
         self.LUT_ISO = &isoSFP[0,0]
 
+        LOG( '\n-> Checking availability of CUDA:' )
+        #cdef unsigned long long required_mem = 28*self.n + 6*self.nzeppelins + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols)
+        checkCompatibility(0, self.gpu_id)
+
         # create the operator in GPU memory
-        self.GPU_COMMIT_A = new C_CudaLinearOperator(
+        self.thisptr = new C_CudaLinearOperator(
             &ICv[0],
             &ICf[0],
             &ICo[0],
@@ -173,7 +181,7 @@ cdef class CudaLinearOperator :
             self.ICv = &ICv[0]
             self.ICo = &ICo[0]
 
-            self.GPU_COMMIT_A.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
+            self.thisptr.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
 
     @property
     def T( self ) :
@@ -207,7 +215,7 @@ cdef class CudaLinearOperator :
 
         # Permit only matrix-vector multiplications
         if v_in.size != self.shape[1] :
-            raise RuntimeError( "A.dot(): dimensions do not match" )
+            ERROR( "A.dot(): dimensions do not match" )
 
         # Create output array
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
@@ -215,14 +223,14 @@ cdef class CudaLinearOperator :
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
-            self.GPU_COMMIT_A.dot(&v_in[0], &v_out[0])
+            self.thisptr.dot(&v_in[0], &v_out[0])
         else :
             # INVERSE PRODUCT A'*y
-            self.GPU_COMMIT_A.Tdot(&v_in[0], &v_out[0])
+            self.thisptr.Tdot(&v_in[0], &v_out[0])
 
         return v_out
 
     def destroy( self ):
         """Free all memory of the CUDA GPU"""
-        self.GPU_COMMIT_A.destroy()
+        self.thisptr.destroy()
 

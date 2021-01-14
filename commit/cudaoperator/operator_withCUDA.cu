@@ -9,7 +9,7 @@ bool cudaCheck(cudaError_t cudaStatus){
     return cudaStatus == cudaSuccess;
 }
 
-bool checkCompatibility(size_t required_mem, int gpu_id) {
+static void checkCompatibility(size_t required_mem, int gpu_id) {
     int num_gpus;
     cudaError_t cudaStatus;
     
@@ -17,7 +17,7 @@ bool checkCompatibility(size_t required_mem, int gpu_id) {
 
     if (num_gpus <= 0 || num_gpus <= gpu_id || cudaStatus != cudaSuccess) {
         printf("\t* the selected GPU does not exist or it is not detected \n");
-        return false;
+        //return false;
     }
 
     cudaStatus = cudaSetDevice(gpu_id);
@@ -42,14 +42,14 @@ bool checkCompatibility(size_t required_mem, int gpu_id) {
         }
         else{
             printf("\t* compute capability: %d.%d [ ERROR ]. GPU compute capability must be at least 5.0\n", gpu_properties.major, gpu_properties.minor);
-            return false;
+            //return false;
         }
 
-        return true;
+        //return true;
     }
     else{
         printf("\t* checking availability of CUDA ... [ ERROR ]: CUDA is not available or GPU is not CUDA compatible\n");
-        return false;
+        //return false;
     }
 }
 
@@ -118,8 +118,8 @@ CudaLinearOperator::CudaLinearOperator(
         int size_lutec  = nzeppelins*norientations*nsamples;
         int size_lutiso = nballs*nsamples;
 
-        size_t required_mem = 28*(size_t)nsegments + 6.0*(size_t)nzeppelins + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols);
-        checkCompatibility(required_mem, gpu_id);
+        //size_t required_mem = 28*(size_t)nsegments + 6.0*(size_t)nzeppelins + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols);
+        //checkCompatibility(required_mem, gpu_id);
 
         // transfer constant values to the GPU
         printf("\t* constant values ... ");
