@@ -131,8 +131,8 @@ def get_extensions_with_cuda():
                       extra_link_args=[],
                       language='c++')
 
-    ext4 = Extension(name='commit.cudaoperator',
-                     sources = ['commit/operator_withCUDA.cu', 'commit/cudaoperator.pyx'],
+    ext4 = Extension(name='commit.cudaoperator.operator',
+                     sources = ['commit/cudaoperator/operator_withCUDA.cu', 'commit/cudaoperator/operator.pyx'],
                      extra_compile_args= {'gcc':  ['-w'],
                                           'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"]},
                      language = 'c++',
@@ -179,7 +179,7 @@ else:
             
             # Add everything requires for build
             self.swig_opts = None
-            self.include_dirs = [get_include(), CUDA['include']]
+            self.include_dirs = [get_include(), CUDA['include'], 'commit/cudaoperator']
             self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules)
 
             # Call original build_ext command
