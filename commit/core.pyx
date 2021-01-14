@@ -751,7 +751,8 @@ cdef class Evaluation :
             Path to the NIFTI file containing a confidence map on the data, 
             relative to the subject folder. The file can be 3D or 4D in 
             the same space as the dwi_filename used (dim and voxel size).
-            It should contain float values between [0.0,1.0]. 
+            It should contain float values. If the values are outside 
+            the range [0.0,1.0] they will be rescaled. 
             (default : None)
 
         """
@@ -809,8 +810,8 @@ cdef class Evaluation :
             cMAX = np.max(self.confidence_map_img)
             cMIN = np.min(self.confidence_map_img)
             if ( cMIN < 0. or cMAX > 1. ):                
-                LOG ( '\n Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [0,1] linearly' % ( cMIN, cMAX ) )
                 self.confidence_map_img = ( self.confidence_map_img - cMIN ) / ( cMAX - cMIN )
+                LOG ( '\n Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [0,1] linearly' % ( cMIN, cMAX ) )
 
             confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
