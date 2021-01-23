@@ -507,7 +507,7 @@ cdef class Evaluation :
             (To show a list of Nvidia GPUs and their IDs, open a system shell and run the command 'nvidia-smi')
         """
         if nthreads is None :
-            if n != None:
+            if n != None :
                 WARNING( '"n" parameter is deprecated, use "nthreads" instead' )
                 nthreads = n
             else:
