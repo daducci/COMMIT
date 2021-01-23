@@ -524,9 +524,9 @@ cdef class Evaluation :
             self.THREADS['GPUID'] = gpu_id
             LOG( '\n-> Checking CUDA GPU:' )
 
-            from commit.cudaoperator.operator import checkCompatibility
+            import commit.cudaoperator.operator
             #cdef unsigned long long required_mem = 28*self.n + 6*self.nzeppelins + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols)
-            ans = checkCompatibility(0, gpu_id)
+            ans = commit.cudaoperator.operator.checkCompatibility(0, gpu_id)
             if ans == 1:
                 ERROR( 'The selected GPU is not detected' )
             elif ans == 2:
