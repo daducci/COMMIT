@@ -491,7 +491,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def set_threads( self, nthreads = None, select_gpu = 0 ) :
+    def set_threads( self, nthreads = None, gpu_id = 0 ) :
         """Set the number of threads to use for the matrix-vector operations with A and A'.
 
         Parameters
@@ -499,7 +499,7 @@ cdef class Evaluation :
         nthreads : integer
             Number of threads to use (nthreads = None ---> all the CPU threads available in the system
                                       nthreads = 0    ---> enable CUDA GPU acceleration)
-        select_gpu : integer
+        gpu_id : integer
             GPU ID of the Nvidia GPU where COMMIT will be executed, default=0 and it is only required if nthreads=0
             (To show a list of Nvidia GPUs and their IDs, open a system shell and run the command 'nvidia-smi')
         """
@@ -521,7 +521,23 @@ cdef class Evaluation :
         self.THREADS = {}
         self.THREADS['n'] = nthreads
         if nthreads == 0:
-            self.THREADS['GPUID'] = select_gpu
+            self.THREADS['GPUID'] = gpu_id
+            LOG( '\n-> Checking CUDA GPU:' )
+
+            from commit.cudaoperator.operator import checkCompatibility
+            #cdef unsigned long long required_mem = 28*self.n + 6*self.nzeppelins + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols)
+            cdef int ans = checkCompatibility(0, gpu_id)
+            if ans == 1:
+                ERROR( 'The selected GPU is not detected' )
+            elif ans == 2:
+                ERROR( 'Impossible to set GPU with ID=%d' % gpu_id )
+            elif ans == 3:
+                ERROR( 'Impossible to get properties from GPU with ID=%d' % gpu_id )
+            elif ans == 4:
+                ERROR( 'Compute capability must be at least 5.0' )
+
+            if gpu_id == 0:
+                LOG( '   Using default GPU. Use option "gpu_id" in "set_threads()" to change selection' )
 
         cdef :
             long [:] C

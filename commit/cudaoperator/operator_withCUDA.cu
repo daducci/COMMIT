@@ -36,7 +36,7 @@ int checkCompatibility(uint64_t required_mem, int gpuID) {
         return 3;
     }
 
-    printf("\t* using CUDA GPU:     [ %s ]\n",     gpuProperties.name);
+    printf("\t* selected GPU:       [ %s ]\n",     gpuProperties.name);
     printf("\t* total memory:       [ %.2fGB ]\n", gpuProperties.totalGlobalMem*1e-9);
     printf("\t* compute capability: [ %d.%d ]\n",  gpuProperties.major, gpuProperties.minor);
 
