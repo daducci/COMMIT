@@ -137,9 +137,9 @@ cdef class CudaLinearOperator :
         if ans == 1:
             ERROR( 'The selected GPU is not detected; check "gpu_id" in "set_threads()"' )
         elif ans == 2:
-            ERROR( 'Impossible to set GPU with ID=%d' % gpu_id )
+            ERROR( 'Impossible to set GPU with ID=%d' % self.gpu_id )
         elif ans == 3:
-            ERROR( 'Impossible to get properties from GPU with ID=%d' % gpu_id )
+            ERROR( 'Impossible to get properties from GPU with ID=%d' % self.gpu_id )
         elif ans == 4:
             ERROR( 'Compute capability must be at least 5.0' )
 
