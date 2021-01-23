@@ -9,6 +9,9 @@ from amico.util import ERROR, LOG
 cdef extern from "operator_withCUDA.cuh":
     int checkCompatibility(np.uint64_t, int)
 
+def check_compatibility(mem, gpu_id):
+    return checkCompatibility(mem, gpu_id)
+
 cdef extern from "operator_withCUDA.cuh":
     cdef cppclass C_CudaLinearOperator "CudaLinearOperator":
         C_CudaLinearOperator(
