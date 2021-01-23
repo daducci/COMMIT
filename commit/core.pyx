@@ -491,11 +491,14 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def set_threads( self, nthreads = None, gpu_id = 0 ) :
+    def set_threads( self, n = None, nthreads = None, gpu_id = 0 ) :
         """Set the number of threads to use for the matrix-vector operations with A and A'.
 
         Parameters
         ----------
+        n : integer
+            Same as nthreads. This remains just for compatibility with previous versions
+
         nthreads : integer
             Number of threads to use (nthreads = None ---> all the CPU threads available in the system
                                       nthreads = 0    ---> enable CUDA GPU acceleration)
@@ -504,12 +507,16 @@ cdef class Evaluation :
             (To show a list of Nvidia GPUs and their IDs, open a system shell and run the command 'nvidia-smi')
         """
         if nthreads is None :
-            # Set to the number of CPUs in the system
-            try :
-                import multiprocessing
-                nthreads = multiprocessing.cpu_count()
-            except :
-                nthreads = 1
+            if n != None:
+                WARNING( '"n" parameter is deprecated, use "nthreads" instead' )
+                nthreads = n
+            else:
+                # Set to the number of CPUs in the system
+                try :
+                    import multiprocessing
+                    nthreads = multiprocessing.cpu_count()
+                except :
+                    nthreads = 1
 
         if nthreads < 0 or nthreads > 255 :
             ERROR( 'Number of threads must be between 0 and 255' )
@@ -521,12 +528,12 @@ cdef class Evaluation :
         self.THREADS = {}
         self.THREADS['n'] = nthreads
         if nthreads == 0:
-            self.THREADS['GPUID'] = gpu_id
+            self.THREADS['gpu_id'] = gpu_id
             LOG( '\n-> Checking CUDA GPU:' )
 
             from commit.cudaoperator.operator import check_compatibility
             #cdef unsigned long long required_mem = 28*self.n + 6*self.nzeppelins + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols)
-            ans = check_compatibility(0, gpu_id)
+            ans = check_compatibility(gpu_id)
             if ans == 1:
                 ERROR( 'The selected GPU is not detected' )
             elif ans == 2:
@@ -537,7 +544,7 @@ cdef class Evaluation :
                 ERROR( 'Compute capability must be at least 5.0' )
 
             if gpu_id == 0:
-                LOG( '   Using default GPU. Use option "gpu_id" in "set_threads()" to change selection' )
+                LOG( '   [ Default selected GPU. Use option "gpu_id" in "set_threads()" to change selection ]' )
 
         cdef :
             long [:] C

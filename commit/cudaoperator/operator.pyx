@@ -7,10 +7,10 @@ cimport numpy as np
 from amico.util import ERROR, LOG
 
 cdef extern from "operator_withCUDA.cuh":
-    int checkCompatibility(np.uint64_t, int)
+    int checkCompatibility(int)
 
-def check_compatibility(mem, gpu_id):
-    return checkCompatibility(mem, gpu_id)
+def check_compatibility(gpu_id):
+    return checkCompatibility(gpu_id)
 
 cdef extern from "operator_withCUDA.cuh":
     cdef cppclass C_CudaLinearOperator "CudaLinearOperator":
@@ -96,7 +96,7 @@ cdef class CudaLinearOperator :
         self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
         self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
         self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
-        self.gpu_id     = THREADS['GPUID']          # id of the CUDA GPU
+        self.gpu_id     = THREADS['gpu_id']          # id of the CUDA GPU
 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
