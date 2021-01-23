@@ -7,7 +7,7 @@ cimport numpy as np
 from amico.util import ERROR, LOG
 
 cdef extern from "operator_withCUDA.cuh":
-    void checkCompatibility(np.uint64_t, int)
+    int checkCompatibility(np.uint64_t, int)
 
 cdef extern from "operator_withCUDA.cuh":
     cdef cppclass C_CudaLinearOperator "CudaLinearOperator":
@@ -131,9 +131,17 @@ cdef class CudaLinearOperator :
         cdef float [:, ::1] isoSFP = KERNELS['iso']
         self.LUT_ISO = &isoSFP[0,0]
 
-        LOG( '\n-> Checking availability of CUDA:' )
+        LOG( '\n-> Checking CUDA GPU:' )
         #cdef unsigned long long required_mem = 28*self.n + 6*self.nzeppelins + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols)
-        checkCompatibility(0, self.gpu_id)
+        cdef int ans = checkCompatibility(0, self.gpu_id)
+        if ans == 1:
+            ERROR( 'The selected GPU is not detected; check "gpu_id" in "set_threads()"' )
+        elif ans == 2:
+            ERROR( 'Impossible to set GPU with ID=%d' % gpu_id )
+        elif ans == 3:
+            ERROR( 'Impossible to get properties from GPU with ID=%d' % gpu_id )
+        elif ans == 4:
+            ERROR( 'Compute capability must be at least 5.0' )
 
         # create the operator in GPU memory
         self.thisptr = new C_CudaLinearOperator(

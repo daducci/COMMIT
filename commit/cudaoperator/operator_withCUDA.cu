@@ -9,39 +9,64 @@ bool cudaCheck(cudaError_t cudaStatus){
     return cudaStatus == cudaSuccess;
 }
 
-void checkCompatibility(uint64_t required_mem, int gpu_id) {
-    int num_gpus;
+int checkCompatibility(uint64_t required_mem, int gpuID) {
+    int gpuCount;
     cudaError_t cudaStatus;
     
-    cudaStatus = cudaGetDeviceCount(&num_gpus);
+    cudaStatus = cudaGetDeviceCount(&gpuCount);
 
-    if (num_gpus <= 0 || num_gpus <= gpu_id || cudaStatus != cudaSuccess) {
-        printf("\t* the selected GPU does not exist or it is not detected \n");
-        //return false;
+    if (gpuCount <= 0 || gpuID >= gpuCount || cudaStatus != cudaSuccess) {
+        //printf("\t* the selected GPU does not exist or it is not detected \n");
+        return 1;
     }
 
-    cudaStatus = cudaSetDevice(gpu_id);
+    cudaStatus = cudaSetDevice(gpuID);
 
-    if(cudaStatus == cudaSuccess){
-        cudaDeviceProp gpu_properties;
-        cudaGetDeviceProperties(&gpu_properties, gpu_id);
+    if (cudaStatus != cudaSuccess){
+        //printf("\t* checking availability of CUDA ... [ ERROR ]: CUDA is not available or GPU is not CUDA compatible\n");
+        //there was a problem setting CUDA GPU with ID=gpuID
+        return 2;
+    }
+
+    cudaDeviceProp gpuProperties;
+    cudaStatus = cudaGetDeviceProperties(&gpuProperties, gpuID);
+
+    if (cudaStatus != cudaSuccess){
+        //problem getting properties from CUDA GPU
+        return 3;
+    }
+
+    printf("\t* using CUDA GPU:     [ %s ]\n",     gpuProperties.name);
+    printf("\t* total memory:       [ %.2fGB ]\n", gpuProperties.totalGlobalMem*1e-9);
+    printf("\t* compute capability: [ %d.%d ]\n",  gpuProperties.major, gpuProperties.minor);
+
+    if(gpuProperties.major < 5){
+        //printf("\t* GPU compute capability must be at least 5.0\n", gpuProperties.major, gpuProperties.minor);
+        return 4;
+    }
+
+    return 0;
+
+    /*if(cudaStatus == cudaSuccess){
+        cudaDeviceProp gpuProperties;
+        cudaGetDeviceProperties(&gpuProperties, gpuID);
 
         printf("\t* checking availability of CUDA... [ OK ]\n");
-        printf("\t* number of CUDA GPUs detected: %d\n", num_gpus);
-        printf("\t* using GPU with ID %d... [ %s ]\n", gpu_id, gpu_properties.name);
+        printf("\t* number of CUDA GPUs detected: %d\n", gpuCount);
+        printf("\t* using GPU with ID %d... [ %s ]\n", gpuID, gpuProperties.name);
 
-        if (required_mem <= gpu_properties.totalGlobalMem) {
-            printf("\t* using %.2f GB of total %.2f GB... [ OK ]\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
+        if (required_mem <= gpuProperties.totalGlobalMem) {
+            printf("\t* using %.2f GB of total %.2f GB... [ OK ]\n", required_mem*1e-9, gpuProperties.totalGlobalMem*1e-9);
         }
         else {
-            printf("\t* using %f GB of total %f GB... [ ERROR ]: dictionary too big for GPU memory\n", required_mem*1e-9, gpu_properties.totalGlobalMem*1e-9);
+            printf("\t* using %f GB of total %f GB... [ ERROR ]: dictionary too big for GPU memory\n", required_mem*1e-9, gpuProperties.totalGlobalMem*1e-9);
         }
 
-        if(gpu_properties.major >= 5){
-            printf("\t* compute capability: %d.%d [ OK ]\n", gpu_properties.major, gpu_properties.minor);
+        if(gpuProperties.major >= 5){
+            printf("\t* compute capability: %d.%d [ OK ]\n", gpuProperties.major, gpuProperties.minor);
         }
         else{
-            printf("\t* compute capability: %d.%d [ ERROR ]. GPU compute capability must be at least 5.0\n", gpu_properties.major, gpu_properties.minor);
+            printf("\t* compute capability: %d.%d [ ERROR ]. GPU compute capability must be at least 5.0\n", gpuProperties.major, gpuProperties.minor);
             //return false;
         }
 
@@ -50,7 +75,7 @@ void checkCompatibility(uint64_t required_mem, int gpu_id) {
     else{
         printf("\t* checking availability of CUDA ... [ ERROR ]: CUDA is not available or GPU is not CUDA compatible\n");
         //return false;
-    }
+    }//*/
 }
 
 void cudaCheckLastError()
