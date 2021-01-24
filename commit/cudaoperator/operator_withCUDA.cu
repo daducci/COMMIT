@@ -337,28 +337,30 @@ int CudaLinearOperator::destroy(){
     if (cudaStatus != cudaSuccess) return 5;
 
     printf("\t* deleting x&y... ");
-    cudaStatus = cudaCheck( cudaFree(gpu_x);
+    cudaStatus = cudaFree(gpu_x);
     if (cudaStatus != cudaSuccess) return 5;
-    cudaStatus = cudaCheck( cudaFree(gpu_y);
+    cudaStatus = cudaFree(gpu_y);
     if (cudaStatus != cudaSuccess) return 5;
 
     printf("\t* deleting LUT... ");
-    cudaStatus = cudaCheck( cudaFree(gpu_lutIC);
+    cudaStatus = cudaFree(gpu_lutIC);
     if (cudaStatus != cudaSuccess) return 5;
-    cudaStatus = cudaCheck( cudaFree(gpu_lutEC);
+    cudaStatus = cudaFree(gpu_lutEC);
     if (cudaStatus != cudaSuccess) return 5;
-    cudaStatus = cudaCheck( cudaFree(gpu_lutISO);
+    cudaStatus = cudaFree(gpu_lutISO);
     if (cudaStatus != cudaSuccess) return 5;
-    cudaStatus = cudaCheck( cudaUnbindTexture(tex_lutIC);
+    cudaStatus = cudaUnbindTexture(tex_lutIC);
     if (cudaStatus != cudaSuccess) return 6;
-    cudaStatus = cudaCheck( cudaUnbindTexture(tex_lutEC);
+    cudaStatus = cudaUnbindTexture(tex_lutEC);
     if (cudaStatus != cudaSuccess) return 6;
-    cudaStatus = cudaCheck( cudaUnbindTexture(tex_lutISO);
+    cudaStatus = cudaUnbindTexture(tex_lutISO);
     if (cudaStatus != cudaSuccess) return 6;
 
     printf("\t* reseting GPU... ");
     cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) return 7;
+
+    return 0;
 }
 
 void cudaCheckKernel(){
