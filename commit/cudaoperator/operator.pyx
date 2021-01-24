@@ -183,7 +183,7 @@ cdef class CudaLinearOperator :
         # create the transpose of the operator in GPU memory
         if fcall == 1:
             print( '\t* global values... ' )
-            check_cuda( self.thisptr.setConstants() )
+            check_cuda( self.thisptr.setGlobals() )
 
             print( '\t* lookup tables... ' )
             check_cuda( self.thisptr.setKernels(&wmrSFP[0,0,0], &wmhSFP[0,0,0], &isoSFP[0,0]) )
