@@ -13,17 +13,17 @@ def check_compatibility(gpu_id):
     return checkCompatibility(gpu_id)
 
 def check_cuda(error_id):
-    if ans == -1:
+    if error_id == -1:
         ERROR( 'Impossible to allocate auxiliar memory in CPU' )
-    elif ans == 1:
+    elif error_id == 1:
         ERROR( 'Impossible to allocate memory in GPU' )
-    elif ans == 2:
+    elif error_id == 2:
         ERROR( 'Impossible to transfer memory to GPU' )
-    elif ans == 3:
+    elif error_id == 3:
         ERROR( 'Impossible to bind texture memory' )
-    elif ans == 4:
+    elif error_id == 4:
         ERROR( 'Impossible to transfer constant values to GPU' )
-    elif ans == 0:
+    elif error_id == 0:
         print( '[ OK ]' )
         
 
