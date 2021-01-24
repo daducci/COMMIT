@@ -580,7 +580,7 @@ void CudaLinearOperator::setTransposeData(uint32_t*  voxelIDs,
                                           uint16_t*  orienIDs,
                                           float32_t* lengths)
 {
-    printf("\t* A' operator... ");
+    /*printf("\t* A' operator... ");
     cudaStatus = true;
     uint32_t*  fibersPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
     uint32_t*  offsetPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
@@ -608,7 +608,7 @@ void CudaLinearOperator::setTransposeData(uint32_t*  voxelIDs,
     cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_TorienIC,  orienIDs, nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice) );
     cudaStatus = cudaStatus && cudaCheck( cudaMemcpy(gpu_TlengthIC, lengths,  nsegments*sizeof(float32_t), cudaMemcpyHostToDevice) );
     if (cudaStatus) printf("[ OK ]\n");
-    else            printf("[ CUDA ERROR ]\n");
+    else            printf("[ CUDA ERROR ]\n");//*/
 }
 
 void cudaCheckKernel(){
