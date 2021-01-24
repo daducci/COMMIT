@@ -300,69 +300,35 @@ CudaLinearOperator::~CudaLinearOperator() {}
 int CudaLinearOperator::destroy(){
     cudaError_t cudaStatus;    
 
-    printf("\t* deleting A...   ");
     cudaStatus = cudaFree(gpu_voxelIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_fiberIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_orienIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_lengthIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_voxelEC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_orienEC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_segmentsPerBlockIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_offsetPerBlockIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_segmentsPerBlockEC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_offsetPerBlockEC);
-    if (cudaStatus != cudaSuccess) return 5;
 
-    printf("\t* deleting A'...  ");
     cudaStatus = cudaFree(gpu_TvoxelIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_TfiberIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_TorienIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_TlengthIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_TfibersPerBlockIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_ToffsetPerBlockIC);
-    if (cudaStatus != cudaSuccess) return 5;
 
-    printf("\t* deleting x&y... ");
     cudaStatus = cudaFree(gpu_x);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_y);
-    if (cudaStatus != cudaSuccess) return 5;
 
-    printf("\t* deleting LUT... ");
     cudaStatus = cudaFree(gpu_lutIC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_lutEC);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaFree(gpu_lutISO);
-    if (cudaStatus != cudaSuccess) return 5;
     cudaStatus = cudaUnbindTexture(tex_lutIC);
-    if (cudaStatus != cudaSuccess) return 6;
     cudaStatus = cudaUnbindTexture(tex_lutEC);
-    if (cudaStatus != cudaSuccess) return 6;
     cudaStatus = cudaUnbindTexture(tex_lutISO);
-    if (cudaStatus != cudaSuccess) return 6;
 
-    printf("\t* reseting GPU... ");
     cudaStatus = cudaDeviceReset();
-    if (cudaStatus != cudaSuccess) return 7;
-
-    uint32_t* calis;
-    cudaStatus = cudaFree(calis);
-    if (cudaStatus != cudaSuccess) return 5;
 
     return 0;
 }

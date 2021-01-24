@@ -172,8 +172,7 @@ cdef class CudaLinearOperator :
             check_cuda( self.thisptr.setTransposeDictionary(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0]) )
 
     def __del__( self ):
-        LOG( '\n-> Clearing GPU memory:' )
-        check_cuda( self.thisptr.destroy() )
+        self.thisptr.destroy()
 
     @property
     def T( self ) :
@@ -222,7 +221,4 @@ cdef class CudaLinearOperator :
 
         return v_out
 
-    def destroy( self ):
-        """Free all memory of the CUDA GPU"""
-        self.thisptr.destroy()
 
