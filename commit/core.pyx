@@ -533,14 +533,14 @@ cdef class Evaluation :
 
             from commit.cudaoperator.operator import check_compatibility
             #cdef unsigned long long required_mem = 28*self.n + 6*self.nzeppelins + 8.0*(size_t)nfibers + 16.0*(size_t)nvoxels + 4.0*((size_t)size_lutic + (size_t)size_lutec + (size_t)size_lutiso + (size_t)this->nrows + (size_t)this->ncols)
-            ans = check_compatibility(gpu_id)
-            if ans == 1:
+            error_id = check_compatibility(gpu_id)
+            if error_id == 1:
                 ERROR( 'The selected GPU is not detected' )
-            elif ans == 2:
+            elif error_id == 2:
                 ERROR( 'Impossible to set GPU with ID=%d' % gpu_id )
-            elif ans == 3:
+            elif error_id == 3:
                 ERROR( 'Impossible to get properties from GPU with ID=%d' % gpu_id )
-            elif ans == 4:
+            elif error_id == 4:
                 ERROR( 'Compute capability must be at least 5.0' )
 
             if gpu_id == 0:

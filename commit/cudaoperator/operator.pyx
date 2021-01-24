@@ -168,7 +168,7 @@ cdef class CudaLinearOperator :
             self.ICv = &ICv[0]
             self.ICo = &ICo[0]
 
-            print( '\t* A\' operator... ', end='' )
+            print( '\t* A\' operator...   ', end='' )
             check_cuda( self.thisptr.setTransposeDictionary(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0]) )
 
     def __del__( self ):
