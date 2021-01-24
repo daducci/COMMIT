@@ -282,7 +282,7 @@ int CudaLinearOperator::setKernels(float32_t* lutIC, float32_t* lutEC, float32_t
     return 0;
 }
 
-int setVectors(){
+int CudaLinearOperator::setVectors(){
     
     cudaError_t cudaStatus;
 
@@ -296,7 +296,7 @@ int setVectors(){
     return 0;
 }
 
-int setConstants(){
+int CudaLinearOperator::setConstants(){
     
     cudaError_t cudaStatus;
     
