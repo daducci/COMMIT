@@ -20,7 +20,7 @@ def check_cuda(error_id):
     elif error_id == 2:
         ERROR( 'Impossible to transfer memory to GPU' )
     elif error_id == 3:
-        ERROR( 'Impossible to bind texture memory' )
+        ERROR( 'Impossible to bind textures' )
     elif error_id == 4:
         ERROR( 'Impossible to transfer constant values to GPU' )
     elif error_id == 0:
@@ -59,7 +59,7 @@ cdef extern from "operator_withCUDA.cuh":
         int setTransposeDictionary(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
         int setKernels(np.float32_t*, np.float32_t*, np.float32_t*)
         int setVectors()
-        int setConstants()
+        int setGlobals()
         void  setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
         void  destroy()
         void  dot(np.float64_t*, np.float64_t*)
@@ -182,13 +182,17 @@ cdef class CudaLinearOperator :
 
         # create the transpose of the operator in GPU memory
         if fcall == 1:
+            print( '\t* global values... ' )
             check_cuda( self.thisptr.setConstants() )
 
-            check_cuda( self.thisptr.setDictionary(&ICv[0],&ICf[0],&ICo[0],&ICl[0], &ECv[0],&ECo[0]) )
-
+            print( '\t* lookup tables... ' )
             check_cuda( self.thisptr.setKernels(&wmrSFP[0,0,0], &wmhSFP[0,0,0], &isoSFP[0,0]) )
 
+            print( '\t* x&y vectors...   ' )
             check_cuda( self.thisptr.setVectors() )
+        
+            print( '\t* A  operator...   ' )
+            check_cuda( self.thisptr.setDictionary(&ICv[0],&ICf[0],&ICo[0],&ICl[0], &ECv[0],&ECo[0]) )
 
             idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
 
@@ -208,6 +212,7 @@ cdef class CudaLinearOperator :
             self.ICo = &ICo[0]
 
             #self.thisptr.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
+            print( '\t* A\' operator... ' )
             check_cuda( self.thisptr.setTransposeDictionary(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0]) )
 
     @property

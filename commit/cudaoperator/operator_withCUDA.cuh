@@ -196,7 +196,7 @@ class CudaLinearOperator {
         int setTransposeDictionary(uint32_t* TvoxelIC, uint32_t* TfiberIC, uint16_t* TorienIC, float32_t* TlengthIC);
         int setKernels(float32_t* lutIC, float32_t* lutEC, float32_t* lutISO);
         int setVectors();
-        int setConstants();
+        int setGlobals();
         void setTransposeData(uint32_t*  voxelIDs, uint32_t*  fiberIDs, uint16_t*  orienIDs, float32_t* lengths);
         void destroy();
 

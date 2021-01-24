@@ -108,7 +108,6 @@ int CudaLinearOperator::setDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint
     
     cudaError_t cudaStatus;
 
-    printf("\t* pre-processing... ");
     uint32_t* segmentsPerBlock = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
     uint32_t* offsetPerBlock   = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
 
@@ -142,8 +141,6 @@ int CudaLinearOperator::setDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint
 
     free(segmentsPerBlock);
     free(offsetPerBlock);
-    
-    printf("\t* A  operator... ");
 
     // alloc IC part of the dictionary in GPU
     cudaStatus = cudaMalloc((void**)&gpu_voxelIC,  nsegments*sizeof(uint32_t)); 
@@ -185,8 +182,6 @@ int CudaLinearOperator::setDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint
 int CudaLinearOperator::setTransposeDictionary(uint32_t* TvoxelIC, uint32_t* TfiberIC, uint16_t* TorienIC, float32_t* TlengthIC){
     
     cudaError_t cudaStatus;
-    
-    printf("\t* A' operator... ");
 
     uint32_t*  fibersPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
     uint32_t*  offsetPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
@@ -231,8 +226,6 @@ int CudaLinearOperator::setTransposeDictionary(uint32_t* TvoxelIC, uint32_t* Tfi
 int CudaLinearOperator::setKernels(float32_t* lutIC, float32_t* lutEC, float32_t* lutISO){
 
     cudaError_t cudaStatus;
-
-    printf("\t* loading LUT... ");
 
     if (ndiameters > 0){
         cudaStatus = cudaMalloc((void**)&gpu_lutIC, size_lutic*sizeof(float32_t));
@@ -286,8 +279,6 @@ int CudaLinearOperator::setVectors(){
     
     cudaError_t cudaStatus;
 
-    printf("\t* vectors x&y... ");
-
     cudaStatus = cudaMalloc((void**)&gpu_x, ncols*sizeof(float64_t));
     if (cudaStatus != cudaSuccess) return 1;
     cudaStatus = cudaMalloc((void**)&gpu_y, nrows*sizeof(float64_t));
@@ -296,11 +287,9 @@ int CudaLinearOperator::setVectors(){
     return 0;
 }
 
-int CudaLinearOperator::setConstants(){
+int CudaLinearOperator::setGlobals(){
     
     cudaError_t cudaStatus;
-    
-    printf("\t* constant values... ");
 
     cudaStatus = cudaMemcpyToSymbol(NUM_VOXELS,       &nvoxels,       sizeof(int));
     if (cudaStatus != cudaSuccess) return -1;
