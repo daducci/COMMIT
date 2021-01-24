@@ -104,6 +104,234 @@ void preprocessDataForGPU(uint32_t* data, int NUM_COMPARTMENTS, uint32_t* compar
         offsetPerBlock[i] = offsetPerBlock[i-1] + compartmentsPerBlock[i-1];
 }
 
+int CudaLinearOperator::setDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint16_t* orienIC, float32_t* lengthIC, uint32_t* voxelEC, uint16_t* orienEC){
+    
+    cudaError_t cudaStatus;
+
+    printf("\t* pre-processing... ");
+    uint32_t* segmentsPerBlock = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
+    uint32_t* offsetPerBlock   = (uint32_t*) malloc(nvoxels*sizeof(uint32_t));
+
+    if (segmentsPerBlock == NULL || offsetPerBlock == NULL) return -1;
+
+    preprocessDataForGPU(voxelIC, nsegments, segmentsPerBlock, offsetPerBlock, nvoxels);
+
+    cudaStatus = cudaMalloc((void**)&gpu_segmentsPerBlockIC, nvoxels*sizeof(uint32_t));
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_offsetPerBlockIC,   nvoxels*sizeof(uint32_t));
+    if (cudaStatus != cudaSuccess) return 1;
+
+    cudaStatus = cudaMemcpy(gpu_segmentsPerBlockIC, segmentsPerBlock, nvoxels*sizeof(uint32_t), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    cudaStatus = cudaMemcpy(gpu_offsetPerBlockIC,   offsetPerBlock,   nvoxels*sizeof(uint32_t), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+
+    if (npeaks > 0){
+        preprocessDataForGPU(voxelEC, npeaks, segmentsPerBlock, offsetPerBlock, nvoxels);
+
+        cudaStatus = cudaMalloc((void**)&gpu_segmentsPerBlockEC, nvoxels*sizeof(uint32_t));
+        if (cudaStatus != cudaSuccess) return 1;
+        cudaStatus = cudaMalloc((void**)&gpu_offsetPerBlockEC,   nvoxels*sizeof(uint32_t));
+        if (cudaStatus != cudaSuccess) return 1;
+
+        cudaStatus = cudaMemcpy(gpu_segmentsPerBlockEC, segmentsPerBlock, nvoxels*sizeof(uint32_t), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) return 2;
+        cudaStatus = cudaMemcpy(gpu_offsetPerBlockEC,   offsetPerBlock,   nvoxels*sizeof(uint32_t), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) return 2;
+    }
+
+    free(segmentsPerBlock);
+    free(offsetPerBlock);
+    
+    printf("\t* A  operator... ");
+
+    // alloc IC part of the dictionary in GPU
+    cudaStatus = cudaMalloc((void**)&gpu_voxelIC,  nsegments*sizeof(uint32_t)); 
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_fiberIC,  nsegments*sizeof(uint32_t)); 
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_orienIC,  nsegments*sizeof(uint16_t)); 
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_lengthIC, nsegments*sizeof(float32_t));
+    if (cudaStatus != cudaSuccess) return 1;
+
+    // transfer IC part of the dictionary to GPU
+    cudaStatus = cudaMemcpy(gpu_voxelIC,  voxelIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    cudaStatus = cudaMemcpy(gpu_fiberIC,  fiberIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    cudaStatus = cudaMemcpy(gpu_orienIC,  orienIC,  nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    cudaStatus = cudaMemcpy(gpu_lengthIC, lengthIC, nsegments*sizeof(float32_t), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+
+    if (npeaks > 0){
+        // alloc EC part of the dictionary in GPU
+        cudaStatus = cudaMalloc((void**)&gpu_voxelEC,  npeaks*sizeof(uint32_t));
+        if (cudaStatus != cudaSuccess) return 1;
+        cudaStatus = cudaMalloc((void**)&gpu_orienEC,  npeaks*sizeof(uint16_t));
+        if (cudaStatus != cudaSuccess) return 1;
+
+        // transfer EC part of the dictionary to GPU
+        cudaStatus = cudaMemcpy(gpu_voxelEC,  voxelEC,  npeaks*sizeof(uint32_t), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) return 2;
+        cudaStatus = cudaMemcpy(gpu_orienEC,  orienEC,  npeaks*sizeof(uint16_t), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) return 2;
+    }
+
+    return 0;
+}
+
+int CudaLinearOperator::setTransposeDictionary(uint32_t* TvoxelIC, uint32_t* TfiberIC, uint16_t* TorienIC, float32_t* TlengthIC){
+    
+    cudaError_t cudaStatus;
+    
+    printf("\t* A' operator... ");
+
+    uint32_t*  fibersPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
+    uint32_t*  offsetPerBlock = (uint32_t*) malloc(nfibers*sizeof(uint32_t));
+    if(fibersPerBlock == NULL || offsetPerBlock == NULL) return -1;
+
+    preprocessDataForGPU(TfiberIC, nsegments, fibersPerBlock, offsetPerBlock, nfibers);
+
+    cudaStatus = cudaMalloc((void**)&gpu_TfibersPerBlockIC, nfibers*sizeof(uint32_t));
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_ToffsetPerBlockIC, nfibers*sizeof(uint32_t));
+    if (cudaStatus != cudaSuccess) return 1;
+
+    cudaStatus = cudaMemcpy(gpu_TfibersPerBlockIC, fibersPerBlock, nfibers*sizeof(uint32_t), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    cudaStatus = cudaMemcpy(gpu_ToffsetPerBlockIC, offsetPerBlock, nfibers*sizeof(uint32_t), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+
+    free(fibersPerBlock);
+    free(offsetPerBlock);
+
+    cudaStatus = cudaMalloc((void**)&gpu_TvoxelIC,  nsegments*sizeof(uint32_t)) ;
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_TfiberIC,  nsegments*sizeof(uint32_t)) ;
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_TorienIC,  nsegments*sizeof(uint16_t)) ;
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_TlengthIC, nsegments*sizeof(float32_t));
+    if (cudaStatus != cudaSuccess) return 1;
+
+    cudaStatus = cudaMemcpy(gpu_TvoxelIC,  TvoxelIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    cudaStatus = cudaMemcpy(gpu_TfiberIC,  TfiberIC,  nsegments*sizeof(uint32_t),  cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    cudaStatus = cudaMemcpy(gpu_TorienIC,  TorienIC,  nsegments*sizeof(uint16_t),  cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    cudaStatus = cudaMemcpy(gpu_TlengthIC, TlengthIC, nsegments*sizeof(float32_t), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) return 2;
+    
+    return 0;
+}
+
+int CudaLinearOperator::setKernels(float32_t* lutIC, float32_t* lutEC, float32_t* lutISO){
+
+    cudaError_t cudaStatus;
+
+    printf("\t* loading LUT... ");
+
+    if (ndiameters > 0){
+        cudaStatus = cudaMalloc((void**)&gpu_lutIC, size_lutic*sizeof(float32_t));
+        if (cudaStatus != cudaSuccess) return 1;
+        cudaStatus = cudaMemcpy(gpu_lutIC, lutIC, size_lutic*sizeof(float32_t), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) return 2;
+
+        tex_lutIC.addressMode[0] = cudaAddressModeBorder;
+        tex_lutIC.addressMode[1] = cudaAddressModeBorder;
+        tex_lutIC.filterMode = cudaFilterModePoint;
+        tex_lutIC.normalized = false;
+
+        cudaStatus = cudaBindTexture(NULL, tex_lutIC,  gpu_lutIC,  size_lutic*sizeof(float32_t));
+        if (cudaStatus != cudaSuccess) return 3;
+    }
+
+    if (nzeppelins > 0){
+        cudaStatus = cudaMalloc((void**)&gpu_lutEC,  size_lutec*sizeof(float32_t));
+        if (cudaStatus != cudaSuccess) return 1;
+        cudaStatus = cudaMemcpy(gpu_lutEC, lutEC, size_lutec*sizeof(float32_t), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) return 2;
+
+        tex_lutEC.addressMode[0] = cudaAddressModeBorder;
+        tex_lutEC.addressMode[1] = cudaAddressModeBorder;
+        tex_lutEC.filterMode = cudaFilterModePoint;
+        tex_lutEC.normalized = false;
+
+        cudaStatus = cudaBindTexture(NULL, tex_lutEC,  gpu_lutEC,  size_lutec*sizeof(float32_t));
+        if (cudaStatus != cudaSuccess) return 3;
+    }
+
+    if (nballs > 0){
+        cudaStatus = cudaMalloc((void**)&gpu_lutISO, size_lutiso*sizeof(float32_t));
+        if (cudaStatus != cudaSuccess) return 1;
+        cudaStatus = cudaMemcpy(gpu_lutISO, lutISO, size_lutiso*sizeof(float32_t), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) return 2;
+
+        tex_lutISO.addressMode[0] = cudaAddressModeBorder;
+        tex_lutISO.addressMode[1] = cudaAddressModeBorder;
+        tex_lutISO.filterMode = cudaFilterModePoint;
+        tex_lutISO.normalized = false;
+
+        cudaStatus = cudaBindTexture(NULL, tex_lutISO, gpu_lutISO, size_lutiso*sizeof(float32_t));
+        if (cudaStatus != cudaSuccess) return 3;
+    }
+
+    return 0;
+}
+
+int setVectors(){
+    
+    cudaError_t cudaStatus;
+
+    printf("\t* vectors x&y... ");
+
+    cudaStatus = cudaMalloc((void**)&gpu_x, ncols*sizeof(float64_t));
+    if (cudaStatus != cudaSuccess) return 1;
+    cudaStatus = cudaMalloc((void**)&gpu_y, nrows*sizeof(float64_t));
+    if (cudaStatus != cudaSuccess) return 1;
+    
+    return 0;
+}
+
+int setConstants(){
+    
+    cudaError_t cudaStatus;
+    
+    printf("\t* constant values... ");
+
+    cudaStatus = cudaMemcpyToSymbol(NUM_VOXELS,       &nvoxels,       sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_FIBERS,       &nfibers,       sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_PEAKS,        &npeaks,        sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_ORIENTATIONS, &norientations, sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_SAMPLES,      &nsamples,      sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_DIAMETERS,    &ndiameters,    sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_ZEPPELINS,    &nzeppelins,    sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_BALLS,        &nballs,        sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_ROWS,         &nrows,         sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(NUM_COLS,         &ncols,         sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(SIZE_LUTIC,       &size_lutic,    sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(SIZE_LUTEC,       &size_lutec,    sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    cudaStatus = cudaMemcpyToSymbol(SIZE_LUTISO,      &size_lutiso,   sizeof(int));
+    if (cudaStatus != cudaSuccess) return -1;
+    
+    return 0;
+}
+
 CudaLinearOperator::CudaLinearOperator(
     // pointers to IC data in CPU memory
     uint32_t* voxelIC,
@@ -132,13 +360,28 @@ CudaLinearOperator::CudaLinearOperator(
     // id of the selected CUDA gpu
     int gpu_id)
 {
-    this->nsegments = nsegments;
+    /*this->nsegments = nsegments;
     this->nvoxels   = nvoxels;
     this->nfibers   = nfibers;
     this->nrows     = nvoxels * nsamples;
-    this->ncols     = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
+    this->ncols     = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;//*/
 
-    if (fcall == 1) {
+    this->nsegments = nsegments;
+    this->nvoxels = nvoxels;
+    this->nfibers = nfibers;
+    this->npeaks = npeaks;
+    this->norientations = norientations;
+    this->nsamples = nsamples;
+    this->ndiameters = ndiameters;
+    this->nzeppelins = nzeppelins;   
+    this->nballs = nballs;
+    this->size_lutic = ndiameters*norientations*nsamples;
+    this->size_lutec = nzeppelins*norientations*nsamples;
+    this->size_lutiso = nballs*nsamples;
+    this->nrows = nvoxels*nsamples;
+    this->ncols = nfibers*ndiameters + npeaks*nzeppelins + nvoxels*nballs;
+
+    /*if (fcall == 1) {
         int size_lutic  = ndiameters*norientations*nsamples;
         int size_lutec  = nzeppelins*norientations*nsamples;
         int size_lutiso = nballs*nsamples;
@@ -268,11 +511,13 @@ CudaLinearOperator::CudaLinearOperator(
         }
         if (cudaStatus) printf("[ OK ]\n");
         else            printf("[ CUDA ERROR ]\n");
-    }
+    }//*/
 
 }
 
-CudaLinearOperator::~CudaLinearOperator() {}
+CudaLinearOperator::~CudaLinearOperator() {
+    printf("DESTRUCTOR!!!!!!!!!!!!!!!!!!!!!!");
+}
 
 void CudaLinearOperator::destroy(){
     bool cudaStatus;

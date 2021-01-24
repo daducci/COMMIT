@@ -544,7 +544,7 @@ cdef class Evaluation :
                 ERROR( 'Compute capability must be at least 5.0' )
 
             if gpu_id == 0:
-                LOG( '   [ Default selected GPU. Use option "gpu_id" in "set_threads()" to change selection ]' )
+                LOG( '   [ Default GPU selected. Use option "gpu_id" in "set_threads()" to change selection ]' )
 
         cdef :
             long [:] C

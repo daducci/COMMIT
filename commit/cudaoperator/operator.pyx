@@ -12,6 +12,21 @@ cdef extern from "operator_withCUDA.cuh":
 def check_compatibility(gpu_id):
     return checkCompatibility(gpu_id)
 
+def check_cuda(error_id):
+    if ans == -1:
+        ERROR( 'Impossible to allocate auxiliar memory in CPU' )
+    elif ans == 1:
+        ERROR( 'Impossible to allocate memory in GPU' )
+    elif ans == 2:
+        ERROR( 'Impossible to transfer memory to GPU' )
+    elif ans == 3:
+        ERROR( 'Impossible to bind texture memory' )
+    elif ans == 4:
+        ERROR( 'Impossible to transfer constant values to GPU' )
+    elif ans == 0:
+        print( '[ OK ]' )
+        
+
 cdef extern from "operator_withCUDA.cuh":
     cdef cppclass C_CudaLinearOperator "CudaLinearOperator":
         C_CudaLinearOperator(
@@ -163,6 +178,14 @@ cdef class CudaLinearOperator :
 
         # create the transpose of the operator in GPU memory
         if fcall == 1:
+            check_cuda( self.thisptr.setConstants() )
+
+            check_cuda( self.thisptr.setDictionary(&ICv[0],&ICf[0],&ICo[0],&ICl[0], &ECv[0],&ECo[0]) )
+
+            check_cuda( self.thisptr.setKernels(&wmrSFP[0,0,0], &wmhSFP[0,0,0], &isoSFP[0,0]) )
+
+            check_cuda( self.thisptr.setVectors() )
+
             idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
 
             self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
@@ -180,7 +203,8 @@ cdef class CudaLinearOperator :
             self.ICv = &ICv[0]
             self.ICo = &ICo[0]
 
-            self.thisptr.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
+            #self.thisptr.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
+            check_cuda( self.thisptr.setTransposeDictionary(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0]) )
 
     @property
     def T( self ) :

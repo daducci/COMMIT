@@ -128,7 +128,7 @@ static uint32_t* gpu_segmentsPerBlockEC;
 static uint32_t* gpu_offsetPerBlockEC;
 
 // ====================================================
-// Pointers to LUTs in the GPU
+// Pointers to LUT in the GPU
 // ====================================================
 static float32_t* gpu_lutIC;
 static float32_t* gpu_lutEC;
@@ -146,15 +146,20 @@ static float64_t* gpu_y;
 class CudaLinearOperator {
 
     // constant values in CPU
+    int nsegments;
+    int nvoxels;    
+    int nfibers;      
+    int npeaks;
+    int norientations;
+    int nsamples;
+    int ndiameters;
+    int nzeppelins;   
+    int nballs;
+    int size_lutic;
+    int size_lutec;
+    int size_lutiso;
     int nrows;
     int ncols;
-    int nvoxels;
-    int nfibers;
-    int nsegments;
-
-    // CUDA GPU status
-    bool cudaStatus;
-    int  cudaError;
 
     public:
         CudaLinearOperator(
@@ -170,7 +175,7 @@ class CudaLinearOperator {
             float*    lutEC,
             // pointer to ISO data in CPU memory
             float*    lutISO,
-            // dataset constant values
+            // operator constant values
             int nsegments,
             int nvoxels,      
             int nfibers,      
@@ -187,7 +192,11 @@ class CudaLinearOperator {
 
         ~CudaLinearOperator();
 
-        int  getCudaStatus() { return (int)cudaStatus; }
+        int setDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint16_t* orienIC, float32_t* lengthIC, uint32_t* voxelEC, uint16_t* orienEC);
+        int setTransposeDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint16_t* orienIC, float32_t* lengthIC);
+        int setKernels(float32_t* lutIC, float32_t* lutEC, float32_t* lutISO);
+        int setVectors();
+        int setConstants();
         void setTransposeData(uint32_t*  voxelIDs, uint32_t*  fiberIDs, uint16_t*  orienIDs, float32_t* lengths);
         void destroy();
 
