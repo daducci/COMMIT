@@ -23,45 +23,26 @@ def check_cuda(error_id):
         ERROR( 'Impossible to bind textures' )
     elif error_id == 4:
         ERROR( 'Impossible to transfer constant values to GPU' )
+    elif error_id == 5:
+        ERROR( 'There was a problem deleting GPU memory' )
+    elif error_id == 6:
+        ERROR( 'There was a problem unbinding texture memory' )
+    elif error_id == 7:
+        ERROR( 'There was a problem resetting GPU' )
     elif error_id == 0:
         print( '[ OK ]' )
-        
 
 cdef extern from "operator_withCUDA.cuh":
     cdef cppclass C_CudaLinearOperator "CudaLinearOperator":
-        C_CudaLinearOperator(
-            np.uint32_t*,
-            np.uint32_t*,
-            np.uint16_t*,
-            np.float32_t*,
-            np.float32_t*,
-
-            np.uint32_t*,
-            np.uint16_t*,
-            np.float32_t*,
-
-            np.float32_t*,
-
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            
-            int,
-            int)
+        C_CudaLinearOperator(int, int, int, int, int, int, int, int, int)
 
         int setDictionary(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*,  np.uint32_t*, np.uint16_t*)
         int setTransposeDictionary(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
         int setKernels(np.float32_t*, np.float32_t*, np.float32_t*)
         int setVectors()
         int setGlobals()
-        void  setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
-        void  destroy()
+        int destroy()
+
         void  dot(np.float64_t*, np.float64_t*)
         void Tdot(np.float64_t*, np.float64_t*)
 
@@ -154,44 +135,20 @@ cdef class CudaLinearOperator :
         self.LUT_ISO = &isoSFP[0,0]
 
         # create the operator in GPU memory
-        self.thisptr = new C_CudaLinearOperator(
-            &ICv[0],
-            &ICf[0],
-            &ICo[0],
-            &ICl[0],
-            &wmrSFP[0,0,0],
+        self.thisptr = new C_CudaLinearOperator(self.n, self.nV, self.nF, self.nE, self.ndirs, self.nS, self.nR, self.nT, self.nI)
 
-            &ECv[0],
-            &ECo[0],
-            &wmhSFP[0,0,0],
-
-            &isoSFP[0,0],
-
-            self.n,
-            self.nV,
-            self.nF,
-            self.nE,
-            self.ndirs,
-            self.nS,
-            self.nR,
-            self.nT,
-            self.nI,
-            
-            fcall,
-            self.gpu_id)
-
-        # create the transpose of the operator in GPU memory
+        # build operator in GPU only one time
         if fcall == 1:
-            print( '\t* global values... ' )
+            print( '\t* global values... ', end='' )
             check_cuda( self.thisptr.setGlobals() )
 
-            print( '\t* lookup tables... ' )
+            print( '\t* lookup tables... ', end='' )
             check_cuda( self.thisptr.setKernels(&wmrSFP[0,0,0], &wmhSFP[0,0,0], &isoSFP[0,0]) )
 
-            print( '\t* x&y vectors...   ' )
+            print( '\t* x&y vectors...   ', end='' )
             check_cuda( self.thisptr.setVectors() )
         
-            print( '\t* A  operator...   ' )
+            print( '\t* A  operator...   ', end='' )
             check_cuda( self.thisptr.setDictionary(&ICv[0],&ICf[0],&ICo[0],&ICl[0], &ECv[0],&ECo[0]) )
 
             idx = np.lexsort( [np.array(self.DICTIONARY['IC']['o']), np.array(self.DICTIONARY['IC']['fiber'])] )
@@ -211,9 +168,12 @@ cdef class CudaLinearOperator :
             self.ICv = &ICv[0]
             self.ICo = &ICo[0]
 
-            #self.thisptr.setTransposeData(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0])
-            print( '\t* A\' operator... ' )
+            print( '\t* A\' operator... ', end='' )
             check_cuda( self.thisptr.setTransposeDictionary(&self.ICv[0], &self.ICf[0], &self.ICo[0], &self.ICl[0]) )
+
+    def __del__( self ):
+        LOG( '\n-> Clearing GPU memory:' )
+        check_cuda( self.thisptr.destroy() )
 
     @property
     def T( self ) :

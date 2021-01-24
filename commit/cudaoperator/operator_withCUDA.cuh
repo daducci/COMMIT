@@ -17,7 +17,6 @@ typedef double float64_t;
 // ====================================================
 // Util functions to check CUDA GPU compatibility
 // ====================================================
-bool cudaCheck(cudaError_t cudaStatus);
 int checkCompatibility(int gpu_id);
 void cudaCheckLastError();
 
@@ -135,6 +134,13 @@ static float32_t* gpu_lutEC;
 static float32_t* gpu_lutISO;
 
 // ====================================================
+// Textures for LUT in the GPU
+// ====================================================
+texture<float32_t, 1, cudaReadModeElementType> tex_lutIC;
+texture<float32_t, 1, cudaReadModeElementType> tex_lutEC;
+texture<float32_t, 1, cudaReadModeElementType> tex_lutISO;
+
+// ====================================================
 // Pointers to x and y in the GPU
 // ====================================================
 static float64_t* gpu_x;
@@ -162,34 +168,7 @@ class CudaLinearOperator {
     int ncols;
 
     public:
-        CudaLinearOperator(
-            // pointers to IC data in CPU memory
-            uint32_t* voxelIC,
-            uint32_t* fiberIC,
-            uint16_t* orienIC,
-            float*    lengthIC,
-            float*    lutIC,
-            // pointers to EC data in CPU memory
-            uint32_t* voxelEC,
-            uint16_t* orienEC,
-            float*    lutEC,
-            // pointer to ISO data in CPU memory
-            float*    lutISO,
-            // operator constant values
-            int nsegments,
-            int nvoxels,      
-            int nfibers,      
-            int npeaks,
-            int norientations,
-            int nsamples,     
-            int ndiameters,   
-            int nzeppelins,   
-            int nballs,
-            // flag to ensure we create the operator only one time
-            int fcall,
-            // id of the selected CUDA gpu
-            int gpu_id);
-
+         CudaLinearOperator(int nsegments, int nvoxels, int nfibers, int npeaks, int norientations, int nsamples, int ndiameters, int nzeppelins, int nballs);
         ~CudaLinearOperator();
 
         int setDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint16_t* orienIC, float32_t* lengthIC, uint32_t* voxelEC, uint16_t* orienEC);
@@ -197,9 +176,8 @@ class CudaLinearOperator {
         int setKernels(float32_t* lutIC, float32_t* lutEC, float32_t* lutISO);
         int setVectors();
         int setGlobals();
-        void setTransposeData(uint32_t*  voxelIDs, uint32_t*  fiberIDs, uint16_t*  orienIDs, float32_t* lengths);
-        void destroy();
-
+        int destroy();
+        
         void  dot(float64_t* v_in, float64_t* v_out);
         void Tdot(float64_t* v_in, float64_t* v_out);
 };
