@@ -360,6 +360,10 @@ int CudaLinearOperator::destroy(){
     cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) return 7;
 
+    uint32_t* calis;
+    cudaStatus = cudaFree(calis);
+    if (cudaStatus != cudaSuccess) return 5;
+
     return 0;
 }
 
