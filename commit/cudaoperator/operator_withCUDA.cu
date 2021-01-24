@@ -1,5 +1,13 @@
 #include "operator_withCUDA.cuh"
 
+// ====================================================
+// Textures for LUT in the GPU
+// ====================================================
+texture<float32_t, 1, cudaReadModeElementType> tex_lutIC;
+texture<float32_t, 1, cudaReadModeElementType> tex_lutEC;
+texture<float32_t, 1, cudaReadModeElementType> tex_lutISO;
+
+
 int checkCompatibility(int gpuID) {
     int gpuCount;
     cudaError_t cudaStatus;

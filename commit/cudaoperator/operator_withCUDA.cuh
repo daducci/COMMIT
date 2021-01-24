@@ -134,13 +134,6 @@ static float32_t* gpu_lutEC;
 static float32_t* gpu_lutISO;
 
 // ====================================================
-// Textures for LUT in the GPU
-// ====================================================
-texture<float32_t, 1, cudaReadModeElementType> tex_lutIC;
-texture<float32_t, 1, cudaReadModeElementType> tex_lutEC;
-texture<float32_t, 1, cudaReadModeElementType> tex_lutISO;
-
-// ====================================================
 // Pointers to x and y in the GPU
 // ====================================================
 static float64_t* gpu_x;
@@ -177,7 +170,7 @@ class CudaLinearOperator {
         int setVectors();
         int setGlobals();
         int destroy();
-        
+
         void  dot(float64_t* v_in, float64_t* v_out);
         void Tdot(float64_t* v_in, float64_t* v_out);
 };
