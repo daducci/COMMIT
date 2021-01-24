@@ -193,7 +193,7 @@ class CudaLinearOperator {
         ~CudaLinearOperator();
 
         int setDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint16_t* orienIC, float32_t* lengthIC, uint32_t* voxelEC, uint16_t* orienEC);
-        int setTransposeDictionary(uint32_t* voxelIC, uint32_t* fiberIC, uint16_t* orienIC, float32_t* lengthIC);
+        int setTransposeDictionary(uint32_t* TvoxelIC, uint32_t* TfiberIC, uint16_t* TorienIC, float32_t* TlengthIC);
         int setKernels(float32_t* lutIC, float32_t* lutEC, float32_t* lutISO);
         int setVectors();
         int setConstants();

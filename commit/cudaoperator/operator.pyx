@@ -55,7 +55,11 @@ cdef extern from "operator_withCUDA.cuh":
             int,
             int)
 
-        int   getCudaStatus()
+        int setDictionary(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*,  np.uint32_t*, np.uint16_t*)
+        int setTransposeDictionary(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
+        int setKernels(np.float32_t*, np.float32_t*, np.float32_t*)
+        int setVectors()
+        int setConstants()
         void  setTransposeData(np.uint32_t*, np.uint32_t*, np.uint16_t*, np.float32_t*)
         void  destroy()
         void  dot(np.float64_t*, np.float64_t*)
