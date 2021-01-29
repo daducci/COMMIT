@@ -1,13 +1,13 @@
 [![PyPI](https://img.shields.io/pypi/v/dmri-commit)](https://pypi.org/project/dmri-commit/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/dmri-commit)](#)
-[![GitHub](https://img.shields.io/github/license/daducci/COMMIT)](#)
+[![GitHub](https://img.shields.io/github/license/daducci/commit)](#)
 [![GitHub top language](https://img.shields.io/github/languages/top/daducci/commit)](#)
 
 [![GitHub stars](https://img.shields.io/github/stars/daducci/COMMIT?style=social)](#)
 [![GitHub forks](https://img.shields.io/github/forks/daducci/COMMIT?style=social)](#)
 [![GitHub watchers](https://img.shields.io/github/watchers/daducci/COMMIT?style=social)](#)
 [![GitHub followers](https://img.shields.io/github/followers/daducci?style=social)](#)
-[![GitHub contributors](https://img.shields.io/github/contributors-anon/daducci/COMMIT?style=social&link)](#)
+[![GitHub contributors](https://img.shields.io/github/contributors-anon/daducci/COMMIT?style=social)](#)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ADaducci)](https://twitter.com/intent/follow?screen_name=ADaducci)
 
 # COMMIT
