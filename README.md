@@ -2,7 +2,7 @@
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/dmri-commit)](#)
 [![GitHub](https://img.shields.io/github/license/daducci/commit)](#)
 [![GitHub top language](https://img.shields.io/github/languages/top/daducci/commit?color=lightgray)](#)
-[![reference](https://img.shields.io/badge/Citation-IEEE%20TMI:%20%2010.1109/TMI.2014.2352414-red.svg)](https://ieeexplore.ieee.org/document/6884830)
+[![reference](https://img.shields.io/badge/DOI-10.1109/TMI.2014.2352414-red.svg)](https://ieeexplore.ieee.org/document/6884830)
 
 [![GitHub stars](https://img.shields.io/github/stars/daducci/COMMIT?style=social)](#)
 [![GitHub forks](https://img.shields.io/github/forks/daducci/COMMIT?style=social)](#)
