@@ -1,6 +1,6 @@
 [![PyPI](https://img.shields.io/pypi/v/dmri-commit)](https://pypi.org/project/dmri-commit/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/dmri-commit)](#)
-[![GitHub](https://img.shields.io/github/license/daducci/commit)](#)
+[![LICENSE](https://img.shields.io/github/license/daducci/commit)](https://github.com/daducci/COMMIT/blob/master/LICENSE)
 [![GitHub top language](https://img.shields.io/github/languages/top/daducci/commit?color=lightgray)](#)
 [![reference](https://img.shields.io/badge/DOI-10.1109/TMI.2014.2352414-red.svg)](https://ieeexplore.ieee.org/document/6884830)
 
