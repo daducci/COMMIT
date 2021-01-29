@@ -1,3 +1,15 @@
+[![PyPI](https://img.shields.io/pypi/v/dmri-commit)](https://pypi.org/project/dmri-commit/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/dmri-commit)](#)
+[![GitHub](https://img.shields.io/github/license/daducci/COMMIT)](#)
+[![GitHub top language](https://img.shields.io/github/languages/top/daducci/commit)](#)
+
+[![GitHub stars](https://img.shields.io/github/stars/daducci/COMMIT?style=social)](#)
+[![GitHub forks](https://img.shields.io/github/forks/daducci/COMMIT?style=social)](#)
+[![GitHub watchers](https://img.shields.io/github/watchers/daducci/COMMIT?style=social)](#)
+[![GitHub followers](https://img.shields.io/github/followers/daducci?style=social)](#)
+[![GitHub contributors](https://img.shields.io/github/contributors-anon/daducci/COMMIT?style=social&link)](#)
+[![Twitter Follow](https://img.shields.io/twitter/follow/ADaducci)](https://twitter.com/intent/follow?screen_name=ADaducci)
+
 # COMMIT
 
 The reconstructions recovered with existing tractography algorithms are *not really quantitative* even though diffusion MRI is a quantitative modality by nature. As a matter of fact, several techniques have been proposed in recent years to estimate, at the voxel level, intrinsic micro-structural features of the tissue, such as axonal density and diameter, by using multi-compartment models. COMMIT implements a novel framework to **re-establish the link between tractography and tissue micro-structure**.
