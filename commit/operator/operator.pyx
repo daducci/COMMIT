@@ -3,6 +3,7 @@
 
 import cython
 import numpy as np
+from amico.util import ERROR
 cimport numpy as np
 
 # Interfaces to actual C code performing the multiplications
@@ -161,7 +162,7 @@ cdef class LinearOperator :
 
         # Permit only matrix-vector multiplications
         if v_in.size != self.shape[1] :
-            raise RuntimeError( "A.dot(): dimensions do not match" )
+            ERROR( "A.dot(): dimensions do not match" )
 
         # Create output array
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )

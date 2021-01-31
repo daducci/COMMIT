@@ -4,7 +4,7 @@
 // number of THREADS
 #ifdef nTHREADS
     #if (nTHREADS<1 || nTHREADS>255)
-    #error "nTHREADS" must be in the range 1..255
+    #error "nTHREADS" must be in the range 0..255
     #endif
 #else
     #error "nTHREADS" parameter must be passed to the compiler as "-DnTHREADS=<value>"
