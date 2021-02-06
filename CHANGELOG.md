@@ -2,6 +2,10 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.4.5] - 2021-02-06
+
+- Added the possibility to specify a voxel confidence map
+
 ## [1.4.5] - 2020-12-29
 
 ### Fixed
@@ -9,7 +13,6 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Added
 - core.pyx: Add to the function build_operator the parameter build_dir
-- Added the possibility to specify a voxel confidence map
 
 ### Changed
 - core.pyx: The function build_operator checks if the LUT configuration 
