@@ -8,8 +8,7 @@ All notable changes to COMMIT will be documented in this file.
 - operator.pyxbld: Changed the condition to create a new operator
 - trk2dictionary.pyx: Check that the tractogram exists before trying to 
             load it and remove the try section
-- trk2dictionary.run(): fixed bug in computing the blur
-- trk2dictionary.run(): fixed bug with blur parameters
+- trk2dictionary.run(): fixed bug with blur parameters and computing the blur
 
 ### Added
 - core.pyx: Add to the function build_operator the parameter build_dir
