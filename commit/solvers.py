@@ -244,7 +244,7 @@ def evaluate_model(y, A, x, regularisation = None):
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 
-def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
+def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = True, x0 = None, regularisation = None):
     """
     Solve the regularised least squares problem
 
@@ -303,13 +303,13 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     mu = 1.9 / L
 
     # Main loop
-    if verbose >= 1 :
+    if verbose :
         print()
         print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
         print( "------|--------------------------------|-----------------------------------------------|------------------------------" )
     iter = 1
     while True :
-        if verbose >= 1 :
+        if verbose :
             print( "%4d  |" % iter, end="" )
             sys.stdout.flush()
 
@@ -349,7 +349,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
-        if verbose >= 1 :
+        if verbose :
             print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
 
         if abs_obj < eps :
@@ -386,7 +386,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         qfval = 0.5 * np.linalg.norm(res)**2
 
 
-    if verbose >= 1 :
+    if verbose :
         print( "< Stopping criterion: %s >" % criterion )
 
     opt_details = {}

@@ -250,14 +250,14 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # Streamlines from tractogram
     print( '\t- Tractogram' )
     
+    if not exists(filename_tractogram):
+        ERROR( 'Tractogram file not found: %s' % filename_tractogram )        
     extension = splitext(filename_tractogram)[1]
     if extension != ".trk" and extension != ".tck":
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
-    try :
-        hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
-    except :
-        ERROR( 'Tractogram file not found' )
-        
+    
+    hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
+            
     if extension == ".trk":
         Nx = hdr['dimensions'][0]
         Ny = hdr['dimensions'][1]
