@@ -257,8 +257,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
     
     hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
-    
-        
+            
     if extension == ".trk":
         Nx = hdr['dimensions'][0]
         Ny = hdr['dimensions'][1]
