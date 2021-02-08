@@ -18,7 +18,7 @@ from pkg_resources import get_distribution
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, 
-        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len,  float max_fiber_len,
+        int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
@@ -26,7 +26,7 @@ cdef extern from "trk2dictionary_c.cpp":
 
 
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
-    fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0, points_to_skip=0,
+    fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
     blur_radii=[], blur_samples=[], blur_sigma=0.0,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
@@ -71,9 +71,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     max_fiber_len : float
         Discard streamlines >= than this length in mm (default : 250.0).
-
-    points_to_skip : integer
-        If necessary, discard first points at beginning/end of a fiber (default : 0).
 
     filename_peaks : string
         Path to the NIFTI file containing the peaks to use as extra-cellular contributions.
@@ -129,9 +126,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     # check for invalid parameters in the blur
     if type(blur_radii)==list:
-        blur_radii = np.ndarray(blur_radii, np.double)
+        blur_radii = np.array(blur_radii, np.double)
+    elif type(blur_radii)!=np.ndarray:
+        ERROR( '"blur_radii" must be a list of floats' )
     if type(blur_samples)==list:
-        blur_samples = np.ndarray(blur_samples, np.int32)
+        blur_samples = np.array(blur_samples, np.int32)
+    elif type(blur_samples)!=np.ndarray:
+        ERROR( '"blur_samples" must be a list of integers' )
 
     if blur_sigma > 0 :
         if blur_radii.size != blur_samples.size :
@@ -151,7 +152,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     print( '\t- Fiber shift X    = %.3f (voxel-size units)' % fiber_shiftX )
     print( '\t- Fiber shift Y    = %.3f (voxel-size units)' % fiber_shiftY )
     print( '\t- Fiber shift Z    = %.3f (voxel-size units)' % fiber_shiftZ )
-    print( '\t- Points to skip   = %d' % points_to_skip )
     if min_seg_len >= 1e-3:
         print( '\t- Min segment len  = %.3f mm' % min_seg_len )
     else:
@@ -171,7 +171,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         float [:] ArrayInvM
         float* ptrArrayInvM
     
-    # convert to numpy arrays (and add fake radius for original segment)
+    # add a fake radius for original segment
     if blur_sigma == 0:
         nBlurRadii = 1
         blurRadii = np.array( [0.0], np.double )
@@ -384,7 +384,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['min_seg_len'] = min_seg_len
     dictionary_info['min_fiber_len'] = min_fiber_len
     dictionary_info['max_fiber_len'] = max_fiber_len
-    dictionary_info['points_to_skip'] = points_to_skip
     dictionary_info['vf_THR'] = vf_THR
     dictionary_info['peaks_use_affine'] = peaks_use_affine
     dictionary_info['flip_peaks'] = flip_peaks
@@ -398,7 +397,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # calling actual C code
     ret = trk2dictionary( filename_tractogram, data_offset,
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
-        fiber_shiftX, fiber_shiftY, fiber_shiftZ, points_to_skip, min_seg_len, min_fiber_len, max_fiber_len,
+        fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
         nBlurRadii, blur_sigma, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM, ndirs, ptrHashTable  );
