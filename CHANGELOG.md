@@ -2,14 +2,17 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.5.0] - 2021-02-06
+## [1.5.0] - 2021-02-09
 
 - Added the possibility to specify a voxel confidence map
 
-## [1.4.5] - 2020-12-29
+## [1.4.5] - 2021-02-08
 
 ### Fixed
 - operator.pyxbld: Changed the condition to create a new operator
+- trk2dictionary.pyx: Check that the tractogram exists before trying to 
+            load it and remove the try section
+- trk2dictionary.run(): fixed bug with blur parameters and computing the blur
 
 ### Added
 - core.pyx: Add to the function build_operator the parameter build_dir
@@ -17,6 +20,8 @@ All notable changes to COMMIT will be documented in this file.
 ### Changed
 - core.pyx: The function build_operator checks if the LUT configuration 
             changed before build a new operator
+- verbose variables in core.pyx and solvers.py changed to be boolean            
+- trk2dictionary.run(): removed 'points_to_skip' option
 
 ## [1.4.4] - 2020-10-28
  

@@ -729,7 +729,7 @@ cdef class Evaluation :
         return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=1, x0=None, regularisation=None, confidence_map_filename=None ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None ) :
         """Fit the model to the data.
 
         Parameters
@@ -738,8 +738,8 @@ cdef class Evaluation :
             Tolerance on the objective function (default : 1e-3)
         max_iter : integer
             Maximum number of iterations (default : 100)
-        verbose : integer
-            Level of verbosity: 0=no print, 1=print progress (default : 1)
+        verbose : boolean
+            Level of verbosity: 0=no print, 1=print progress (default : True)
         x0 : np.array
             Initial guess for the solution of the problem (default : None)
         regularisation : commit.solvers.init_regularisation object
