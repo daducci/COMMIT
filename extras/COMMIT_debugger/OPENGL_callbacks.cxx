@@ -14,38 +14,303 @@ using namespace OPENGL_utils;
 
 /* global variables */
 GLfloat			id[16], rot[16], rot1[16], rot2[16], rot3[16];
-Vec3Df			rotation, translation;
+Vec3Df			translation;
 Vec3Di			start;
 GLint			moving;
 GLfloat			zoom;
 
-float ScreenX = 800, ScreenY = 600;
+float ScreenX, ScreenY;
+
+
+void drawString( const char *string )
+{
+    static int y = glutGet( GLUT_WINDOW_HEIGHT ) - 50;
+    if ( string=="" )
+        y = glutGet( GLUT_WINDOW_HEIGHT ) - 50;
+    else
+    {
+        glRasterPos2i(10, y);
+        for (const char* c=string; *c != '\0'; c++) 
+            glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
+        y -= 18;
+    }
+}
 
 
 void PrintConfig()
 {
-    if ( !showHelp )
+    if ( !showConfig )
         return;
-    printf( "=======================\n     CONFIGURATION     \n=======================\n" );
-    printf( "\t- showPLANE = [ %d, %d, %d ]\n", showPlane[0], showPlane[1], showPlane[2] );
-    printf( "\t- MAP_range = [ %.1f ... %.1f]\n", MAP_min_view, MAP_max_view );
-    printf( "\t- MAP_opacity = %.1f\n", MAP_opacity );
-    printf( "\n" );
-    printf( "\t- PEAKS_doNormalize = %s\n", PEAKS_doNormalize?"true":"false" );
-    printf( "\t- PEAKS_use_affine = %s\n", PEAKS_use_affine?"true":"false" );
-    printf( "\t- PEAKS_flip = [ %d, %d, %d ]\n", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
-    printf( "\t- PEAKS_thr = %.1f\n", PEAKS_thr );
-    printf( "\t- PEAKS_width = %.1f\n", PEAKS_width );
-    printf( "\t- PEAKS_kolor = [ %.1f, %.1f ]\n", PEAKS_kolor_l, PEAKS_kolor_u );
-    printf( "\t- PEAKS_lut = %d\n", PEAKS_lut );
-    printf( "\n" );
-    printf( "\t- TRK_offset = [ %.1f %.1f %.1f]    (voxel-size units)\n", TRK_offset.x, TRK_offset.y, TRK_offset.z );
-    printf( "\t- TRK_crop = %.1f  (voxel-size units)\n", TRK_crop );
-    printf( "\n" );
-    printf( "\t- GLYPHS_shell = %d (b=%.1f)\n", GLYPHS_shell, SCHEME_shells_b[GLYPHS_shell] );
-    printf( "\t- GLYPHS_flip = [ %d, %d, %d ]\n", GLYPHS_flip[0], GLYPHS_flip[1], GLYPHS_flip[2] );
-    printf( "\t- GLYPHS_b0_thr = %.1f\n", GLYPHS_b0_thr );
-    printf( "\n" );
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();             
+    glLoadIdentity();
+    glMatrixMode( GL_MODELVIEW ) ;
+    glPushMatrix() ;
+    glLoadIdentity() ;
+    int w = glutGet( GLUT_WINDOW_WIDTH );
+    int h = glutGet( GLUT_WINDOW_HEIGHT );
+    glOrtho( 0, w, 0, h, -1, 1 );
+    glDisable( GL_DEPTH_TEST ); 
+
+    char s[1024];
+    glColor3f(1, 1, 0);
+    drawString( "" ); // reset initial position
+
+    drawString( "MAP" );
+    sprintf( s, "   - value(%d,%d,%d) = %.2f", VOXEL.x, VOXEL.y, VOXEL.z, MAP(VOXEL.x, VOXEL.y, VOXEL.z) );
+    drawString( s );
+    sprintf( s, "   - range = [ %.1f ... %.1f ]", MAP_min_view, MAP_max_view );
+    drawString( s );
+    sprintf( s, "   - opacity = %.1f", MAP_opacity );
+    drawString( s );
+
+    drawString( "SIGNAL" );
+    sprintf( s, "   - shell = %d/%d  (b=%.1f)", GLYPHS_shell+1, SCHEME_shells_b.size(), SCHEME_shells_b[GLYPHS_shell] );
+    drawString( s );
+    sprintf( s, "   - use affine = %s", GLYPHS_use_affine?"true":"false" );
+    drawString( s );
+    sprintf( s, "   - flip = [ %d, %d, %d ]", GLYPHS_flip[0], GLYPHS_flip[1], GLYPHS_flip[2] );
+    drawString( s );
+    sprintf( s, "   - b0 thr = %.1f", GLYPHS_b0_thr );
+    drawString( s );
+
+    if ( PEAKS_n>0 )
+    {
+        drawString( "PEAKS" );
+        sprintf( s, "   - use affine = %s", PEAKS_use_affine?"true":"false" );
+        drawString( s );
+        sprintf( s, "   - flip = [ %d, %d, %d ]", PEAKS_flip[0], PEAKS_flip[1], PEAKS_flip[2] );
+        drawString( s );
+        sprintf( s, "   - thr = %.1f", PEAKS_thr );
+        drawString( s );
+        sprintf( s, "   - normalize = %s", PEAKS_doNormalize?"true":"false" );
+        drawString( s );
+    }
+
+    if ( TRK_nTractsPlotted>0 )
+    {
+        drawString( "FIBERS" );
+        sprintf( s, "   - shift = [ %.1f %.1f %.1f ]  (voxels)", TRK_offset.x, TRK_offset.y, TRK_offset.z );
+        drawString( s );
+        sprintf( s, "   - slab thickness = %.1f  (voxels)", TRK_crop );
+        drawString( s );
+    }
+
+    glEnable (GL_DEPTH_TEST);     
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
+
+
+// KEYBOARD callback
+// -----------------
+void GLUT__keyboard( unsigned char key, GLint x=0, GLint y=0 )
+{
+    bool doRedraw = true;
+
+    switch( key )
+    {
+        case 'l': showConfig = 1 - showConfig; break;
+
+        case '1': showPlane[0] = 1 - showPlane[0]; break;
+        case '2': showPlane[1] = 1 - showPlane[1]; break;
+        case '3': showPlane[2] = 1 - showPlane[2]; break;
+        case '4':
+            showPlane[0] = 1;
+            showPlane[1] = 0;
+            showPlane[2] = 0;
+            translation.x	= translation.y = 0;
+            OPENGL_utils::identity(rot1);
+            OPENGL_utils::rotateX(rot1, 90.0, rot2);
+            OPENGL_utils::rotateZ(rot2, 90.0, rot);
+            break;
+        case '5':
+            showPlane[0] = 0;
+            showPlane[1] = 1;
+            showPlane[2] = 0;
+            translation.x	= translation.y = 0;
+            OPENGL_utils::identity(rot1);
+            OPENGL_utils::rotateX(rot1, 90.0, rot);
+            break;
+        case '6':
+            showPlane[0] = 0;
+            showPlane[1] = 0;
+            showPlane[2] = 1;
+            translation.x	= translation.y = 0;
+            OPENGL_utils::identity( rot );
+            break;
+
+        case '0': showAxes = 1 - showAxes; break;
+        case '-': zoom += 10.0; break;
+        case '+': zoom -= 10.0; break;
+        case 'm': MAP_max_view = fmaxf(0.0,MAP_max_view-MAP_max*0.05); break;
+        case 'M': MAP_max_view = fminf(MAP_max,MAP_max_view+MAP_max*0.05); break;
+        case 'o': MAP_opacity = fmaxf(0.0,MAP_opacity-0.1); break;
+        case 'O': MAP_opacity = fminf(1.0,MAP_opacity+0.1); break;
+        case 'w': LINE_width = fmaxf( 1,LINE_width-1); break;
+        case 'W': LINE_width = fminf(10,LINE_width+1); break;
+        case 'r':
+            showPlane[0] = showPlane[1] = showPlane[2] = 1;
+            translation.x	= translation.y = 0;
+            zoom			= 0;
+            OPENGL_utils::identity( rot );
+            break;
+
+        case 's': GLYPHS_show = 1 - GLYPHS_show; break;
+        case 'S': GLYPHS_shell = (GLYPHS_shell+1) % SCHEME_shells_idx.size(); break;
+        case 'a': GLYPHS_use_affine = 1 - GLYPHS_use_affine; break;
+        case 'x': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].x *= -1; break;
+        case 'y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].y *= -1; break;
+        case 'z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].z *= -1; break;
+        case 'b': GLYPHS_b0_thr = fmaxf(0.0,GLYPHS_b0_thr-10.0); break;
+        case 'B': GLYPHS_b0_thr = fminf(MAP_max,GLYPHS_b0_thr+10.0); break;
+
+        case 'p': if ( PEAKS_n>0 ) PEAKS_show  = 1 - PEAKS_show; break;
+        case 'A': PEAKS_use_affine = 1 - PEAKS_use_affine; break;
+        case 'X': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
+        case 'Y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
+        case 'Z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
+        case 't': PEAKS_thr = fmaxf(PEAKS_thr - 0.1, 0.0); break;
+        case 'T': PEAKS_thr = fminf(PEAKS_thr + 0.1, 1.0); break;
+        case 'n': PEAKS_doNormalize = 1 - PEAKS_doNormalize; break;
+
+        case 'f': if ( TRK_nTractsPlotted>0 ) TRK_show = 1 - TRK_show; break;
+        case 'c': TRK_crop = fmaxf( 0.0,TRK_crop-0.5); break;
+        case 'C': TRK_crop = fminf(max(dim.x,max(dim.y,dim.z)),TRK_crop+0.5); break;
+        case ' ': TRK_crop_mode = 1 - TRK_crop_mode; break;
+
+        case 'q':
+        case 27 : exit(0); break;
+
+        default: doRedraw = false;
+    }
+
+    if ( doRedraw )
+        glutPostRedisplay();
+}
+
+
+// MENU callback
+// -------------
+void GLUT__menu( int id ) 
+{
+    switch( id )
+    {
+        case   0: GLUT__keyboard('q'); break;
+
+        case 101: GLUT__keyboard('s'); break;
+        case 102: GLUT__keyboard('S'); break;
+        case 103: GLUT__keyboard('a'); break;
+        case 104: GLUT__keyboard('x'); break;
+        case 105: GLUT__keyboard('y'); break;
+        case 106: GLUT__keyboard('z'); break;
+        case 107: GLUT__keyboard('b'); break;
+        case 108: GLUT__keyboard('B'); break;
+
+        case 201: GLUT__keyboard('p'); break;
+        case 202: GLUT__keyboard('A'); break;
+        case 203: GLUT__keyboard('X'); break;
+        case 204: GLUT__keyboard('Y'); break;
+        case 205: GLUT__keyboard('Z'); break;
+        case 206: GLUT__keyboard('t'); break;
+        case 207: GLUT__keyboard('T'); break;
+        case 208: GLUT__keyboard('n'); break;
+
+        case 301: GLUT__keyboard('f'); break;
+        case 302: GLUT__keyboard('c'); break;
+        case 303: GLUT__keyboard('C'); break;
+        case 304: GLUT__keyboard(' '); break;
+
+        case 401: GLUT__keyboard('1'); break;
+        case 402: GLUT__keyboard('2'); break;
+        case 403: GLUT__keyboard('3'); break;
+        case 404: GLUT__keyboard('4'); break;
+        case 405: GLUT__keyboard('5'); break;
+        case 406: GLUT__keyboard('6'); break;
+        case 407: GLUT__keyboard('0'); break;
+        case 408: GLUT__keyboard('-'); break;
+        case 409: GLUT__keyboard('+'); break;
+        case 410: GLUT__keyboard('m'); break;
+        case 411: GLUT__keyboard('M'); break;
+        case 412: GLUT__keyboard('o'); break;
+        case 413: GLUT__keyboard('O'); break;
+        case 414: GLUT__keyboard('w'); break;
+        case 415: GLUT__keyboard('W'); break;
+        case 416: GLUT__keyboard('r'); break;
+        case 417: GLUT__keyboard('l'); break;
+    }
+}
+
+
+// Create the dropdown MENU
+// ------------------------
+void GLUT__createMenu()
+{
+    int submenu_SIGNAL_id, submenu_PEAKS_id, submenu_FIBERS_id, submenu_VIEW_id;
+
+    submenu_SIGNAL_id = glutCreateMenu( GLUT__menu );
+    glutAddMenuEntry("[s] Show/hide",         101);
+    glutAddMenuEntry("[S] Change shell",      102);
+    glutAddMenuEntry("[a] Use affine",        103);
+    glutAddMenuEntry("[x] Flip X axis",       104);
+    glutAddMenuEntry("[y] Flip Y axis",       105);
+    glutAddMenuEntry("[z] Flip Z axis",       106);
+    glutAddMenuEntry("[b] Decrease b0 thr",   107);
+    glutAddMenuEntry("[B] Increase b0 thr",   108);
+
+    if ( PEAKS_n>0 )
+    {
+        submenu_PEAKS_id = glutCreateMenu( GLUT__menu );
+        glutAddMenuEntry("[p] Show/hide",         201);
+        glutAddMenuEntry("[A] Use affine",        202);
+        glutAddMenuEntry("[X] Flip X axis",       203);
+        glutAddMenuEntry("[Y] Flip Y axis",       204);
+        glutAddMenuEntry("[Z] Flip Z axis",       205);
+        glutAddMenuEntry("[t] Decrease threshold",206);
+        glutAddMenuEntry("[T] Increase threshold",207);
+        glutAddMenuEntry("[n] Normalize length",  208);
+    }
+
+    if ( TRK_nTractsPlotted>0 )
+    {
+        submenu_FIBERS_id = glutCreateMenu( GLUT__menu );
+        glutAddMenuEntry("[f] Show/hide",         301);
+        glutAddMenuEntry("[c] Decrease crop size",302);
+        glutAddMenuEntry("[C] Increase crop size",303);
+        glutAddMenuEntry("[ ] Change crop mode",  304);
+    }
+
+    submenu_VIEW_id = glutCreateMenu( GLUT__menu );
+    glutAddMenuEntry("[1] Show/hide YZ plane", 401);
+    glutAddMenuEntry("[2] Show/hide XZ plane", 402);
+    glutAddMenuEntry("[3] Show/hide XY plane", 403);
+    glutAddMenuEntry("[4] Reset to YZ plane",  404);
+    glutAddMenuEntry("[5] Reset to XZ plane",  405);
+    glutAddMenuEntry("[6] Reset to XY plane",  406);
+    glutAddMenuEntry("[0] Show/hide axes",     407);
+    glutAddMenuEntry("[-] Decrease zoom",      408);
+    glutAddMenuEntry("[+] Increase zoom",      409);
+    glutAddMenuEntry("[m] Decrease max value", 410);
+    glutAddMenuEntry("[M] Increase max value", 411);
+    glutAddMenuEntry("[o] Decrease opacity",   412);
+    glutAddMenuEntry("[O] Increase opacity",   413);
+    glutAddMenuEntry("[t] Decrease line width",414);
+    glutAddMenuEntry("[T] Increase line width",415);
+    glutAddMenuEntry("[r] Reset view",         416);
+    glutAddMenuEntry("[l] Show/hide log",      417);
+
+    int menu_id = glutCreateMenu( GLUT__menu );
+    glutAddSubMenu("Signal", submenu_SIGNAL_id);
+    if ( PEAKS_n>0 )
+        glutAddSubMenu("Peaks", submenu_PEAKS_id);
+    if ( TRK_nTractsPlotted>0 )
+        glutAddSubMenu("Fibers", submenu_FIBERS_id);
+    glutAddSubMenu("View options", submenu_VIEW_id);
+    glutAddMenuEntry("Quit", 0);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
 
@@ -56,105 +321,19 @@ void GLUT__reshape( GLint w, GLint h )
     ScreenX = w;
     ScreenY = h;
 
+    glViewport( 0, 0, w, h );
+
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
-    gluPerspective( 45.0f, (GLfloat)w / (GLfloat)h, 1.0f, 1000.0f );
+    gluPerspective( 45.0f, ScreenX/ScreenY, 1.0f, 5000.0f );
 
     glMatrixMode( GL_MODELVIEW );
-    glViewport( 0, 0, w, h );
-}
-
-
-
-// KEYBOARD callback
-// -----------------
-void GLUT__keyboard( unsigned char key, GLint x, GLint y )
-{
-    bool doRedraw = true;
-    GLint modif = glutGetModifiers();
-    GLint ALT   = modif & GLUT_ACTIVE_ALT;
-
-    switch( key )
-    {
-        case 'h': showHelp = 1 - showHelp; break;
-
-        case '1': showPlane[0] = 1 - showPlane[0]; break;
-        case '2': showPlane[1] = 1 - showPlane[1]; break;
-        case '3': showPlane[2] = 1 - showPlane[2]; break;
-
-        case '0': showAxes = 1 - showAxes; break;
-
-        case 'a': PEAKS_use_affine = 1 - PEAKS_use_affine;  break;
-        case 'x': PEAKS_flip[0] = 1 - PEAKS_flip[0]; break;
-        case 'y': PEAKS_flip[1] = 1 - PEAKS_flip[1]; break;
-        case 'z': PEAKS_flip[2] = 1 - PEAKS_flip[2]; break;
-
-        case 'X': GLYPHS_flip[0] = 1 - GLYPHS_flip[0]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].x *= -1; break;
-        case 'Y': GLYPHS_flip[1] = 1 - GLYPHS_flip[1]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].y *= -1; break;
-        case 'Z': GLYPHS_flip[2] = 1 - GLYPHS_flip[2]; for(int d=0; d < SCHEME_dirs.size() ;d++) SCHEME_dirs[d].z *= -1; break;
-
-        case 't': PEAKS_thr = fmaxf(PEAKS_thr - 0.1, 0.0); break;
-        case 'T': PEAKS_thr = fminf(PEAKS_thr + 0.1, 1.0); break;
-
-        case 'n': PEAKS_doNormalize = 1 - PEAKS_doNormalize; break;
-
-        case 'w': PEAKS_width = max(1,PEAKS_width-1); break;
-        case 'W': PEAKS_width = min(15,PEAKS_width+1); break;
-
-        case 'o': MAP_opacity = fmaxf(0.0,MAP_opacity-0.1); break;
-        case 'O': MAP_opacity = fminf(1.0,MAP_opacity+0.1); break;
-
-        case 'm': MAP_max_view = fmaxf(0.0,MAP_max_view-MAP_max*0.05); break;
-        case 'M': MAP_max_view = fminf(MAP_max,MAP_max_view+MAP_max*0.05); break;
-
-        case 'c': TRK_crop = fmaxf( 0.0,TRK_crop-0.5); break;
-        case 'C': TRK_crop = fminf(max(dim.x,max(dim.y,dim.z)),TRK_crop+0.5); break;
-        case ' ': TRK_crop_mode = 1 - TRK_crop_mode; break;
-
-        case 'f': if ( TRK_nTractsPlotted > 0 ) TRK_show = 1 - TRK_show; break;
-
-        case 's': GLYPHS_show = 1 - GLYPHS_show; break;
-        case 'S': GLYPHS_shell = (GLYPHS_shell+1) % SCHEME_shells_idx.size(); break;
-
-        case 'p': PEAKS_show  = 1 - PEAKS_show;  break;
-        case 'j': PEAKS_kolor_l = fmaxf(PEAKS_kolor_l - 0.5,  0.0); break;
-        case 'J': PEAKS_kolor_l = fminf(PEAKS_kolor_l + 0.5, PEAKS_kolor_u); break;
-        case 'k': PEAKS_kolor_u = fmaxf(PEAKS_kolor_u - 0.5, PEAKS_kolor_l); break;
-        case 'K': PEAKS_kolor_u = fminf(PEAKS_kolor_u + 0.5, 20.0); break;
-        case 'l':
-            PEAKS_lut   = (PEAKS_lut+1) % 7;
-            switch( PEAKS_lut )
-            {
-                case 0 : PEAKS_lut_ptr = &COLORMAPS::hot;        break;
-                case 1 : PEAKS_lut_ptr = &COLORMAPS::parula;     break;
-                case 2 : PEAKS_lut_ptr = &COLORMAPS::greenToRed; break;
-                case 3 : PEAKS_lut_ptr = &COLORMAPS::polar;      break;
-                case 4 : PEAKS_lut_ptr = &COLORMAPS::dawn;       break;
-                case 5 : PEAKS_lut_ptr = &COLORMAPS::gnuplot;    break;
-                case 6 : PEAKS_lut_ptr = &COLORMAPS::rainbow;    break;
-            }
-            break;
-
-        case 'b': GLYPHS_b0_thr = fmaxf(0.0,GLYPHS_b0_thr-10.0); break;
-        case 'B': GLYPHS_b0_thr = fminf(MAP_max,GLYPHS_b0_thr+10.0); break;
-
-        case 'r':
-            translation.x	= translation.y = 0;
-            rotation.x		= rotation.y = rotation.z = 0;
-            zoom			= 0;
-            OPENGL_utils::identity( rot );
-            break;
-
-        case 27 : exit(0); break;
-
-        default: doRedraw = false;
-    }
-
-    if ( doRedraw )
-    {
-        PrintConfig();
-        glutPostRedisplay();
-    }
+    glLoadIdentity();
+    gluLookAt(
+        0.0, 0.0, 2.0 * max(pixdim.x*dim.x,pixdim.y*dim.y) * ScreenY/ScreenX, // eye point
+        0.0, 0.0, 0.0, // reference point
+        0.0, 1.0, 0.0  // up vector
+    );
 }
 
 
@@ -165,30 +344,39 @@ void GLUT__specialkey( GLint key, GLint x, GLint y )
     bool doRedraw = true;
     GLint modif = glutGetModifiers();
     GLint ALT   = modif & GLUT_ACTIVE_ALT;
+    GLint CTRL  = modif & GLUT_ACTIVE_CTRL;
 
     switch( key )
     {
         case GLUT_KEY_LEFT:
             if ( ALT )
                 TRK_offset.x -= 0.5;
+            else if ( CTRL )
+                translation.x -= 2.0;
             else
                 VOXEL.x--;
             break;
         case GLUT_KEY_RIGHT:
             if ( ALT )
                 TRK_offset.x += 0.5;
+            else if ( CTRL )
+                translation.x += 2.0;
             else
                 VOXEL.x++;
             break;
         case GLUT_KEY_DOWN:
             if ( ALT )
                 TRK_offset.y -= 0.5;
+            else if ( CTRL )
+                translation.y -= 2.0;
             else
                 VOXEL.y--;
             break;
         case GLUT_KEY_UP:
             if ( ALT )
                 TRK_offset.y += 0.5;
+            else if ( CTRL )
+                translation.y += 2.0;
             else
                 VOXEL.y++;
             break;
@@ -218,12 +406,8 @@ void GLUT__specialkey( GLint key, GLint x, GLint y )
     VOXEL.z = min( VOXEL.z, dim.z-1 );
 
     if ( doRedraw )
-    {
-        PrintConfig();
         glutPostRedisplay();
-    }
 }
-
 
 
 // MOUSE callback
@@ -232,18 +416,19 @@ void GLUT__mouse( GLint button, GLint state, GLint x, GLint y )
 {
     if (state == GLUT_DOWN)
     {
-        if ( button == GLUT_LEFT_BUTTON && glutGetModifiers() != GLUT_ACTIVE_ALT )
+        if ( button == GLUT_LEFT_BUTTON && glutGetModifiers() != GLUT_ACTIVE_CTRL )
         {
             moving = 1;
             start.x = x;
             start.y = y;
         }
-        else if ( button == GLUT_RIGHT_BUTTON )
-        {
-            moving = 2;
-            start.x = x;
-            start.y = y;
-        }
+        // NOTE: does not work, issue with glutGetModifiers not getting CTRL
+        // else if ( button == GLUT_LEFT_BUTTON && glutGetModifiers() == GLUT_ACTIVE_CTRL )
+        // {
+        //     moving = 2;
+        //     start.x = x;
+        //     start.y = y;
+        // }
         else if ( (button == GLUT_MIDDLE_BUTTON) || (button == GLUT_LEFT_BUTTON && glutGetModifiers() == GLUT_ACTIVE_ALT) )
         {
             moving = 3;
@@ -258,26 +443,20 @@ void GLUT__mouse( GLint button, GLint state, GLint x, GLint y )
 }
 
 
-
 // MOTION callback
 // ---------------
 void GLUT__motion( GLint x, GLint y )
 {
     if (moving==1)
     {
-        rotation.y = (start.x-x) / 1;
-        rotation.x = (start.y-y) / 1;
-
-        // porto il centro di rotazione nel baricentro
         OPENGL_utils::translate(id, 0,0,0, rot1);
 
-        OPENGL_utils::rotateY(id,rotation.y,rot3);
+        OPENGL_utils::rotateY(id,start.x-x,rot3);
         OPENGL_utils::matXMat(rot,rot1,rot2);
-        OPENGL_utils::rotateX(id,rotation.x,rot1);
+        OPENGL_utils::rotateX(id,start.y-y,rot1);
         OPENGL_utils::matXMat(rot2,rot1,rot);
         OPENGL_utils::matXMat(rot,rot3,rot2);
 
-        // riporto il centro di rotazione in pos. originale
         OPENGL_utils::translate(id, 0,0,0, rot1);
         OPENGL_utils::matXMat(rot2,rot1,rot);
 
@@ -309,14 +488,13 @@ void GLUT__display( void )
 {
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    // MOUSE translation + rotation
     glPushMatrix();
-    glTranslatef(translation.x, translation.y, -zoom);
-    glMultMatrixf(rot);
+    glTranslatef(translation.x, translation.y, -zoom); // mouse translation + zoom
+    glMultMatrixf(rot); // mouse rotation    
+    glTranslatef( -pixdim.x*dim.x/2.0, -pixdim.y*dim.y/2.0, -pixdim.z*dim.z/2.0 ); // center the FOV
+    glScalef( pixdim.x, pixdim.y, pixdim.z ); // account for voxel size
 
-    // center the FOV
-    glTranslatef( -dim.x/2.0, -dim.y/2.0, -dim.z/2.0 );
-
+    glEnable(GL_MULTISAMPLE_ARB);
 
     /* ============= */
     /* Draw the AXES */
@@ -366,16 +544,16 @@ void GLUT__display( void )
                       )
                     )
                 {
-                    glColor3f(  *ptrc++, *ptrc++, *ptrc++ );
-                    glVertex3f( *ptr++,  *ptr++,  *ptr++  );
+                    glColor3f(  ptrc[0], ptrc[1], ptrc[2] );
+                    glVertex3f( ptr[0],  ptr[1],  ptr[2]  );
                 }
                 else
                 {
                     glEnd();
                     glBegin(GL_LINE_STRIP);
-                    ptr  += 3;
-                    ptrc += 3;
                 }
+                ptr  += 3;
+                ptrc += 3;
             }
             glEnd();
         }
@@ -383,15 +561,14 @@ void GLUT__display( void )
         glPopMatrix();
     }
 
-
     /* ============== */
     /* Draw the PEAKS */
     /* ============== */
     if ( PEAKS_show || GLYPHS_show )
     {
         glDisable( GL_BLEND );
-        glLineWidth( PEAKS_width );
-        glPointSize( PEAKS_width );
+        glLineWidth( LINE_width );
+        glPointSize( LINE_width );
 
         glPushMatrix();
         glTranslatef(.5,.5,.5);
@@ -469,14 +646,7 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
-                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
-                        else
-                        {
-                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
-                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
-                        }
-
+                        glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) ); 
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -493,10 +663,22 @@ void GLUT__display( void )
                         {
                             idx = SCHEME_shells_idx[GLYPHS_shell][d];
                             w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
-                            dir.x = w * SCHEME_dirs[idx].x;
-                            dir.y = w * SCHEME_dirs[idx].y;
-                            dir.z = w * SCHEME_dirs[idx].z;
-
+                            if ( GLYPHS_use_affine ) 
+                            {
+                                dir.x = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[0] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[1] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[2];
+                                dir.y = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[3] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[4] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[5];
+                                dir.z = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[6] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[7] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[8];
+                                normMax = dir.norm();
+                                dir.x *= w / normMax;
+                                dir.y *= w / normMax;
+                                dir.z *= w / normMax;
+                            }
+                            else
+                            {
+                                dir.x = w * SCHEME_dirs[idx].x;
+                                dir.y = w * SCHEME_dirs[idx].y;
+                                dir.z = w * SCHEME_dirs[idx].z;
+                            }
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -577,14 +759,7 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
-                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
-                        else
-                        {
-                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
-                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
-                        }
-
+                        glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -602,10 +777,22 @@ void GLUT__display( void )
                         {
                             idx = SCHEME_shells_idx[GLYPHS_shell][d];
                             w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
-                            dir.x = w * SCHEME_dirs[idx].x;
-                            dir.y = w * SCHEME_dirs[idx].y;
-                            dir.z = w * SCHEME_dirs[idx].z;
-
+                            if ( GLYPHS_use_affine ) 
+                            {
+                                dir.x = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[0] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[1] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[2];
+                                dir.y = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[3] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[4] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[5];
+                                dir.z = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[6] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[7] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[8];
+                                normMax = dir.norm();
+                                dir.x *= w / normMax;
+                                dir.y *= w / normMax;
+                                dir.z *= w / normMax;
+                            }
+                            else
+                            {
+                                dir.x = w * SCHEME_dirs[idx].x;
+                                dir.y = w * SCHEME_dirs[idx].y;
+                                dir.z = w * SCHEME_dirs[idx].z;
+                            }
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -686,14 +873,7 @@ void GLUT__display( void )
                             dir.z = col.z * norms[d] / normMax;
                         }
 
-                        if ( PEAKS_kolor_u-PEAKS_kolor_l <= 0 )
-                            glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
-                        else
-                        {
-                            int idx = fmin( round( 255.0*fmax(norms[d]-PEAKS_kolor_l,0.0)/(PEAKS_kolor_u-PEAKS_kolor_l) ), 255.0 );
-                            glColor3f( (*PEAKS_lut_ptr)[idx][0], (*PEAKS_lut_ptr)[idx][1], (*PEAKS_lut_ptr)[idx][2] );
-                        }
-
+                        glColor3f( fabs(2.0*col.x), fabs(2.0*col.y), fabs(2.0*col.z) );
                         glBegin(GL_LINES);
                             glVertex3f( x-dir.x, y-dir.y, z-dir.z );
                             glVertex3f( x+dir.x, y+dir.y, z+dir.z );
@@ -711,9 +891,22 @@ void GLUT__display( void )
                         {
                             idx = SCHEME_shells_idx[GLYPHS_shell][d];
                             w = 0.5 * (float)(*niiDWI->img)(x,y,z,idx) / b0;
-                            dir.x = w * SCHEME_dirs[idx].x;
-                            dir.y = w * SCHEME_dirs[idx].y;
-                            dir.z = w * SCHEME_dirs[idx].z;
+                            if ( GLYPHS_use_affine ) 
+                            {
+                                dir.x = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[0] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[1] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[2];
+                                dir.y = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[3] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[4] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[5];
+                                dir.z = SCHEME_dirs[idx].x * ((float*)GLYPHS_affine)[6] + SCHEME_dirs[idx].y * ((float*)GLYPHS_affine)[7] + SCHEME_dirs[idx].z * ((float*)GLYPHS_affine)[8];
+                                normMax = dir.norm();
+                                dir.x *= w / normMax;
+                                dir.y *= w / normMax;
+                                dir.z *= w / normMax;
+                            }
+                            else
+                            {
+                                dir.x = w * SCHEME_dirs[idx].x;
+                                dir.y = w * SCHEME_dirs[idx].y;
+                                dir.z = w * SCHEME_dirs[idx].z;
+                            }
 
                             normMax = dir.norm();
                             glColor3f( fabs(dir.x)/normMax, fabs(dir.y)/normMax, fabs(dir.z)/normMax );
@@ -728,8 +921,6 @@ void GLUT__display( void )
 
         glPopMatrix();
     }
-
-
 
     /* =================== */
     /* Draw the SCALAR MAP */
@@ -861,7 +1052,6 @@ void GLUT__display( void )
         glDisable(GL_POLYGON_OFFSET_FILL);
     }
 
-
     /* ====================== */
     /* Draw the CURRENT VOXEL */
     /* ====================== */
@@ -883,6 +1073,7 @@ void GLUT__display( void )
     }
 
     glPopMatrix();
+    PrintConfig();
     glutSwapBuffers();
 }
 
@@ -892,34 +1083,24 @@ void GLUT__display( void )
 void OpenGL_init( int argc, char** argv )
 {
     glutInit( &argc, argv );
-    glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
+    glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_MULTISAMPLE );
+    ScreenX = 0.7*glutGet(GLUT_SCREEN_WIDTH);  if (ScreenX==0) ScreenX = 800;
+    ScreenY = 0.7*glutGet(GLUT_SCREEN_HEIGHT); if (ScreenY==0) ScreenY = 600;
     glutInitWindowSize( ScreenX, ScreenY );
+    glutInitWindowPosition( 0.15*glutGet(GLUT_SCREEN_WIDTH), 0.15*glutGet(GLUT_SCREEN_HEIGHT) );
     glutCreateWindow( "COMMIT debugger" );
 
     // Projection and model matrix
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(40.0f, (GLfloat)ScreenX / (GLfloat)ScreenY, 10.0f,1000.0f);
     glMatrixMode(GL_MODELVIEW);
-    gluLookAt(
-        0.0, 0.0, max(dim.x,dim.y) * (GLfloat)ScreenX / (GLfloat)ScreenY,
-        0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0
-    );
+    glLoadIdentity();
 
     translation.x	= translation.y = 0;
-    rotation.x		= rotation.y = rotation.z = 0;
     zoom			= 0;
     OPENGL_utils::identity( rot );
     OPENGL_utils::identity( id );
 
-    // basic settings
-    // glEnable( GL_LINE_SMOOTH );
-    // glEnable( GL_POLYGON_SMOOTH );
-    // glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-    // glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
-
-// 	glEnable( GL_CULL_FACE );
     glEnable( GL_DEPTH_TEST );
     glClearColor( 0.1, 0.1, 0.1, 0.0 );
 
@@ -935,7 +1116,7 @@ void OpenGL_init( int argc, char** argv )
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
     GLfloat global_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-    glEnable ( GL_COLOR_MATERIAL );	// use glColor3f() to colorize polygons
+    glEnable ( GL_COLOR_MATERIAL );
 
     // register CALLBACKS and open window
     glutKeyboardFunc( GLUT__keyboard );
@@ -945,7 +1126,7 @@ void OpenGL_init( int argc, char** argv )
     glutMouseFunc(    GLUT__mouse );
     glutMotionFunc(   GLUT__motion );
 
-    PrintConfig();
+    GLUT__createMenu();
 
     glutMainLoop();
 }

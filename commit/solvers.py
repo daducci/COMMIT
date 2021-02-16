@@ -244,7 +244,7 @@ def evaluate_model(y, A, x, regularisation = None):
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 
-def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
+def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = True, x0 = None, regularisation = None):
     """
     Solve the regularised least squares problem
 
@@ -287,11 +287,6 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     res = -y.copy()
     xhat = x0.copy()
     x = np.zeros_like(xhat)
-    checkval = np.sum(A.dot(xhat))
-    if np.isnan(checkval):
-        print('----------------------------------- Te la pelas 1 Ax -----------------------------------')
-        print(A.dot(xhat))
-        print()
     res += A.dot(xhat)
     proximal( xhat )
     reg_term = omega( xhat )
@@ -300,31 +295,21 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     told = 1
     beta = 0.9
     prev_x = xhat.copy()
-    checkval = np.sum(np.asarray(At.dot(res)))
-    if np.isnan(checkval):
-        print('----------------------------------- Te la pelas 2 A\'y -----------------------------------')
-        print(np.asarray(At.dot(res)))
-        print()
     grad = np.asarray(At.dot(res))
     qfval = prev_obj
 
     # Step size computation
-    checkval = np.sum(A.dot(grad))
-    if np.isnan(checkval):
-        print('----------------------------------- Te la pelas 3 Ax -----------------------------------')
-        print(A.dot(grad))
-        print()
     L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     mu = 1.9 / L
 
     # Main loop
-    if verbose >= 1 :
+    if verbose :
         print()
         print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
         print( "------|--------------------------------|-----------------------------------------------|------------------------------" )
     iter = 1
     while True :
-        if verbose >= 1 :
+        if verbose :
             print( "%4d  |" % iter, end="" )
             sys.stdout.flush()
 
@@ -338,11 +323,6 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         # Check stepsize
         tmp = x-xhat
         q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-        checkval = np.sum(A.dot(x) - y)
-        if np.isnan(checkval):
-            print('----------------------------------- Te la pelas 4 Ax -----------------------------------')
-            print(A.dot(x) - y)
-            print()
         res = A.dot(x) - y
         res_norm = np.linalg.norm(res)
         curr_obj = 0.5 * res_norm**2 + reg_term_x
@@ -360,11 +340,6 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
             # Check stepsize
             tmp = x-xhat
             q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-            checkval = np.sum(A.dot(x) - y)
-            if np.isnan(checkval):
-                print('----------------------------------- Te la pelas 5 Ax -----------------------------------')
-                print(A.dot(x) - y)
-                print()
             res = A.dot(x) - y
             res_norm = np.linalg.norm(res)
             curr_obj = 0.5 * res_norm**2 + reg_term_x
@@ -374,7 +349,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
-        if verbose >= 1 :
+        if verbose :
             print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
 
         if abs_obj < eps :
@@ -398,19 +373,9 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         xhat = x + (told-1)/t * (x - prev_x)
 
         # Gradient computation
-        checkval = np.sum(A.dot(xhat) - y)
-        if np.isnan(checkval):
-            print('----------------------------------- Te la pelas 6 Ax -----------------------------------')
-            print(A.dot(xhat) - y)
-            print()
         res = A.dot(xhat) - y
         xarr = np.asarray(x)
 
-        checkval = np.sum(np.asarray(At.dot(res)))
-        if np.isnan(checkval):
-            print('----------------------------------- Te la pelas 7 A\'y -----------------------------------')
-            print(np.asarray(At.dot(res)))
-            print()
         grad = np.asarray(At.dot(res))
 
         # Update variables
@@ -421,7 +386,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         qfval = 0.5 * np.linalg.norm(res)**2
 
 
-    if verbose >= 1 :
+    if verbose :
         print( "< Stopping criterion: %s >" % criterion )
 
     opt_details = {}

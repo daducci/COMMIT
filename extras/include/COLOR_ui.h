@@ -26,8 +26,8 @@ using namespace std;
 
 #define		COLOR(FG,BG,FONT) "\033["#FONT";"#FG";"#BG"m"
 #define		COLOR_reset "\033[0m"
-#define		COLOR_strERR COLOR(31,48,7)"[ERROR]"COLOR(31,48,0)" "
-#define		COLOR_strWAR COLOR(33,48,7)"[WARNING]"COLOR(33,48,0)" "
+#define		COLOR_strERR COLOR(31,48,7) "[ERROR]" COLOR(31,48,0) " "
+#define		COLOR_strWAR COLOR(33,48,7) "[WARNING]" COLOR(33,48,0) " "
 
 
 void COLOR_print(string str, short int FG=COLOR_white, short int BG=COLOR_black, short int FONT=COLOR_normal)
