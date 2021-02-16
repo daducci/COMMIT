@@ -629,11 +629,18 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self, regtikhonov=0.0, Ltype=1 ) :
+    def build_operator( self, tikhonov_equalizer=0, deriv_matrix=None ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
             the data is changed in self.DICTIONARY, self.KERNELS or self.THREADS.
+
+        Parameters
+        ----------
+        tikhonov_equalizer: float
+            equalizer parameter of the Tikhonov regularization term
+        deriv_matrix: string
+            derivative matrix of the Tikhonov regularization term
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
@@ -641,6 +648,12 @@ cdef class Evaluation :
             ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
             ERROR( 'Threads not set; call "set_threads()" first' )
+        if tikhonov_equalizer < 0:
+            ERROR( 'Invalid value for Tikhonov equalizer parameter; value must be positive or zero' )
+        if tikhonov_equalizer > 0 and deriv_matrix == None:
+            ERROR( 'Tikhonov equalizer term given but derivative matrix was not selected; add "deriv_matrix" parameter in "build_operator()", valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
+        if tikhonov_equalizer > 0 and deriv_matrix!='L1' and deriv_matrix!='L2' and deriv_matrix!='L1z' and deriv_matrix!='L2z':
+            ERROR( 'Invalid derivative matrix selection for regularization term; valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
 
         tic = time.time()
         LOG( '\n-> Building linear operator A:' )
@@ -656,7 +669,7 @@ cdef class Evaluation :
             import commit.operator.operator
         else :
             reload( sys.modules['commit.operator.operator'] )
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, regtikhonov, Ltype )
+        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, tikhonov_equalizer, deriv_matrix )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -674,15 +687,17 @@ cdef class Evaluation :
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
         # add regularization part
-        if self.A.regtikhonov > 0.0:
-            if self.A.Ltype == 0:
+        if self.A.tikhonov_equalizer > 0:
+            if self.A.deriv_matrix == 'L1':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-1, dtype=np.float64)
-            elif self.A.Ltype == 1:
+            elif self.A.deriv_matrix == 'L2':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-2, dtype=np.float64)
-            elif self.A.Ltype == 2:
+            elif self.A.deriv_matrix == 'L1z':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]+1, dtype=np.float64)
-            else:
+            elif self.A.deriv_matrix == 'L2z':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]  , dtype=np.float64)
+            else:
+                ERROR( 'Invalid derivative matrix selection for regularization term; valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
             
             yL[0:y.shape[0]] = y
             return yL
