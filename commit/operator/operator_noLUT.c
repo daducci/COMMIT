@@ -185,3 +185,5 @@ void COMMIT_At(
         pthread_join( threads[t], NULL );
     return;
 }
+
+//TODO: Add tikhonov regularization when no LUT is required

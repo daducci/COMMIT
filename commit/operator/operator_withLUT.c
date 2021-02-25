@@ -2245,3 +2245,139 @@ void COMMIT_At(
         pthread_join( threads[t], NULL );
     return;
 }
+
+// ===============================================================================================
+// Compute L*x MATRIX-VECTOR product (L is first order derivative with free boundary conditions)
+// ===============================================================================================
+void Tikhonov_L1(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_vIN, double *_vOUT)
+{
+    for(int r = 0; r < _nIC-1; r++){
+        for(int f = 0; f < _nF; f++){
+            _vOUT[_nV*_nS + r] += _lambda*( -_vIN[r*_nF + f] + _vIN[(r+1)*_nF + f] );
+        }
+    }
+}
+
+// ==========================================================================================================
+// Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is first order derivative with free boundary conditions)
+// ==========================================================================================================
+void Tikhonov_L1t(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+        _vOUT[f] += _lambda*( -_vIN[_nV*_nS] );
+
+        for(int r = 1; r < _nIC-1; r++)
+            _vOUT[_nF*r + f] += _lambda*( _vIN[_nV*_nS + r-1] - _vIN[_nV*_nS + r] );
+
+        _vOUT[_nF*(_nIC-1) + f] += _lambda*( _vIN[_nV*_nS + _nIC-2] );
+    }
+}
+
+// ===============================================================================================
+// Compute L*x MATRIX-VECTOR product (L is second order derivative with free boundary conditions)
+// ===============================================================================================
+void Tikhonov_L2(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_vIN, double *_vOUT)
+{
+    for(int r = 0; r < _nIC-2; r++){
+        for(int f = 0; f < _nF; f++){
+            _vOUT[_nV*_nS + r] += _lambda*( _vIN[r*_nF + f] -2*_vIN[(r+1)*_nF + f] + _vIN[(r+2)*_nF + f] );
+        }
+    }
+}
+
+// ==========================================================================================================
+// Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is second order derivative with free boundary conditions)
+// ==========================================================================================================
+void Tikhonov_L2t(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+        _vOUT[f] += _lambda*( _vIN[_nV*_nS] );
+
+        _vOUT[_nF + f] += _lambda*( -2*_vIN[_nV*_nS] + _vIN[_nV*_nS + 1] );
+
+        for (int r = 2; r < _nIC-2; r++){
+            _vOUT[r*_nF + f] += _lambda*( _vIN[_nV*_nS + (r-2)] -2*_vIN[_nV*_nS + (r-1)] + _vIN[_nV*_nS + r] );
+        }
+        
+        _vOUT[(_nIC-2)*_nF + f] += _lambda*( _vIN[_nV*_nS + _nIC-4] -2*_vIN[_nV*_nS + _nIC-3] );
+
+        _vOUT[(_nIC-1)*_nF + f] += _lambda*( _vIN[_nV*_nS + (_nIC-3)] );
+    }
+}
+
+// ===============================================================================================
+// Compute L*x MATRIX-VECTOR product (L is first order derivative with zero boundary conditions)
+// ===============================================================================================
+void Tikhonov_L1z(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+        _vOUT[_nV*_nS] += _lambda*( _vIN[f] );
+
+        for(int r = 1; r < _nIC; r++){
+            _vOUT[_nV*_nS + r] += _lambda*( -_vIN[(r-1)*_nF + f] + _vIN[r*_nF + f] );
+        }
+
+        _vOUT[_nV*_nS + _nIC] += _lambda*( -_vIN[(_nIC-1)*_nF + f] );
+    }
+}
+
+// ==========================================================================================================
+// Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is first order derivative with zero boundary conditions)
+// ==========================================================================================================
+void Tikhonov_L1zt(
+        int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+        for(int r = 0; r < _nIC; r++){
+            _vOUT[r*_nF + f] += _lambda*( _vIN[_nV*_nS + r] - _vIN[_nV*_nS + r + 1]);
+        }
+    }
+}
+
+// ===============================================================================================
+// Compute L*x MATRIX-VECTOR product (L is second order derivative with zero boundary conditions)
+// ===============================================================================================
+void Tikhonov_L2z(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+
+        _vOUT[_nV*_nS] += _lambda*( -2*_vIN[f] + x[_nF + f] );
+
+        for(int r = 1; r < _nIC-1; r++){
+            _vOUT[_nV*_nS + r] += _lambda*( _vIN[(r-1)*_nF + f] -2*_vIN[r*_nF + f] + _vIN[(r+1)*_nF + f] );
+        }
+
+        _vOUT[_nV*_nS + _nIC - 1] += _lambda*( _vIN[(_nIC-2)*_nF + f] - 2*_vIN[(_nIC-1)*_nF + f] );
+    }
+}
+
+// ==========================================================================================================
+// Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is second order derivative with zero boundary conditions)
+// ==========================================================================================================
+void Tikhonov_L2zt(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_vIN, double *_vOUT)
+{
+    for(int f = 0; f < _nF; f++){
+        _vOUT[f] += _lambda*( -2*_vIN[_nV*_nS] + _vIN[_nV*_nS + 1] );
+
+        for (int r = 0; r < _nIC-1; r++){
+            _vOUT[r*_nF + f] += _lambda*( _vIN[_nV*_nS + (r-1)] - 2*_vIN[_nV*_nS + r] + _vIN[_nV*_nS + (r+1)] );
+        }
+        
+        _vOUT[(_nIC-1)*_nF + f] += _lambda*( _vIN[_nV*_nS + (_nIC-2)] - 2*_vIN[_nV*_nS + (_nIC-1)] );
+    }
+}

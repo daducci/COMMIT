@@ -2,6 +2,16 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.5.0] - 2021-02-16
+
+### Added
+- core.pyx: Add to the function build_operator the parameter tikhonov_equalizer and deriv_matrix
+- operator.pyx: Extend Ax and A'y multiplications when Tikhonov regularization is enabled
+- operator_withLUC.c: Add C functions to extend Ax and A'y multiplications when Tikhonov regularization is enabled
+
+### Changed
+- core.pyx: The function get_y returns a larger vector y when Tikhonov regularization is enabled
+
 ## [1.4.5] - 2021-02-08
 
 ### Fixed
