@@ -639,7 +639,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self, build_dir=None, tikhonov_equalizer=0, deriv_matrix=None ) :
+    def build_operator( self, build_dir=None, tikhonov_lambda=0, tikhonov_matrix=None ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
@@ -652,12 +652,12 @@ cdef class Evaluation :
             If None (default), they will end up in the .pyxbld directory in the user’s home directory.
             If using this option, it is recommended to use a temporary directory, quit your python 
                 console between each build, and delete the content of the temporary directory.
-        tikhonov_equalizer: float
+        tikhonov_lambda: float
             equalizer parameter of the Tikhonov regularization term
-        deriv_matrix: string
+        tikhonov_matrix: string
             derivative matrix of the Tikhonov regularization term
             If None (default), no regularization term is added to the model
-            If using this option, tikhonov_equalizer must be positive
+            If using this option, tikhonov_lambda must be positive
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
@@ -665,11 +665,11 @@ cdef class Evaluation :
             ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
             ERROR( 'Threads not set; call "set_threads()" first' )
-        if tikhonov_equalizer < 0:
+        if tikhonov_lambda < 0:
             ERROR( 'Invalid value for Tikhonov equalizer parameter; value must be positive or zero' )
-        if tikhonov_equalizer > 0 and deriv_matrix == None:
-            ERROR( 'Tikhonov equalizer term given but derivative matrix was not selected; add "deriv_matrix" parameter in "build_operator()", valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
-        if tikhonov_equalizer > 0 and deriv_matrix!='L1' and deriv_matrix!='L2' and deriv_matrix!='L1z' and deriv_matrix!='L2z':
+        if tikhonov_lambda > 0 and tikhonov_matrix == None:
+            ERROR( 'Tikhonov equalizer term given but derivative matrix was not selected; add "tikhonov_matrix" parameter in "build_operator()", valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
+        if tikhonov_lambda > 0 and tikhonov_matrix!='L1' and tikhonov_matrix!='L2' and tikhonov_matrix!='L1z' and tikhonov_matrix!='L2z':
             ERROR( 'Invalid derivative matrix selection for regularization term; valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
         
         if self.DICTIONARY['IC']['nF'] <= 0 :
@@ -722,7 +722,7 @@ cdef class Evaluation :
             else :
                 reload( sys.modules['commit.operator.operator'] )
             
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, tikhonov_equalizer, deriv_matrix )
+        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, tikhonov_lambda, tikhonov_matrix )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -740,14 +740,14 @@ cdef class Evaluation :
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
         # extend y for the tikhonov regularization term
-        if self.A.tikhonov_equalizer > 0:
-            if self.A.deriv_matrix == 'L1':
+        if self.A.tikhonov_lambda > 0:
+            if self.A.tikhonov_matrix == 'L1':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-1, dtype=np.float64)
-            elif self.A.deriv_matrix == 'L2':
+            elif self.A.tikhonov_matrix == 'L2':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-2, dtype=np.float64)
-            elif self.A.deriv_matrix == 'L1z':
+            elif self.A.tikhonov_matrix == 'L1z':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]+1, dtype=np.float64)
-            elif self.A.deriv_matrix == 'L2z':
+            elif self.A.tikhonov_matrix == 'L2z':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]  , dtype=np.float64)
             else:
                 ERROR( 'Invalid derivative matrix selection for regularization term; valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
@@ -883,6 +883,7 @@ cdef class Evaluation :
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
+        nS = self.KERNELS['iso'].shape[1]
         norm_fib = np.ones( nF )
         # x is the x of the original problem
         # self.x is the x preconditioned
@@ -915,7 +916,7 @@ cdef class Evaluation :
         niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
-        y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
+        y_est = np.reshape( self.A.dot(self.x)[0:int(nV*nS)], (nV,-1) ).astype(np.float32)
 
         print( '\t\t- RMSE...  ', end='' )
         sys.stdout.flush()

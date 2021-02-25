@@ -74,8 +74,8 @@ cdef class LinearOperator :
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
-    cdef public float tikhonov_equalizer
-    cdef public char* deriv_matrix
+    cdef public float tikhonov_lambda
+    cdef public tikhonov_matrix
 
     cdef DICTIONARY
     cdef KERNELS
@@ -102,7 +102,7 @@ cdef class LinearOperator :
     cdef unsigned int*   ISOthreadsT
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS, tikhonov_equalizer=0, deriv_matrix=None ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, tikhonov_lambda=0, tikhonov_matrix=None ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
@@ -116,8 +116,8 @@ cdef class LinearOperator :
         self.nI         = KERNELS['iso'].shape[0]    # number of ISO contributions
         self.n          = DICTIONARY['IC']['n']      # numbner of IC segments
         self.ndirs      = KERNELS['wmr'].shape[1]    # number of directions
-        self.tikhonov_equalizer = tikhonov_equalizer # equalizer parameter of the Tikhonov regularization term
-        self.deriv_matrix       = deriv_matrix       # derivative matrix of the Tikhonov regularization term
+        self.tikhonov_lambda = tikhonov_lambda # equalizer parameter of the Tikhonov regularization term
+        self.tikhonov_matrix       = tikhonov_matrix       # derivative matrix of the Tikhonov regularization term
 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
@@ -128,15 +128,15 @@ cdef class LinearOperator :
 
         self.adjoint    = 0                         # direct of inverse product
 
-        # set shape of the operator according to deriv_matrix
-        if self.tikhonov_equalizer > 0.0:
-            if self.deriv_matrix == 0:
+        # set shape of the operator according to tikhonov_matrix
+        if self.tikhonov_lambda > 0:
+            if self.tikhonov_matrix == 'L1':
                 self.n1 = self.nV*self.nS + (self.nR-1)
-            elif self.deriv_matrix == 1:
+            elif self.tikhonov_matrix == 'L2':
                 self.n1 = self.nV*self.nS + (self.nR-2)
-            elif self.deriv_matrix == 2:
+            elif self.tikhonov_matrix == 'L1z':
                 self.n1 = self.nV*self.nS + (self.nR+1)
-            else:
+            elif self.tikhonov_matrix == 'L2z':
                 self.n1 = self.nV*self.nS + (self.nR)
         else:
             self.n1 = self.nV*self.nS
@@ -185,7 +185,7 @@ cdef class LinearOperator :
     @property
     def T( self ) :
         """Transpose of the explicit matrix."""
-        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.tikhonov_equalizer, self.deriv_matrix )
+        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.tikhonov_lambda, self.tikhonov_matrix )
         C.adjoint = 1 - C.adjoint
         return C
 
@@ -242,57 +242,57 @@ cdef class LinearOperator :
                     self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
                 )
 
-        if self.tikhonov_equalizer > 0:
+        if self.tikhonov_lambda > 0:
             if not self.adjoint:
                 # DIRECT PRODUCT lambda*L*x
-                if self.deriv_matrix == 'L1':
+                if self.tikhonov_matrix == 'L1':
                     with nogil:
                         COMMIT_L1(
-                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_equalizer,
+                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
-                elif self.deriv_matrix == 'L2':
+                elif self.tikhonov_matrix == 'L2':
                     with nogil:
                         COMMIT_L2(
-                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_equalizer,
+                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
-                elif self.deriv_matrix == 'L1z':
+                elif self.tikhonov_matrix == 'L1z':
                     with nogil:
                         COMMIT_L1z(
-                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_equalizer,
+                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
-                elif self.deriv_matrix == 'L2z':
+                elif self.tikhonov_matrix == 'L2z':
                     with nogil:
                         COMMIT_L2z(
-                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_equalizer,
+                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
             else:
                 # INVERSE PRODUCT lambda*L'*y
-                if self.deriv_matrix == 'L1':
+                if self.tikhonov_matrix == 'L1':
                     with nogil:
                         COMMIT_L1t(
-                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_equalizer,
+                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
-                elif self.deriv_matrix == 'L2':
+                elif self.tikhonov_matrix == 'L2':
                     with nogil:
                         COMMIT_L2t(
-                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_equalizer,
+                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
-                elif self.deriv_matrix == 'L1z':
+                elif self.tikhonov_matrix == 'L1z':
                     with nogil:
                         COMMIT_L1zt(
-                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_equalizer,
+                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
-                elif self.deriv_matrix == 'L2z':
+                elif self.tikhonov_matrix == 'L2z':
                     with nogil:
                         COMMIT_L2zt(
-                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_equalizer,
+                            self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
 
