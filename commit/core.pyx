@@ -653,11 +653,10 @@ cdef class Evaluation :
             If using this option, it is recommended to use a temporary directory, quit your python 
                 console between each build, and delete the content of the temporary directory.
         tikhonov_lambda: float
-            equalizer parameter of the Tikhonov regularization term
+            Tikhonov lambda
+            If a positive value is given, tikhonov_matrix must not be None
         tikhonov_matrix: string
-            derivative matrix of the Tikhonov regularization term
-            If None (default), no regularization term is added to the model
-            If using this option, tikhonov_lambda must be positive
+            Tikhonov matrix
         """
         if self.DICTIONARY is None :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
@@ -666,11 +665,11 @@ cdef class Evaluation :
         if self.THREADS is None :
             ERROR( 'Threads not set; call "set_threads()" first' )
         if tikhonov_lambda < 0:
-            ERROR( 'Invalid value for Tikhonov equalizer parameter; value must be positive or zero' )
+            ERROR( 'Invalid lambda for Tikhonov regularization; value must be positive or zero' )
         if tikhonov_lambda > 0 and tikhonov_matrix == None:
-            ERROR( 'Tikhonov equalizer term given but derivative matrix was not selected; add "tikhonov_matrix" parameter in "build_operator()", valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
+            ERROR( 'Tikhonov lambda given but Tikhonov matrix was not selected; add "tikhonov_matrix" parameter in "build_operator()"' )
         if tikhonov_lambda > 0 and tikhonov_matrix!='L1' and tikhonov_matrix!='L2' and tikhonov_matrix!='L1z' and tikhonov_matrix!='L2z':
-            ERROR( 'Invalid derivative matrix selection for regularization term; valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
+            ERROR( 'Invalid matrix selection for Tikhonov regularization term; check "tikhonov_matrix" parameter in "build_operator()"' )
         
         if self.DICTIONARY['IC']['nF'] <= 0 :
             ERROR( 'No streamline found in the dictionary; check your data' )
@@ -750,7 +749,7 @@ cdef class Evaluation :
             elif self.A.tikhonov_matrix == 'L2z':
                 yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]  , dtype=np.float64)
             else:
-                ERROR( 'Invalid derivative matrix selection for regularization term; valid options are \'L1\' (first  derivative with free boundary conditions), \'L2\' (second derivative with free boundary conditions), \'L1z\' (first  derivative with zero boundary conditions) and \'L2z\' (second derivative with zero boundary conditions)' )
+                ERROR( 'Invalid matrix selection for Tikhonov regularization term; check "tikhonov_matrix" parameter in "build_operator()"' )
             
             yL[0:y.shape[0]] = y
             return yL

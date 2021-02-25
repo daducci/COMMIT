@@ -26,42 +26,42 @@ cdef extern void COMMIT_At(
     unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
 ) nogil
 
-cdef extern void COMMIT_L1(
+cdef extern void Tikhonov_L1(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_v_in, double *_v_out
 ) nogil
 
-cdef extern void COMMIT_L2(
+cdef extern void Tikhonov_L2(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_v_in, double *_v_out
 ) nogil
 
-cdef extern void COMMIT_L1z(
+cdef extern void Tikhonov_L1z(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_v_in, double *_v_out
 ) nogil
 
-cdef extern void COMMIT_L2z(
+cdef extern void Tikhonov_L2z(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_v_in, double *_v_out
 ) nogil
 
-cdef extern void COMMIT_L1t(
+cdef extern void Tikhonov_L1t(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_v_in, double *_v_out
 ) nogil
 
-cdef extern void COMMIT_L2t(
+cdef extern void Tikhonov_L2t(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_v_in, double *_v_out
 ) nogil
 
-cdef extern void COMMIT_L1zt(
+cdef extern void Tikhonov_L1zt(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_v_in, double *_v_out
 ) nogil
 
-cdef extern void COMMIT_L2zt(
+cdef extern void Tikhonov_L2zt(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_v_in, double *_v_out
 ) nogil
@@ -247,25 +247,25 @@ cdef class LinearOperator :
                 # DIRECT PRODUCT lambda*L*x
                 if self.tikhonov_matrix == 'L1':
                     with nogil:
-                        COMMIT_L1(
+                        Tikhonov_L1(
                             self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
                 elif self.tikhonov_matrix == 'L2':
                     with nogil:
-                        COMMIT_L2(
+                        Tikhonov_L2(
                             self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
                 elif self.tikhonov_matrix == 'L1z':
                     with nogil:
-                        COMMIT_L1z(
+                        Tikhonov_L1z(
                             self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
                 elif self.tikhonov_matrix == 'L2z':
                     with nogil:
-                        COMMIT_L2z(
+                        Tikhonov_L2z(
                             self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
@@ -273,25 +273,25 @@ cdef class LinearOperator :
                 # INVERSE PRODUCT lambda*L'*y
                 if self.tikhonov_matrix == 'L1':
                     with nogil:
-                        COMMIT_L1t(
+                        Tikhonov_L1t(
                             self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
                 elif self.tikhonov_matrix == 'L2':
                     with nogil:
-                        COMMIT_L2t(
+                        Tikhonov_L2t(
                             self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
                 elif self.tikhonov_matrix == 'L1z':
                     with nogil:
-                        COMMIT_L1zt(
+                        Tikhonov_L1zt(
                             self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )
                 elif self.tikhonov_matrix == 'L2z':
                     with nogil:
-                        COMMIT_L2zt(
+                        Tikhonov_L2zt(
                             self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
                             &v_in[0], &v_out[0]
                         )

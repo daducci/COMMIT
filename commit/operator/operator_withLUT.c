@@ -2246,8 +2246,10 @@ void COMMIT_At(
     return;
 }
 
-////////////////////////// L_1 //////////////////////////
-void COMMIT_L1(
+// ===============================================================================================
+// Compute L*x MATRIX-VECTOR product (L is first order derivative with free boundary conditions)
+// ===============================================================================================
+void Tikhonov_L1(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_vIN, double *_vOUT)
 {
@@ -2258,7 +2260,10 @@ void COMMIT_L1(
     }
 }
 
-void COMMIT_L1t(
+// ==========================================================================================================
+// Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is first order derivative with free boundary conditions)
+// ==========================================================================================================
+void Tikhonov_L1t(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_vIN, double *_vOUT)
 {
@@ -2272,8 +2277,10 @@ void COMMIT_L1t(
     }
 }
 
-////////////////////////// L_2 //////////////////////////
-void COMMIT_L2(
+// ===============================================================================================
+// Compute L*x MATRIX-VECTOR product (L is second order derivative with free boundary conditions)
+// ===============================================================================================
+void Tikhonov_L2(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_vIN, double *_vOUT)
 {
@@ -2284,7 +2291,10 @@ void COMMIT_L2(
     }
 }
 
-void COMMIT_L2t(
+// ==========================================================================================================
+// Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is second order derivative with free boundary conditions)
+// ==========================================================================================================
+void Tikhonov_L2t(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_vIN, double *_vOUT)
 {
@@ -2303,8 +2313,10 @@ void COMMIT_L2t(
     }
 }
 
-////////////////////////// L_1^z //////////////////////////
-void COMMIT_L1z(
+// ===============================================================================================
+// Compute L*x MATRIX-VECTOR product (L is first order derivative with zero boundary conditions)
+// ===============================================================================================
+void Tikhonov_L1z(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_vIN, double *_vOUT)
 {
@@ -2319,7 +2331,10 @@ void COMMIT_L1z(
     }
 }
 
-void COMMIT_L1zt(
+// ==========================================================================================================
+// Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is first order derivative with zero boundary conditions)
+// ==========================================================================================================
+void Tikhonov_L1zt(
         int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_vIN, double *_vOUT)
 {
@@ -2330,8 +2345,10 @@ void COMMIT_L1zt(
     }
 }
 
-////////////////////////// L_2^z //////////////////////////
-void COMMIT_L2z(
+// ===============================================================================================
+// Compute L*x MATRIX-VECTOR product (L is second order derivative with zero boundary conditions)
+// ===============================================================================================
+void Tikhonov_L2z(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_vIN, double *_vOUT)
 {
@@ -2347,7 +2364,10 @@ void COMMIT_L2z(
     }
 }
 
-void COMMIT_L2zt(
+// ==========================================================================================================
+// Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is second order derivative with zero boundary conditions)
+// ==========================================================================================================
+void Tikhonov_L2zt(
     int _nF, int _nIC, int _nV, int _nS, double _lambda,
     double *_vIN, double *_vOUT)
 {
