@@ -406,13 +406,18 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         return None
 
     # save TDI and MASK maps
-    if filename_mask is not None :
-        affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()
-    elif filename_peaks is not None :
-        affine = niiPEAKS.affine if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_affine()
-    else :
-        affine = np.diag( [Px, Py, Pz, 1] )
-
+    if extension == ".trk":
+        if filename_mask is not None :
+            affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()
+        elif filename_peaks is not None :
+            affine = niiPEAKS.affine if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_affine()
+        else :
+            affine = np.diag( [Px, Py, Pz, 1] )
+            WARNING( 'dictionary_mask.nii.gz and dictionary_tdi.nii.gz will be created with a default affine' )
+    
+    if extension == ".tck":
+        affine = nii_image.affine if nibabel.__version__ >= '2.0.0' else nii_image.get_affine()
+        
     niiTDI = nibabel.Nifti1Image( niiTDI_img, affine )
     nii_hdr = niiTDI.header if nibabel.__version__ >= '2.0.0' else niiTDI.get_header()
     nii_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version

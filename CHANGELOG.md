@@ -2,14 +2,17 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.4.5] - 2021-02-08
+## [1.4.5] - 2021-03-24
 
 ### Fixed
 - operator.pyxbld: Changed the condition to create a new operator
-- trk2dictionary.pyx: Check that the tractogram exists before trying to 
-            load it and remove the try section
-- trk2dictionary.run(): fixed bug with blur parameters and computing the blur
-
+- trk2dictionary.pyx: 
+    - Check that the tractogram exists before trying to load it and 
+        remove the try section
+    - Fixed bug with blur parameters and computing the blur
+    - Create dictionary\_mask.nii.gz and dictionary\_tdi.nii.gz with 
+        affine from TCK\_ref\_image for tck tractograms
+    
 ### Added
 - core.pyx: Add to the function build_operator the parameter build_dir
 
