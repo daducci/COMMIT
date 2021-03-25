@@ -24,7 +24,7 @@ from amico.util import LOG, NOTE, WARNING, ERROR
 
 def setup( lmax=12, ndirs=32761 ) :
     """General setup/initialization of the COMMIT framework.
-    
+
     Parameters
     ----------
     lmax : int
@@ -41,7 +41,7 @@ def setup( lmax=12, ndirs=32761 ) :
 
 def load_dictionary_info( filename ):
     """Function to load dictionary info file
-    
+
     Parameters
     ----------
     filename : string
@@ -353,7 +353,7 @@ cdef class Evaluation :
             Folder containing the output of the trk2dictionary script (relative to subject path)
         use_all_voxels_in_mask : boolean
             If False (default) the optimization will be conducted only on the voxels actually
-            traversed by tracts. If True, then all voxels present in the mask specified in 
+            traversed by tracts. If True, then all voxels present in the mask specified in
             trk2dictionary.run(), i.e. "filename_mask" parameter, will be used instead.
             NB: if no mask was specified in trk2dictionary, this parameter is irrelevant.
         """
@@ -395,10 +395,11 @@ cdef class Evaluation :
         sys.stdout.flush()
 
         self.DICTIONARY['TRK'] = {}
-        self.DICTIONARY['TRK']['kept']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
-        self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
-        self.DICTIONARY['TRK']['len']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
-        
+        self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
+        self.DICTIONARY['TRK']['norm']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
+        self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
+        self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
+
 
         self.DICTIONARY['IC'] = {}
         self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
@@ -416,7 +417,7 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
         del idx
 
-        # divide the length of each segment by the fiber length so that all the columns of the libear operator will have same length
+        # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
         cdef :
             np.float32_t [:] sl = self.DICTIONARY['IC']['len']
@@ -648,9 +649,9 @@ cdef class Evaluation :
         Parameters
         ----------
         build_dir : string
-            The folder in which to store the compiled files. 
+            The folder in which to store the compiled files.
             If None (default), they will end up in the .pyxbld directory in the user’s home directory.
-            If using this option, it is recommended to use a temporary directory, quit your python 
+            If using this option, it is recommended to use a temporary directory, quit your python
                 console between each build, and delete the content of the temporary directory.
         """
         if self.DICTIONARY is None :
@@ -659,7 +660,7 @@ cdef class Evaluation :
             ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
             ERROR( 'Threads not set; call "set_threads()" first' )
-        
+
         if self.DICTIONARY['IC']['nF'] <= 0 :
             ERROR( 'No streamline found in the dictionary; check your data' )
         if self.DICTIONARY['EC']['nE'] <= 0 and self.KERNELS['wmh'].shape[0] > 0 :
@@ -672,21 +673,21 @@ cdef class Evaluation :
         from commit.operator import config
 
         compilation_is_needed = False
-        
+
         if config.nTHREADS is None or config.nTHREADS != self.THREADS['n']:
             compilation_is_needed = True
         if config.nIC is None or config.nIC != self.KERNELS['wmr'].shape[0]:
             compilation_is_needed = True
         if config.model is None or config.model != self.model.id:
-            compilation_is_needed = True        
+            compilation_is_needed = True
         if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
-            compilation_is_needed = True                
+            compilation_is_needed = True
         if config.nISO is None or config.nISO != self.KERNELS['iso'].shape[0]:
-            compilation_is_needed = True        
+            compilation_is_needed = True
         if config.build_dir != build_dir:
-            compilation_is_needed = True        
+            compilation_is_needed = True
 
-        if compilation_is_needed or not 'commit.operator.operator' in sys.modules :       
+        if compilation_is_needed or not 'commit.operator.operator' in sys.modules :
 
             if build_dir is not None:
                 if isdir(build_dir) and not len(listdir(build_dir)) == 0:
@@ -709,7 +710,7 @@ cdef class Evaluation :
                 import commit.operator.operator
             else :
                 reload( sys.modules['commit.operator.operator'] )
-            
+
         self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
@@ -848,7 +849,7 @@ cdef class Evaluation :
 
         if save_opt_details is not None :
             WARNING('"save_opt_details" parameter is deprecated')
-        
+
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
@@ -996,5 +997,5 @@ cdef class Evaluation :
             nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
             self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
             print( '[ OK ]' )
-        
+
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )

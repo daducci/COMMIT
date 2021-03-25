@@ -53,7 +53,8 @@ class segInVoxKey
 
 // global variables (to avoid passing them at each call)
 std::map<segKey,float>          FiberSegments;
-float                           FiberLen;
+float                           FiberLen;      // length of a streamline
+float                           FiberLenTot;   // length of a streamline (considering the blur)
 std::vector< Vector<double> >    P;
 
 Vector<int>     dim;
@@ -104,7 +105,7 @@ int trk2dictionary(
     segInVoxKey         inVoxKey;
 
     printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
-    
+
     int isTRK; // var to check
 
     char *ext = strrchr(str_filename, '.'); //get the extension of input file
@@ -116,7 +117,7 @@ int trk2dictionary(
     else
         return 0;
 
-    FILE* fpTractogram = fopen(str_filename,"rb"); //open 
+    FILE* fpTractogram = fopen(str_filename,"rb"); //open
     if (fpTractogram == NULL) return 0;
     fseek(fpTractogram,data_offset,SEEK_SET); //skip header
 
@@ -153,17 +154,18 @@ int trk2dictionary(
         printf( "\n[trk2dictionary] Unable to create output files" );
         return 0;
     }
-    filename = OUTPUT_path+"/dictionary_IC_f.dict";        FILE* pDict_IC_f      = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_v.dict";        FILE* pDict_IC_v      = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_o.dict";        FILE* pDict_IC_o      = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len    = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len   = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept  = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_f.dict";        FILE* pDict_IC_f       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_v.dict";        FILE* pDict_IC_v       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_o.dict";        FILE* pDict_IC_o       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len     = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len    = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_lenTot.dict";  FILE* pDict_TRK_lenTot = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept   = fopen(filename.c_str(),"wb");
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
     PROGRESS.setPrefix("     ");
-    
+
     float affine[4][4];
     if (!isTRK)  {//.tck
         //ricreate affine matrix
@@ -206,8 +208,9 @@ int trk2dictionary(
                     fiberNorm += pow(itNorm->second,2);
                 fiberNorm = sqrt(fiberNorm);
                 FiberNorm.clear();
-                fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
-                fwrite( &FiberLen,   1, 4, pDict_TRK_len );
+                fwrite( &fiberNorm,   1, 4, pDict_TRK_norm );   // actual length considered in optimization
+                fwrite( &FiberLen,    1, 4, pDict_TRK_len );    // length of the streamline
+                fwrite( &FiberLenTot, 1, 4, pDict_TRK_lenTot ); // length of the streamline (considering the blur)
                 totICSegments += FiberSegments.size();
                 totFibers++;
                 kept = 1;
@@ -224,6 +227,7 @@ int trk2dictionary(
     fclose( pDict_IC_o );
     fclose( pDict_IC_len );
     fclose( pDict_TRK_len );
+    fclose( pDict_TRK_lenTot );
     fclose( pDict_TRK_kept );
 
     printf("     [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
@@ -341,6 +345,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
     static int            i, j, k, kk;
 
     FiberLen = 0.0;
+    FiberLenTot = 0.0;
     FiberSegments.clear();
     if ( pts <= 2 )
         return;
@@ -458,7 +463,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vect
                             len = sqrt( pow(S2m.x-S1m.x,2) + pow(S2m.y-S1m.y,2) + pow(S2m.z-S1m.z,2) ); // in mm
                             if ( len <= minSegLen )
                                 break;
-                            
+
                             if ( floor(S1m.x/pixdim.x)==floor(S2m.x/pixdim.x) &&
                                 floor(S1m.y/pixdim.y)==floor(S2m.y/pixdim.y) &&
                                 floor(S1m.z/pixdim.z)==floor(S2m.z/pixdim.z)
@@ -550,6 +555,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );
     FiberSegments[key] += w * len;
+    FiberLenTot += len;
     if ( k==0 ) // fiber length computed only from origianl segments
         FiberLen += len;
 }
