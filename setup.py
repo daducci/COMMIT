@@ -30,7 +30,7 @@ class CustomBuildExtCommand(build_ext):
         # Now that the requirements are installed, get everything from numpy
         from Cython.Build import cythonize
         from numpy import get_include
-        
+
         # Add everything requires for build
         self.swig_opts = None
         self.include_dirs = [get_include()]
@@ -44,7 +44,7 @@ class CustomBuildExtCommand(build_ext):
 
 description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
 opts = dict(name='dmri-commit',
-            version='1.4.5',
+            version='1.4.6',
             description=description,
             long_description=description,
             author='Alessandro Daducci',
