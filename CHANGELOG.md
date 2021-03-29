@@ -5,8 +5,10 @@ All notable changes to COMMIT will be documented in this file.
 ## [1.4.6] - 2021-03-25
 
 ### Added
-- trk2dictionary: variable to keep track of streamline length (including blur)
+- Variable to keep track of total streamline contribution (including blur)
 
+### Fixed
+- Length of short segments to neglect
 
 ## [1.4.5] - 2021-02-08
 

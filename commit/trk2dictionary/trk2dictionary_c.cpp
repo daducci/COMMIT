@@ -535,7 +535,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
 
     // length of the segment
     len = dir.norm();
-    if ( len <= minSegLen )
+    if ( w*len <= minSegLen )
         return;
     dir.Normalize();
 
@@ -554,8 +554,8 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     ox = (int)round(colatitude/M_PI*180.0); // theta // i1
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );
-    FiberSegments[key] += w * len;
-    FiberLenTot += len;
+    FiberSegments[key] += w*len;
+    FiberLenTot += w*len;
     if ( k==0 ) // fiber length computed only from origianl segments
         FiberLen += len;
 }
