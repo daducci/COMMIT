@@ -556,7 +556,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );
     FiberSegments[key] += w*len;
     FiberLenTot += w*len;
-    if ( k==0 ) // fiber length computed only from origianl segments
+    if ( k==0 ) // fiber length computed only from original segments
         FiberLen += len;
 }
 

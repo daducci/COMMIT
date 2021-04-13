@@ -366,7 +366,7 @@ cdef class Evaluation :
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
         # check that ndirs of dictionary matches with that of the kernels
-        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
+        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
         if dictionary_info['ndirs'] != self.get_config('ndirs'):
             ERROR( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
         self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
@@ -975,7 +975,15 @@ cdef class Evaluation :
             elif stat_coeffs == 'max' :
                 xic = np.max( xic, axis=0 )
             else :
-                ERROR( 'Stat not allowed. Possible values: sum, mean, median, min, max, all.', prefix='\n' )
+                ERROR( 'Stat not allowed. Possible values: sum, mean, median, min, max, all', prefix='\n' )
+
+        # scale output weights if blur was used
+        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
+        if dictionary_info['blur_sigma'] > 0 :
+            if stat_coeffs == 'all' :
+                ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
+            xic = xic * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+            
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%.5e' )
         self.set_config('stat_coeffs', stat_coeffs)
         print( '[ OK ]' )

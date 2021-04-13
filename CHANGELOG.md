@@ -4,11 +4,9 @@ All notable changes to COMMIT will be documented in this file.
 
 ## [1.4.6] - 2021-03-25
 
-### Added
-- Variable to keep track of total streamline contribution (including blur)
-
 ### Fixed
 - Length of short segments to neglect
+- Streamline weights, in case of blur, are properly scaled
 
 ## [1.4.5] - 2021-02-08
 
