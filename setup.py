@@ -30,7 +30,7 @@ class CustomBuildExtCommand(build_ext):
         # Now that the requirements are installed, get everything from numpy
         from Cython.Build import cythonize
         from numpy import get_include
-        
+
         # Add everything requires for build
         self.swig_opts = None
         self.include_dirs = [get_include()]
