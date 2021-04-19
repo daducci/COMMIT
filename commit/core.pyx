@@ -730,7 +730,7 @@ cdef class Evaluation :
         return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
         """Fit the model to the data.
 
         Parameters
@@ -808,13 +808,19 @@ cdef class Evaluation :
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
 
-            cMAX = np.max(self.confidence_map_img)
-            cMIN = np.min(self.confidence_map_img)
-            if ( cMIN < 0. or cMAX > 1. ):                
-                self.confidence_map_img = ( self.confidence_map_img - cMIN ) / ( cMAX - cMIN )
-                LOG ( '\n Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [0,1] linearly' % ( cMIN, cMAX ) )
-
+            self.confidence_map_img[np.isnan(self.confidence_map_img)] = 0.
             confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
+            if(confidence_map_rescale):
+                cMAX = np.max(confidence_array)
+                cMIN = np.min(confidence_array)                
+                nV = self.DICTIONARY['nV']
+                if(cMIN == cMAX):
+                    confidence_array = confidence_array / cMIN 
+                else:
+                    confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
+                LOG ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) ) 
+                self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nV,-1) ).astype(np.float64)
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
@@ -972,7 +978,7 @@ cdef class Evaluation :
             
             print( '\t\t- RMSE considering the confidence map...  ', end='' )        
             sys.stdout.flush()
-            tmp = np.sqrt( np.mean((confidence_array*(y_mea-y_est))**2,axis=1) )
+            tmp = np.sqrt( np.mean(confidence_array*(y_mea-y_est)**2,axis=1) )
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = tmp.max()
@@ -984,7 +990,7 @@ cdef class Evaluation :
             tmp = np.sum(y_mea**2,axis=1)
             idx = np.where( tmp < 1E-12 )
             tmp[ idx ] = 1
-            tmp = np.sqrt( np.sum((confidence_array*(y_mea-y_est))**2,axis=1) / tmp )
+            tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
             tmp[ idx ] = 0
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
