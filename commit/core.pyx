@@ -747,15 +747,17 @@ cdef class Evaluation :
             Python dictionary that describes the wanted regularisation term.
             Check the documentation of commit.solvers.init_regularisation to see
             how to properly define the wanted mathematical formulation
-            ( default : None )
-        confidence_map_filename : 
+            (default : None)
+        confidence_map_filename : string
             Path to the NIFTI file containing a confidence map on the data, 
             relative to the subject folder. The file can be 3D or 4D in 
             the same space as the dwi_filename used (dim and voxel size).
-            It should contain float values. If the values are outside 
-            the range [0.0,1.0] they will be rescaled. 
+            It should contain float values. 
             (default : None)
-
+        confidence_map_rescale : boolean
+            If true, the values of the confidence map will be rescaled to the 
+            range [0.0,1.0]. Only the voxels considered in the mask will be affected.
+            (default : False)
         """
         if self.niiDWI is None :
             ERROR( 'Data not loaded; call "load_data()" first' )
