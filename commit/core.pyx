@@ -974,11 +974,15 @@ cdef class Evaluation :
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
         
         if self.confidence_map_img is not None:
-            confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
+            confidence_array = np.reshape( mit.confidence_map_img[ mit.DICTIONARY['MASK_ix'], mit.DICTIONARY['MASK_iy'], mit.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
             
             print( '\t\t- RMSE considering the confidence map...  ', end='' )        
             sys.stdout.flush()
-            tmp = np.sqrt( np.mean(confidence_array*(y_mea-y_est)**2,axis=1) )
+            tmp = np.sum(confidence_array,axis=1)
+            idx = np.where( tmp < 1E-12 )
+            tmp[ idx ] = 1 
+            tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
+            tmp[ idx ] = 0
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = tmp.max()
@@ -987,7 +991,7 @@ cdef class Evaluation :
 
             print( '\t\t- NRMSE considering the confidence map... ', end='' )
             sys.stdout.flush()
-            tmp = np.sum(y_mea**2,axis=1)
+            tmp = np.sum(confidence_array*y_mea**2,axis=1)
             idx = np.where( tmp < 1E-12 )
             tmp[ idx ] = 1
             tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
