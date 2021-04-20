@@ -141,7 +141,7 @@ cdef class Evaluation :
         print( '\t* DWI signal:' )
         self.set_config('dwi_filename', dwi_filename)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
-        self.niiDWI_img = self.niiDWI.get_data().astype(np.float32)
+        self.niiDWI_img = self.niiDWI.get_fdata().astype(np.float32)
         if self.niiDWI_img.ndim ==3 :
             self.niiDWI_img = np.expand_dims( self.niiDWI_img, axis=3 )
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
@@ -389,7 +389,7 @@ cdef class Evaluation :
              abs(self.get_config('pixdim')[1]-niiMASK_hdr['pixdim'][2])>1e-3 or
              abs(self.get_config('pixdim')[2]-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             WARNING( 'Dictionary does not have the same geometry as the dataset' )
-        self.DICTIONARY['MASK'] = (niiMASK.get_data() > 0).astype(np.uint8)
+        self.DICTIONARY['MASK'] = (niiMASK.get_fdata() > 0).astype(np.uint8)
 
         # segments from the tracts
         # ------------------------
@@ -786,7 +786,7 @@ cdef class Evaluation :
             
             self.set_config('confidence_map_filename', confidence_map_filename)
             confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
-            self.confidence_map_img = confidence_map.get_data().astype(np.float64)
+            self.confidence_map_img = confidence_map.get_fdata().astype(np.float64)
 
             if self.confidence_map_img.ndim not in [3,4]:
                 ERROR( 'Confidence map must be 3D or 4D dataset' )

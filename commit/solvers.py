@@ -289,11 +289,11 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
     x = np.zeros_like(xhat)
     if confidence_array is not None:
         sqrt_W = np.sqrt(confidence_array)
-        res = sqrt_W * (A.dot(xhat) - y.copy()) 
+        res = sqrt_W * (A.dot(xhat) - y) 
         grad = np.asarray(At.dot(sqrt_W * res))
     else:
         sqrt_W = None
-        res = A.dot(xhat) - y.copy() 
+        res = A.dot(xhat) - y 
         grad = np.asarray(At.dot(res))
 
     proximal( xhat )
