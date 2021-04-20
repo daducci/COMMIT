@@ -774,6 +774,7 @@ cdef class Evaluation :
         self.confidence_map_img = None
         self.set_config('confidence_map_filename', None)
         confidence_array = None
+        confidence_array_changed = False
 
         if confidence_map_filename is not None:
             # Loading confidence map
@@ -810,18 +811,29 @@ cdef class Evaluation :
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
 
-            self.confidence_map_img[np.isnan(self.confidence_map_img)] = 0.
             confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
-            if(confidence_map_rescale):
-                cMAX = np.max(confidence_array)
-                cMIN = np.min(confidence_array)                
-                nV = self.DICTIONARY['nV']
-                if(cMIN == cMAX):
-                    confidence_array = confidence_array / cMIN 
-                else:
-                    confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
+            if(np.isnan(confidence_array).any()): 
+                confidence_array[np.isnan(confidence_array)] = 0.
+                confidence_array_changed = True
+                WARNING('Confidence map contains NaNs. Those values were changed to 0.')
+            
+            cMAX = np.max(confidence_array)
+            cMIN = np.min(confidence_array)  
+            if(cMIN == cMAX): 
+                self.confidence_map_img = None
+                self.set_config('confidence_map_filename', None)
+                confidence_array = None
+                confidence_array_changed = False
+                WARNING('All voxels in the confidence map have the same value. The confidence map will not be used')
+
+            elif(confidence_map_rescale):
+                confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
                 LOG ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) ) 
+                confidence_array_changed = True
+            
+            if(confidence_array_changed):
+                nV = self.DICTIONARY['nV']
                 self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nV,-1) ).astype(np.float64)
 
         if x0 is not None :
@@ -976,7 +988,7 @@ cdef class Evaluation :
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
         
         if self.confidence_map_img is not None:
-            confidence_array = np.reshape( mit.confidence_map_img[ mit.DICTIONARY['MASK_ix'], mit.DICTIONARY['MASK_iy'], mit.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
+            confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
             
             print( '\t\t- RMSE considering the confidence map...  ', end='' )        
             sys.stdout.flush()
