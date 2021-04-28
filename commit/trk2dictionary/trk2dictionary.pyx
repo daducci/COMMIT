@@ -407,13 +407,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     # save TDI and MASK maps
     if extension == ".trk":
-        if filename_mask is not None :
-            affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()
-        elif filename_peaks is not None :
+        if filename_peaks is not None :
             affine = niiPEAKS.affine if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_affine()
+        elif filename_mask is not None :
+            affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()        
         else :
             affine = np.diag( [Px, Py, Pz, 1] )
-            WARNING( 'dictionary_mask.nii.gz and dictionary_tdi.nii.gz will be created with a default affine' )
+            WARNING( 'Output maps will be created using a default affine, i.e., diagonal matrix [%0.2f, %0.2f, %0.2f, 1.]'%(Px, Py, Pz) )
     
     if extension == ".tck":
         affine = nii_image.affine if nibabel.__version__ >= '2.0.0' else nii_image.get_affine()
