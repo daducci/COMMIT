@@ -2,9 +2,13 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.5.0] - 2021-04-16
+## [1.5.0] - 2021-04-28
 
-- Added the possibility to specify a voxel confidence map
+### Added
+- The possibility to specify a voxel confidence map
+
+### Fixed
+- Set license: BSD-3-Clause License 
 
 ## [1.4.6] - 2021-03-25
 
