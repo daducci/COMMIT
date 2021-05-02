@@ -10,6 +10,9 @@ All notable changes to COMMIT will be documented in this file.
 ### Fixed
 - Set license: BSD-3-Clause License 
 
+### Changed
+- Loading of nii data using (np.asanyarray( nii.dataobj )) in core and trk2dictionary
+
 ## [1.4.6] - 2021-03-25
 
 ### Fixed
