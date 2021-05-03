@@ -326,7 +326,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
             abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             WARNING( 'Dataset does not have the same geometry as the tractogram' )
-        niiMASK_img = np.ascontiguousarray( niiMASK.get_data().astype(np.float32) )
+        niiMASK_img = np.ascontiguousarray( np.asanyarray( niiMASK.dataobj ).astype(np.float32) )
         ptrMASK  = &niiMASK_img[0,0,0]
     else :
         print( '\t- No mask specified to filter IC compartments' )
@@ -356,7 +356,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             ERROR( 'PEAKS dataset must have 3*k volumes' )
         if vf_THR < 0 or vf_THR > 1 :
             ERROR( '"vf_THR" must be between 0 and 1' )
-        niiPEAKS_img = np.ascontiguousarray( niiPEAKS.get_data().astype(np.float32) )
+        niiPEAKS_img = np.ascontiguousarray( np.asanyarray( niiPEAKS.dataobj ).astype(np.float32) )
         ptrPEAKS = &niiPEAKS_img[0,0,0,0]
         Np = niiPEAKS.shape[3]/3
 

@@ -2,13 +2,24 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.4.6] - 2021-04-23
+## [1.5.0] - 2021-04-28
+
+### Added
+- The possibility to specify a voxel confidence map
+
+### Fixed
+- Set license: BSD-3-Clause License 
+- trk2dictionary.pyx: Create dictionary\_mask.nii.gz and dictionary\_tdi.nii.gz with 
+        affine from TCK\_ref\_image for tck tractograms
+
+### Changed
+- Loading of nii data using (np.asanyarray( nii.dataobj )) in core and trk2dictionary
+
+## [1.4.6] - 2021-03-25
 
 ### Fixed
 - Length of short segments to neglect
 - Streamline weights, in case of blur, are properly scaled
-- trk2dictionary.pyx: Create dictionary\_mask.nii.gz and dictionary\_tdi.nii.gz with 
-        affine from TCK\_ref\_image for tck tractograms
 
 ## [1.4.5] - 2021-02-08
 
