@@ -2,6 +2,17 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.5.0] - 2021-04-28
+
+### Added
+- The possibility to specify a voxel confidence map
+
+### Fixed
+- Set license: BSD-3-Clause License 
+
+### Changed
+- Loading of nii data using (np.asanyarray( nii.dataobj )) in core and trk2dictionary
+
 ## [1.4.6] - 2021-03-25
 
 ### Fixed

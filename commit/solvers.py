@@ -244,7 +244,7 @@ def evaluate_model(y, A, x, regularisation = None):
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 
-def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = True, x0 = None, regularisation = None):
+def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = True, x0 = None, regularisation = None, confidence_array = None):
     """
     Solve the regularised least squares problem
 
@@ -264,14 +264,15 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = Tru
     if x0 is None:
         x0 = np.zeros(A.shape[1])
 
-    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox)
+   
+    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
+   
 
-
-def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
+def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, confidence_array) :
     """
     Solve the regularised least squares problem
 
-        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+        argmin_x 0.5*|| sqrt(W) ( Ax-y ) ||_2^2 + Omega(x)
 
     with the FISTA algorithm described in [1].
 
@@ -284,10 +285,17 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     """
 
     # Initialization
-    res = -y.copy()
     xhat = x0.copy()
     x = np.zeros_like(xhat)
-    res += A.dot(xhat)
+    if confidence_array is not None:
+        sqrt_W = np.sqrt(confidence_array)
+        res = sqrt_W * (A.dot(xhat) - y) 
+        grad = np.asarray(At.dot(sqrt_W * res))
+    else:
+        sqrt_W = None
+        res = A.dot(xhat) - y 
+        grad = np.asarray(At.dot(res))
+
     proximal( xhat )
     reg_term = omega( xhat )
     prev_obj = 0.5 * np.linalg.norm(res)**2 + reg_term
@@ -295,11 +303,13 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     told = 1
     beta = 0.9
     prev_x = xhat.copy()
-    grad = np.asarray(At.dot(res))
-    qfval = prev_obj
+    qfval = prev_obj    
 
     # Step size computation
-    L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
+    if sqrt_W is not None:
+        L = ( np.linalg.norm( sqrt_W * A.dot(grad) ) / np.linalg.norm(grad) )**2
+    else:    
+        L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     mu = 1.9 / L
 
     # Main loop
@@ -323,7 +333,10 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         # Check stepsize
         tmp = x-xhat
         q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-        res = A.dot(x) - y
+        if sqrt_W is not None:
+            res = sqrt_W * ( A.dot(x) - y )
+        else:
+            res = A.dot(x) - y
         res_norm = np.linalg.norm(res)
         curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -340,7 +353,10 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
             # Check stepsize
             tmp = x-xhat
             q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-            res = A.dot(x) - y
+            if sqrt_W is not None:
+                res = sqrt_W * ( A.dot(x) - y )
+            else:
+                res = A.dot(x) - y
             res_norm = np.linalg.norm(res)
             curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -373,19 +389,20 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         xhat = x + (told-1)/t * (x - prev_x)
 
         # Gradient computation
-        res = A.dot(xhat) - y
-        xarr = np.asarray(x)
-
-        grad = np.asarray(At.dot(res))
-
+        if sqrt_W is not None:
+            res = sqrt_W * ( A.dot(xhat) - y )
+            grad = np.asarray(At.dot(sqrt_W * res))
+        else:
+            res = A.dot(xhat) - y
+            grad = np.asarray(At.dot(res))
+        
         # Update variables
         iter += 1
         prev_obj = curr_obj
         prev_x = x.copy()
         told = t
         qfval = 0.5 * np.linalg.norm(res)**2
-
-
+    
     if verbose :
         print( "< Stopping criterion: %s >" % criterion )
 
