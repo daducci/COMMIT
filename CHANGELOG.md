@@ -2,7 +2,7 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.5.0] - 2021-04-28
+## [1.5.0] - 2021-05-07
 
 ### Added
 - The possibility to specify a voxel confidence map
@@ -12,6 +12,7 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Changed
 - Loading of nii data using (np.asanyarray( nii.dataobj )) in core and trk2dictionary
+- confidence_map from float64 to float32
 
 ## [1.4.6] - 2021-03-25
 
