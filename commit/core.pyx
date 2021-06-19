@@ -786,7 +786,7 @@ cdef class Evaluation :
             
             self.set_config('confidence_map_filename', confidence_map_filename)
             confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
-            self.confidence_map_img = np.asanyarray( confidence_map.dataobj ).astype(np.float64)
+            self.confidence_map_img = np.asanyarray( confidence_map.dataobj ).astype(np.float32)
 
             if self.confidence_map_img.ndim not in [3,4]:
                 ERROR( 'Confidence map must be 3D or 4D dataset' )
@@ -811,7 +811,7 @@ cdef class Evaluation :
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
 
-            confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+            confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32)
 
             if(np.isnan(confidence_array).any()): 
                 confidence_array[np.isnan(confidence_array)] = 0.
@@ -834,7 +834,7 @@ cdef class Evaluation :
             
             if(confidence_array_changed):
                 nV = self.DICTIONARY['nV']
-                self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nV,-1) ).astype(np.float64)
+                self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nV,-1) ).astype(np.float32)
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
@@ -988,7 +988,7 @@ cdef class Evaluation :
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
         
         if self.confidence_map_img is not None:
-            confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64), (nV,-1) ).astype(np.float32)
+            confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
             
             print( '\t\t- RMSE considering the confidence map...  ', end='' )        
             sys.stdout.flush()
@@ -1015,6 +1015,7 @@ cdef class Evaluation :
             niiMAP_hdr['cal_max'] = 1
             nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE_adjusted.nii.gz') )
             print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
+            confidence_array = None
 
         # Map of compartment contributions
         print( '\t* Voxelwise contributions:' )
