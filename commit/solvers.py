@@ -125,7 +125,7 @@ def init_regularisation(commit_evaluation,
     if(0 in commit_evaluation.DICTIONARY['TRK']['kept']):
         dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
 
-        idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int8) - 1
+        idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int64) - 1
         idx_in_kept[dictionary_TRK_kept==1] = list(range(np.sum(dictionary_TRK_kept)))
 
         newStructureIC = []
@@ -137,12 +137,13 @@ def init_regularisation(commit_evaluation,
                 group = np.delete(group,idx_to_delete)
                 if(group.size>0):
                     newStructureIC.append(group)
-                    newWeightsIC.append(weightsIC(count))
+                    newWeightsIC.append(weightsIC[count])
             else:
                 newStructureIC.append(group)
-                newWeightsIC.append(weightsIC(count))
+                newWeightsIC.append(weightsIC[count])
 
         structureIC = np.array(newStructureIC)
+        weightsIC = np.array(newWeightsIC)
 
     regularisation['structureIC']      = structureIC
     regularisation['weightsIC']        = weightsIC
