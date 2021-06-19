@@ -28,7 +28,7 @@ list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
                         structureIC = None, weightsIC = None, group_norm = 2,
-                        lambdas = (.0,.0,.0) ):
+                        lambdas = (.0,.0,.0)):
     """
     Initialise the data structure that defines Omega in
 
@@ -121,6 +121,26 @@ def init_regularisation(commit_evaluation,
     regularisation['lambdaISO'] = float( lambdas[2] )
 
     # Solver-specific fields
+    # Check if idxs in groups need to be updated
+    if(0 in commit_evaluation.DICTIONARY['TRK']['kept']):
+        dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
+
+        idx_in_kept = np.zeros_like(dictionary_TRK_kept) - 1
+        idx_in_kept[dictionary_TRK_kept==1] = list(range(np.sum(dictionary_TRK_kept)))
+
+        newStructure = []
+        for group in structureIC:
+            group = idx_in_kept[group]   
+            idx_to_delete = np.where(group==-1)[0]
+            if idx_to_delete.size>0:
+                group = np.delete(group,idx_to_delete)
+                if(group.size>0):
+                    newStructure.append(group)
+            else:
+                newStructure.append(group)
+
+        structureIC = np.array(newStructure)
+
     regularisation['structureIC']      = structureIC
     regularisation['weightsIC']        = weightsIC
     regularisation['group_norm']       = group_norm
@@ -248,9 +268,9 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = Tru
     """
     Solve the regularised least squares problem
 
-        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+        argmin_x 0.5*|| sqrt(W) ( Ax-y ) ||_2^2 + Omega(x)
 
-    with the Omega described by 'regularisation'.
+    with the Omega described by 'regularisation' and W is the confidence_array
 
     Check the documentation of commit.solvers.init_regularisation to see how to
     solve a specific problem.
@@ -264,11 +284,13 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = Tru
     if x0 is None:
         x0 = np.zeros(A.shape[1])
 
+    if confidence_array is not None:
+        confidence_array = np.sqrt(confidence_array)
    
     return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
    
 
-def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, confidence_array) :
+def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqrt_W) :
     """
     Solve the regularised least squares problem
 
@@ -287,12 +309,10 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, con
     # Initialization
     xhat = x0.copy()
     x = np.zeros_like(xhat)
-    if confidence_array is not None:
-        sqrt_W = np.sqrt(confidence_array)
+    if sqrt_W is not None:
         res = sqrt_W * (A.dot(xhat) - y) 
         grad = np.asarray(At.dot(sqrt_W * res))
     else:
-        sqrt_W = None
         res = A.dot(xhat) - y 
         grad = np.asarray(At.dot(res))
 
