@@ -125,7 +125,7 @@ def init_regularisation(commit_evaluation,
     if(0 in commit_evaluation.DICTIONARY['TRK']['kept']):
         dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
 
-        idx_in_kept = np.zeros_like(dictionary_TRK_kept) - 1
+        idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int8) - 1
         idx_in_kept[dictionary_TRK_kept==1] = list(range(np.sum(dictionary_TRK_kept)))
 
         newStructure = []
