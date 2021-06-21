@@ -122,11 +122,11 @@ def init_regularisation(commit_evaluation,
 
     # Solver-specific fields
     # Check if idxs in groups need to be updated
-    if(0 in commit_evaluation.DICTIONARY['TRK']['kept']):
+    if 0 in commit_evaluation.DICTIONARY['TRK']['kept']:
         dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
 
-        idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int64) - 1
-        idx_in_kept[dictionary_TRK_kept==1] = list(range(np.sum(dictionary_TRK_kept)))
+        idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
+        idx_in_kept[dictionary_TRK_kept==1] = list(range(commit_evaluation.DICTIONARY['IC']['nF']))
 
         newStructureIC = []
         newWeightsIC = []
@@ -145,9 +145,9 @@ def init_regularisation(commit_evaluation,
         structureIC = np.array(newStructureIC)
         weightsIC = np.array(newWeightsIC)
 
-    regularisation['structureIC']      = structureIC
-    regularisation['weightsIC']        = weightsIC
-    regularisation['group_norm']       = group_norm
+    regularisation['structureIC'] = structureIC
+    regularisation['weightsIC']   = weightsIC
+    regularisation['group_norm']  = group_norm
 
     return regularisation
 
