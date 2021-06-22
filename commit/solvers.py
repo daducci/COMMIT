@@ -120,9 +120,8 @@ def init_regularisation(commit_evaluation,
     regularisation['lambdaEC']  = float( lambdas[1] )
     regularisation['lambdaISO'] = float( lambdas[2] )
 
-    # Solver-specific fields
-    # Check if idxs in groups need to be updated
-    if 0 in commit_evaluation.DICTIONARY['TRK']['kept']:
+    # Check if group indices need to be updated in case of group_sparsity
+    if (structureIC is not None) and (0 in commit_evaluation.DICTIONARY['TRK']['kept']) :
         dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
 
         idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
