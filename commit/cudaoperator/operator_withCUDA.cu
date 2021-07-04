@@ -484,7 +484,7 @@ __global__ void multiply_Ax_ICpart(uint32_t*  voxelIDs,
             for(int j=0; j<NUM_DIAMETERS; j++)
                 aux += (float64_t)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES]) * x[(*fiber) + j*NUM_FIBERS];
 
-            y[(*voxel)*NUM_SAMPLES + s] = aux*(*length);
+            y[(*voxel)*NUM_SAMPLES + s] += aux*(*length);
         }
 
         fiber++;
