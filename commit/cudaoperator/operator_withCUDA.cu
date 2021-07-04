@@ -356,7 +356,8 @@ void CudaLinearOperator::dot(float64_t* v_in, float64_t* v_out){
     //cudaCheckLastError();
 
     // Multiply IC part in the GPU
-    multiply_Ax_ICpart<<<nvoxels, 1024>>>(gpu_voxelIC, gpu_fiberIC, gpu_orienIC, gpu_lengthIC, gpu_segmentsPerBlockIC, gpu_offsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
+    //multiply_Ax_ICpart<<<nvoxels, 1024>>>(gpu_voxelIC, gpu_fiberIC, gpu_orienIC, gpu_lengthIC, gpu_segmentsPerBlockIC, gpu_offsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
+    multiply_Ax_ICpart<<<nvoxels/256 + 1, 256>>>(gpu_voxelIC, gpu_fiberIC, gpu_orienIC, gpu_lengthIC, gpu_segmentsPerBlockIC, gpu_offsetPerBlockIC, gpu_lutIC, gpu_x, gpu_y);
     //cudaCheckLastError();
 
     // Multiply EC part in the GPU
@@ -396,7 +397,7 @@ void CudaLinearOperator::Tdot(float64_t* v_in, float64_t* v_out){
 }
 
 // ------------------------------------------------------- KERNELS ------------------------------------------------------- //
-__global__ void multiply_Ax_ICpart(uint32_t*  voxelIDs,
+/*__global__ void multiply_Ax_ICpart(uint32_t*  voxelIDs,
                                    uint32_t*  fiberIDs,
                                    uint16_t*  orienIDs,
                                    float32_t* lengths,
@@ -448,6 +449,48 @@ __global__ void multiply_Ax_ICpart(uint32_t*  voxelIDs,
 
     if(tid < NUM_SAMPLES)
         y[(*voxel)*NUM_SAMPLES + sid] = sum + shmem[tid+512];
+}//*/
+
+__global__ void multiply_Ax_ICpart(uint32_t*  voxelIDs,
+                     uint32_t*  fiberIDs,
+                     uint16_t*  orienIDs,
+                     float32_t* lengths,
+                     uint32_t*  segmentsPerVoxel,
+                     uint32_t*  offsetPerVoxel,
+                     float32_t* lut,
+                     float64_t* x,
+                     float64_t* y)
+{
+    uint32_t bid = blockIdx.x;
+    uint32_t tid = threadIdx.x;
+
+    uint32_t vid = bid*256 + tid;
+
+    if (vid >= NUM_VOXELS) return;
+
+    uint32_t offset = offsetPerVoxel[ vid ];
+    uint32_t nsegments = segmentsPerVoxel[ vid ];
+
+    uint32_t*  voxel  = voxelIDs + offset;
+    uint32_t*  fiber  = fiberIDs + offset;
+    uint16_t*  orien  = orienIDs + offset;
+    float32_t* length = lengths  + offset;
+
+    for(int i=0; i<nsegments; i++){
+        for(int s=0; s<NUM_SAMPLES; s++){
+            int offset_lut = (*orien)*NUM_SAMPLES + s;
+
+            float64_t aux = 0.0;
+            for(int j=0; j<NUM_DIAMETERS; j++)
+                aux += (float64_t)(lut[offset_lut + j*NUM_ORIENTATIONS*NUM_SAMPLES]) * x[(*fiber) + j*NUM_FIBERS];
+
+            y[(*voxel)*NUM_SAMPLES + s] = aux*(*length);
+        }
+
+        fiber++;
+        orien++;
+        length++;
+    }
 }
 
 __global__ void multiply_Ax_ECpart(
