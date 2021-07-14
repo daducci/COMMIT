@@ -28,7 +28,7 @@ list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
                         structureIC = None, weightsIC = None, group_norm = 2,
-                        lambdas = (.0,.0,.0) ):
+                        lambdas = (.0,.0,.0)):
     """
     Initialise the data structure that defines Omega in
 
@@ -120,10 +120,33 @@ def init_regularisation(commit_evaluation,
     regularisation['lambdaEC']  = float( lambdas[1] )
     regularisation['lambdaISO'] = float( lambdas[2] )
 
-    # Solver-specific fields
-    regularisation['structureIC']      = structureIC
-    regularisation['weightsIC']        = weightsIC
-    regularisation['group_norm']       = group_norm
+    # Check if group indices need to be updated in case of group_sparsity
+    if (structureIC is not None) and (0 in commit_evaluation.DICTIONARY['TRK']['kept']) :
+        dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
+
+        idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
+        idx_in_kept[dictionary_TRK_kept==1] = list(range(commit_evaluation.DICTIONARY['IC']['nF']))
+
+        newStructureIC = []
+        newWeightsIC = []
+        for count, group in enumerate(structureIC):
+            group = idx_in_kept[group]   
+            idx_to_delete = np.where(group==-1)[0]
+            if idx_to_delete.size>0:
+                group = np.delete(group,idx_to_delete)
+                if(group.size>0):
+                    newStructureIC.append(group)
+                    newWeightsIC.append(weightsIC[count])
+            else:
+                newStructureIC.append(group)
+                newWeightsIC.append(weightsIC[count])
+
+        structureIC = np.array(newStructureIC)
+        weightsIC = np.array(newWeightsIC)
+
+    regularisation['structureIC'] = structureIC
+    regularisation['weightsIC']   = weightsIC
+    regularisation['group_norm']  = group_norm
 
     return regularisation
 

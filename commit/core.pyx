@@ -1090,7 +1090,7 @@ cdef class Evaluation :
         if dictionary_info['blur_sigma'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            xic = xic * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+            xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
             
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%.5e' )
         self.set_config('stat_coeffs', stat_coeffs)
