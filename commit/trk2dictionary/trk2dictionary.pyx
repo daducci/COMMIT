@@ -13,7 +13,6 @@ import pickle
 from amico.util import LOG, NOTE, WARNING, ERROR
 from pkg_resources import get_distribution
 
-
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
@@ -28,7 +27,7 @@ cdef extern from "trk2dictionary_c.cpp":
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
-    blur_radii=[], blur_samples=[], blur_extent=0.0, blur_sigma=0.0,
+    blur_radii=[], blur_samples=[], blur_extent = 0.0, blur_sigma=0.0,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
