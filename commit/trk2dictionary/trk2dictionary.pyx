@@ -27,7 +27,7 @@ cdef extern from "trk2dictionary_c.cpp":
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
-    blur_radii=[], blur_samples=[], blur_extent=0.0, blur_sigma=0.0,
+    blur_radii=[], blur_samples=[], blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
@@ -92,9 +92,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Segments are duplicated along a circle at a given radius; this parameter controls the
         number of samples to take over a given circle (defaut : []).
 
-    blur_sigma: float
-        The contributions of the segments at different radii are damped as a Gaussian (default : 0.0).
+    blur_core_extent: float
+        Extent of the core inside which the segments have equal contribution to the central one (default : 0.0).
     
+    blur_gauss_extent: float
+        Extent of the gaussian damping at the border (default : 0.0).
+
+    blur_gauss_min: float
+        Minimum value of the Gaussian to consider when computing the sigma (default : 0.1).
+
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
         each segment in a streamline (default : 32761).
@@ -133,7 +139,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     elif type(blur_samples)!=np.ndarray:
         ERROR( '"blur_samples" must be a list of integers' )
 
-    if blur_sigma > 0 :
+    if blur_core_extent < 0 :
+        ERROR( 'The extent of the core must be non-negative' )
+    
+    if blur_gauss_extent < 0 :
+        ERROR( 'The extent of the blur must be non-negative' )
+
+    if blur_gauss_extent > 0 or blur_core_extent > 0:
         if blur_radii.size != blur_samples.size :
             ERROR( 'The number of blur radii and blur samples must match' )
 
@@ -142,6 +154,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
         if np.count_nonzero( blur_samples<1 ):
             ERROR( 'Please specify at least 1 sample per blur radius' )
+
+        if blur_core_extent + blur_gauss_extent > np.max(blur_radii) :
+            ERROR( 'The total blur extent cannot be grater than the maximum radius' )
 
     tic = time.time()
     LOG( '\n-> Creating the dictionary from tractogram:' )
@@ -169,9 +184,10 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         int nBlurRadii
         float [:] ArrayInvM
         float* ptrArrayInvM
-    
+        float blur_sigma
+
     # add a fake radius for original segment
-    if blur_sigma == 0:
+    if blur_gauss_extent == 0 and blur_core_extent == 0 :
         nBlurRadii = 1
         blurRadii = np.array( [0.0], np.double )
         blurSamples = np.array( [1], np.int32 )
@@ -181,15 +197,23 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         blurRadii = np.insert( blur_radii, 0, 0.0 ).astype(np.double)
         blurSamples = np.insert( blur_samples, 0, 1 ).astype(np.int32)
 
-        # compute weights for gaussian damping
-        blurWeights = np.empty_like( blurRadii )
-        for i in xrange(nBlurRadii):
-            blurWeights[i] = np.exp( -blurRadii[i]**2 / (2.0*blur_sigma**2) )
+        if blur_gauss_extent == 0 :
+            blurWeights = np.ones_like( blurRadii, np.double )
+        else:
+            blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.log( blur_gauss_min ) )
+            blurWeights = np.empty_like( blurRadii )
+            for i in xrange(nBlurRadii):
+                if blurRadii[i] <= blur_core_extent :
+                    blurWeights[i] = 1.0
+                else:
+                    blurWeights[i] = np.exp( -(blurRadii[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
 
     if nBlurRadii == 1 :
         print( '\t- Do not blur fibers' )
     else :
         print( '\t- Blur fibers:' )
+        print( '\t\t- core extent = %.3f' % blur_core_extent )
+        print( '\t\t- blur extent = %.3f' % blur_gauss_extent )
         print( '\t\t- sigma = %.3f' % blur_sigma )
         print( '\t\t- radii =   [ ', end="" )
         for i in xrange( 1, blurRadii.size ) :
@@ -388,7 +412,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['flip_peaks'] = flip_peaks
     dictionary_info['blur_radii'] = blur_radii
     dictionary_info['blur_samples'] = blur_samples
-    dictionary_info['blur_sigma'] = blur_sigma    
+    dictionary_info['blur_core_extent'] = blur_core_extent    
+    dictionary_info['blur_gauss_extent'] = blur_gauss_extent    
+    dictionary_info['blur_gauss_min'] = blur_gauss_min    
     dictionary_info['ndirs'] = ndirs
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
