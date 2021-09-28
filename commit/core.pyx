@@ -24,7 +24,7 @@ from amico.util import LOG, NOTE, WARNING, ERROR
 
 def setup( lmax=12, ndirs=32761 ) :
     """General setup/initialization of the COMMIT framework.
-    
+
     Parameters
     ----------
     lmax : int
@@ -41,7 +41,7 @@ def setup( lmax=12, ndirs=32761 ) :
 
 def load_dictionary_info( filename ):
     """Function to load dictionary info file
-    
+
     Parameters
     ----------
     filename : string
@@ -75,7 +75,8 @@ cdef class Evaluation :
     cdef public A
     cdef public x
     cdef public CONFIG
-
+    cdef public confidence_map_img
+    
     def __init__( self, study_path, subject ) :
         """Setup the data structures with default values.
 
@@ -86,14 +87,15 @@ cdef class Evaluation :
         subject : string
             The path (relative to previous folder) to the subject folder
         """
-        self.niiDWI     = None # set by "load_data" method
-        self.scheme     = None # set by "load_data" method
-        self.model      = None # set by "set_model" method
-        self.KERNELS    = None # set by "load_kernels" method
-        self.DICTIONARY = None # set by "load_dictionary" method
-        self.THREADS    = None # set by "set_threads" method
-        self.A          = None # set by "build_operator" method
-        self.x          = None # set by "fit" method
+        self.niiDWI             = None # set by "load_data" method
+        self.scheme             = None # set by "load_data" method
+        self.model              = None # set by "set_model" method
+        self.KERNELS            = None # set by "load_kernels" method
+        self.DICTIONARY         = None # set by "load_dictionary" method
+        self.THREADS            = None # set by "set_threads" method
+        self.A                  = None # set by "build_operator" method
+        self.x                  = None # set by "fit" method
+        self.confidence_map_img = None # set by "fit" method
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
@@ -139,7 +141,7 @@ cdef class Evaluation :
         print( '\t* DWI signal:' )
         self.set_config('dwi_filename', dwi_filename)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
-        self.niiDWI_img = self.niiDWI.get_data().astype(np.float32)
+        self.niiDWI_img = np.asanyarray( self.niiDWI.dataobj ).astype(np.float32)
         if self.niiDWI_img.ndim ==3 :
             self.niiDWI_img = np.expand_dims( self.niiDWI_img, axis=3 )
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
@@ -353,7 +355,7 @@ cdef class Evaluation :
             Folder containing the output of the trk2dictionary script (relative to subject path)
         use_all_voxels_in_mask : boolean
             If False (default) the optimization will be conducted only on the voxels actually
-            traversed by tracts. If True, then all voxels present in the mask specified in 
+            traversed by tracts. If True, then all voxels present in the mask specified in
             trk2dictionary.run(), i.e. "filename_mask" parameter, will be used instead.
             NB: if no mask was specified in trk2dictionary, this parameter is irrelevant.
         """
@@ -366,7 +368,7 @@ cdef class Evaluation :
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
         # check that ndirs of dictionary matches with that of the kernels
-        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), "dictionary_info.pickle") )
+        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
         if dictionary_info['ndirs'] != self.get_config('ndirs'):
             ERROR( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
         self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
@@ -387,7 +389,7 @@ cdef class Evaluation :
              abs(self.get_config('pixdim')[1]-niiMASK_hdr['pixdim'][2])>1e-3 or
              abs(self.get_config('pixdim')[2]-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             WARNING( 'Dictionary does not have the same geometry as the dataset' )
-        self.DICTIONARY['MASK'] = (niiMASK.get_data() > 0).astype(np.uint8)
+        self.DICTIONARY['MASK'] = ( np.asanyarray(niiMASK.dataobj ) > 0).astype(np.uint8)
 
         # segments from the tracts
         # ------------------------
@@ -395,10 +397,11 @@ cdef class Evaluation :
         sys.stdout.flush()
 
         self.DICTIONARY['TRK'] = {}
-        self.DICTIONARY['TRK']['kept']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
-        self.DICTIONARY['TRK']['norm'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
-        self.DICTIONARY['TRK']['len']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
-        
+        self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
+        self.DICTIONARY['TRK']['norm']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
+        self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
+        self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
+
 
         self.DICTIONARY['IC'] = {}
         self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
@@ -416,7 +419,7 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
         del idx
 
-        # divide the length of each segment by the fiber length so that all the columns of the libear operator will have same length
+        # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
         cdef :
             np.float32_t [:] sl = self.DICTIONARY['IC']['len']
@@ -673,9 +676,9 @@ cdef class Evaluation :
         Parameters
         ----------
         build_dir : string
-            The folder in which to store the compiled files. 
+            The folder in which to store the compiled files.
             If None (default), they will end up in the .pyxbld directory in the user’s home directory.
-            If using this option, it is recommended to use a temporary directory, quit your python 
+            If using this option, it is recommended to use a temporary directory, quit your python
                 console between each build, and delete the content of the temporary directory.
         """
         if self.DICTIONARY is None :
@@ -684,7 +687,7 @@ cdef class Evaluation :
             ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
             ERROR( 'Threads not set; call "set_threads()" first' )
-        
+
         if self.DICTIONARY['IC']['nF'] <= 0 :
             ERROR( 'No streamline found in the dictionary; check your data' )
         if self.DICTIONARY['EC']['nE'] <= 0 and self.KERNELS['wmh'].shape[0] > 0 :
@@ -756,7 +759,7 @@ cdef class Evaluation :
         return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=1, x0=None, regularisation=None ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
         """Fit the model to the data.
 
         Parameters
@@ -765,15 +768,25 @@ cdef class Evaluation :
             Tolerance on the objective function (default : 1e-3)
         max_iter : integer
             Maximum number of iterations (default : 100)
-        verbose : integer
-            Level of verbosity: 0=no print, 1=print progress (default : 1)
+        verbose : boolean
+            Level of verbosity: 0=no print, 1=print progress (default : True)
         x0 : np.array
             Initial guess for the solution of the problem (default : None)
         regularisation : commit.solvers.init_regularisation object
             Python dictionary that describes the wanted regularisation term.
             Check the documentation of commit.solvers.init_regularisation to see
             how to properly define the wanted mathematical formulation
-            ( default : None )
+            (default : None)
+        confidence_map_filename : string
+            Path to the NIFTI file containing a confidence map on the data, 
+            relative to the subject folder. The file can be 3D or 4D in 
+            the same space as the dwi_filename used (dim and voxel size).
+            It should contain float values. 
+            (default : None)
+        confidence_map_rescale : boolean
+            If true, the values of the confidence map will be rescaled to the 
+            range [0.0,1.0]. Only the voxels considered in the mask will be affected.
+            (default : False)
         """
         if self.niiDWI is None :
             ERROR( 'Data not loaded; call "load_data()" first' )
@@ -785,6 +798,72 @@ cdef class Evaluation :
             ERROR( 'Threads not set; call "set_threads()" first' )
         if self.A is None :
             ERROR( 'Operator not built; call "build_operator()" first' )
+        
+        # Confidence map
+        self.confidence_map_img = None
+        self.set_config('confidence_map_filename', None)
+        confidence_array = None
+        confidence_array_changed = False
+
+        if confidence_map_filename is not None:
+            # Loading confidence map
+            tic = time.time()
+            LOG( '\n-> Loading confidence map:' )
+
+            if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :            
+                ERROR( 'Confidence map not found' )
+            
+            self.set_config('confidence_map_filename', confidence_map_filename)
+            confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
+            self.confidence_map_img = np.asanyarray( confidence_map.dataobj ).astype(np.float32)
+
+            if self.confidence_map_img.ndim not in [3,4]:
+                ERROR( 'Confidence map must be 3D or 4D dataset' )
+
+            if self.confidence_map_img.ndim == 3:
+                print( '\t* Extending the confidence map volume to match the DWI signal volume(s)... ' )                
+                self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
+            hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
+            confidence_map_dim = self.confidence_map_img.shape[0:3]
+            confidence_map_pixdim = tuple( hdr.get_zooms()[:3] )
+            print( '\t\t- dim    : %d x %d x %d x %d' % self.confidence_map_img.shape )
+            print( '\t\t- pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim )
+
+            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            
+            if ( self.get_config('dim') != confidence_map_dim ):
+                ERROR( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
+
+            if (self.get_config('pixdim') != confidence_map_pixdim ):
+                ERROR( 'Dataset does not have the same geometry (voxel size) as the DWI signal' )
+            
+            if (self.confidence_map_img.shape != self.niiDWI_img.shape):
+                ERROR( 'Dataset does not have the same geometry as the DWI signal' )
+
+            confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32)
+
+            if(np.isnan(confidence_array).any()): 
+                confidence_array[np.isnan(confidence_array)] = 0.
+                confidence_array_changed = True
+                WARNING('Confidence map contains NaNs. Those values were changed to 0.')
+            
+            cMAX = np.max(confidence_array)
+            cMIN = np.min(confidence_array)  
+            if(cMIN == cMAX): 
+                self.confidence_map_img = None
+                self.set_config('confidence_map_filename', None)
+                confidence_array = None
+                confidence_array_changed = False
+                WARNING('All voxels in the confidence map have the same value. The confidence map will not be used')
+
+            elif(confidence_map_rescale):
+                confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
+                LOG ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) ) 
+                confidence_array_changed = True
+            
+            if(confidence_array_changed):
+                nV = self.DICTIONARY['nV']
+                self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nV,-1) ).astype(np.float32)
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
@@ -803,7 +882,7 @@ cdef class Evaluation :
         t = time.time()
         LOG( '\n-> Fit model:' )
 
-        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation)
+        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
@@ -877,7 +956,7 @@ cdef class Evaluation :
 
         if save_opt_details is not None :
             WARNING('"save_opt_details" parameter is deprecated')
-        
+
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
@@ -936,6 +1015,36 @@ cdef class Evaluation :
         niiMAP_hdr['cal_max'] = 1
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
+        
+        if self.confidence_map_img is not None:
+            confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
+            
+            print( '\t\t- RMSE considering the confidence map...  ', end='' )        
+            sys.stdout.flush()
+            tmp = np.sum(confidence_array,axis=1)
+            idx = np.where( tmp < 1E-12 )
+            tmp[ idx ] = 1 
+            tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
+            tmp[ idx ] = 0
+            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+            niiMAP_hdr['cal_min'] = 0
+            niiMAP_hdr['cal_max'] = tmp.max()
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE_adjusted.nii.gz') )
+            print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
+
+            print( '\t\t- NRMSE considering the confidence map... ', end='' )
+            sys.stdout.flush()
+            tmp = np.sum(confidence_array*y_mea**2,axis=1)
+            idx = np.where( tmp < 1E-12 )
+            tmp[ idx ] = 1
+            tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
+            tmp[ idx ] = 0
+            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+            niiMAP_hdr['cal_min'] = 0
+            niiMAP_hdr['cal_max'] = 1
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE_adjusted.nii.gz') )
+            print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
+            confidence_array = None
 
         # Map of compartment contributions
         print( '\t* Voxelwise contributions:' )
@@ -1003,7 +1112,15 @@ cdef class Evaluation :
             elif stat_coeffs == 'max' :
                 xic = np.max( xic, axis=0 )
             else :
-                ERROR( 'Stat not allowed. Possible values: sum, mean, median, min, max, all.', prefix='\n' )
+                ERROR( 'Stat not allowed. Possible values: sum, mean, median, min, max, all', prefix='\n' )
+
+        # scale output weights if blur was used
+        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
+        if dictionary_info['blur_sigma'] > 0 :
+            if stat_coeffs == 'all' :
+                ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
+            xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+            
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%.5e' )
         self.set_config('stat_coeffs', stat_coeffs)
         print( '[ OK ]' )
@@ -1025,5 +1142,5 @@ cdef class Evaluation :
             nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
             self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
             print( '[ OK ]' )
-        
+
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )

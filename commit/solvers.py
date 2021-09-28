@@ -28,7 +28,7 @@ list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
                         structureIC = None, weightsIC = None, group_norm = 2,
-                        lambdas = (.0,.0,.0) ):
+                        lambdas = (.0,.0,.0)):
     """
     Initialise the data structure that defines Omega in
 
@@ -120,10 +120,33 @@ def init_regularisation(commit_evaluation,
     regularisation['lambdaEC']  = float( lambdas[1] )
     regularisation['lambdaISO'] = float( lambdas[2] )
 
-    # Solver-specific fields
-    regularisation['structureIC']      = structureIC
-    regularisation['weightsIC']        = weightsIC
-    regularisation['group_norm']       = group_norm
+    # Check if group indices need to be updated in case of group_sparsity
+    if (structureIC is not None) and (0 in commit_evaluation.DICTIONARY['TRK']['kept']) :
+        dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
+
+        idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
+        idx_in_kept[dictionary_TRK_kept==1] = list(range(commit_evaluation.DICTIONARY['IC']['nF']))
+
+        newStructureIC = []
+        newWeightsIC = []
+        for count, group in enumerate(structureIC):
+            group = idx_in_kept[group]   
+            idx_to_delete = np.where(group==-1)[0]
+            if idx_to_delete.size>0:
+                group = np.delete(group,idx_to_delete)
+                if(group.size>0):
+                    newStructureIC.append(group)
+                    newWeightsIC.append(weightsIC[count])
+            else:
+                newStructureIC.append(group)
+                newWeightsIC.append(weightsIC[count])
+
+        structureIC = np.array(newStructureIC)
+        weightsIC = np.array(newWeightsIC)
+
+    regularisation['structureIC'] = structureIC
+    regularisation['weightsIC']   = weightsIC
+    regularisation['group_norm']  = group_norm
 
     return regularisation
 
@@ -244,13 +267,13 @@ def evaluate_model(y, A, x, regularisation = None):
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 
-def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, x0 = None, regularisation = None):
+def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = True, x0 = None, regularisation = None, confidence_array = None):
     """
     Solve the regularised least squares problem
 
-        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+        argmin_x 0.5*|| sqrt(W) ( Ax-y ) ||_2^2 + Omega(x)
 
-    with the Omega described by 'regularisation'.
+    with the Omega described by 'regularisation' and W is the confidence_array
 
     Check the documentation of commit.solvers.init_regularisation to see how to
     solve a specific problem.
@@ -264,14 +287,17 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = 1, 
     if x0 is None:
         x0 = np.zeros(A.shape[1])
 
-    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox)
+    if confidence_array is not None:
+        confidence_array = np.sqrt(confidence_array)
+   
+    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
+   
 
-
-def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
+def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqrt_W) :
     """
     Solve the regularised least squares problem
 
-        argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
+        argmin_x 0.5*|| sqrt(W) ( Ax-y ) ||_2^2 + Omega(x)
 
     with the FISTA algorithm described in [1].
 
@@ -284,10 +310,15 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     """
 
     # Initialization
-    res = -y.copy()
     xhat = x0.copy()
     x = np.zeros_like(xhat)
-    res += A.dot(xhat)
+    if sqrt_W is not None:
+        res = sqrt_W * (A.dot(xhat) - y) 
+        grad = np.asarray(At.dot(sqrt_W * res))
+    else:
+        res = A.dot(xhat) - y 
+        grad = np.asarray(At.dot(res))
+
     proximal( xhat )
     reg_term = omega( xhat )
     prev_obj = 0.5 * np.linalg.norm(res)**2 + reg_term
@@ -295,21 +326,23 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
     told = 1
     beta = 0.9
     prev_x = xhat.copy()
-    grad = np.asarray(At.dot(res))
-    qfval = prev_obj
+    qfval = prev_obj    
 
     # Step size computation
-    L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
+    if sqrt_W is not None:
+        L = ( np.linalg.norm( sqrt_W * A.dot(grad) ) / np.linalg.norm(grad) )**2
+    else:    
+        L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     mu = 1.9 / L
 
     # Main loop
-    if verbose >= 1 :
+    if verbose :
         print()
         print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
         print( "------|--------------------------------|-----------------------------------------------|------------------------------" )
     iter = 1
     while True :
-        if verbose >= 1 :
+        if verbose :
             print( "%4d  |" % iter, end="" )
             sys.stdout.flush()
 
@@ -323,7 +356,10 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         # Check stepsize
         tmp = x-xhat
         q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-        res = A.dot(x) - y
+        if sqrt_W is not None:
+            res = sqrt_W * ( A.dot(x) - y )
+        else:
+            res = A.dot(x) - y
         res_norm = np.linalg.norm(res)
         curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -340,7 +376,10 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
             # Check stepsize
             tmp = x-xhat
             q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
-            res = A.dot(x) - y
+            if sqrt_W is not None:
+                res = sqrt_W * ( A.dot(x) - y )
+            else:
+                res = A.dot(x) - y
             res_norm = np.linalg.norm(res)
             curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -349,7 +388,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
-        if verbose >= 1 :
+        if verbose :
             print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
 
         if abs_obj < eps :
@@ -373,20 +412,21 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal) :
         xhat = x + (told-1)/t * (x - prev_x)
 
         # Gradient computation
-        res = A.dot(xhat) - y
-        xarr = np.asarray(x)
-
-        grad = np.asarray(At.dot(res))
-
+        if sqrt_W is not None:
+            res = sqrt_W * ( A.dot(xhat) - y )
+            grad = np.asarray(At.dot(sqrt_W * res))
+        else:
+            res = A.dot(xhat) - y
+            grad = np.asarray(At.dot(res))
+        
         # Update variables
         iter += 1
         prev_obj = curr_obj
         prev_x = x.copy()
         told = t
         qfval = 0.5 * np.linalg.norm(res)**2
-
-
-    if verbose >= 1 :
+    
+    if verbose :
         print( "< Stopping criterion: %s >" % criterion )
 
     opt_details = {}

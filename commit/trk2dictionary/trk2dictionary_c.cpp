@@ -52,13 +52,14 @@ class segInVoxKey
 };
 
 // global variables (to avoid passing them at each call)
-std::map<segKey,float>  FiberSegments;
-float                   FiberLen;
+std::map<segKey,float>          FiberSegments;
+float                           FiberLen;      // length of a streamline
+float                           FiberLenTot;   // length of a streamline (considering the blur)
+std::vector< Vector<double> >    P;
 
 Vector<int>     dim;
 Vector<float>   pixdim;
 float*          ptrMASK;
-unsigned int    nPointsToSkip;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
 float           minSegLen, minFiberLen, maxFiberLen;
@@ -81,7 +82,7 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine
 // =========================
 int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
-    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, int points_to_skip, float min_seg_len, float min_fiber_len, float max_fiber_len,
+    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
@@ -95,7 +96,6 @@ int trk2dictionary(
     unsigned int   N, totICSegments = 0, totFibers = 0, v;
     unsigned short o;
     unsigned char  kept;
-    Vector<double> P;
     std::string    filename;
     std::string    OUTPUT_path(path_out);
     std::map<segKey,float>::iterator it;
@@ -105,7 +105,7 @@ int trk2dictionary(
     segInVoxKey         inVoxKey;
 
     printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
-    
+
     int isTRK; // var to check
 
     char *ext = strrchr(str_filename, '.'); //get the extension of input file
@@ -117,14 +117,13 @@ int trk2dictionary(
     else
         return 0;
 
-    FILE* fpTractogram = fopen(str_filename,"rb"); //open 
+    FILE* fpTractogram = fopen(str_filename,"rb"); //open
     if (fpTractogram == NULL) return 0;
     fseek(fpTractogram,data_offset,SEEK_SET); //skip header
 
     // set global variables
     dim.Set( Nx, Ny, Nz );
     pixdim.Set( Px, Py, Pz );
-    nPointsToSkip = points_to_skip;
     fiberShiftXmm = fiber_shiftX * pixdim.x; // shift in mm for the coordinates
     fiberShiftYmm = fiber_shiftY * pixdim.y;
     fiberShiftZmm = fiber_shiftZ * pixdim.z;
@@ -137,12 +136,15 @@ int trk2dictionary(
     radii.clear();
     sectors.clear();
     weights.clear();
+    N = 0;
     for(int i=0; i<nBlurRadii ;i++)
     {
         radii.push_back( ptrBlurRadii[i] );
         sectors.push_back( ptrBlurSamples[i] );
         weights.push_back( ptrBlurWeights[i] );
+        N += ptrBlurSamples[i];
     }
+    P.resize( N );
     radiusSigma = blurSigma;
 
     // open files
@@ -152,17 +154,18 @@ int trk2dictionary(
         printf( "\n[trk2dictionary] Unable to create output files" );
         return 0;
     }
-    filename = OUTPUT_path+"/dictionary_IC_f.dict";        FILE* pDict_IC_f      = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_v.dict";        FILE* pDict_IC_v      = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_o.dict";        FILE* pDict_IC_o      = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len    = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len   = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept  = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_f.dict";        FILE* pDict_IC_f       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_v.dict";        FILE* pDict_IC_v       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_o.dict";        FILE* pDict_IC_o       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_len.dict";      FILE* pDict_IC_len     = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_len.dict";     FILE* pDict_TRK_len    = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_lenTot.dict";  FILE* pDict_TRK_lenTot = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept   = fopen(filename.c_str(),"wb");
 
     // iterate over fibers
     ProgressBar PROGRESS( n_count );
     PROGRESS.setPrefix("     ");
-    
+
     float affine[4][4];
     if (!isTRK)  {//.tck
         //ricreate affine matrix
@@ -205,8 +208,9 @@ int trk2dictionary(
                     fiberNorm += pow(itNorm->second,2);
                 fiberNorm = sqrt(fiberNorm);
                 FiberNorm.clear();
-                fwrite( &fiberNorm,  1, 4, pDict_TRK_norm ); // actual length considered in optimization
-                fwrite( &FiberLen,   1, 4, pDict_TRK_len );
+                fwrite( &fiberNorm,   1, 4, pDict_TRK_norm );   // actual length considered in optimization
+                fwrite( &FiberLen,    1, 4, pDict_TRK_len );    // length of the streamline
+                fwrite( &FiberLenTot, 1, 4, pDict_TRK_lenTot ); // length of the streamline (considering the blur)
                 totICSegments += FiberSegments.size();
                 totFibers++;
                 kept = 1;
@@ -223,6 +227,7 @@ int trk2dictionary(
     fclose( pDict_IC_o );
     fclose( pDict_IC_len );
     fclose( pDict_TRK_len );
+    fclose( pDict_TRK_lenTot );
     fclose( pDict_TRK_kept );
 
     printf("     [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
@@ -334,109 +339,169 @@ int trk2dictionary(
 /********************************************************************************************************************/
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, std::vector<int> sectors, std::vector<double> radii, std::vector<double> weights, short* ptrHashTable )
 {
-    static Vector<double> S1, S2, S1m, S2m, P, q, n, qxn, qxqxn;
-    static Vector<double> vox, vmin, vmax, dir;
-    static double         len, t, alpha, w, R;
-    static int            i, j, k;
+    static Vector<double> S1, S2, S1m, S2m, P_old, P_int, q, n, qxn, qxqxn;
+    static Vector<double> vox, vmin, vmax, dir1, dir2;
+    static double         len, t, alpha, w, R, dot;
+    static int            i, j, k, kk;
 
     FiberLen = 0.0;
+    FiberLenTot = 0.0;
     FiberSegments.clear();
-    if ( pts <= 2*nPointsToSkip )
+    if ( pts <= 2 )
         return;
 
-    for(i=nPointsToSkip; i<pts-1-nPointsToSkip ;i++)
+    // create duplicate points on circles
+    S1.x = fiber[0][0]+fiberShiftXmm;
+    S1.y = fiber[1][0]+fiberShiftYmm;
+    S1.z = fiber[2][0]+fiberShiftZmm;
+    dir2.x = (fiber[0][1]+fiberShiftXmm) - S1.x;
+    dir2.y = (fiber[1][1]+fiberShiftYmm) - S1.y;
+    dir2.z = (fiber[2][1]+fiberShiftZmm) - S1.z;
+    dir2.Normalize();
+    n.x = dir2.y-dir2.z;
+    n.y = dir2.z-dir2.x;
+    n.z = dir2.x-dir2.y;
+    n.Normalize();
+    for(i=0, k=0; k<(int)radii.size() ;k++)
     {
-        // original segment to be processed
-        S1.Set( fiber[0][i]   + fiberShiftXmm, fiber[1][i]   + fiberShiftYmm, fiber[2][i]   + fiberShiftZmm );
-        S2.Set( fiber[0][i+1] + fiberShiftXmm, fiber[1][i+1] + fiberShiftYmm, fiber[2][i+1] + fiberShiftZmm );
-        dir.x = S2.x-S1.x;
-        dir.y = S2.y-S1.y;
-        dir.z = S2.z-S1.z;
-        dir.Normalize();
+        // quaternion (q.x, q.y, q.z, w) for rotation
+        alpha = 2.0*M_PI/sectors[k];
+        w = sin(alpha/2.0);
+        q.x = dir2.x * w;
+        q.y = dir2.y * w;
+        q.z = dir2.z * w;
+        w = cos(alpha/2.0);
 
-        // get a normal to the vector to move
-        n.x = dir.y-dir.z;
-        n.y = dir.z-dir.x;
-        n.z = dir.x-dir.y;
-        n.Normalize();
-
-        /* assign contribution(s) */
-        for(k=0; k<(int)radii.size() ;k++)
+        R = radii[k];
+        for(j=0; j<sectors[k]; j++)
         {
-            if ( weights[k] < 1e-3 )
-                continue;
+            // rotate the segment's normal
+            qxn.x = 2.0 * ( q.y * n.z - q.z * n.y );
+            qxn.y = 2.0 * ( q.z * n.x - q.x * n.z );
+            qxn.z = 2.0 * ( q.x * n.y - q.y * n.x );
+            qxqxn.x = q.y * qxn.z - q.z * qxn.y;
+            qxqxn.y = q.z * qxn.x - q.x * qxn.z;
+            qxqxn.z = q.x * qxn.y - q.y * qxn.x;
+            n.x += w * qxn.x + qxqxn.x;
+            n.y += w * qxn.y + qxqxn.y;
+            n.z += w * qxn.z + qxqxn.z;
 
-            R = radii[k];
+            // move first point to each radius/sector
+            S2.x = S1.x + R*n.x;
+            S2.y = S1.y + R*n.y;
+            S2.z = S1.z + R*n.z;
+            P[i++] = S2;
+        }
+    }
 
-            // quaternion (q.x, q.y, q.z, w) for rotation
-            alpha = 2.0*M_PI/sectors[k];
-            w = sin(alpha/2.0);
-            q.x = dir.x * w;
-            q.y = dir.y * w;
-            q.z = dir.z * w;
-            w = cos(alpha/2.0);
-            for(j=0; j<sectors[k] ;j++)
+    // move each point of the polyline
+    for(i=1; i<pts ;i++)
+    {
+        /* get the intersection plane */
+        // S2 = point on plane
+        S2.x = fiber[0][i]+fiberShiftXmm;
+        S2.y = fiber[1][i]+fiberShiftYmm;
+        S2.z = fiber[2][i]+fiberShiftZmm;
+
+        // n = normal to plane
+        dir1.x = S2.x - (fiber[0][i-1]+fiberShiftXmm);
+        dir1.y = S2.y - (fiber[1][i-1]+fiberShiftYmm);
+        dir1.z = S2.z - (fiber[2][i-1]+fiberShiftZmm);
+        dir1.Normalize();
+        if ( i == pts-1 )
+        {
+            dir2.x = dir1.x;
+            dir2.y = dir1.y;
+            dir2.z = dir1.z;
+        } else {
+            dir2.x = (fiber[0][i+1]+fiberShiftXmm) - S2.x;
+            dir2.y = (fiber[1][i+1]+fiberShiftYmm) - S2.y;
+            dir2.z = (fiber[2][i+1]+fiberShiftZmm) - S2.z;
+            dir2.Normalize();
+        }
+        n.x = 0.5*(dir1.x+dir2.x);
+        n.y = 0.5*(dir1.y+dir2.y);
+        n.z = 0.5*(dir1.z+dir2.z);
+
+        // normalize to avoid computations later on
+        dot = dir1.x*n.x + dir1.y*n.y + dir1.z*n.z;
+        n.x /= dot;
+        n.y /= dot;
+        n.z /= dot;
+
+        /* translate points */
+        for(kk=0, k=0; k<(int)radii.size() ;k++)
+        {
+            for(j=0; j<sectors[k]; j++, kk++)
             {
-                // rotate the segment's normal
-                qxn.x = 2.0 * ( q.y * n.z - q.z * n.y );
-                qxn.y = 2.0 * ( q.z * n.x - q.x * n.z );
-                qxn.z = 2.0 * ( q.x * n.y - q.y * n.x );
-                qxqxn.x = q.y * qxn.z - q.z * qxn.y;
-                qxqxn.y = q.z * qxn.x - q.x * qxn.z;
-                qxqxn.z = q.x * qxn.y - q.y * qxn.x;
-                n.x += w * qxn.x + qxqxn.x;
-                n.y += w * qxn.y + qxqxn.y;
-                n.z += w * qxn.z + qxqxn.z;
+                if ( weights[k] < 1e-3 )
+                    continue;
 
-                // move the segment
-                S1m.x = S1.x + R*n.x;
-                S1m.y = S1.y + R*n.y;
-                S1m.z = S1.z + R*n.z;
-                S2m.x = S2.x + R*n.x;
-                S2m.y = S2.y + R*n.y;
-                S2m.z = S2.z + R*n.z;
+                P_old.x = P[kk].x;
+                P_old.y = P[kk].y;
+                P_old.z = P[kk].z;
+                len = (S2.x-P_old.x)*n.x + (S2.y-P_old.y)*n.y + (S2.z-P_old.z)*n.z;
+                if ( len>0 )
+                {
+                    P[kk].x += dir1.x * len;
+                    P[kk].y += dir1.y * len;
+                    P[kk].z += dir1.z * len;
 
-                if ( doIntersect==false )
-                    segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
-                else
-                    while( 1 )
+                    /* save segment */
+                    if ( doIntersect==false )
+                        segmentForwardModel( P_old, P[kk], k, weights[k], ptrHashTable );
+                    else
                     {
-                        len = sqrt( pow(S2m.x-S1m.x,2) + pow(S2m.y-S1m.y,2) + pow(S2m.z-S1m.z,2) ); // in mm
-                        if ( len <= minSegLen )
-                            break;
-                        
-                        if ( floor(S1m.x/pixdim.x)==floor(S2m.x/pixdim.x) &&
-                             floor(S1m.y/pixdim.y)==floor(S2m.y/pixdim.y) &&
-                             floor(S1m.z/pixdim.z)==floor(S2m.z/pixdim.z)
-                            )
+                        S1m.x = P_old.x;
+                        S1m.y = P_old.y;
+                        S1m.z = P_old.z;
+                        S2m.x = P[kk].x;
+                        S2m.y = P[kk].y;
+                        S2m.z = P[kk].z;
+                        while( 1 )
                         {
-                            // same voxel, no need to compute intersections
-                            segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
-                            break;
-                        }
+                            len = sqrt( pow(S2m.x-S1m.x,2) + pow(S2m.y-S1m.y,2) + pow(S2m.z-S1m.z,2) ); // in mm
+                            if ( len <= minSegLen )
+                                break;
 
-                        // compute AABB of the first point (in mm)
-                        vmin.x = floor( (S1m.x + 1e-6*dir.x)/pixdim.x ) * pixdim.x;
-                        vmin.y = floor( (S1m.y + 1e-6*dir.y)/pixdim.y ) * pixdim.y;
-                        vmin.z = floor( (S1m.z + 1e-6*dir.z)/pixdim.z ) * pixdim.z;
-                        vmax.x = vmin.x + pixdim.x;
-                        vmax.y = vmin.y + pixdim.y;
-                        vmax.z = vmin.z + pixdim.z;
+                            if ( floor(S1m.x/pixdim.x)==floor(S2m.x/pixdim.x) &&
+                                floor(S1m.y/pixdim.y)==floor(S2m.y/pixdim.y) &&
+                                floor(S1m.z/pixdim.z)==floor(S2m.z/pixdim.z)
+                                )
+                            {
+                                // same voxel, no need to compute intersections
+                                segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
+                                break;
+                            }
 
-                        if ( rayBoxIntersection( S1m, dir, vmin, vmax, t ) && t>0 && t<len )
-                        {
-                            // add the portion S1P, and then reiterate
-                            P.Set( S1m.x + t*dir.x, S1m.y + t*dir.y, S1m.z + t*dir.z );
-                            segmentForwardModel( S1m, P, k, weights[k], ptrHashTable );
-                            S1m.Set( P.x, P.y, P.z );
-                        }
-                        else
-                        {
-                            // add the segment S1S2 and stop iterating
-                            segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
-                            break;
+                            // compute AABB of the first point (in mm)
+                            vmin.x = floor( (S1m.x + 1e-6*dir1.x)/pixdim.x ) * pixdim.x;
+                            vmin.y = floor( (S1m.y + 1e-6*dir1.y)/pixdim.y ) * pixdim.y;
+                            vmin.z = floor( (S1m.z + 1e-6*dir1.z)/pixdim.z ) * pixdim.z;
+                            vmax.x = vmin.x + pixdim.x;
+                            vmax.y = vmin.y + pixdim.y;
+                            vmax.z = vmin.z + pixdim.z;
+
+                            if ( rayBoxIntersection( S1m, dir1, vmin, vmax, t ) && t>0 && t<len )
+                            {
+                                // add the portion S1P, and then reiterate
+                                P_int.x = S1m.x + t*dir1.x;
+                                P_int.y = S1m.y + t*dir1.y;
+                                P_int.z = S1m.z + t*dir1.z;
+                                segmentForwardModel( S1m, P_int, k, weights[k], ptrHashTable );
+                                S1m.x = P_int.x;
+                                S1m.y = P_int.y;
+                                S1m.z = P_int.z;
+                            }
+                            else
+                            {
+                                // add the segment S1S2 and stop iterating
+                                segmentForwardModel( S1m, S2m, k, weights[k], ptrHashTable );
+                                break;
+                            }
                         }
                     }
+                }
             }
         }
     }
@@ -470,7 +535,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
 
     // length of the segment
     len = dir.norm();
-    if ( len <= minSegLen )
+    if ( w*len <= minSegLen )
         return;
     dir.Normalize();
 
@@ -489,8 +554,9 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     ox = (int)round(colatitude/M_PI*180.0); // theta // i1
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );
-    FiberSegments[key] += w * len;
-    if ( k==0 ) // fiber length computed only from origianl segments
+    FiberSegments[key] += w*len;
+    FiberLenTot += w*len;
+    if ( k==0 ) // fiber length computed only from original segments
         FiberLen += len;
 }
 

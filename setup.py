@@ -187,7 +187,6 @@ else:
             build_ext.run(self)
 
 description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
-
 opts = dict(name='dmri-commit',
             version='1.5.0',
             description=description,
@@ -195,6 +194,7 @@ opts = dict(name='dmri-commit',
             author='Alessandro Daducci',
             author_email='alessandro.daducci@univr.it',
             url='https://github.com/daducci/COMMIT',
+            license='BSD license',
             packages=['commit', 'commit.operator'],
             cmdclass={'build_ext': CustomBuildExtCommand},
             ext_modules=extensions,

@@ -1,28 +1,44 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.5.0] - 2021-01-04
-
-### Changed
-- setup.py: Add compilation for .cu files
+## [1.5.0] - 2021-06-19
 
 ### Added
-- GPU acceleration with CUDA for faster model fitting
+- Possibility to specify a voxel confidence map
 
-## [1.4.5] - 2020-12-29
+### Fixed
+- Set license: BSD-3-Clause License 
+- Indices of groups in case of streamlines that were pre-filtered during trk2dictionary
+
+### Changed
+- Loading of nii data using (np.asanyarray( nii.dataobj )) in core and trk2dictionary
+- confidence_map from float64 to float32
+
+## [1.4.6] - 2021-03-25
+
+### Fixed
+- Length of short segments to neglect
+- Streamline weights, in case of blur, are properly scaled
+
+## [1.4.5] - 2021-02-08
 
 ### Fixed
 - operator.pyxbld: Changed the condition to create a new operator
+- trk2dictionary.pyx: Check that the tractogram exists before trying to
+            load it and remove the try section
+- trk2dictionary.run(): fixed bug with blur parameters and computing the blur
 
 ### Added
 - core.pyx: Add to the function build_operator the parameter build_dir
 
 ### Changed
-- core.pyx: The function build_operator checks if the LUT configuration 
+- core.pyx: The function build_operator checks if the LUT configuration
             changed before build a new operator
+- verbose variables in core.pyx and solvers.py changed to be boolean
+- trk2dictionary.run(): removed 'points_to_skip' option
 
 ## [1.4.4] - 2020-10-28
- 
+
 ### Changed
 - Option to set one single direction in the resolution of the LUT
 
@@ -121,7 +137,7 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Added
 - Added possibility to save the predicted DW-MR signal in save_results.
- 
+
 ### Fixed
 - Minor cleanup.
 
@@ -130,7 +146,7 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Added
 - Check if dictionary (upon loading) and data have the same geometry.
- 
+
 ### Fixed
 - Bug while saving coefficients in save_results.
 
@@ -144,12 +160,12 @@ All notable changes to COMMIT will be documented in this file.
 ## [1.3] - 2019-10-30
 
 This version of COMMIT *is not compatible* with [AMICO](https://github.com/daducci/AMICO) v1.0.1 of below. If you update COMMIT to this version, please update AMICO to version 1.1.0 or above.
- 
+
 ### Added
 - Changelog file to keep tracking of the COMMIT versions.
- 
+
 ### Changed
 - Added compatibility with low resolution LUTs.
- 
+
 ### Fixed
 - Nothing.
