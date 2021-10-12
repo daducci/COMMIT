@@ -5,7 +5,7 @@ All notable changes to COMMIT will be documented in this file.
 ## [1.5.1] - 2021-10-11
 
 ### Added
-- Option 'undo_normalization' to 'save_coeffs()'
+- Option 'get_normalized' to 'save_coeffs()'
 
 ## [1.5.0] - 2021-06-19
 
