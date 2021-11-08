@@ -67,7 +67,6 @@ float           minSegLen, minFiberLen, maxFiberLen;
 std::vector<double> radii;         // radii for the extrusion
 std::vector<double> weights;       // damping weight
 std::vector<int>    sectors;       // number of duplicates across the extrusion circle
-double              radiusSigma;   // modulates the impact of each segment as function of radius
 
 
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
@@ -85,7 +84,7 @@ int trk2dictionary(
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
-    int nBlurRadii, double blurSigma, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
+    int nBlurRadii, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights, float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
 )
 {
     /*=========================*/
@@ -145,7 +144,6 @@ int trk2dictionary(
         N += ptrBlurSamples[i];
     }
     P.resize( N );
-    radiusSigma = blurSigma;
 
     // open files
     filename = OUTPUT_path+"/dictionary_TRK_norm.dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");

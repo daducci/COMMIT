@@ -542,7 +542,7 @@ cdef class Evaluation :
                 C = np.bincount( self.DICTIONARY['IC']['v'] )
                 for c in C :
                     tot += c
-                    if tot >= N :
+                    if tot >= N and t <= n :
                         self.THREADS['IC'][t] = self.THREADS['IC'][t-1] + tot
                         t += 1
                         tot = 0
