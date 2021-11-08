@@ -861,10 +861,17 @@ cdef class Evaluation :
         LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
-    def get_coeffs( self ):
+    def get_coeffs( self, get_normalized=True ):
         """
-        Returns the coefficients, corresponding to the original optimisation problem,
-        i.e. the input tractogram to trk2dictionary, divided in three classes (ic, ec, iso).
+        Returns the coefficients estimated from the tractogram passed to trk2dictionary.run(). These coefficients are divided in three
+        classes (ic, ec, iso) and correspond to the 'original optimization problem', so if preconditioning was applied via the option
+        'doNormalizeKernels', then they are re-scaled accordingly. This behaviour can be overridden using the 'get_normalized' parameter.
+
+        Parameters
+        ----------
+        get_normalized : boolean
+            If True (default), the returned coefficients correspond to the 'original' optimization problem.
+            If False, the returned coefficients correspond to the 'preconditioned' optimization problem.
         """
         if self.x is None :
             ERROR( 'Model not fitted to the data; call "fit()" first' )
@@ -873,7 +880,7 @@ cdef class Evaluation :
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
 
-        if self.get_config('doNormalizeKernels') :
+        if get_normalized and self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)

@@ -55,7 +55,7 @@ opts = dict(name='dmri-commit',
             cmdclass={'build_ext': CustomBuildExtCommand},
             ext_modules=get_extensions(),
             setup_requires=['Cython>=0.29', 'numpy>=1.12'],
-            install_requires=['Cython>=0.29', 'dmri-amico>=1.2.6', 'dipy>=1.0', 'numpy>=1.12'],
+            install_requires=['wheel', 'setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-amico>=1.3.0'],
             package_data={'commit.operator': ["*.*"]})
 
 setup(**opts)
