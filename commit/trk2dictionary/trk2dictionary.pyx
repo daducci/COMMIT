@@ -20,14 +20,15 @@ cdef extern from "trk2dictionary_c.cpp":
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
-        int nBlurRadii, double* ptrBlurRadii, int* ptrBlurSamples, double* ptrBlurWeights,  float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
+        int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights,
+        float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
     ) nogil
 
 
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
-    blur_radii=[], blur_samples=[], blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1,
+    blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
@@ -85,12 +86,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     flip_peaks : list of three boolean
         If necessary, flips peak orientations along each axis (default : no flipping).
 
-    blur_radii : list of float
-        Translate each segment to given radii to assign a broader fiber contribution (default : []).
-    
-    blur_samples : list of integer
-        Segments are duplicated along a circle at a given radius; this parameter controls the
-        number of samples to take over a given circle (defaut : []).
+    blur_spacing : float
+        To obtain the blur effect, streamlines are duplicated and organized in a cartesian grid;
+        this parameter controls the spacing of the grid in mm (defaut : 0.25).
 
     blur_core_extent: float
         Extent of the core inside which the segments have equal contribution to the central one (default : 0.0).
@@ -130,15 +128,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( '"fiber_shift" must be a scalar or a vector with 3 elements' )
 
     # check for invalid parameters in the blur
-    if type(blur_radii)==list:
-        blur_radii = np.array(blur_radii, np.double)
-    elif type(blur_radii)!=np.ndarray:
-        ERROR( '"blur_radii" must be a list of floats' )
-    if type(blur_samples)==list:
-        blur_samples = np.array(blur_samples, np.int32)
-    elif type(blur_samples)!=np.ndarray:
-        ERROR( '"blur_samples" must be a list of integers' )
-
     if blur_core_extent < 0 :
         ERROR( 'The extent of the core must be non-negative' )
     
@@ -146,17 +135,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( 'The extent of the blur must be non-negative' )
 
     if blur_gauss_extent > 0 or blur_core_extent > 0:
-        if blur_radii.size != blur_samples.size :
-            ERROR( 'The number of blur radii and blur samples must match' )
-
-        if np.count_nonzero( blur_radii<=0 ):
-            ERROR( 'A blur radius was <= 0; only positive radii can be used' )
-
-        if np.count_nonzero( blur_samples<1 ):
-            ERROR( 'Please specify at least 1 sample per blur radius' )
-
-        if blur_core_extent + blur_gauss_extent > np.max(blur_radii) :
-            ERROR( 'The total blur extent cannot be grater than the maximum radius' )
+        if blur_spacing <= 0 :
+            ERROR( 'The grid spacing of the blur must be positive' )
 
     tic = time.time()
     LOG( '\n-> Creating the dictionary from tractogram:' )
@@ -175,62 +155,49 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     # check blur params
     cdef :
-        double [:] blurRadii
-        int [:] blurSamples
+        double [:] blurRho
+        double [:] blurAngle
         double [:] blurWeights
-        double* ptrBlurRadii
-        int* ptrBlurSamples
-        double* ptrBlurWeights
-        int nBlurRadii
+        int nReplicas
+        float blur_sigma
         float [:] ArrayInvM
         float* ptrArrayInvM
-        float blur_sigma
 
-    # add a fake radius for original segment
-    if blur_gauss_extent == 0 and blur_core_extent == 0 :
-        nBlurRadii = 1
-        blurRadii = np.array( [0.0], np.double )
-        blurSamples = np.array( [1], np.int32 )
+    if (blur_gauss_extent==0 and blur_core_extent==0) or (blur_spacing==0) :
+        nReplicas = 1
+        blurRho = np.array( [0.0], np.double )
+        blurAngle = np.array( [0.0], np.double )
         blurWeights = np.array( [1], np.double )
     else:
-        nBlurRadii = len(blur_radii)+1
-        blurRadii = np.insert( blur_radii, 0, 0.0 ).astype(np.double)
-        blurSamples = np.insert( blur_samples, 0, 1 ).astype(np.int32)
+        tmp = np.arange(0,blur_core_extent+blur_gauss_extent+1e-6,blur_spacing)
+        tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
+        x, y = np.meshgrid( tmp, tmp )
+        r = np.sqrt( x*x + y*y )
+        idx = (r <= blur_core_extent+blur_gauss_extent)
+        blurRho = r[idx]
+        blurAngle = np.arctan2(y,x)[idx]
+        nReplicas = blurRho.size
 
+        blurWeights = np.empty( nReplicas, np.double  )
         if blur_gauss_extent == 0 :
-            blurWeights = np.ones_like( blurRadii, np.double )
+            blurWeights[:] = 1.0
         else:
             blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.log( blur_gauss_min ) )
-            blurWeights = np.empty_like( blurRadii )
-            for i in xrange(nBlurRadii):
-                if blurRadii[i] <= blur_core_extent :
+            for i in xrange(nReplicas):
+                if blurRho[i] <= blur_core_extent :
                     blurWeights[i] = 1.0
                 else:
-                    blurWeights[i] = np.exp( -(blurRadii[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
+                    blurWeights[i] = np.exp( -(blurRho[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
 
-    if nBlurRadii == 1 :
+    if nReplicas == 1 :
         print( '\t- Do not blur fibers' )
     else :
         print( '\t- Blur fibers:' )
-        print( '\t\t- core extent = %.3f' % blur_core_extent )
-        print( '\t\t- blur extent = %.3f' % blur_gauss_extent )
-        print( '\t\t- sigma = %.3f' % blur_sigma )
-        print( '\t\t- radii =   [ ', end="" )
-        for i in xrange( 1, blurRadii.size ) :
-            print( '%.3f ' % blurRadii[i], end="" )
-        print( ']' )
-        print( '\t\t- weights = [ ', end="" )
-        for i in xrange( 1, blurWeights.size ) :
-            print( '%.3f ' % blurWeights[i], end="" )
-        print( ']' )
-        print( '\t\t- samples = [ ', end="" )
-        for i in xrange( 1, blurSamples.size ) :
-            print( '%5d ' % blurSamples[i], end="" )
-        print( ']' )
-
-    ptrBlurRadii   = &blurRadii[0]
-    ptrBlurSamples = &blurSamples[0]
-    ptrBlurWeights = &blurWeights[0]
+        print( '\t\t- core extent  = %.3f' % blur_core_extent )
+        print( '\t\t- gauss extent = %.3f' % blur_gauss_extent )
+        print( '\t\t- gauss sigma  = %.3f' % blur_sigma )
+        print( '\t\t- grid spacing = %.3f' % blur_spacing )
+        print( '\t\t- weights = [ %.3f ... %.3f ]' % (np.min(blurWeights), np.max(blurWeights)) )
 
     if min_seg_len < 0 :
         ERROR( '"min_seg_len" must be >= 0' )
@@ -410,11 +377,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['vf_THR'] = vf_THR
     dictionary_info['peaks_use_affine'] = peaks_use_affine
     dictionary_info['flip_peaks'] = flip_peaks
-    dictionary_info['blur_radii'] = blur_radii
-    dictionary_info['blur_samples'] = blur_samples
-    dictionary_info['blur_core_extent'] = blur_core_extent    
-    dictionary_info['blur_gauss_extent'] = blur_gauss_extent    
-    dictionary_info['blur_gauss_min'] = blur_gauss_min    
+    dictionary_info['blur_core_extent'] = blur_core_extent
+    dictionary_info['blur_gauss_extent'] = blur_gauss_extent
+    dictionary_info['blur_gauss_min'] = blur_gauss_min
+    dictionary_info['blur_spacing'] = blur_spacing
+    dictionary_info['blur_sigma'] = blur_sigma
     dictionary_info['ndirs'] = ndirs
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
@@ -425,7 +392,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nBlurRadii, ptrBlurRadii, ptrBlurSamples, ptrBlurWeights, ptrArrayInvM, ndirs, ptrHashTable  );
+        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], ptrArrayInvM, ndirs, ptrHashTable  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
