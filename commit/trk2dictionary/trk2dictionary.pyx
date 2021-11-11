@@ -13,6 +13,8 @@ import pickle
 from amico.util import LOG, NOTE, WARNING, ERROR
 from pkg_resources import get_distribution
 
+from libcpp cimport bool
+
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
@@ -20,7 +22,7 @@ cdef extern from "trk2dictionary_c.cpp":
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
-        int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights,
+        int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
         float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
     ) nogil
 
@@ -28,7 +30,7 @@ cdef extern from "trk2dictionary_c.cpp":
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
-    blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1,
+    blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
@@ -98,6 +100,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     blur_gauss_min: float
         Minimum value of the Gaussian to consider when computing the sigma (default : 0.1).
+        
+    blur_apply_to: array of bool
+        For each input streamline, decide whether blur is applied or not to it (default : None, meaning apply to all).
 
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
@@ -158,6 +163,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         double [:] blurRho
         double [:] blurAngle
         double [:] blurWeights
+        bool [:] blurApplyTo
         int nReplicas
         float blur_sigma
         float [:] ArrayInvM
@@ -291,6 +297,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         ERROR( 'The max dim size is 2^16 voxels' )
     
+    # check copmpatibility between blurApplyTo and n umber of streamlines
+    if blur_apply_to.size != n_count :
+        ERROR( '"blur_apply_to" must have one value per streamline' )
+    blurApplyTo = blur_apply_to
+    
     # get the affine matrix
     if extension == ".tck":
         scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
@@ -382,6 +393,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['blur_gauss_min'] = blur_gauss_min
     dictionary_info['blur_spacing'] = blur_spacing
     dictionary_info['blur_sigma'] = blur_sigma
+    dictionary_info['blur_apply_to'] = blur_apply_to
     dictionary_info['ndirs'] = ndirs
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
@@ -392,7 +404,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], ptrArrayInvM, ndirs, ptrHashTable  );
+        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrArrayInvM, ndirs, ptrHashTable  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
