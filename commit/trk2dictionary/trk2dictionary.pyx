@@ -200,8 +200,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else :
         print( '\t- Blur fibers:' )
         print( '\t\t- core extent  = %.3f' % blur_core_extent )
-        print( '\t\t- gauss extent = %.3f' % blur_gauss_extent )
-        print( '\t\t- gauss sigma  = %.3f' % blur_sigma )
+        print( '\t\t- gauss extent = %.3f (sigma = %.3f)' % (blur_gauss_extent, blur_sigma) )
         print( '\t\t- grid spacing = %.3f' % blur_spacing )
         print( '\t\t- weights = [ %.3f ... %.3f ]' % (np.min(blurWeights), np.max(blurWeights)) )
 
