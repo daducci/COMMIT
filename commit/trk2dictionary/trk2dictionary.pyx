@@ -297,9 +297,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         ERROR( 'The max dim size is 2^16 voxels' )
     
-    # check copmpatibility between blurApplyTo and n umber of streamlines
-    if blur_apply_to.size != n_count :
-        ERROR( '"blur_apply_to" must have one value per streamline' )
+    # check copmpatibility between blurApplyTo and number of streamlines
+    if blur_apply_to is None:
+        blur_apply_to = np.repeat([True], n_count)
+    else : 
+        if blur_apply_to.size != n_count :
+            ERROR( '"blur_apply_to" must have one value per streamline' )
+        print( '\t\t\t- %d blurred fibers' % sum(blur_apply_to) )
     blurApplyTo = blur_apply_to
     
     # get the affine matrix

@@ -349,6 +349,8 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
     // duplicate first point and move to corresponding grid locations
     for(k=0; k<nReplicas ;k++)
     {
+        if ( !doApplyBlur && k>0 )
+            continue;
         R = ptrBlurRho[k];
         alpha = ptrBlurAngle[k];
 
@@ -416,6 +418,9 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
         /* translate points */
         for(k=0; k<nReplicas ;k++)
         {
+            if ( !doApplyBlur && k>0 )
+                continue;
+
             if ( ptrBlurWeights[k] < 1e-3 )
                 continue;
 
