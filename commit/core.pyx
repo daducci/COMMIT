@@ -77,15 +77,15 @@ cdef class Evaluation :
     cdef public CONFIG
     cdef public confidence_map_img
     
-    def __init__( self, study_path, subject ) :
+    def __init__( self, study_path='.', subject='.' ) :
         """Setup the data structures with default values.
 
         Parameters
         ----------
         study_path : string
-            The path to the folder containing all the subjects from one study
+            The path to the folder containing all the subjects from one study (default : '.')
         subject : string
-            The path (relative to previous folder) to the subject folder
+            The path (relative to previous folder) to the subject folder (default : '.')
         """
         self.niiDWI             = None # set by "load_data" method
         self.scheme             = None # set by "load_data" method
