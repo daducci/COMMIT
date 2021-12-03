@@ -7,6 +7,9 @@ All notable changes to COMMIT will be documented in this file.
 ### Added
 - Option 'coeffs_format' to 'save_results()'
 
+### Changed
+- Install information are stored (and taken from) commit/info.py
+
 ## [1.5.2] - 2021-10-27
 
 ### Fixed
