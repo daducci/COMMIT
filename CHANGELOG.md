@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.5.3] - 2021-12-03
+
+### Added
+- Option 'coeffs_format' to 'save_results()'
+
 ## [1.5.2] - 2021-10-27
 
 ### Fixed

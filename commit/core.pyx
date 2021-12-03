@@ -901,7 +901,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, stat_coeffs='sum', save_est_dwi=False, save_coeff=None, save_opt_details=None ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, save_coeff=None, save_opt_details=None ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -911,6 +911,8 @@ cdef class Evaluation :
         stat_coeffs : string
             Stat to be used if more coefficients are estimated for each streamline.
             Options: 'sum', 'mean', 'median', 'min', 'max', 'all' (default : 'sum')
+        coeffs_format : string
+            Format for saving the coefficients to `streamline_weights.txt` (default: '%.5e')
         save_est_dwi : boolean
             Save the estimated DW-MRI signal (default : False)
         save_opt_details : boolean
@@ -1099,7 +1101,7 @@ cdef class Evaluation :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
             
-        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%.5e' )
+        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
         print( '[ OK ]' )
 
