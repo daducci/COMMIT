@@ -2,7 +2,7 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.6.0] - 2021-09-17
+## [1.6.0] - 2021-12-03
 
 ### Changed
 - Improved the blur functionality
