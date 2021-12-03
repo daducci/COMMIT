@@ -542,7 +542,7 @@ cdef class Evaluation :
                 C = np.bincount( self.DICTIONARY['IC']['v'] )
                 for c in C :
                     tot += c
-                    if tot >= N :
+                    if tot >= N and t <= n :
                         self.THREADS['IC'][t] = self.THREADS['IC'][t-1] + tot
                         t += 1
                         tot = 0
@@ -1086,7 +1086,7 @@ cdef class Evaluation :
 
         # scale output weights if blur was used
         dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-        if dictionary_info['blur_sigma'] > 0 :
+        if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']

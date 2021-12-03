@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.6.0] - 2021-09-17
+
+### Changed
+- Improved the blur functionality
+
 ## [1.5.3] - 2021-12-03
 
 ### Added
@@ -19,6 +24,7 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Added
 - Option 'get_normalized' to 'save_coeffs()'
+
 
 ## [1.5.0] - 2021-06-19
 
