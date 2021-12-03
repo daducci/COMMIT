@@ -77,15 +77,15 @@ cdef class Evaluation :
     cdef public CONFIG
     cdef public confidence_map_img
     
-    def __init__( self, study_path, subject ) :
+    def __init__( self, study_path='.', subject='.' ) :
         """Setup the data structures with default values.
 
         Parameters
         ----------
         study_path : string
-            The path to the folder containing all the subjects from one study
+            The path to the folder containing all the subjects from one study (default : '.')
         subject : string
-            The path (relative to previous folder) to the subject folder
+            The path (relative to previous folder) to the subject folder (default : '.')
         """
         self.niiDWI             = None # set by "load_data" method
         self.scheme             = None # set by "load_data" method
@@ -901,7 +901,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, stat_coeffs='sum', save_est_dwi=False, save_coeff=None, save_opt_details=None ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -911,12 +911,10 @@ cdef class Evaluation :
         stat_coeffs : string
             Stat to be used if more coefficients are estimated for each streamline.
             Options: 'sum', 'mean', 'median', 'min', 'max', 'all' (default : 'sum')
+        coeffs_format : string
+            Format for saving the coefficients to `streamline_weights.txt` (default: '%.5e')
         save_est_dwi : boolean
             Save the estimated DW-MRI signal (default : False)
-        save_opt_details : boolean
-            DEPRECATED. The details of the optimization and the coefficients are always saved.
-        save_coeff : boolean
-            DEPRECATED. The estimated weights for the streamlines are always saved.
         """
         RESULTS_path = 'Results_' + self.model.id
         if path_suffix :
@@ -928,12 +926,6 @@ cdef class Evaluation :
 
         if self.x is None :
             ERROR( 'Model not fitted to the data; call "fit()" first' )
-
-        if save_coeff is not None :
-            WARNING('"save_coeff" parameter is deprecated')
-
-        if save_opt_details is not None :
-            WARNING('"save_opt_details" parameter is deprecated')
 
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
@@ -1099,7 +1091,7 @@ cdef class Evaluation :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
             
-        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%.5e' )
+        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
         print( '[ OK ]' )
 
