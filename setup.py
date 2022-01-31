@@ -53,6 +53,6 @@ setup(
     cmdclass={'build_ext': CustomBuildExtCommand},
     ext_modules=get_extensions(),
     setup_requires=['Cython>=0.29', 'numpy>=1.12'],
-    install_requires=['wheel', 'setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-amico>=1.3.1'],
+    install_requires=['wheel', 'setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-amico>=1.4.0'],
     package_data={'commit.operator': ["*.*"]}
 )

@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.6.1] - 2022-01-31
+
+### Changed
+- generate_kernels: forcing 'ndirs' to 1 in case of 'VolumeFraction' model
+
 ## [1.6.0] - 2021-12-03
 
 ### Changed
@@ -32,7 +37,7 @@ All notable changes to COMMIT will be documented in this file.
 - Possibility to specify a voxel confidence map
 
 ### Fixed
-- Set license: BSD-3-Clause License 
+- Set license: BSD-3-Clause License
 - Indices of groups in case of streamlines that were pre-filtered during trk2dictionary
 
 ### Changed

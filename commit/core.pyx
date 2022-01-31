@@ -76,7 +76,7 @@ cdef class Evaluation :
     cdef public x
     cdef public CONFIG
     cdef public confidence_map_img
-    
+
     def __init__( self, study_path='.', subject='.' ) :
         """Setup the data structures with default values.
 
@@ -239,20 +239,23 @@ cdef class Evaluation :
         ndirs : int
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
         """
-        if not amico.lut.is_valid(ndirs):
+        LOG( '\n-> Simulating with "%s" model:' % self.model.name )
+
+        if not amico.lut.is_valid( ndirs ):
             ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
         if self.scheme is None :
             ERROR( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
             ERROR( 'Model not set; call "set_model()" method first' )
+        if self.model.id=='VolumeFractions' and ndirs!=1:
+            ndirs = 1
+            print( '\t* Forcing "ndirs" to 1 because this model is isotropic' )
 
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
         self.set_config('model', self.model.get_params())
         self.model.scheme = self.scheme
-
-        LOG( '\n-> Simulating with "%s" model:' % self.model.name )
 
         # check if kernels were already generated
         tmp = glob.glob( pjoin(self.get_config('ATOMS_path'),'A_*.npy') )
@@ -749,13 +752,13 @@ cdef class Evaluation :
             how to properly define the wanted mathematical formulation
             (default : None)
         confidence_map_filename : string
-            Path to the NIFTI file containing a confidence map on the data, 
-            relative to the subject folder. The file can be 3D or 4D in 
+            Path to the NIFTI file containing a confidence map on the data,
+            relative to the subject folder. The file can be 3D or 4D in
             the same space as the dwi_filename used (dim and voxel size).
-            It should contain float values. 
+            It should contain float values.
             (default : None)
         confidence_map_rescale : boolean
-            If true, the values of the confidence map will be rescaled to the 
+            If true, the values of the confidence map will be rescaled to the
             range [0.0,1.0]. Only the voxels considered in the mask will be affected.
             (default : False)
         """
@@ -769,7 +772,7 @@ cdef class Evaluation :
             ERROR( 'Threads not set; call "set_threads()" first' )
         if self.A is None :
             ERROR( 'Operator not built; call "build_operator()" first' )
-        
+
         # Confidence map
         self.confidence_map_img = None
         self.set_config('confidence_map_filename', None)
@@ -781,9 +784,9 @@ cdef class Evaluation :
             tic = time.time()
             LOG( '\n-> Loading confidence map:' )
 
-            if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :            
+            if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :
                 ERROR( 'Confidence map not found' )
-            
+
             self.set_config('confidence_map_filename', confidence_map_filename)
             confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
             self.confidence_map_img = np.asanyarray( confidence_map.dataobj ).astype(np.float32)
@@ -792,7 +795,7 @@ cdef class Evaluation :
                 ERROR( 'Confidence map must be 3D or 4D dataset' )
 
             if self.confidence_map_img.ndim == 3:
-                print( '\t* Extending the confidence map volume to match the DWI signal volume(s)... ' )                
+                print( '\t* Extending the confidence map volume to match the DWI signal volume(s)... ' )
                 self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
             hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
             confidence_map_dim = self.confidence_map_img.shape[0:3]
@@ -801,26 +804,26 @@ cdef class Evaluation :
             print( '\t\t- pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim )
 
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
-            
+
             if ( self.get_config('dim') != confidence_map_dim ):
                 ERROR( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
 
             if (self.get_config('pixdim') != confidence_map_pixdim ):
                 ERROR( 'Dataset does not have the same geometry (voxel size) as the DWI signal' )
-            
+
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
 
             confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32)
 
-            if(np.isnan(confidence_array).any()): 
+            if(np.isnan(confidence_array).any()):
                 confidence_array[np.isnan(confidence_array)] = 0.
                 confidence_array_changed = True
                 WARNING('Confidence map contains NaNs. Those values were changed to 0.')
-            
+
             cMAX = np.max(confidence_array)
-            cMIN = np.min(confidence_array)  
-            if(cMIN == cMAX): 
+            cMIN = np.min(confidence_array)
+            if(cMIN == cMAX):
                 self.confidence_map_img = None
                 self.set_config('confidence_map_filename', None)
                 confidence_array = None
@@ -829,9 +832,9 @@ cdef class Evaluation :
 
             elif(confidence_map_rescale):
                 confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
-                LOG ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) ) 
+                LOG ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) )
                 confidence_array_changed = True
-            
+
             if(confidence_array_changed):
                 nV = self.DICTIONARY['nV']
                 self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nV,-1) ).astype(np.float32)
@@ -985,15 +988,15 @@ cdef class Evaluation :
         niiMAP_hdr['cal_max'] = 1
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
-        
+
         if self.confidence_map_img is not None:
             confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
-            
-            print( '\t\t- RMSE considering the confidence map...  ', end='' )        
+
+            print( '\t\t- RMSE considering the confidence map...  ', end='' )
             sys.stdout.flush()
             tmp = np.sum(confidence_array,axis=1)
             idx = np.where( tmp < 1E-12 )
-            tmp[ idx ] = 1 
+            tmp[ idx ] = 1
             tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
             tmp[ idx ] = 0
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
@@ -1090,7 +1093,7 @@ cdef class Evaluation :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
-            
+
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
         print( '[ OK ]' )
