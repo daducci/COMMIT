@@ -138,7 +138,21 @@ cdef class Evaluation :
         tic = time.time()
         LOG( '\n-> Loading data:' )
 
-        print( '\t* Input signal:' )
+        print( '\t* Acquisition scheme:' )
+        if scheme_filename is not None:
+            print( '\t\t- diffusion-weighted signal' )
+            self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
+            print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
+            print( '\t\t- %d @ b=0' % ( self.scheme.b0_count ), end='' )
+            for i in xrange(len(self.scheme.shells)) :
+                print( ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] ), end='' )
+            print()
+        else:
+            # if no scheme is passed, assume data is scalar
+            self.scheme = amico.scheme.Scheme( np.array( [[0,0,0,1000]] ), 0 )
+            print( '\t\t- scalar map' )
+
+        print( '\t* Signal dataset:' )
         self.set_config('dwi_filename', dwi_filename)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = np.asanyarray( self.niiDWI.dataobj ).astype(np.float32)
@@ -150,19 +164,6 @@ cdef class Evaluation :
         print( '\t\t- dim    : %d x %d x %d x %d' % self.niiDWI_img.shape )
         print( '\t\t- pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim') )
         print( '\t\t- values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
-
-        print( '\t* Acquisition scheme:' )
-        if scheme_filename is not None:
-            self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
-            print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
-            print( '\t\t- %d @ b=0' % ( self.scheme.b0_count ), end='' )
-            for i in xrange(len(self.scheme.shells)) :
-                print( ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] ), end='' )
-            print()
-        else:
-            # if no scheme is passed, assume data is scalar
-            self.scheme = amico.scheme.Scheme( np.array( [[0,0,0,1000]] ), 0 )
-            print( '\t\t- scalar data' )
 
         if self.scheme.nS != self.niiDWI_img.shape[3] :
             ERROR( 'Scheme does not match with input data' )
@@ -255,7 +256,7 @@ cdef class Evaluation :
             ERROR( 'Model not set; call "set_model()" method first' )
         if self.model.id=='VolumeFractions' and ndirs!=1:
             ndirs = 1
-            print( '\t* Forcing "ndirs" to 1 because this model is isotropic' )
+            print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
 
         # store some values for later use
         self.set_config('lmax', lmax)
