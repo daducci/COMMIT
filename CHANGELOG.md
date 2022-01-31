@@ -6,6 +6,10 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Changed
 - generate_kernels: forcing 'ndirs' to 1 in case of 'VolumeFraction' model
+- core.setup: removed 'ndirs' parameter, now precomputes all directions
+
+### Added
+- Shortcut 'commit.core.setup' to 'commit.setup'
 
 ## [1.6.0] - 2021-12-03
 
