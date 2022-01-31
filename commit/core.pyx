@@ -119,15 +119,16 @@ cdef class Evaluation :
         return self.CONFIG.get( key )
 
 
-    def load_data( self, dwi_filename='DWI.nii', scheme_filename='DWI.scheme', b0_thr=0, b0_min_signal=0 ) :
+    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0 ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
         ----------
         dwi_filename : string
-            The file name of the DWI data, relative to the subject folder (default : 'DWI.nii')
+            The filename of the DWI data, relative to the subject folder.
         scheme_filename : string
-            The file name of the corresponding acquisition scheme (default : 'DWI.scheme')
+            The file name of the corresponding acquisition scheme.
+            If None, assumes the data is scalar, i.e. 1 value per voxel.
         b0_thr : float
             The threshold below which a b-value is considered a b0 (default : 0)
         b0_min_signal : float
@@ -138,7 +139,7 @@ cdef class Evaluation :
         tic = time.time()
         LOG( '\n-> Loading data:' )
 
-        print( '\t* DWI signal:' )
+        print( '\t* Input signal:' )
         self.set_config('dwi_filename', dwi_filename)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = np.asanyarray( self.niiDWI.dataobj ).astype(np.float32)
@@ -152,61 +153,67 @@ cdef class Evaluation :
         print( '\t\t- values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
 
         print( '\t* Acquisition scheme:' )
-        self.set_config('scheme_filename', scheme_filename)
-        self.set_config('b0_thr', b0_thr)
-        self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
-        print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
-        print( '\t\t- %d @ b=0' % ( self.scheme.b0_count ), end='' )
-        for i in xrange(len(self.scheme.shells)) :
-            print( ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] ), end='' )
-        print()
+        if scheme_filename is not None:
+            self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
+            print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
+            print( '\t\t- %d @ b=0' % ( self.scheme.b0_count ), end='' )
+            for i in xrange(len(self.scheme.shells)) :
+                print( ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] ), end='' )
+            print()
+        else:
+            # if no scheme is passed, assume data is scalar
+            self.scheme = amico.scheme.Scheme( np.array( [[0,0,0,1000]] ), 0 )
+            print( '\t\t- scalar data' )
 
         if self.scheme.nS != self.niiDWI_img.shape[3] :
-            ERROR( 'Scheme does not match with DWI data' )
-
+            ERROR( 'Scheme does not match with input data' )
         if self.scheme.dwi_count == 0 :
             ERROR( 'There are no DWI volumes in the data' )
+
+        self.set_config('b0_thr', b0_thr)
+        self.set_config('scheme_filename', scheme_filename)
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
         # Preprocessing
-        tic = time.time()
-        LOG( '\n-> Preprocessing:' )
+        if self.get_config('scheme_filename') is not None:
+            tic = time.time()
+            LOG( '\n-> Preprocessing:' )
 
-        if self.get_config('doNormalizeSignal') :
-            if self.scheme.b0_count > 0 :
-                print( '\t* Normalizing to b0... ', end='' )
+            if self.get_config('doNormalizeSignal') :
+                if self.scheme.b0_count > 0:
+                    print( '\t* Normalizing to b0... ', end='' )
+                    sys.stdout.flush()
+                    b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
+                    idx = b0 <= b0_min_signal * b0[b0>0].mean()
+                    b0[ idx ] = 1
+                    b0 = 1.0 / b0
+                    b0[ idx ] = 0
+                    for i in xrange(self.scheme.nS) :
+                        self.niiDWI_img[:,:,:,i] *= b0
+                    print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
+                    del idx, b0
+                else :
+                    WARNING( 'There are no b0 volumes for normalization' )
+
+            if self.scheme.b0_count > 1:
+                if self.get_config('doMergeB0') :
+                    print( '\t* Merging multiple b0 volume(s)... ', end='' )
+                    mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
+                    self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
+                    del mean
+                else :
+                    print( '\t* Keeping all b0 volume(s)... ', end='' )
+                print( '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
+
+            if self.get_config('doDemean'):
+                print( '\t* Demeaning signal... ', end='' )
                 sys.stdout.flush()
-                b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
-                idx = b0 <= b0_min_signal * b0[b0>0].mean()
-                b0[ idx ] = 1
-                b0 = 1.0 / b0
-                b0[ idx ] = 0
-                for i in xrange(self.scheme.nS) :
-                    self.niiDWI_img[:,:,:,i] *= b0
+                mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
+                self.niiDWI_img = self.niiDWI_img - mean
                 print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
-                del idx, b0
-            else :
-                WARNING( 'There are no b0 volumes for normalization' )
 
-        if self.scheme.b0_count > 1 :
-            if self.get_config('doMergeB0') :
-                print( '\t* Merging multiple b0 volume(s)... ', end='' )
-                mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
-                self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
-                del mean
-            else :
-                print( '\t* Keeping all b0 volume(s)... ', end='' )
-            print( '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
-
-        if self.get_config('doDemean') :
-            print( '\t* Demeaning signal... ', end='' )
-            sys.stdout.flush()
-            mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
-            self.niiDWI_img = self.niiDWI_img - mean
-            print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
-
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def set_model( self, model_name ) :
