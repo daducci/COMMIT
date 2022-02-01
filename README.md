@@ -15,7 +15,7 @@
 
 The reconstructions recovered with existing tractography algorithms are not really quantitative even though diffusion MRI is a quantitative modality. COMMIT stands for *Convex Optimization for Microstructure Informed Tractography* and is a **powerful framework for enhancing the anatomical accuracy of the reconstructions** by combining tractography with microstructural features of the neuronal tissue.
 
-<img align="right" src="https://github.com/daducci/COMMIT/wiki/images/filtering_methods.png" height="250">
+<img align="right" src="https://github.com/daducci/COMMIT/wiki/images/filtering_methods.png" height="225">
 
 **How?** Starting from an input set of candidate fiber-tracts estimated using standard fiber-tracking techniques, COMMIT models the diffusion MRI signal in each voxel of the image as a *linear combination* of the restricted and hindered contributions generated in every location of the brain by these candidate tracts. Then, COMMIT seeks for the effective contribution of each of them such that they globally fit the measured signal at best.
 These weights can be *efficiently estimated by solving a convenient linear system*.
