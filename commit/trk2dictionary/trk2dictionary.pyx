@@ -309,9 +309,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if extension == ".tck":
         M = nii_hdr.get_best_affine()
         # Affine matrix without scaling, i.e. diagonal is 1
-        M[:3, :3] = np.dot( M[:3, :3], np.diag(np.divide(1.0, [Px,Py,Pz])) )
-        M = M.astype('<f4') # affine matrix in float value
-        invM = np.linalg.inv(M) # inverse affine matrix
+        M[:3, :3] = np.dot( M[:3, :3], np.diag([1./Px,1./Py,1./Pz]) )
+        invM = np.linalg.inv(M).astype('<f4') # inverse affine matrix
         #create a vector of inverse matrix M
         ArrayInvM = np.ravel(invM)
         ptrArrayInvM = &ArrayInvM[0]
@@ -411,6 +410,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         return None
 
     # save TDI and MASK maps
+    #FIXME: save TDI/MASK files with correct affine
     if filename_mask is not None :
         affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()
     elif filename_peaks is not None :
