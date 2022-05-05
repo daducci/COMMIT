@@ -18,7 +18,7 @@ from libcpp cimport bool
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
-        char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, 
+        char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars,
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
@@ -29,7 +29,7 @@ cdef extern from "trk2dictionary_c.cpp":
 
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
-    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], 
+    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
     blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
     filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
     ):
@@ -41,12 +41,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     ----------
     filename_tractogram : string
         Path to the tractogram (.trk or .tck) containing the streamlines to load.
-        
+
     TCK_ref_image: string
         When loading a .tck tractogram, path to the NIFTI file containing the information about
         the geometry to be used for the tractogram to load. If not specified, it will try to use
         the information from filename_peaks or filename_mask.
-    
+
     path_out : string
         Path to the folder for storing the sparse data structure. If not specified (default),
         a folder name "COMMIT" will be created in the same folder of the tractogram.
@@ -94,13 +94,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     blur_core_extent: float
         Extent of the core inside which the segments have equal contribution to the central one (default : 0.0).
-    
+
     blur_gauss_extent: float
         Extent of the gaussian damping at the border (default : 0.0).
 
     blur_gauss_min: float
         Minimum value of the Gaussian to consider when computing the sigma (default : 0.1).
-        
+
     blur_apply_to: array of bool
         For each input streamline, decide whether blur is applied or not to it (default : None, meaning apply to all).
 
@@ -135,7 +135,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # check for invalid parameters in the blur
     if blur_core_extent < 0 :
         ERROR( 'The extent of the core must be non-negative' )
-    
+
     if blur_gauss_extent < 0 :
         ERROR( 'The extent of the blur must be non-negative' )
 
@@ -145,7 +145,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     tic = time.time()
     LOG( '\n-> Creating the dictionary from tractogram:' )
-    
+
     LOG( '\n   * Configuration:' )
     print( '\t- Segment position = %s' % ( 'COMPUTE INTERSECTIONS' if do_intersect else 'CENTROID' ) )
     print( '\t- Fiber shift X    = %.3f (voxel-size units)' % fiber_shiftX )
@@ -244,15 +244,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     # Streamlines from tractogram
     print( '\t- Tractogram' )
-    
+
     if not exists(filename_tractogram):
-        ERROR( 'Tractogram file not found: %s' % filename_tractogram )        
+        ERROR( 'Tractogram file not found: %s' % filename_tractogram )
     extension = splitext(filename_tractogram)[1]
     if extension != ".trk" and extension != ".tck":
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
-    
+
     hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
-            
+
     if extension == ".trk":
         Nx = hdr['dimensions'][0]
         Ny = hdr['dimensions'][1]
@@ -289,29 +289,27 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         n_count = int(hdr['count'])  #set number of fibers
         n_scalars = 0
         n_properties = 0
-        
+
     print( '\t\t- %d x %d x %d' % ( Nx, Ny, Nz ) )
     print( '\t\t- %.4f x %.4f x %.4f' % ( Px, Py, Pz ) )
     print( '\t\t- %d fibers' % n_count )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         ERROR( 'The max dim size is 2^16 voxels' )
-    
+
     # check copmpatibility between blurApplyTo and number of streamlines
     if blur_apply_to is None:
         blur_apply_to = np.repeat([True], n_count)
-    else : 
+    else :
         if blur_apply_to.size != n_count :
             ERROR( '"blur_apply_to" must have one value per streamline' )
         print( '\t\t\t- %d blurred fibers' % sum(blur_apply_to) )
     blurApplyTo = blur_apply_to
-    
+
     # get the affine matrix
     if extension == ".tck":
-        scaleMat = np.diag(np.divide(1.0, [Px,Py,Pz]))
         M = nii_hdr.get_best_affine()
-
         # Affine matrix without scaling, i.e. diagonal is 1
-        M[:3, :3] = np.dot(scaleMat, M[:3, :3])
+        M[:3, :3] = np.dot( M[:3, :3], np.diag(np.divide(1.0, [Px,Py,Pz])) )
         M = M.astype('<f4') # affine matrix in float value
         invM = np.linalg.inv(M) # inverse affine matrix
         #create a vector of inverse matrix M
