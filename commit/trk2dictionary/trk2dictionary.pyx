@@ -166,8 +166,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         bool [:] blurApplyTo
         int nReplicas
         float blur_sigma
-        float [:] ArrayInvM
-        float* ptrArrayInvM
 
     if (blur_gauss_extent==0 and blur_core_extent==0) or (blur_spacing==0) :
         nReplicas = 1
@@ -275,18 +273,18 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             else:
                 ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
 
-        print ('\t\t- geometry taken from "%s"' %TCK_ref_image)
+        print ( f'\t\t- geometry taken from "{TCK_ref_image}"' )
 
-        nii_image = nibabel.load(TCK_ref_image)
-        nii_hdr = nii_image.header if nibabel.__version__ >= '2.0.0' else nii_image.get_header()
-        Nx = nii_image.shape[0]
-        Ny = nii_image.shape[1]
-        Nz = nii_image.shape[2]
-        Px = nii_hdr['pixdim'][1]
-        Py = nii_hdr['pixdim'][2]
-        Pz = nii_hdr['pixdim'][3]
-        data_offset = int(hdr['_offset_data'])  #set offset
-        n_count = int(hdr['count'])  #set number of fibers
+        niiREF = nibabel.load( TCK_ref_image )
+        niiREF_hdr = niiREF.header if nibabel.__version__ >= '2.0.0' else niiREF.get_header()
+        Nx = niiREF.shape[0]
+        Ny = niiREF.shape[1]
+        Nz = niiREF.shape[2]
+        Px = niiREF_hdr['pixdim'][1]
+        Py = niiREF_hdr['pixdim'][2]
+        Pz = niiREF_hdr['pixdim'][3]
+        data_offset = int(hdr['_offset_data'])
+        n_count = int(hdr['count'])
         n_scalars = 0
         n_properties = 0
 
@@ -305,15 +303,14 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         print( '\t\t\t- %d blurred fibers' % sum(blur_apply_to) )
     blurApplyTo = blur_apply_to
 
-    # get the affine matrix
+    # get toVOXMM matrix (remove voxel scaling from affine) in case of TCK
+    cdef float [:] toVOXMM
+    cdef float* ptrToVOXMM
     if extension == ".tck":
-        M = nii_hdr.get_best_affine()
-        # Affine matrix without scaling, i.e. diagonal is 1
-        M[:3, :3] = np.dot( M[:3, :3], np.diag([1./Px,1./Py,1./Pz]) )
-        invM = np.linalg.inv(M).astype('<f4') # inverse affine matrix
-        #create a vector of inverse matrix M
-        ArrayInvM = np.ravel(invM)
-        ptrArrayInvM = &ArrayInvM[0]
+        M = niiREF.affine if nibabel.__version__ >= '2.0.0' else niiREF.get_affine()
+        M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
+        toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
+        ptrToVOXMM = &toVOXMM[0]
 
     # white-matter mask
     cdef float* ptrMASK
@@ -404,7 +401,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
-        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrArrayInvM, ndirs, ptrHashTable  );
+        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ndirs, ptrHashTable  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
@@ -419,16 +416,16 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         affine = np.diag( [Px, Py, Pz, 1] )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img, affine )
-    nii_hdr = niiTDI.header if nibabel.__version__ >= '2.0.0' else niiTDI.get_header()
-    nii_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
+    niiREF_hdr = niiTDI.header if nibabel.__version__ >= '2.0.0' else niiTDI.get_header()
+    niiREF_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
 
     if filename_mask is not None :
         niiMASK = nibabel.Nifti1Image( niiMASK_img, affine )
     else :
         niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), affine )
-    nii_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
-    nii_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
+    niiREF_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
+    niiREF_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     LOG( '\n   [ %.1f seconds ]' % ( time.time() - tic ) )
