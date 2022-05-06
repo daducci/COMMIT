@@ -252,6 +252,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
 
     if extension == ".trk":
+        print ( f'\t\t- geometry taken from "{filename_tractogram}"' )
         Nx = hdr['dimensions'][0]
         Ny = hdr['dimensions'][1]
         Nz = hdr['dimensions'][2]
@@ -264,7 +265,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         n_scalars = hdr['nb_scalars_per_point']
         n_properties = hdr['nb_properties_per_streamline']
 
-    if extension == ".tck":
+    else:
         if TCK_ref_image is None:
             if filename_peaks is not None:
                 TCK_ref_image = filename_peaks
@@ -272,7 +273,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                 TCK_ref_image = filename_mask
             else:
                 ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
-
         print ( f'\t\t- geometry taken from "{TCK_ref_image}"' )
 
         niiREF = nibabel.load( TCK_ref_image )
@@ -307,7 +307,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float [:] toVOXMM
     cdef float* ptrToVOXMM
     if extension == ".tck":
-        M = niiREF.affine if nibabel.__version__ >= '2.0.0' else niiREF.get_affine()
+        M = niiREF.affine.copy() if nibabel.__version__ >= '2.0.0' else niiREF.get_affine()
         M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
         ptrToVOXMM = &toVOXMM[0]
@@ -336,8 +336,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef int Np
     cdef float [:, :, ::1] niiTDI_img = np.ascontiguousarray( np.zeros((Nx,Ny,Nz),dtype=np.float32) )
     cdef float* ptrTDI  = &niiTDI_img[0,0,0]
-    cdef double [:, ::1] affine
-    cdef double* ptrAFFINE
+    cdef double [:, ::1] peaksAffine
+    cdef double* ptrPeaksAffine
     if filename_peaks is not None :
         print( '\t- EC orientations' )
         niiPEAKS = nibabel.load( filename_peaks )
@@ -360,15 +360,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
         # affine matrix to rotate gradien directions (if required)
         if peaks_use_affine :
-            affine = np.ascontiguousarray( niiPEAKS.affine[:3,:3].T )
+            peaksAffine = np.ascontiguousarray( niiPEAKS.affine[:3,:3].T )
         else :
-            affine = np.ascontiguousarray( np.eye(3) )
-        ptrAFFINE = &affine[0,0]
+            peaksAffine = np.ascontiguousarray( np.eye(3) )
+        ptrPeaksAffine = &peaksAffine[0,0]
     else :
         print( '\t- No dataset specified for EC compartments' )
         Np = 0
         ptrPEAKS = NULL
-        ptrAFFINE = NULL
+        ptrPeaksAffine = NULL
 
     # write dictionary information info file
     dictionary_info = {}
@@ -400,32 +400,33 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
-        ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrAFFINE,
+        ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrPeaksAffine,
         nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ndirs, ptrHashTable  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
 
     # save TDI and MASK maps
-    #FIXME: save TDI/MASK files with correct affine
-    if filename_mask is not None :
-        affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()
+    if TCK_ref_image is not None:
+        TDI_affine = niiREF.affine if nibabel.__version__ >= '2.0.0' else niiREF.get_affine()
+    elif filename_mask is not None :
+        TDI_affine = niiMASK.affine if nibabel.__version__ >= '2.0.0' else niiMASK.get_affine()
     elif filename_peaks is not None :
-        affine = niiPEAKS.affine if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_affine()
+        TDI_affine = niiPEAKS.affine if nibabel.__version__ >= '2.0.0' else niiPEAKS.get_affine()
     else :
-        affine = np.diag( [Px, Py, Pz, 1] )
+        TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
-    niiTDI = nibabel.Nifti1Image( niiTDI_img, affine )
-    niiREF_hdr = niiTDI.header if nibabel.__version__ >= '2.0.0' else niiTDI.get_header()
-    niiREF_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
+    niiTDI = nibabel.Nifti1Image( niiTDI_img, TDI_affine )
+    niiTDI_hdr = niiTDI.header if nibabel.__version__ >= '2.0.0' else niiTDI.get_header()
+    niiTDI_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
 
     if filename_mask is not None :
-        niiMASK = nibabel.Nifti1Image( niiMASK_img, affine )
+        niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
     else :
-        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), affine )
-    niiREF_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
-    niiREF_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
+        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), TDI_affine )
+    niiTDI_hdr = niiMASK.header if nibabel.__version__ >= '2.0.0' else niiMASK.get_header()
+    niiTDI_hdr['descrip'] = 'Created with COMMIT %s'%get_distribution('dmri-commit').version
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     LOG( '\n   [ %.1f seconds ]' % ( time.time() - tic ) )
