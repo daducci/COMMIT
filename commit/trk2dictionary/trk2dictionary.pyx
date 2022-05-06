@@ -27,10 +27,10 @@ cdef extern from "trk2dictionary_c.cpp":
     ) nogil
 
 def _get_header( niiFILE ):
-    return niiFILE.header.copy() if nibabel.__version__ >= '2.0.0' else niiFILE.get_header()
+    return niiFILE.header if nibabel.__version__ >= '2.0.0' else niiFILE.get_header()
 
 def _get_affine( niiFILE ):
-    return niiFILE.affine.copy() if nibabel.__version__ >= '2.0.0' else niiFILE.get_affine()
+    return niiFILE.affine if nibabel.__version__ >= '2.0.0' else niiFILE.get_affine()
 
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
@@ -62,11 +62,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         the mask is created from all voxels intersected by the tracts.
 
     do_intersect : boolean
-        If True then fiber segments that intersect voxel boundaries are splitted (default).
+        If True then streamline segments that intersect voxel boundaries are splitted (default).
         If False then the centroid of the segment is used as its voxel position.
 
     fiber_shift : float or list of three float
-        If necessary, apply a translation to fiber coordinates (default : 0) to account
+        If necessary, apply a translation to streamline coordinates (default : 0) to account
         for differences between the reference system of the tracking algorithm and COMMIT.
         The value is specified in voxel units, eg 0.5 translates by half voxel.
 
@@ -153,15 +153,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     LOG( '\n   * Configuration:' )
     print( f'\t- Segment position = {"COMPUTE INTERSECTIONS" if do_intersect else "CENTROID"}' )
-    print( f'\t- Fiber shift X    = {fiber_shiftX:.3f} (voxel-size units)' )
-    print( f'\t- Fiber shift Y    = {fiber_shiftY:.3f} (voxel-size units)' )
-    print( f'\t- Fiber shift Z    = {fiber_shiftZ:.3f} (voxel-size units)' )
+    print( f'\t- Coordinates shift in X = {fiber_shiftX:.3f} (voxel-size units)' )
+    print( f'\t- Coordinates shift in Y = {fiber_shiftY:.3f} (voxel-size units)' )
+    print( f'\t- Coordinates shift in Z = {fiber_shiftZ:.3f} (voxel-size units)' )
     if min_seg_len >= 1e-3:
         print( f'\t- Min segment len  = {min_seg_len:.3f} mm' )
     else:
         print( f'\t- Min segment len  = {min_seg_len:.2e} mm' )
-    print( f'\t- Min fiber len    = {min_fiber_len:.2f} mm' )
-    print( f'\t- Max fiber len    = {max_fiber_len:.2f} mm' )
+    print( f'\t- Min streamline len    = {min_fiber_len:.2f} mm' )
+    print( f'\t- Max streamline len    = {max_fiber_len:.2f} mm' )
 
     # check blur params
     cdef :
@@ -199,9 +199,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                     blurWeights[i] = np.exp( -(blurRho[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
 
     if nReplicas == 1 :
-        print( '\t- Do not blur fibers' )
+        print( '\t- Do not blur streamlines' )
     else :
-        print( '\t- Blur fibers:' )
+        print( '\t- Blur streamlines:' )
         print( f'\t\t- core extent  = {blur_core_extent:.3f}' )
         print( f'\t\t- gauss extent = {blur_gauss_extent:.3f} (sigma = {blur_sigma:.3f})' )
         print( f'\t\t- grid spacing = {blur_spacing:.3f}' )
@@ -295,7 +295,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     print( f'\t\t- {Nx} x {Ny} x {Nz}' )
     print( f'\t\t- {Px:.4f} x {Py:.4f} x {Pz:.4f}' )
-    print( f'\t\t- {n_count} fibers' )
+    print( f'\t\t- {n_count} streamlines' )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         ERROR( 'The max dim size is 2^16 voxels' )
 
@@ -305,14 +305,14 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else :
         if blur_apply_to.size != n_count :
             ERROR( '"blur_apply_to" must have one value per streamline' )
-        print( f'\t\t\t- {sum(blur_apply_to)} blurred fibers' )
+        print( f'\t\t\t- {sum(blur_apply_to)} blurred streamlines' )
     blurApplyTo = blur_apply_to
 
     # get toVOXMM matrix (remove voxel scaling from affine) in case of TCK
     cdef float [:] toVOXMM
     cdef float* ptrToVOXMM
     if extension == ".tck":
-        M = _get_affine( niiREF )
+        M = _get_affine( niiREF ).copy()
         M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
         ptrToVOXMM = &toVOXMM[0]

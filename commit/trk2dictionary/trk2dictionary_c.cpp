@@ -143,7 +143,7 @@ int trk2dictionary(
     filename = OUTPUT_path+"/dictionary_TRK_lenTot.dict";  FILE* pDict_TRK_lenTot = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept   = fopen(filename.c_str(),"wb");
 
-    // iterate over fibers
+    // iterate over streamlines
     ProgressBar PROGRESS( n_count );
     PROGRESS.setPrefix("     ");
     for(int f=0; f<n_count ;f++)
@@ -200,7 +200,7 @@ int trk2dictionary(
     fclose( pDict_TRK_lenTot );
     fclose( pDict_TRK_kept );
 
-    printf("     [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
+    printf("     [ %d streamlines kept, %d segments in total ]\n", totFibers, totICSegments );
 
 
     /*=========================*/
