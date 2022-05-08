@@ -68,7 +68,7 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable );
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable );
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
-unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float affine[4][4]);
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOXMM );
 
 
 // =========================
@@ -80,7 +80,7 @@ int trk2dictionary(
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
-    float* ptrTractsAffine, unsigned short ndirs, short* ptrHashTable
+    float* ptrToVOXMM, unsigned short ndirs, short* ptrHashTable
 )
 {
     /*=========================*/
@@ -101,10 +101,8 @@ int trk2dictionary(
 
     printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
 
-    int isTRK; // var to check
-
-    char *ext = strrchr(str_filename, '.'); //get the extension of input file
-
+    int isTRK;
+    char *ext = strrchr(str_filename, '.');
     if (strcmp(ext,".trk")==0) //for .trk file
         isTRK = 1;
     else if (strcmp(ext,".tck")==0)// for .tck file
@@ -145,27 +143,16 @@ int trk2dictionary(
     filename = OUTPUT_path+"/dictionary_TRK_lenTot.dict";  FILE* pDict_TRK_lenTot = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_kept.dict";    FILE* pDict_TRK_kept   = fopen(filename.c_str(),"wb");
 
-    // iterate over fibers
+    // iterate over streamlines
     ProgressBar PROGRESS( n_count );
     PROGRESS.setPrefix("     ");
-
-    float affine[4][4];
-    if (!isTRK)  {//.tck
-        //ricreate affine matrix
-        int k = 0;
-        for(int i=0; i<4; i++) {
-            for (int j=0; j<4; j++) {
-                affine[i][j] = ptrTractsAffine[k];
-                k++;
-            }
-        }
-    }
-
     for(int f=0; f<n_count ;f++)
     {
         PROGRESS.inc();
-        if (isTRK) N = read_fiberTRK( fpTractogram, fiber, n_scalars, n_properties );
-        else N = read_fiberTCK( fpTractogram, fiber , affine );
+        if ( isTRK )
+            N = read_fiberTRK( fpTractogram, fiber, n_scalars, n_properties );
+        else
+            N = read_fiberTCK( fpTractogram, fiber , ptrToVOXMM );
         fiberForwardModel( fiber, N, nReplicas, ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo[f], ptrHashTable );
 
         kept = 0;
@@ -213,7 +200,7 @@ int trk2dictionary(
     fclose( pDict_TRK_lenTot );
     fclose( pDict_TRK_kept );
 
-    printf("     [ %d fibers kept, %d segments in total ]\n", totFibers, totICSegments );
+    printf("     [ %d streamlines kept, %d segments in total ]\n", totFibers, totICSegments );
 
 
     /*=========================*/
@@ -617,13 +604,13 @@ unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int n
     if ( N >= MAX_FIB_LEN || N <= 0 )
         return 0;
 
-    float tmp[3];
+    float P[3];
     for(int i=0; i<N; i++)
     {
-        fread((char*)tmp, 1, 12, fp);
-        fiber[0][i] = tmp[0];
-        fiber[1][i] = tmp[1];
-        fiber[2][i] = tmp[2];
+        fread((char*)P, 1, 12, fp);
+        fiber[0][i] = P[0];
+        fiber[1][i] = P[1];
+        fiber[2][i] = P[2];
         fseek(fp,4*ns,SEEK_CUR);
     }
     fseek(fp,4*np,SEEK_CUR);
@@ -632,18 +619,18 @@ unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int n
 }
 
 // Read a fiber from file .tck
-unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float affine[4][4])
+unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float* ptrToVOXMM )
 {
     int i = 0;
-    float tmp[3];
-    fread((char*)tmp, 1, 12, fp);
-    while( !(isnan(tmp[0])) && !(isnan(tmp[1])) &&  !(isnan(tmp[2])) )
+    float P[3];
+    fread((char*)P, 1, 12, fp);
+    while( !(isnan(P[0])) && !(isnan(P[1])) &&  !(isnan(P[2])) )
     {
-        fiber[0][i] = tmp[0]*affine[0][0] + tmp[1]*affine[0][1] + tmp[2]*affine[0][2] + affine[0][3];
-        fiber[1][i] = tmp[0]*affine[1][0] + tmp[1]*affine[1][1] + tmp[2]*affine[1][2] + affine[1][3];
-        fiber[2][i] = tmp[0]*affine[2][0] + tmp[1]*affine[2][1] + tmp[2]*affine[2][2] + affine[2][3];
+        fiber[0][i] = P[0] * ptrToVOXMM[0] + P[1] * ptrToVOXMM[1] + P[2] * ptrToVOXMM[2]  + ptrToVOXMM[3];
+        fiber[1][i] = P[0] * ptrToVOXMM[4] + P[1] * ptrToVOXMM[5] + P[2] * ptrToVOXMM[6]  + ptrToVOXMM[7];
+        fiber[2][i] = P[0] * ptrToVOXMM[8] + P[1] * ptrToVOXMM[9] + P[2] * ptrToVOXMM[10] + ptrToVOXMM[11];
         i++;
-        fread((char*)tmp, 1, 12, fp);
+        fread((char*)P, 1, 12, fp);
     }
 
     return i;

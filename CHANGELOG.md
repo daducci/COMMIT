@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.6.2] - 2022-05-05
+
+### Fixed
+- Problem with very anisotropic voxelsizes
+
 ## [1.6.1] - 2022-01-31
 
 ### Changed
