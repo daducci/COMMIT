@@ -1,6 +1,18 @@
-
 # Change Log
 All notable changes to COMMIT will be documented in this file.
+
+## [1.7.0] - 2022-06-07
+
+### Added
+- GPU acceleration with CUDA for faster model fitting
+- 'cudaoperator' extension to handle operator in GPU memory
+
+### Fixed
+- Changed end of line from CRLF to LF in several files
+
+### Changed
+- setupy.py: Added custom cython compilation for .cu files with nvcc
+- set_threads(): 'n' parameter was renamed to 'nthreads'
 
 ## [1.6.2] - 2022-05-05
 
