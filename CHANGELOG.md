@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.6.0] - 2021-09-28
+## [1.7.0] - 2022-06-07
 
 ### Added
 - GPU acceleration with CUDA for faster model fitting
@@ -14,13 +14,51 @@ All notable changes to COMMIT will be documented in this file.
 - setupy.py: Added custom cython compilation for .cu files with nvcc
 - set_threads(): 'n' parameter was renamed to 'nthreads'
 
+## [1.6.2] - 2022-05-05
+
+### Fixed
+- Problem with very anisotropic voxelsizes
+
+## [1.6.1] - 2022-01-31
+
+### Changed
+- generate_kernels: forcing 'ndirs' to 1 in case of 'VolumeFraction' model
+- core.setup: removed 'ndirs' parameter, now precomputes all directions
+
+### Added
+- Shortcut 'commit.core.setup' to 'commit.setup'
+
+## [1.6.0] - 2021-12-03
+
+### Changed
+- Improved the blur functionality
+
+## [1.5.3] - 2021-12-03
+
+### Added
+- Option 'coeffs_format' to 'save_results()'
+
+### Changed
+- Install information are stored (and taken from) commit/info.py
+
+## [1.5.2] - 2021-10-27
+
+### Fixed
+- Missing dependencies
+
+## [1.5.1] - 2021-10-11
+
+### Added
+- Option 'get_normalized' to 'save_coeffs()'
+
+
 ## [1.5.0] - 2021-06-19
 
 ### Added
 - Possibility to specify a voxel confidence map
 
 ### Fixed
-- Set license: BSD-3-Clause License 
+- Set license: BSD-3-Clause License
 - Indices of groups in case of streamlines that were pre-filtered during trk2dictionary
 
 ### Changed

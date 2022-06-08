@@ -16,6 +16,4 @@ __pycache__/
 dist/
 
 trk2dictionary.c
-
-# Never modify line endings of our bash scripts
-*.sh -lf
+github_token.txt

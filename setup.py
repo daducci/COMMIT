@@ -89,17 +89,15 @@ CUDA = locate_cuda()
 def get_extensions():
     # Cython extension to create the sparse data structure from a tractogram
     # for the computation of matrix-vector multiplications
-    ext1 = Extension(name='commit.trk2dictionary',
+    trk2dictionary = Extension(name='commit.trk2dictionary',
                      sources=['commit/trk2dictionary/trk2dictionary.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
-
-    ext2 = Extension(name='commit.core',
+    core = Extension(name='commit.core',
                      sources=['commit/core.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
-
-    ext3 = Extension(name='commit.proximals',
+    proximals = Extension(name='commit.proximals',
                      sources=['commit/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
@@ -186,20 +184,25 @@ else:
             build_ext.finalize_options(self)
             build_ext.run(self)
 
-description = 'Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)'
-opts = dict(name='dmri-commit',
-            version='1.6.0',
-            description=description,
-            long_description=description,
-            author='Alessandro Daducci',
-            author_email='alessandro.daducci@univr.it',
-            url='https://github.com/daducci/COMMIT',
-            license='BSD license',
-            packages=['commit', 'commit.operator'],
-            cmdclass={'build_ext': CustomBuildExtCommand},
-            ext_modules=extensions,
-            setup_requires=['Cython>=0.29', 'numpy>=1.12'],
-            install_requires=['Cython>=0.29', 'dmri-amico>=1.2.6', 'dipy>=1.0', 'numpy>=1.12'],
-            package_data={'commit.operator': ["*.*"]})
+# import details from commit/info.py
+import sys
+sys.path.insert(0, './commit/')
+import info
 
-setup(**opts)
+# install the package
+setup(
+    name=info.NAME,
+    version=info.VERSION,
+    description=info.DESCRIPTION,
+    long_description=info.LONG_DESCRIPTION,
+    author=info.AUTHOR,
+    author_email=info.AUTHOR_EMAIL,
+    url=info.URL,
+    license=info.LICENSE,
+    packages=['commit', 'commit.operator'],
+    cmdclass={'build_ext': CustomBuildExtCommand},
+    ext_modules=get_extensions(),
+    setup_requires=['Cython>=0.29', 'numpy>=1.12'],
+    install_requires=['wheel', 'setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-amico>=1.3.2'],
+    package_data={'commit.operator': ["*.*"]}
+)

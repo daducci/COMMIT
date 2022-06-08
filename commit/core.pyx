@@ -22,21 +22,20 @@ from pkg_resources import get_distribution
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
-def setup( lmax=12, ndirs=32761 ) :
+def setup( lmax=12, ndirs=None ) :
     """General setup/initialization of the COMMIT framework.
 
     Parameters
     ----------
     lmax : int
         Maximum SH order to use for the rotation phase (default : 12)
-    ndirs : int
-        Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
+     ndirs : int
+        DEPRECATED. Now, all directions are precomputed.
     """
+    if ndirs is not None:
+        WARNING('"ndirs" parameter is deprecated')
 
-    if not amico.lut.is_valid(ndirs):
-        ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
-
-    amico.lut.precompute_rotation_matrices( lmax, ndirs )
+    amico.setup( lmax )
 
 
 def load_dictionary_info( filename ):
@@ -76,16 +75,16 @@ cdef class Evaluation :
     cdef public x
     cdef public CONFIG
     cdef public confidence_map_img
-    
-    def __init__( self, study_path, subject ) :
+
+    def __init__( self, study_path='.', subject='.' ) :
         """Setup the data structures with default values.
 
         Parameters
         ----------
         study_path : string
-            The path to the folder containing all the subjects from one study
+            The path to the folder containing all the subjects from one study (default : '.')
         subject : string
-            The path (relative to previous folder) to the subject folder
+            The path (relative to previous folder) to the subject folder (default : '.')
         """
         self.niiDWI             = None # set by "load_data" method
         self.scheme             = None # set by "load_data" method
@@ -119,15 +118,16 @@ cdef class Evaluation :
         return self.CONFIG.get( key )
 
 
-    def load_data( self, dwi_filename='DWI.nii', scheme_filename='DWI.scheme', b0_thr=0, b0_min_signal=0 ) :
+    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0 ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
         ----------
         dwi_filename : string
-            The file name of the DWI data, relative to the subject folder (default : 'DWI.nii')
+            The filename of the DWI data, relative to the subject folder.
         scheme_filename : string
-            The file name of the corresponding acquisition scheme (default : 'DWI.scheme')
+            The file name of the corresponding acquisition scheme.
+            If None, assumes the data is scalar, i.e. 1 value per voxel.
         b0_thr : float
             The threshold below which a b-value is considered a b0 (default : 0)
         b0_min_signal : float
@@ -138,7 +138,21 @@ cdef class Evaluation :
         tic = time.time()
         LOG( '\n-> Loading data:' )
 
-        print( '\t* DWI signal:' )
+        print( '\t* Acquisition scheme:' )
+        if scheme_filename is not None:
+            print( '\t\t- diffusion-weighted signal' )
+            self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
+            print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
+            print( '\t\t- %d @ b=0' % ( self.scheme.b0_count ), end='' )
+            for i in xrange(len(self.scheme.shells)) :
+                print( ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] ), end='' )
+            print()
+        else:
+            # if no scheme is passed, assume data is scalar
+            self.scheme = amico.scheme.Scheme( np.array( [[0,0,0,1000]] ), 0 )
+            print( '\t\t- scalar map' )
+
+        print( '\t* Signal dataset:' )
         self.set_config('dwi_filename', dwi_filename)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = np.asanyarray( self.niiDWI.dataobj ).astype(np.float32)
@@ -151,62 +165,55 @@ cdef class Evaluation :
         print( '\t\t- pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim') )
         print( '\t\t- values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
 
-        print( '\t* Acquisition scheme:' )
-        self.set_config('scheme_filename', scheme_filename)
-        self.set_config('b0_thr', b0_thr)
-        self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
-        print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
-        print( '\t\t- %d @ b=0' % ( self.scheme.b0_count ), end='' )
-        for i in xrange(len(self.scheme.shells)) :
-            print( ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] ), end='' )
-        print()
-
         if self.scheme.nS != self.niiDWI_img.shape[3] :
-            ERROR( 'Scheme does not match with DWI data' )
-
+            ERROR( 'Scheme does not match with input data' )
         if self.scheme.dwi_count == 0 :
             ERROR( 'There are no DWI volumes in the data' )
+
+        self.set_config('b0_thr', b0_thr)
+        self.set_config('scheme_filename', scheme_filename)
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
         # Preprocessing
-        tic = time.time()
-        LOG( '\n-> Preprocessing:' )
+        if self.get_config('scheme_filename') is not None:
+            tic = time.time()
+            LOG( '\n-> Preprocessing:' )
 
-        if self.get_config('doNormalizeSignal') :
-            if self.scheme.b0_count > 0 :
-                print( '\t* Normalizing to b0... ', end='' )
+            if self.get_config('doNormalizeSignal') :
+                if self.scheme.b0_count > 0:
+                    print( '\t* Normalizing to b0... ', end='' )
+                    sys.stdout.flush()
+                    b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
+                    idx = b0 <= b0_min_signal * b0[b0>0].mean()
+                    b0[ idx ] = 1
+                    b0 = 1.0 / b0
+                    b0[ idx ] = 0
+                    for i in xrange(self.scheme.nS) :
+                        self.niiDWI_img[:,:,:,i] *= b0
+                    print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
+                    del idx, b0
+                else :
+                    WARNING( 'There are no b0 volumes for normalization' )
+
+            if self.scheme.b0_count > 1:
+                if self.get_config('doMergeB0') :
+                    print( '\t* Merging multiple b0 volume(s)... ', end='' )
+                    mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
+                    self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
+                    del mean
+                else :
+                    print( '\t* Keeping all b0 volume(s)... ', end='' )
+                print( '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
+
+            if self.get_config('doDemean'):
+                print( '\t* Demeaning signal... ', end='' )
                 sys.stdout.flush()
-                b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
-                idx = b0 <= b0_min_signal * b0[b0>0].mean()
-                b0[ idx ] = 1
-                b0 = 1.0 / b0
-                b0[ idx ] = 0
-                for i in xrange(self.scheme.nS) :
-                    self.niiDWI_img[:,:,:,i] *= b0
+                mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
+                self.niiDWI_img = self.niiDWI_img - mean
                 print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
-                del idx, b0
-            else :
-                WARNING( 'There are no b0 volumes for normalization' )
 
-        if self.scheme.b0_count > 1 :
-            if self.get_config('doMergeB0') :
-                print( '\t* Merging multiple b0 volume(s)... ', end='' )
-                mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
-                self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
-                del mean
-            else :
-                print( '\t* Keeping all b0 volume(s)... ', end='' )
-            print( '[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
-
-        if self.get_config('doDemean') :
-            print( '\t* Demeaning signal... ', end='' )
-            sys.stdout.flush()
-            mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
-            self.niiDWI_img = self.niiDWI_img - mean
-            print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
-
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def set_model( self, model_name ) :
@@ -239,20 +246,23 @@ cdef class Evaluation :
         ndirs : int
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
         """
-        if not amico.lut.is_valid(ndirs):
+        LOG( '\n-> Simulating with "%s" model:' % self.model.name )
+
+        if not amico.lut.is_valid( ndirs ):
             ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
         if self.scheme is None :
             ERROR( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
             ERROR( 'Model not set; call "set_model()" method first' )
+        if self.model.id=='VolumeFractions' and ndirs!=1:
+            ndirs = 1
+            print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
 
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
         self.set_config('model', self.model.get_params())
         self.model.scheme = self.scheme
-
-        LOG( '\n-> Simulating with "%s" model:' % self.model.name )
 
         # check if kernels were already generated
         tmp = glob.glob( pjoin(self.get_config('ATOMS_path'),'A_*.npy') )
@@ -778,13 +788,13 @@ cdef class Evaluation :
             how to properly define the wanted mathematical formulation
             (default : None)
         confidence_map_filename : string
-            Path to the NIFTI file containing a confidence map on the data, 
-            relative to the subject folder. The file can be 3D or 4D in 
+            Path to the NIFTI file containing a confidence map on the data,
+            relative to the subject folder. The file can be 3D or 4D in
             the same space as the dwi_filename used (dim and voxel size).
-            It should contain float values. 
+            It should contain float values.
             (default : None)
         confidence_map_rescale : boolean
-            If true, the values of the confidence map will be rescaled to the 
+            If true, the values of the confidence map will be rescaled to the
             range [0.0,1.0]. Only the voxels considered in the mask will be affected.
             (default : False)
         """
@@ -798,7 +808,7 @@ cdef class Evaluation :
             ERROR( 'Threads not set; call "set_threads()" first' )
         if self.A is None :
             ERROR( 'Operator not built; call "build_operator()" first' )
-        
+
         # Confidence map
         self.confidence_map_img = None
         self.set_config('confidence_map_filename', None)
@@ -810,9 +820,9 @@ cdef class Evaluation :
             tic = time.time()
             LOG( '\n-> Loading confidence map:' )
 
-            if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :            
+            if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :
                 ERROR( 'Confidence map not found' )
-            
+
             self.set_config('confidence_map_filename', confidence_map_filename)
             confidence_map  = nibabel.load( pjoin( self.get_config('DATA_path'), confidence_map_filename) )
             self.confidence_map_img = np.asanyarray( confidence_map.dataobj ).astype(np.float32)
@@ -821,7 +831,7 @@ cdef class Evaluation :
                 ERROR( 'Confidence map must be 3D or 4D dataset' )
 
             if self.confidence_map_img.ndim == 3:
-                print( '\t* Extending the confidence map volume to match the DWI signal volume(s)... ' )                
+                print( '\t* Extending the confidence map volume to match the DWI signal volume(s)... ' )
                 self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
             hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
             confidence_map_dim = self.confidence_map_img.shape[0:3]
@@ -830,26 +840,26 @@ cdef class Evaluation :
             print( '\t\t- pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim )
 
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
-            
+
             if ( self.get_config('dim') != confidence_map_dim ):
                 ERROR( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
 
             if (self.get_config('pixdim') != confidence_map_pixdim ):
                 ERROR( 'Dataset does not have the same geometry (voxel size) as the DWI signal' )
-            
+
             if (self.confidence_map_img.shape != self.niiDWI_img.shape):
                 ERROR( 'Dataset does not have the same geometry as the DWI signal' )
 
             confidence_array = self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32)
 
-            if(np.isnan(confidence_array).any()): 
+            if(np.isnan(confidence_array).any()):
                 confidence_array[np.isnan(confidence_array)] = 0.
                 confidence_array_changed = True
                 WARNING('Confidence map contains NaNs. Those values were changed to 0.')
-            
+
             cMAX = np.max(confidence_array)
-            cMIN = np.min(confidence_array)  
-            if(cMIN == cMAX): 
+            cMIN = np.min(confidence_array)
+            if(cMIN == cMAX):
                 self.confidence_map_img = None
                 self.set_config('confidence_map_filename', None)
                 confidence_array = None
@@ -858,9 +868,9 @@ cdef class Evaluation :
 
             elif(confidence_map_rescale):
                 confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
-                LOG ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) ) 
+                LOG ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) )
                 confidence_array_changed = True
-            
+
             if(confidence_array_changed):
                 nV = self.DICTIONARY['nV']
                 self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nV,-1) ).astype(np.float32)
@@ -890,10 +900,17 @@ cdef class Evaluation :
         LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
-    def get_coeffs( self ):
+    def get_coeffs( self, get_normalized=True ):
         """
-        Returns the coefficients, corresponding to the original optimisation problem,
-        i.e. the input tractogram to trk2dictionary, divided in three classes (ic, ec, iso).
+        Returns the coefficients estimated from the tractogram passed to trk2dictionary.run(). These coefficients are divided in three
+        classes (ic, ec, iso) and correspond to the 'original optimization problem', so if preconditioning was applied via the option
+        'doNormalizeKernels', then they are re-scaled accordingly. This behaviour can be overridden using the 'get_normalized' parameter.
+
+        Parameters
+        ----------
+        get_normalized : boolean
+            If True (default), the returned coefficients correspond to the 'original' optimization problem.
+            If False, the returned coefficients correspond to the 'preconditioned' optimization problem.
         """
         if self.x is None :
             ERROR( 'Model not fitted to the data; call "fit()" first' )
@@ -902,7 +919,7 @@ cdef class Evaluation :
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
 
-        if self.get_config('doNormalizeKernels') :
+        if get_normalized and self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
@@ -923,7 +940,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, stat_coeffs='sum', save_est_dwi=False, save_coeff=None, save_opt_details=None ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -933,12 +950,10 @@ cdef class Evaluation :
         stat_coeffs : string
             Stat to be used if more coefficients are estimated for each streamline.
             Options: 'sum', 'mean', 'median', 'min', 'max', 'all' (default : 'sum')
+        coeffs_format : string
+            Format for saving the coefficients to `streamline_weights.txt` (default: '%.5e')
         save_est_dwi : boolean
             Save the estimated DW-MRI signal (default : False)
-        save_opt_details : boolean
-            DEPRECATED. The details of the optimization and the coefficients are always saved.
-        save_coeff : boolean
-            DEPRECATED. The estimated weights for the streamlines are always saved.
         """
         RESULTS_path = 'Results_' + self.model.id
         if path_suffix :
@@ -950,12 +965,6 @@ cdef class Evaluation :
 
         if self.x is None :
             ERROR( 'Model not fitted to the data; call "fit()" first' )
-
-        if save_coeff is not None :
-            WARNING('"save_coeff" parameter is deprecated')
-
-        if save_opt_details is not None :
-            WARNING('"save_opt_details" parameter is deprecated')
 
         nF = self.DICTIONARY['IC']['nF']
         nE = self.DICTIONARY['EC']['nE']
@@ -1015,15 +1024,15 @@ cdef class Evaluation :
         niiMAP_hdr['cal_max'] = 1
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
         print( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ) )
-        
+
         if self.confidence_map_img is not None:
             confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
-            
-            print( '\t\t- RMSE considering the confidence map...  ', end='' )        
+
+            print( '\t\t- RMSE considering the confidence map...  ', end='' )
             sys.stdout.flush()
             tmp = np.sum(confidence_array,axis=1)
             idx = np.where( tmp < 1E-12 )
-            tmp[ idx ] = 1 
+            tmp[ idx ] = 1
             tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
             tmp[ idx ] = 0
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
@@ -1116,12 +1125,12 @@ cdef class Evaluation :
 
         # scale output weights if blur was used
         dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-        if dictionary_info['blur_sigma'] > 0 :
+        if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
-            
-        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt='%.5e' )
+
+        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
         print( '[ OK ]' )
 
