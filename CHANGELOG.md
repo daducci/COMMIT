@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.6.3] - 2022-10-21
+
+### Added
+- 'replace_bad_voxels' parameter in 'load_data()' to replace NaN and Inf values in the signal
+
 ## [1.6.2] - 2022-05-05
 
 ### Fixed
