@@ -118,7 +118,7 @@ cdef class Evaluation :
         return self.CONFIG.get( key )
 
 
-    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0 ) :
+    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
@@ -132,6 +132,8 @@ cdef class Evaluation :
             The threshold below which a b-value is considered a b0 (default : 0)
         b0_min_signal : float
             Crop to zero the signal in voxels where the b0 <= b0_min_signal * mean(b0[b0>0]) (default : 0)
+        replace_bad_voxels : float, optional
+            Value to be used to fill NaN and Inf values in the signal. (default : None)
         """
 
         # Loading data and acquisition scheme
@@ -179,6 +181,8 @@ cdef class Evaluation :
         if self.get_config('scheme_filename') is not None:
             tic = time.time()
             LOG( '\n-> Preprocessing:' )
+            if replace_bad_voxels is not None:
+                WARNING('Nan and Inf values in the signal will be replaced with: {0}'.format(replace_bad_voxels))
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
@@ -191,6 +195,11 @@ cdef class Evaluation :
                     b0[ idx ] = 0
                     for i in xrange(self.scheme.nS) :
                         self.niiDWI_img[:,:,:,i] *= b0
+                    if self.niiDWI_img[np.isnan(self.niiDWI_img)].any() or self.niiDWI_img[np.isinf(self.niiDWI_img)].any():
+                        if replace_bad_voxels is not None:
+                            np.nan_to_num(self.niiDWI_img, copy=False, nan=replace_bad_voxels, posinf=replace_bad_voxels, neginf=replace_bad_voxels)
+                        else:
+                            ERROR('Nan or Inf values in the signal. Try using the "replace_bad_voxels" parameter when calling "load_data()"', '\n')
                     print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
                     del idx, b0
                 else :
