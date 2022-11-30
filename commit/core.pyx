@@ -756,7 +756,10 @@ cdef class Evaluation :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.niiDWI is None :
             ERROR( 'Data not loaded; call "load_data()" first' )
-        return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
+        y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+        y[y < 0] = 0
+        return y
 
 
     def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
