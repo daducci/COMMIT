@@ -133,7 +133,7 @@ cdef class Evaluation :
         b0_min_signal : float
             Crop to zero the signal in voxels where the b0 <= b0_min_signal * mean(b0[b0>0]) (default : 0)
         replace_bad_voxels : float, optional
-            Value to be used to fill NaN and Inf values in the signal. (default : None)
+            Value to be used to fill NaN and Inf values in the signal. (default : do nothing)
         """
 
         # Loading data and acquisition scheme
@@ -142,6 +142,8 @@ cdef class Evaluation :
 
         print( '\t* Acquisition scheme:' )
         if scheme_filename is not None:
+            self.set_config('scheme_filename', scheme_filename)
+            self.set_config('b0_thr', b0_thr)
             print( '\t\t- diffusion-weighted signal' )
             self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
             print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
@@ -156,6 +158,8 @@ cdef class Evaluation :
 
         print( '\t* Signal dataset:' )
         self.set_config('dwi_filename', dwi_filename)
+        self.set_config('b0_min_signal', b0_min_signal)
+        self.set_config('replace_bad_voxels', replace_bad_voxels)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = np.asanyarray( self.niiDWI.dataobj ).astype(np.float32)
         if self.niiDWI_img.ndim ==3 :
@@ -171,9 +175,14 @@ cdef class Evaluation :
             ERROR( 'Scheme does not match with input data' )
         if self.scheme.dwi_count == 0 :
             ERROR( 'There are no DWI volumes in the data' )
-
-        self.set_config('b0_thr', b0_thr)
-        self.set_config('scheme_filename', scheme_filename)
+        
+        # Check for Nan or Inf values in raw data
+        if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
+            if replace_bad_voxels is not None:
+                WARNING(f'Nan or Inf values in the raw signal. They will be replaced with: {replace_bad_voxels}')
+                np.nan_to_num(self.niiDWI_img, copy=False, nan=replace_bad_voxels, posinf=replace_bad_voxels, neginf=replace_bad_voxels)
+            else:
+                ERROR('Nan or Inf values in the raw signal. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -181,8 +190,6 @@ cdef class Evaluation :
         if self.get_config('scheme_filename') is not None:
             tic = time.time()
             LOG( '\n-> Preprocessing:' )
-            if replace_bad_voxels is not None:
-                WARNING('Nan and Inf values in the signal will be replaced with: {0}'.format(replace_bad_voxels))
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
@@ -195,11 +202,6 @@ cdef class Evaluation :
                     b0[ idx ] = 0
                     for i in xrange(self.scheme.nS) :
                         self.niiDWI_img[:,:,:,i] *= b0
-                    if self.niiDWI_img[np.isnan(self.niiDWI_img)].any() or self.niiDWI_img[np.isinf(self.niiDWI_img)].any():
-                        if replace_bad_voxels is not None:
-                            np.nan_to_num(self.niiDWI_img, copy=False, nan=replace_bad_voxels, posinf=replace_bad_voxels, neginf=replace_bad_voxels)
-                        else:
-                            ERROR('Nan or Inf values in the signal. Try using the "replace_bad_voxels" parameter when calling "load_data()"', '\n')
                     print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
                     del idx, b0
                 else :
@@ -221,6 +223,14 @@ cdef class Evaluation :
                 mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
                 self.niiDWI_img = self.niiDWI_img - mean
                 print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
+
+            # Check for Nan or Inf values in pre-processed data
+            if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
+                if replace_bad_voxels is not None:
+                    WARNING(f'Nan or Inf values in the signal after the pre-processing. They will be replaced with: {replace_bad_voxels}')
+                    np.nan_to_num(self.niiDWI_img, copy=False, nan=replace_bad_voxels, posinf=replace_bad_voxels, neginf=replace_bad_voxels)
+                else:
+                    ERROR('Nan or Inf values in the signal after the pre-processing. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
