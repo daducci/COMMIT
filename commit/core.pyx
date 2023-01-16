@@ -118,7 +118,7 @@ cdef class Evaluation :
         return self.CONFIG.get( key )
 
 
-    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0 ) :
+    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
@@ -132,6 +132,8 @@ cdef class Evaluation :
             The threshold below which a b-value is considered a b0 (default : 0)
         b0_min_signal : float
             Crop to zero the signal in voxels where the b0 <= b0_min_signal * mean(b0[b0>0]) (default : 0)
+        replace_bad_voxels : float, optional
+            Value to be used to fill NaN and Inf values in the signal. (default : do nothing)
         """
 
         # Loading data and acquisition scheme
@@ -140,6 +142,8 @@ cdef class Evaluation :
 
         print( '\t* Acquisition scheme:' )
         if scheme_filename is not None:
+            self.set_config('scheme_filename', scheme_filename)
+            self.set_config('b0_thr', b0_thr)
             print( '\t\t- diffusion-weighted signal' )
             self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
             print( '\t\t- %d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) )
@@ -154,6 +158,8 @@ cdef class Evaluation :
 
         print( '\t* Signal dataset:' )
         self.set_config('dwi_filename', dwi_filename)
+        self.set_config('b0_min_signal', b0_min_signal)
+        self.set_config('replace_bad_voxels', replace_bad_voxels)
         self.niiDWI  = nibabel.load( pjoin( self.get_config('DATA_path'), dwi_filename) )
         self.niiDWI_img = np.asanyarray( self.niiDWI.dataobj ).astype(np.float32)
         if self.niiDWI_img.ndim ==3 :
@@ -169,9 +175,14 @@ cdef class Evaluation :
             ERROR( 'Scheme does not match with input data' )
         if self.scheme.dwi_count == 0 :
             ERROR( 'There are no DWI volumes in the data' )
-
-        self.set_config('b0_thr', b0_thr)
-        self.set_config('scheme_filename', scheme_filename)
+        
+        # Check for Nan or Inf values in raw data
+        if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
+            if replace_bad_voxels is not None:
+                WARNING(f'Nan or Inf values in the raw signal. They will be replaced with: {replace_bad_voxels}')
+                np.nan_to_num(self.niiDWI_img, copy=False, nan=replace_bad_voxels, posinf=replace_bad_voxels, neginf=replace_bad_voxels)
+            else:
+                ERROR('Nan or Inf values in the raw signal. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -212,6 +223,14 @@ cdef class Evaluation :
                 mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
                 self.niiDWI_img = self.niiDWI_img - mean
                 print( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ) )
+
+            # Check for Nan or Inf values in pre-processed data
+            if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
+                if replace_bad_voxels is not None:
+                    WARNING(f'Nan or Inf values in the signal after the pre-processing. They will be replaced with: {replace_bad_voxels}')
+                    np.nan_to_num(self.niiDWI_img, copy=False, nan=replace_bad_voxels, posinf=replace_bad_voxels, neginf=replace_bad_voxels)
+                else:
+                    ERROR('Nan or Inf values in the signal after the pre-processing. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -737,7 +756,10 @@ cdef class Evaluation :
             ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.niiDWI is None :
             ERROR( 'Data not loaded; call "load_data()" first' )
-        return self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
+        y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+        y[y < 0] = 0
+        return y
 
 
     def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
