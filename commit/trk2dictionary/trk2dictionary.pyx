@@ -5,6 +5,12 @@ import cython
 import numpy as np
 cimport numpy as np
 import nibabel
+from dipy.io.stateful_tractogram import StatefulTractogram as sft
+from dipy.io.streamline import load_tractogram, save_tractogram
+from dipy.segment.clustering import QuickBundlesX
+from dipy.segment.metric import AveragePointwiseEuclideanMetric
+from dipy.segment.featurespeed import ResampleFeature
+from dipy.tracking.streamline import set_number_of_points
 from os.path import join, exists, splitext, dirname, isdir
 from os import makedirs, remove
 import time
@@ -32,7 +38,98 @@ def _get_header( niiFILE ):
 def _get_affine( niiFILE ):
     return niiFILE.affine if nibabel.__version__ >= '2.0.0' else niiFILE.get_affine()
 
-cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
+def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
+    ''' Returns the streamlines from the input tractogram which are
+        closer to the centroids of the input clusters. Streamlines are resampled
+        to cluster_pts before processing.
+    '''
+    sample_streamlines = set_number_of_points( streamlines, cluster_pts )
+    centroids_out = []
+
+    for cluster in clusters:
+        minDis      = 1e10
+        minDis_idx  = -1 
+        centroid_fw = cluster.centroid
+        centroid_bw = cluster.centroid[::-1] 
+        for i in cluster.indices:  
+            d1 = np.linalg.norm( centroid_fw - sample_streamlines[i] )
+            d2 = np.linalg.norm( centroid_bw - sample_streamlines[i] )
+            if d1>d2:
+                dm = d2
+            else:
+                dm = d1
+            
+            if dm < minDis:
+                minDis = dm 
+                minDis_idx = i
+        centroids_out.append( streamlines[minDis_idx] )
+
+    return centroids_out
+
+def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, centroid_type='original',
+                        random=True, verbose=False, smooth=False, get_size=False ):
+    """ Cluster streamlines in a tractogram.
+    """
+    if verbose :
+        print( f'-> Clustering "{filename_in}":' )
+
+    tractogram = load_tractogram( filename_in, reference=filename_reference, bbox_valid_check=False )
+
+    if len(tractogram.streamlines)==0:
+        print( 'NO streamlines found' )
+        return False    
+
+    if verbose :
+        print( f'- {len(tractogram.streamlines)} streamlines found' )
+    
+
+    if np.isscalar( thresholds ) :
+        thresholds = [ thresholds ]
+    if len(thresholds)>1 :
+        filename_out = join(dirname(filename_in), f'{filename_in}_{thresholds[0]}_{thresholds[0]}.tck' )
+    else :
+        filename_out = join(dirname(filename_in), f'{filename_in}_{thresholds[0]}.tck' )
+
+
+    metric   = AveragePointwiseEuclideanMetric( ResampleFeature( nb_points=n_pts ) )
+
+    if verbose :
+        print( '- Running QuickBundlesX...' )
+    if random == False :
+        clusters = QuickBundlesX( thresholds, metric ).cluster( tractogram.streamlines )
+    else:
+        rng = np.random.RandomState()
+        ordering = np.arange(len(tractogram.streamlines))
+        rng.shuffle(ordering)
+        clusters = QuickBundlesX( thresholds, metric ).cluster( tractogram.streamlines, ordering=ordering )
+    if verbose :
+        print( f'  * {len(clusters.leaves)} clusters in lowest level'  )
+
+
+    if centroid_type=='original' :
+        if verbose :
+            print( '- Keep the centroids, without replacing them with closest streamline in input tractogram' )
+        centroids = [cluster.centroid for cluster in clusters.leaves]
+    elif centroid_type=='closer':
+        if verbose :
+            print( '- Replace centroids with closest streamline in input tractogram' )
+        centroids = get_streamlines_close_to_centroids( clusters.leaves, tractogram.streamlines, n_pts )
+
+    else :
+        print( 'value of option centroid_type NOT valid!' )
+        return False
+
+
+    if verbose :
+        print( f'  * {len(centroids)} centroids' )
+
+    if verbose :
+        print( f'- Save to "{filename_out}"' )
+    tractogram_new = sft.from_sft( centroids, tractogram )
+    save_tractogram( tractogram_new, filename_out, bbox_valid_check=False )
+    return filename_out
+
+cpdef run( filename_tractogram=None, path_out=None, clustering_thr=0, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
     blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
@@ -223,6 +320,24 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if filename_trk is not None and filename_tractogram is None:
         filename_tractogram = filename_trk
         WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
+    
+    if clustering_thr > 0:
+        LOG( '\n-> Running tractogram clustering:' )
+        extension = splitext(filename_tractogram)[1]
+        if filename_mask is None and TCK_ref_image is None:
+            if extension == ".tck":
+                ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
+            elif extension == ".trk":
+                filename_reference = "same"
+            else:
+                ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
+        else:
+            if filename_mask is not None:
+                filename_reference = filename_mask
+            else:
+                filename_reference = TCK_ref_image
+
+        filename_tractogram = tractogram_cluster( filename_tractogram, filename_reference, clustering_thr)
 
     if path_out is None:
         path_out = dirname(filename_tractogram)
