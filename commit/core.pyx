@@ -22,19 +22,14 @@ from pkg_resources import get_distribution
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
-def setup( lmax=12, ndirs=None ) :
+def setup( lmax=12 ) :
     """General setup/initialization of the COMMIT framework.
 
     Parameters
     ----------
     lmax : int
         Maximum SH order to use for the rotation phase (default : 12)
-     ndirs : int
-        DEPRECATED. Now, all directions are precomputed.
     """
-    if ndirs is not None:
-        WARNING('"ndirs" parameter is deprecated')
-
     amico.setup( lmax )
 
 

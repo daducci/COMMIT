@@ -6,6 +6,8 @@ All notable changes to COMMIT will be documented in this file.
 
 ### Changed
 - Default `ndirs=500` in `core.generate_kernels()` and in `trk2dictionary.run()`
+- Expire the deprecated `ndirs` parameter in `amico.core.setup()`
+- Expire the deprecated `filename_trk` and `gen_trk` parameters in `trk2dictionary.run()`
 
 ## [1.6.3] - 2022-10-21
 
