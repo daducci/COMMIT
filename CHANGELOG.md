@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [2.0.0] - 2023-##-##
+
+### Changed
+- Default `ndirs=500` in `core.generate_kernels()` and in `trk2dictionary.run()`
+
 ## [1.6.3] - 2022-10-21
 
 ### Changed
