@@ -2,6 +2,11 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.6.4] - 2023-02-14
+
+### Fixed
+- Invalid command 'bdist_wheel' error when install with pip<=20.0.2
+
 ## [1.6.3] - 2022-10-21
 
 ### Changed
