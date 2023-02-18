@@ -2,6 +2,14 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
+## [1.6.5] - 2023-02-18
+
+### Changed
+- Build output goes into 'build'
+
+### Added
+- Parallel compilation
+
 ## [1.6.4] - 2023-02-14
 
 ### Fixed
