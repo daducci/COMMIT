@@ -24,11 +24,17 @@ class CustomBuildExtCommand(build_ext):
         # Now that the requirements are installed, get everything from numpy
         from Cython.Build import cythonize
         from numpy import get_include
+        from multiprocessing import cpu_count
 
         # Add everything requires for build
         self.swig_opts = None
         self.include_dirs = [get_include()]
         self.distribution.ext_modules[:] = cythonize( self.distribution.ext_modules, build_dir='build' )
+
+        # if not specified via '-j N' option, set compilation using max number of cores
+        if self.parallel is None:
+            self.parallel = cpu_count()
+        print( f'Parallel compilation using {self.parallel} threads' )
 
         # Call original build_ext command
         build_ext.finalize_options(self)
