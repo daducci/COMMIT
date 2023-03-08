@@ -129,7 +129,7 @@ def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, c
     save_tractogram( tractogram_new, filename_out, bbox_valid_check=False )
     return filename_out
 
-cpdef run( filename_tractogram=None, path_out=None, clustering_thr=0, filename_peaks=None, filename_mask=None, do_intersect=True,
+cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
     blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
@@ -314,7 +314,7 @@ cpdef run( filename_tractogram=None, path_out=None, clustering_thr=0, filename_p
         filename_tractogram = filename_trk
         WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
     
-    if clustering_thr > 0:
+    if blur_clust_thr > 0:
         LOG( '\n-> Running tractogram clustering:' )
         extension = splitext(filename_tractogram)[1]
         if filename_mask is None and TCK_ref_image is None:
@@ -330,7 +330,7 @@ cpdef run( filename_tractogram=None, path_out=None, clustering_thr=0, filename_p
             else:
                 filename_reference = TCK_ref_image
 
-        filename_tractogram = tractogram_cluster( filename_tractogram, filename_reference, clustering_thr)
+        filename_tractogram = tractogram_cluster( filename_tractogram, filename_reference, blur_clust_thr)
 
     if path_out is None:
         path_out = dirname(filename_tractogram)
