@@ -307,13 +307,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     if filename_tractogram is None:
         ERROR( '"filename_tractogram" not defined' )
 
-    if filename_trk is not None and filename_tractogram is not None:
-        WARNING('"filename_trk" will not be considered, "filename_tractogram" will be used')
 
-    if filename_trk is not None and filename_tractogram is None:
-        filename_tractogram = filename_trk
-        WARNING('"filename_trk" parameter is deprecated, use "filename_tractogram" instead')
-    
     if blur_clust_thr > 0:
         LOG( '\n-> Running tractogram clustering:' )
         extension = splitext(filename_tractogram)[1]
