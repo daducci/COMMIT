@@ -133,7 +133,7 @@ cpdef run( filename_tractogram=None, path_out=None, clustering_thr=0, filename_p
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
     blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
-    filename_trk=None, gen_trk=None, TCK_ref_image=None, ndirs=32761
+    TCK_ref_image=None, ndirs=500
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -208,19 +208,12 @@ cpdef run( filename_tractogram=None, path_out=None, clustering_thr=0, filename_p
 
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
-        each segment in a streamline (default : 32761).
-
-    filename_trk : string
-        DEPRECATED. Use filename_tractogram instead.
-
-    gen_trk : string
-        DEPRECATED. No tractogram will be saved any more, but the returned coefficients will account
-        for the streamlines that were pre-filtered in this function.
+        each segment in a streamline (default : 500).
     """
 
     # check the value of ndirs
     if not amico.lut.is_valid(ndirs):
-        ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+        ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
 
     # check conflicts of fiber_shift
     if np.isscalar(fiber_shift) :
@@ -311,7 +304,7 @@ cpdef run( filename_tractogram=None, path_out=None, clustering_thr=0, filename_p
     if max_fiber_len < min_fiber_len :
         ERROR( '"max_fiber_len" must be >= "min_fiber_len"' )
 
-    if filename_trk is None and filename_tractogram is None:
+    if filename_tractogram is None:
         ERROR( '"filename_tractogram" not defined' )
 
     if filename_trk is not None and filename_tractogram is not None:
@@ -346,9 +339,6 @@ cpdef run( filename_tractogram=None, path_out=None, clustering_thr=0, filename_p
         if not isdir(path_out):
             ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
         path_out = join(path_out,'COMMIT')
-
-    if gen_trk is not None:
-        WARNING('"gen_trk" parameter is deprecated')
 
     # create output path
     print( f'\t- Output written to "{path_out}"' )
