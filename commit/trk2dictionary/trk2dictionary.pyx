@@ -307,8 +307,10 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     if filename_tractogram is None:
         ERROR( '"filename_tractogram" not defined' )
 
+    if np.isscalar(blur_clust_thr):
+        blur_clust_thr = np.array( [blur_clust_thr] )
 
-    if blur_clust_thr > 0:
+    if blur_clust_thr[0]> 0:
         LOG( '\n-> Running tractogram clustering:' )
         extension = splitext(filename_tractogram)[1]
         if filename_mask is None and TCK_ref_image is None:
