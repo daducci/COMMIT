@@ -86,9 +86,9 @@ def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, c
     if np.isscalar( thresholds ) :
         thresholds = [ thresholds ]
     if len(thresholds)>1 :
-        filename_out = join(dirname(filename_in), f'{filename_in}_{thresholds[0]}_{thresholds[0]}.tck' )
+        filename_out = join(dirname(filename_in), f'{filename_in[:-4]}_{thresholds[0]}_{thresholds[0]}.tck' )
     else :
-        filename_out = join(dirname(filename_in), f'{filename_in}_{thresholds[0]}.tck' )
+        filename_out = join(dirname(filename_in), f'{filename_in[:-4]}_{thresholds[0]}.tck' )
 
 
     metric   = AveragePointwiseEuclideanMetric( ResampleFeature( nb_points=n_pts ) )
