@@ -12,12 +12,14 @@ from dipy.segment.metric import AveragePointwiseEuclideanMetric
 from dipy.segment.featurespeed import ResampleFeature
 from dipy.tracking.streamline import set_number_of_points
 from os.path import join, exists, splitext, dirname, isdir
-from os import makedirs, remove
+from os import makedirs, remove, system, listdir
 import time
 import amico
 import pickle
 from amico.util import LOG, NOTE, WARNING, ERROR
 from pkg_resources import get_distribution
+import multiprocessing
+import shutil
 
 from libcpp cimport bool
 
@@ -29,7 +31,7 @@ cdef extern from "trk2dictionary_c.cpp":
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
-        float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable
+        float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable, int threads_count
     ) nogil
 
 def _get_header( niiFILE ):
@@ -37,6 +39,14 @@ def _get_header( niiFILE ):
 
 def _get_affine( niiFILE ):
     return niiFILE.affine if nibabel.__version__ >= '2.0.0' else niiFILE.get_affine()
+
+cpdef cat_function( infilename, outfilename ):
+    """ Concatenate binary file """
+
+    with open( outfilename, "ab" ) as outFile:
+        with open( infilename, "rb" ) as inFile:
+            shutil.copyfileobj( inFile, outFile )
+            remove( infilename )
 
 def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
     ''' Returns the streamlines from the input tractogram which are
@@ -133,7 +143,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
     vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
     blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
-    TCK_ref_image=None, ndirs=500
+    TCK_ref_image=None, ndirs=500, threads=None
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -209,6 +219,9 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
         each segment in a streamline (default : 500).
+
+    threads: int
+        Number of threads. If nothing is specified, the value used is the number of CPUs available
     """
 
     # check the value of ndirs
@@ -340,6 +353,17 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     print( f'\t- Output written to "{path_out}"' )
     if not exists( path_out ):
         makedirs( path_out )
+
+    if threads is None :
+        # Set to the number of CPUs in the system
+        try :
+            import multiprocessing
+            threads = multiprocessing.cpu_count()
+        except :
+            threads = 1
+
+    if threads < 1 or threads > 255 :
+        ERROR( 'Number of threads must be between 1 and 255' )
 
     # Load data from files
     LOG( '\n   * Loading data:' )
@@ -499,6 +523,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     dictionary_info['blur_sigma'] = blur_sigma
     dictionary_info['blur_apply_to'] = blur_apply_to
     dictionary_info['ndirs'] = ndirs
+    dictionary_info['threads'] = threads
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
@@ -508,7 +533,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrPeaksAffine,
-        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ndirs, ptrHashTable  );
+        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ndirs, ptrHashTable, threads  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
@@ -535,5 +560,40 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     niiMASK_hdr = _get_header( niiMASK )
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
+
+    # Concatenate files together
+    cdef int j 
+
+    fileout = path_out + '/dictionary_TRK_kept.dict'
+    for j in range(threads):
+        cat_function( path_out+f'/dictionary_TRK_kept_{j}.dict', fileout )
+
+    fileout = path_out + '/dictionary_TRK_norm.dict'
+    for j in range(threads):
+        cat_function( path_out+f'/dictionary_TRK_norm_{j}.dict', fileout )
+
+    fileout = path_out + '/dictionary_TRK_len.dict'
+    for j in range(threads):
+        cat_function( path_out+f'/dictionary_TRK_len_{j}.dict', fileout )
+
+    fileout = path_out + '/dictionary_TRK_lenTot.dict'
+    for j in range(threads):
+        cat_function( path_out+f'/dictionary_TRK_lenTot_{j}.dict', fileout )
+
+    fileout = path_out + '/dictionary_IC_f.dict'
+    for j in range(threads):
+        cat_function( path_out+f'/dictionary_IC_f_{j}.dict', fileout )
+
+    fileout = path_out + '/dictionary_IC_v.dict'
+    for j in range(threads):
+        cat_function( path_out+f'/dictionary_IC_v_{j}.dict', fileout )
+
+    fileout = path_out + '/dictionary_IC_o.dict'
+    for j in range(threads):
+        cat_function( path_out+f'/dictionary_IC_o_{j}.dict', fileout )
+    
+    fileout = path_out + '/dictionary_IC_len.dict'
+    for j in range(threads):
+        cat_function( path_out+f'/dictionary_IC_len_{j}.dict', fileout )
 
     LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )
