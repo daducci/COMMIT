@@ -249,7 +249,7 @@ int trk2dictionary(
     }
 
 
-    printf( "     [ %d streamlines kept, %d segments in total ]\n", totFibers[threads_count-1], std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
+    printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
 
 
     /*
@@ -417,7 +417,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     if ( fpTractogram1 == NULL ) return 0; // if there's no tractogram file, then return 0
     fseek(fpTractogram1, offset, SEEK_SET);
 
-
+    sumFibers = 0;
     // Iterate over streamlines
     for(int f=startpos; f<endpos; f++) 
     {        
@@ -469,15 +469,14 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
                 totICSegments[idx] += FiberSegments.size();
                 sumFibers ++;
-                totFibers[idx] = sumFibers;
-                std::cout << "Fibers " << sumFibers << " added to dictionary" << std::endl;
-
                 kept = 1;
             }
 
         }
 
         fwrite( &kept, 1, 1, pDict_TRK_kept );
+        totFibers[idx] = sumFibers;
+        std::cout << "Fibers " << totFibers[idx] << " added to dictionary" << std::endl;
     }
 
     fclose( fpTractogram1 );
