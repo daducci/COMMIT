@@ -476,7 +476,6 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
         fwrite( &kept, 1, 1, pDict_TRK_kept );
         totFibers[idx] = sumFibers;
-        std::cout << "Fibers " << totFibers[idx] << " added to dictionary" << std::endl;
     }
 
     fclose( fpTractogram1 );
