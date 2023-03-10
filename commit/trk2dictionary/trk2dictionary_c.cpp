@@ -377,13 +377,13 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 {
 
     // Variables definition
-    float          fiber[3][MAX_FIB_LEN] = {0} ;
-    float          fiberNorm;   // normalization
-    unsigned int   N, v, tempTotFibers = 0;
-    unsigned short o;
-    unsigned char  kept;
-    string    filename;
-    string    OUTPUT_path(path_out);
+    float           fiber[3][MAX_FIB_LEN] = {0} ;
+    float           fiberNorm;   // normalization
+    unsigned int    N, v, tempTotFibers;
+    unsigned short  o;
+    unsigned char   kept;
+    string          filename;
+    string          OUTPUT_path(path_out);
 
     unsigned int sumFibers = startpos;
 
