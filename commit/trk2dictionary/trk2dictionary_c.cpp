@@ -249,7 +249,7 @@ int trk2dictionary(
     }
 
 
-    printf( "     [ %d streamlines kept, %d segments in total ]\n", totFibers[threads_count-1][Pos[threads_count+1]], std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
+    printf( "     [ %d streamlines kept, %d segments in total ]\n", totFibers[threads_count-1], std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
 
 
     /*
@@ -470,6 +470,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                 totICSegments[idx] += FiberSegments.size();
                 sumFibers ++;
                 totFibers[idx] = sumFibers;
+                std::cout << "Fibers " << sumFibers << " added to dictionary" << std::endl;
 
                 kept = 1;
             }
