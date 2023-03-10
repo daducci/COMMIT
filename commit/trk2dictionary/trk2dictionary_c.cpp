@@ -379,7 +379,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     // Variables definition
     float          fiber[3][MAX_FIB_LEN] = {0} ;
     float          fiberNorm;   // normalization
-    unsigned int   N, v;
+    unsigned int   N, v, tempTotFibers = 0;
     unsigned short o;
     unsigned char  kept;
     string    filename;
@@ -417,7 +417,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     if ( fpTractogram1 == NULL ) return 0; // if there's no tractogram file, then return 0
     fseek(fpTractogram1, offset, SEEK_SET);
 
-    sumFibers = 0;
+    tempTotFibers = 0;
     // Iterate over streamlines
     for(int f=startpos; f<endpos; f++) 
     {        
@@ -469,13 +469,14 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
                 totICSegments[idx] += FiberSegments.size();
                 sumFibers ++;
+                tempTotFibers ++;
                 kept = 1;
             }
 
         }
 
         fwrite( &kept, 1, 1, pDict_TRK_kept );
-        totFibers[idx] = sumFibers;
+        totFibers[idx] = tempTotFibers;
     }
 
     fclose( fpTractogram1 );
