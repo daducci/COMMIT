@@ -249,7 +249,7 @@ int trk2dictionary(
     }
 
 
-    printf( "     [ %d streamlines kept, %d segments in total ]\n", totFibers[threads_count-1], std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
+    printf( "     [ %d streamlines kept, %d segments in total ]\n", totFibers[threads_count-1][Pos[threads_count+1]], std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
 
 
     /*
