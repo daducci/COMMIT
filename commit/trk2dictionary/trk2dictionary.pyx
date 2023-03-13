@@ -42,7 +42,7 @@ def _get_affine( niiFILE ):
 
 cpdef cat_function( infilename, outfilename ):
     """ Concatenate binary file """
-    with open( outfilename, "w" ) as outfile:
+    with open( outfilename, "wb" ) as outfile:
         for fname in infilename:
             with open( fname, 'rb' ) as inFile:
                 shutil.copyfileobj( inFile, outfile )
