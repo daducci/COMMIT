@@ -45,7 +45,7 @@ cpdef cat_function( infilename, outfilename ):
     with open( outfilename, "w" ) as outfile:
         for fname in infilename:
             with open( fname, 'rb' ) as inFile:
-                shutil.copyfileobj( inFile, outFile )
+                shutil.copyfileobj( inFile, outfile )
                 # remove( infilename )
 
 def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
@@ -562,7 +562,6 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     # Concatenate files together
-    cdef int j
 
     fileout = path_out + '/dictionary_TRK_kept.dict'
     dict_list = []
