@@ -46,7 +46,7 @@ cpdef cat_function( infilename, outfilename ):
         for fname in infilename:
             with open( fname, 'rb' ) as inFile:
                 shutil.copyfileobj( inFile, outfile )
-                remove( infilename )
+                remove( fname )
 
 def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
     ''' Returns the streamlines from the input tractogram which are
