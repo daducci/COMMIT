@@ -42,11 +42,11 @@ def _get_affine( niiFILE ):
 
 cpdef cat_function( infilename, outfilename ):
     """ Concatenate binary file """
-
-    with open( outfilename, "ab" ) as outFile:
-        with open( infilename, "rb" ) as inFile:
-            shutil.copyfileobj( inFile, outFile )
-            remove( infilename )
+    with open( outfilename, "w" ) as outfile:
+        for fname in infilename:
+            with open( fname, 'rb' ) as inFile:
+                shutil.copyfileobj( inFile, outFile )
+                # remove( infilename )
 
 def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
     ''' Returns the streamlines from the input tractogram which are
@@ -562,38 +562,55 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     # Concatenate files together
-    cdef int j 
+    cdef int j
 
     fileout = path_out + '/dictionary_TRK_kept.dict'
+    dict_list = []
     for j in range(threads):
-        cat_function( path_out+f'/dictionary_TRK_kept_{j}.dict', fileout )
+        dict_list += [ path_out+f'/dictionary_TRK_kept_{j}.dict' ]
+    cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_norm.dict'
+    dict_list = []
     for j in range(threads):
-        cat_function( path_out+f'/dictionary_TRK_norm_{j}.dict', fileout )
+        dict_list += [ path_out+f'/dictionary_TRK_norm_{j}.dict' ]
+    cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_len.dict'
+    dict_list = []
     for j in range(threads):
-        cat_function( path_out+f'/dictionary_TRK_len_{j}.dict', fileout )
+        dict_list += [ path_out+f'/dictionary_TRK_len_{j}.dict' ]
+    cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_lenTot.dict'
+    dict_list = []
     for j in range(threads):
-        cat_function( path_out+f'/dictionary_TRK_lenTot_{j}.dict', fileout )
+        dict_list += [ path_out+f'/dictionary_TRK_lenTot_{j}.dict' ]
+    cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_f.dict'
+    dict_list = []
     for j in range(threads):
-        cat_function( path_out+f'/dictionary_IC_f_{j}.dict', fileout )
+        dict_list += [ path_out+f'/dictionary_IC_f_{j}.dict' ]
+    cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_v.dict'
+    dict_list = []
     for j in range(threads):
-        cat_function( path_out+f'/dictionary_IC_v_{j}.dict', fileout )
+        dict_list += [ path_out+f'/dictionary_IC_v_{j}.dict' ]
+    cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_o.dict'
+    dict_list = []
     for j in range(threads):
-        cat_function( path_out+f'/dictionary_IC_o_{j}.dict', fileout )
-    
+        dict_list += [ path_out+f'/dictionary_IC_o_{j}.dict' ]
+    cat_function( dict_list, fileout )
+
+
     fileout = path_out + '/dictionary_IC_len.dict'
+    dict_list = []
     for j in range(threads):
-        cat_function( path_out+f'/dictionary_IC_len_{j}.dict', fileout )
+        dict_list += [ path_out+f'/dictionary_IC_len_{j}.dict' ]
+    cat_function( dict_list, fileout )
 
     LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )

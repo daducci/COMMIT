@@ -217,9 +217,9 @@ int trk2dictionary(
                 for( int i = 1; i < threads_count; i++ ){
                     if( f == Pos[i] ) 
                         OffsetArr[i] = current;
-        }
+                }
 
-    }
+            }
 
         }
 
@@ -419,6 +419,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
     tempTotFibers = 0;
     // Iterate over streamlines
+    std::cout << "     [ " << startpos << " - " << endpos << " ]" << std::endl;
     for(int f=startpos; f<endpos; f++) 
     {        
 
