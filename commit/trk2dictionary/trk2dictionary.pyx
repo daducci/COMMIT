@@ -569,7 +569,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         IC_f = np.fromfile( path_out + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
         discarded += np.count_nonzero(kept==1)
         IC_f -= discarded
-        IC_f_save = np.memmap( path_out + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32, mode='w+', shape=IC_f.shape ).copy( IC_f )
+        IC_f_save = np.memmap( path_out + f'/dictionary_IC_f_{j+1}.dict', dtype="uint32", mode='w+', shape=IC_f.shape ).copy( IC_f )
         IC_f_save[:] = IC_f[:]
         IC_f_save.flush()
         del IC_f_save
