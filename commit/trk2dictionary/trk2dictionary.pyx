@@ -569,7 +569,8 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         IC_f = np.fromfile( path_out + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
         discarded += np.count_nonzero(kept==1)
         IC_f -= discarded
-        np.save( path_out + f'/dictionary_IC_f_{j+1}.dict', IC_f, allow_pickle=True)
+        np.memmap( path_out + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32, mode='w+', shape=IC_f.shape ).copy( IC_f )
+        # np.save( path_out + f'/dictionary_IC_f_{j+1}.dict', IC_f, allow_pickle=True)
 
     fileout = path_out + '/dictionary_TRK_kept.dict'
     dict_list = []
