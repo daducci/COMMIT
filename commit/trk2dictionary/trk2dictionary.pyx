@@ -562,11 +562,12 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     # Concatenate files together
+    discarded = 0
     for j in range(threads-1):
         path_kept = path_out + f'/dictionary_TRK_kept_{j}.dict'
         kept = np.fromfile( path_out + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
         IC_f = np.fromfile( path_out + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
-        discarded = np.count_nonzero(kept==1)
+        discarded += np.count_nonzero(kept==1)
         IC_f -= discarded
         np.save( path_out + f'/dictionary_IC_f_{j+1}.dict', IC_f, allow_pickle=True)
 
