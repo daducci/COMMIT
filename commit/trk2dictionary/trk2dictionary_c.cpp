@@ -444,14 +444,14 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                     // NB: plese note inverted ordering for 'v'
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;       
-            
+
                     fwrite( &sumFibers,      4, 1, pDict_IC_f );
                     fwrite( &v,              4, 1, pDict_IC_v );
                     fwrite( &o,              2, 1, pDict_IC_o );
                     fwrite( &(it->second),   4, 1, pDict_IC_len );       
                     
                     // m.lock();
-                    ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
+                    // ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
                     // m.unlock();
 
                     inVoxKey.set( it->first.x, it->first.y, it->first.z );
@@ -460,7 +460,6 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
                 for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
                     fiberNorm += pow(itNorm->second,2);
-
                 fiberNorm = sqrt(fiberNorm);
                 FiberNorm.clear();
 
