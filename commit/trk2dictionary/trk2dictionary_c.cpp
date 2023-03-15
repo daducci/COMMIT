@@ -175,35 +175,19 @@ int trk2dictionary(
 
     OffsetArr[0] = ftell( fpTractogram );
 
-    // Check the number of streamlines ( IC ) for .Trk
-    // Number of segments IC - OK
-    // Streamlines and segments for EC - OK
     if(isTRK) {
-
-        /*
-        fread( (char*)&N, 1, 4, fpTractogram ); // read the number of points in each streamline
-        if( N >= MAX_FIB_LEN || N <= 0 ) return 0;   // check
-
+        // TODO: check if the file is a TRK file
         while( f != n_count) {
-
+            fread( (char*)&N, 1, 4, fpTractogram ); // read the number of points in each streamline
+            if( N >= MAX_FIB_LEN || N <= 0 ) return 0;   // check
             for( int k=0; k<N; k++){
                 fread((char*)Buff, 1, 12, fpTractogram);
                 fseek(fpTractogram,4*n_scalars,SEEK_CUR);
-                }
-                for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
-                    fiberNorm += pow(itNorm->second,2);
-                fiberNorm = sqrt(fiberNorm);
-                FiberNorm.clear();
-                fwrite( &fiberNorm,   1, 4, pDict_TRK_norm );   // actual length considered in optimization
-                fwrite( &FiberLen,    1, 4, pDict_TRK_len );    // length of the streamline
-                fwrite( &FiberLenTot, 1, 4, pDict_TRK_lenTot ); // length of the streamline (considering the blur)
-                totICSegments += FiberSegments.size();
-                totFibers++;
-                kept = 1;
             }
-        }*/
-
-
+            fseek(fpTractogram,4*n_properties,SEEK_CUR);
+            f++;
+            OffsetArr[f] = ftell( fpTractogram );
+        }
     } else {
 
         while( f != n_count ) {

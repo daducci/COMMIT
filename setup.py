@@ -6,7 +6,8 @@ def get_extensions():
     # for the computation of matrix-vector multiplications
     trk2dictionary = Extension(name='commit.trk2dictionary',
                      sources=['commit/trk2dictionary/trk2dictionary.pyx'],
-                     extra_compile_args=['-w'],
+                     extra_compile_args=['-w', '-std=c++11'],
+                     libraries=['stdc++'],
                      language='c++')
     core = Extension(name='commit.core',
                      sources=['commit/core.pyx'],
