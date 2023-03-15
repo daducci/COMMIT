@@ -126,9 +126,8 @@ int trk2dictionary(
 
     // Compute the batch size for each thread
     // ---------------------------------------
-    int p_size = 0;
-    p_size = n_count > threads_count ? threads_count : n_count;
-    int batch_size[p_size] = {0};
+    int p_size = n_count > threads_count ? threads_count : n_count;
+    int* batch_size = new int[p_size]();
 
     for (int i = 0; i < n_count; i++)
     {
@@ -138,9 +137,8 @@ int trk2dictionary(
     
     // Compute the starting position
     // -----------------------------------------
-    unsigned int elements = 0;
-    elements = threads_count + 1;
-    unsigned int Pos[elements] = {0};
+    unsigned int elements = threads_count + 1;
+    unsigned int *Pos = new unsigned int[elements]();
 
     for (int i = 1; i < threads_count; i++)
     {
