@@ -12,6 +12,8 @@ All notable changes to COMMIT will be documented in this file.
 ### Added
 - Added trk2dictionary.run() parameter `blur_clust_thr`
 - Implemented clustering in trk2dictionary
+- Added trk2dictionary.run() parallel computation
+- Added trk2dictionary.run() parameter `threads`
 
 ## [1.6.4] - 2023-02-14
 

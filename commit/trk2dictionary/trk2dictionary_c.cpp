@@ -419,7 +419,6 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
     tempTotFibers = 0;
     // Iterate over streamlines
-    std::cout << "     [ " << startpos << " - " << endpos << " ]" << std::endl;
     for(int f=startpos; f<endpos; f++) 
     {        
 
@@ -432,7 +431,6 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
         fiberForwardModel( fiber, N, nReplicas, ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo[f], ptrHashTable, P );
 
         kept = 0;
-        
 
         if ( FiberSegments.size() > 0 )
         {
