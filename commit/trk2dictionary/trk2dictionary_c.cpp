@@ -288,8 +288,6 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         for(iz=0; iz<dim.z; iz++)
         {
             for(iy=0; iy<dim.y; iy++)
-            {
-                skip = 0;
                 for(ix=0; ix<dim.x; ix++)
                 {
                     // check if in mask previously computed from IC segments
@@ -298,7 +296,10 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                             skip += 1;
                         }
                     }
-                    if(skip==threads-1) continue;
+                    if(skip==threads-1){
+                        skip = 0;
+                        continue;
+                    }
 
                     peakMax = -1;
                     for(id=0; id<Np ;id++)
@@ -357,7 +358,6 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                         totECVoxels++;
                     }
                 }
-            }
         }
     }
 
