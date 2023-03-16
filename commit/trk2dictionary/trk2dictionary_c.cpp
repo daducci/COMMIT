@@ -76,8 +76,8 @@ float           minSegLen, minFiberLen, maxFiberLen;
 vector<thread>  threads;
 vector<unsigned int>    totICSegments( MAX_THREADS, 0 ); 
 vector<unsigned int>    totFibers( MAX_THREADS, 0 );
-vector<unsigned int>    totECVoxels( MAX_THREADS, 0 );
-vector<unsigned int>    totECSegments( MAX_THREADS, 0 );
+unsigned int            totECVoxels = 0;
+unsigned int            totECSegments = 0;
 
 
 // --- Functions Definitions ----
@@ -243,16 +243,17 @@ int trk2dictionary(
     threads.clear();
     printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
-    for( int i = 0; i<threads_count; i++ ) {
-        threads.push_back( thread( ECSegments, ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrMASK, ptrTDI[i], ptrHashTable,
-                                path_out, ptrPeaksAffine, i) );
-    }
+    int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrMASK, ptrTDI[0], ptrHashTable, path_out, ptrPeaksAffine, threads_count );
+    // for( int i = 0; i<threads_count; i++ ) {
+    //     threads.push_back( thread( ECSegments, ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrMASK, ptrTDI[i], ptrHashTable,
+    //                             path_out, ptrPeaksAffine, i) );
+    // }
 
-    for( int i = 0; i<threads_count; i++ ) {
-        threads[i].join();
-    }
+    // for( int i = 0; i<threads_count; i++ ) {
+    //     threads[i].join();
+    // }
 
-    printf("     [ %d voxels, %d segments ]\n", std::accumulate(totECVoxels.begin(),totECVoxels.end(), 0), std::accumulate(totECSegments.begin(),totECSegments.end(), 0) );
+    printf("     [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 
     return 1;
 
@@ -260,7 +261,7 @@ int trk2dictionary(
 
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* ptrMASK, float* ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx){
+    float* ptrMASK, float* ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads){
 
     // Variables definition
     string    filename;
@@ -282,70 +283,80 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         float          norms[ Np ];
         float          *ptr;
         int            ox, oy;
+        int            skip = 0;
 
         for(iz=0; iz<dim.z; iz++)
         {
             for(iy=0; iy<dim.y; iy++)
-            for(ix=0; ix<dim.x; ix++)
             {
-                // check if in mask previously computed from IC segments
-                if ( ptrTDI[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-
-                peakMax = -1;
-                for(id=0; id<Np ;id++)
+                skip = 0;
+                for(ix=0; ix<dim.x; ix++)
                 {
-                    ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
-                    dir.x = ptr[0];
-                    dir.y = ptr[1];
-                    dir.z = ptr[2];
-                    norms[id] = dir.norm();
-                    if ( norms[id] > peakMax )
-                        peakMax = norms[id];
-                }
+                    // check if in mask previously computed from IC segments
+                    for(int i =0; i<threads; i++){
+                        if( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) + dim.z * dim.y * dim.x * i ] == 0 )
+                        skip=1;
+                        continue;
+                    }
+                    if(skip) continue;
+                    // if ( ptrTDI[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
 
-                if ( peakMax > 0 )
-                {
-                    ec_seg.x  = ix;
-                    ec_seg.y  = iy;
-                    ec_seg.z  = iz;
-                    atLeastOne = 0;
+                    peakMax = -1;
                     for(id=0; id<Np ;id++)
                     {
-                    if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
+                        ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+                        dir.x = ptr[0];
+                        dir.y = ptr[1];
+                        dir.z = ptr[2];
+                        norms[id] = dir.norm();
+                        if ( norms[id] > peakMax )
+                            peakMax = norms[id];
+                    }
 
-                    // get the orientation of the current peak
-                    ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
-
-                    // multiply by the affine matrix
-                    dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
-                    dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
-                    dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
-
-                    // flip axes if requested
-                    dir.x *= ECix;
-                    dir.y *= ECiy;
-                    dir.z *= ECiz;
-                    if ( dir.y < 0 )
+                    if ( peakMax > 0 )
                     {
-                        // ensure to be in the right hemisphere (the one where kernels were pre-computed)
-                        dir.x = -dir.x;
-                        dir.y = -dir.y;
-                        dir.z = -dir.z;
-                    }
-                    colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
-                    longitude  = atan2( dir.y, dir.x );
-                    ox = (int)round(colatitude/M_PI*180.0);
-                    oy = (int)round(longitude/M_PI*180.0);
+                        ec_seg.x  = ix;
+                        ec_seg.y  = iy;
+                        ec_seg.z  = iz;
+                        atLeastOne = 0;
+                        for(id=0; id<Np ;id++)
+                        {
+                        if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
 
-                    v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
-                    o = ptrHashTable[ox*181 + oy];
-                    fwrite( &v, 4, 1, pDict_EC_v );
-                    fwrite( &o, 2, 1, pDict_EC_o );
-                    totECSegments[idx] ++;
-                    atLeastOne = 1;
+                        // get the orientation of the current peak
+                        ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+
+                        // multiply by the affine matrix
+                        dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
+                        dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
+                        dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
+
+                        // flip axes if requested
+                        dir.x *= ECix;
+                        dir.y *= ECiy;
+                        dir.z *= ECiz;
+                        if ( dir.y < 0 )
+                        {
+                            // ensure to be in the right hemisphere (the one where kernels were pre-computed)
+                            dir.x = -dir.x;
+                            dir.y = -dir.y;
+                            dir.z = -dir.z;
+                        }
+                        colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
+                        longitude  = atan2( dir.y, dir.x );
+                        ox = (int)round(colatitude/M_PI*180.0);
+                        oy = (int)round(longitude/M_PI*180.0);
+
+                        v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
+                        o = ptrHashTable[ox*181 + oy];
+                        fwrite( &v, 4, 1, pDict_EC_v );
+                        fwrite( &o, 2, 1, pDict_EC_o );
+                        totECSegments ++;
+                        atLeastOne = 1;
+                        }
+                    if ( atLeastOne>0 )
+                        totECVoxels++;
                     }
-                if ( atLeastOne>0 )
-                    totECVoxels[idx]++;
                 }
             }
         }
