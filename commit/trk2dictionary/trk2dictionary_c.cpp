@@ -76,6 +76,8 @@ float           minSegLen, minFiberLen, maxFiberLen;
 vector<thread>  threads;
 vector<unsigned int>    totICSegments( MAX_THREADS, 0 ); 
 vector<unsigned int>    totFibers( MAX_THREADS, 0 );
+vector<unsigned int>    totECVoxels( MAX_THREADS, 0 );
+vector<unsigned int>    totECSegments( MAX_THREADS, 0 );
 
 
 // --- Functions Definitions ----
@@ -89,7 +91,10 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOX
 // ---------- Parallel fuction --------------
 int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
 float* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
-unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos ); 
+unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos );
+
+int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
+    float* ptrMASK, float* ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx);
 
 
 
@@ -101,9 +106,9 @@ int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+    float* _ptrMASK, float** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
-    float* ptrToVOXMM, unsigned short ndirs, short* ptrHashTable, int threads_count
+    float* ptrToVOXMM, short* ptrHashTable, int threads_count
 )
 {
 
@@ -223,7 +228,7 @@ int trk2dictionary(
     // ---- Original ------
     for( int i = 0; i<threads_count; i++ ){
         threads.push_back( thread( ICSegments, str_filename, isTRK, n_count, nReplicas, n_scalars, n_properties, ptrToVOXMM,
-        ptrTDI , ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo, ptrHashTable, path_out, OffsetArr[i], 
+        ptrTDI[i] , ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo, ptrHashTable, path_out, OffsetArr[i], 
         i, Pos[i], Pos[i+1]  ) );
     }
 
@@ -235,29 +240,37 @@ int trk2dictionary(
 
     printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
 
+    threads.clear();
+    printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
-    /*
-    // Debugging
-    fclose( x_seg );
-    fclose( y_seg );
-    fclose( z_seg );
-    fclose( o_seg );
-    */
+    for( int i = 0; i<threads_count; i++ ) {
+        threads.push_back( thread( ECSegments, ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrMASK, ptrTDI[i], ptrHashTable,
+                                path_out, ptrPeaksAffine, i) );
+    }
+
+    for( int i = 0; i<threads_count; i++ ) {
+        threads[i].join();
+    }
+
+    printf("     [ %d voxels, %d segments ]\n", std::accumulate(totECVoxels.begin(),totECVoxels.end(), 0), std::accumulate(totECSegments.begin(),totECSegments.end(), 0) );
+
+    return 1;
+
+}
 
 
-    // ------- EC Compartments -------
+int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
+    float* ptrMASK, float* ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx){
 
     // Variables definition
     string    filename;
     string    OUTPUT_path(path_out);
     unsigned short o;
     unsigned int v;
-    unsigned int totECSegments = 0, totECVoxels = 0;
 
-    printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
-    filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v   = fopen( filename.c_str(),   "wb" );
-    filename = OUTPUT_path+"/dictionary_EC_o.dict";        FILE* pDict_EC_o   = fopen( filename.c_str(),   "wb" );
+    filename = OUTPUT_path+"/dictionary_EC_v_" + std::to_string(idx) + ".dict";        FILE* pDict_EC_v       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_EC_o_" + std::to_string(idx) + ".dict";        FILE* pDict_EC_o       = fopen(filename.c_str(),"wb");
 
     if ( ptrPEAKS != NULL )
     {
@@ -298,51 +311,48 @@ int trk2dictionary(
                     atLeastOne = 0;
                     for(id=0; id<Np ;id++)
                     {
-                        if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
+                    if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
 
-                        // get the orientation of the current peak
-                        ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+                    // get the orientation of the current peak
+                    ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
 
-                        // multiply by the affine matrix
-                        dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
-                        dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
-                        dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
+                    // multiply by the affine matrix
+                    dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
+                    dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
+                    dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
 
-                        // flip axes if requested
-                        dir.x *= ECix;
-                        dir.y *= ECiy;
-                        dir.z *= ECiz;
-                        if ( dir.y < 0 )
-                        {
-                            // ensure to be in the right hemisphere (the one where kernels were pre-computed)
-                            dir.x = -dir.x;
-                            dir.y = -dir.y;
-                            dir.z = -dir.z;
-                        }
-                        colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
-                        longitude  = atan2( dir.y, dir.x );
-                        ox = (int)round(colatitude/M_PI*180.0);
-                        oy = (int)round(longitude/M_PI*180.0);
-
-                        v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
-                        o = ptrHashTable[ox*181 + oy];
-                        fwrite( &v, 4, 1, pDict_EC_v );
-                        fwrite( &o, 2, 1, pDict_EC_o );
-                        totECSegments++;
-                        atLeastOne = 1;
+                    // flip axes if requested
+                    dir.x *= ECix;
+                    dir.y *= ECiy;
+                    dir.z *= ECiz;
+                    if ( dir.y < 0 )
+                    {
+                        // ensure to be in the right hemisphere (the one where kernels were pre-computed)
+                        dir.x = -dir.x;
+                        dir.y = -dir.y;
+                        dir.z = -dir.z;
                     }
-                    if ( atLeastOne>0 )
-                        totECVoxels++;
+                    colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
+                    longitude  = atan2( dir.y, dir.x );
+                    ox = (int)round(colatitude/M_PI*180.0);
+                    oy = (int)round(longitude/M_PI*180.0);
+
+                    v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
+                    o = ptrHashTable[ox*181 + oy];
+                    fwrite( &v, 4, 1, pDict_EC_v );
+                    fwrite( &o, 2, 1, pDict_EC_o );
+                    totECSegments[idx] ++;
+                    atLeastOne = 1;
+                    }
+                if ( atLeastOne>0 )
+                    totECVoxels[idx]++;
                 }
             }
         }
-    
     }
 
     fclose( pDict_EC_v );
     fclose( pDict_EC_o );
-
-    printf("     [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 
     return 1;
 
@@ -432,9 +442,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                     fwrite( &o,              2, 1, pDict_IC_o );
                     fwrite( &(it->second),   4, 1, pDict_IC_len );       
                     
-                    // m.lock();
-                    // ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
-                    // m.unlock();
+                    ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
 
                     inVoxKey.set( it->first.x, it->first.y, it->first.z );
                     FiberNorm[inVoxKey] += it->second;

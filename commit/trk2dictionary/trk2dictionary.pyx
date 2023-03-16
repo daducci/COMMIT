@@ -4,6 +4,7 @@ from __future__ import print_function
 import cython
 import numpy as np
 cimport numpy as np
+from libc.stdlib cimport malloc, free
 import nibabel
 from dipy.io.stateful_tractogram import StatefulTractogram as sft
 from dipy.io.streamline import load_tractogram, save_tractogram
@@ -29,9 +30,9 @@ cdef extern from "trk2dictionary_c.cpp":
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars,
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-        float* _ptrMASK, float* ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+        float* _ptrMASK, float** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
-        float* ptrTractsAffine, unsigned short ndirs, short* prtHashTable, int threads_count
+        float* ptrTractsAffine, short* prtHashTable, int threads_count
     ) nogil
 
 def _get_header( niiFILE ):
@@ -464,8 +465,11 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     cdef float* ptrPEAKS
     cdef float [:, :, :, ::1] niiPEAKS_img
     cdef int Np
-    cdef float [:, :, ::1] niiTDI_img = np.ascontiguousarray( np.zeros((Nx,Ny,Nz),dtype=np.float32) )
-    cdef float* ptrTDI  = &niiTDI_img[0,0,0]
+    cdef float [:,:, :,::1] niiTDI_img = np.ascontiguousarray( np.zeros((threads,Nx,Ny,Nz),dtype=np.float32) )
+    cdef float** ptrTDI = <float**>malloc( threads * sizeof(float*) )
+    for i in range(threads):
+        ptrTDI[i] = &niiTDI_img[i,0,0,0]
+
     cdef double [:, ::1] peaksAffine
     cdef double* ptrPeaksAffine
     if filename_peaks is not None :
@@ -533,33 +537,10 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrPeaksAffine,
-        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ndirs, ptrHashTable, threads  );
+        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, threads  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
-
-    # save TDI and MASK maps
-    if TCK_ref_image is not None:
-        TDI_affine = _get_affine( niiREF )
-    elif filename_mask is not None :
-        TDI_affine = _get_affine( niiMASK )
-    elif filename_peaks is not None :
-        TDI_affine = _get_affine( niiPEAKS )
-    else :
-        TDI_affine = np.diag( [Px, Py, Pz, 1] )
-
-    niiTDI = nibabel.Nifti1Image( niiTDI_img, TDI_affine )
-    niiTDI_hdr = _get_header( niiTDI )
-    niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
-    nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
-
-    if filename_mask is not None :
-        niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
-    else :
-        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), TDI_affine )
-    niiMASK_hdr = _get_header( niiMASK )
-    niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
-    nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     # Concatenate files together
     cdef int discarded = 0
@@ -617,11 +598,48 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         dict_list += [ path_out+f'/dictionary_IC_o_{j}.dict' ]
     cat_function( dict_list, fileout )
 
-
     fileout = path_out + '/dictionary_IC_len.dict'
     dict_list = []
     for j in range(threads):
         dict_list += [ path_out+f'/dictionary_IC_len_{j}.dict' ]
     cat_function( dict_list, fileout )
+
+    fileout = path_out + '/dictionary_EC_v.dict'
+    dict_list = []
+    for j in range(threads):
+        dict_list += [ path_out+f'/dictionary_EC_v_{j}.dict' ]
+    cat_function( dict_list, fileout )
+
+    fileout = path_out + '/dictionary_EC_o.dict'
+    dict_list = []
+    for j in range(threads):
+        dict_list += [ path_out+f'/dictionary_EC_o_{j}.dict' ]
+    cat_function( dict_list, fileout )
+
+
+    # save TDI and MASK maps
+    if TCK_ref_image is not None:
+        TDI_affine = _get_affine( niiREF )
+    elif filename_mask is not None :
+        TDI_affine = _get_affine( niiMASK )
+    elif filename_peaks is not None :
+        TDI_affine = _get_affine( niiPEAKS )
+    else :
+        TDI_affine = np.diag( [Px, Py, Pz, 1] )
+
+    niiTDI = nibabel.Nifti1Image( niiTDI_img, TDI_affine )
+    niiTDI_hdr = _get_header( niiTDI )
+    niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
+    nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
+
+    if filename_mask is not None :
+        niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
+    else :
+        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), TDI_affine )
+    niiMASK_hdr = _get_header( niiMASK )
+    niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
+    nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
+
+    free( ptrTDI )
 
     LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )

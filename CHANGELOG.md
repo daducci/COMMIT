@@ -8,6 +8,7 @@ All notable changes to COMMIT will be documented in this file.
 - Default `ndirs=500` in `core.generate_kernels()` and in `trk2dictionary.run()`
 - Expire the deprecated `ndirs` parameter in `amico.core.setup()`
 - Expire the deprecated `filename_trk` and `gen_trk` parameters in `trk2dictionary.run()`
+- Removed unused parameter `ndirs` from `trk2dictionary_c.cpp()`
 
 ### Added
 - Added trk2dictionary.run() parameter `blur_clust_thr`
