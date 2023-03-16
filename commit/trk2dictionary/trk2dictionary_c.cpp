@@ -296,7 +296,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                             skip += 1;
                         }
                     }
-                    if(skip==threads-1){
+                    if(skip==threads){
                         skip = 0;
                         continue;
                     }
