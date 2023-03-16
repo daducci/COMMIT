@@ -94,7 +94,7 @@ float* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos );
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* ptrMASK, float* ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx);
+    float** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx);
 
 
 
@@ -243,7 +243,7 @@ int trk2dictionary(
     threads.clear();
     printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
-    int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrMASK, ptrTDI[0], ptrHashTable, path_out, ptrPeaksAffine, threads_count );
+    int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
     // for( int i = 0; i<threads_count; i++ ) {
     //     threads.push_back( thread( ECSegments, ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrMASK, ptrTDI[i], ptrHashTable,
     //                             path_out, ptrPeaksAffine, i) );
@@ -261,7 +261,7 @@ int trk2dictionary(
 
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* ptrMASK, float* ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads){
+    float** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads){
 
     // Variables definition
     string    filename;
@@ -294,12 +294,11 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                 {
                     // check if in mask previously computed from IC segments
                     for(int i =0; i<threads; i++){
-                        if( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) + dim.z * dim.y * dim.x * i ] == 0 ){
+                        if( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) + dim.z * dim.y * dim.x * i ] == 0 ){
                             skip += 1;
                         }
                     }
                     if(skip==threads-1) continue;
-                    // if ( ptrTDI[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
 
                     peakMax = -1;
                     for(id=0; id<Np ;id++)
