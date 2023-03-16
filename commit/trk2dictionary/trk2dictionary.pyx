@@ -610,13 +610,6 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         dict_list += [ path_out+f'/dictionary_EC_v_{j}.dict' ]
     cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_EC_o.dict'
-    dict_list = []
-    for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_EC_o_{j}.dict' ]
-    cat_function( dict_list, fileout )
-
-
     # save TDI and MASK maps
     if TCK_ref_image is not None:
         TDI_affine = _get_affine( niiREF )
