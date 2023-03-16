@@ -300,7 +300,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                         skip = 0;
                         continue;
                     }
-
+                    skip = 0;
                     peakMax = -1;
                     for(id=0; id<Np ;id++)
                     {
