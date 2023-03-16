@@ -627,7 +627,11 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     else :
         TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
-    niiTDI = nibabel.Nifti1Image( niiTDI_img, TDI_affine )
+    niiTDI_img_save= np.zeros_like(niiTDI_img[0,:,:,:])
+    for i in range(threads):
+        niiTDI_img_save += niiTDI_img[i,:,:,:]
+
+    niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
     niiTDI_hdr = _get_header( niiTDI )
     niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
