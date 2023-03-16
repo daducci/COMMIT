@@ -294,11 +294,11 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                 {
                     // check if in mask previously computed from IC segments
                     for(int i =0; i<threads; i++){
-                        if( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) + dim.z * dim.y * dim.x * i ] == 0 )
-                        skip=1;
-                        continue;
+                        if( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) + dim.z * dim.y * dim.x * i ] == 0 ){
+                            skip += 1;
+                        }
                     }
-                    if(skip) continue;
+                    if(skip==threads-1) continue;
                     // if ( ptrTDI[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
 
                     peakMax = -1;
