@@ -270,8 +270,8 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
     unsigned int v;
 
 
-    filename = OUTPUT_path+"/dictionary_EC_v_" + std::to_string(idx) + ".dict";        FILE* pDict_EC_v       = fopen(filename.c_str(),"wb");
-    filename = OUTPUT_path+"/dictionary_EC_o_" + std::to_string(idx) + ".dict";        FILE* pDict_EC_o       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v       = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_EC_o.dict";        FILE* pDict_EC_o       = fopen(filename.c_str(),"wb");
 
     if ( ptrPEAKS != NULL )
     {
