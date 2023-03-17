@@ -239,7 +239,8 @@ int trk2dictionary(
 
 
     printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
-
+    totFibers.clear();
+    totICSegments.clear();
     threads.clear();
     printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
