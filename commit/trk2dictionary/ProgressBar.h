@@ -20,9 +20,13 @@ class ProgressBar
         void    close();
 
         ProgressBar( unsigned int _N, unsigned int _width );
+        ProgressBar(unsigned int _width);
         ~ProgressBar();
 };
 
+ProgressBar::ProgressBar(unsigned int _width = 25){
+    width = _width;
+};
 
 ProgressBar::ProgressBar( unsigned int _N, unsigned int _width = 25 )
 {

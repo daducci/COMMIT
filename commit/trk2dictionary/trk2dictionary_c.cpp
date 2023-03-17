@@ -17,6 +17,7 @@
 #define MAX_THREADS 255
 
 using namespace std;
+ProgressBar PROGRESS;
 
 // CLASS to store the segments of one fiber
 class segKey
@@ -230,6 +231,8 @@ int trk2dictionary(
     printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
     
 
+    PROGRESS.reset((unsigned int) n_count);
+    PROGRESS.setPrefix("     ");
     // ---- Original ------
     for( int i = 0; i<threads_count; i++ ){
         threads.push_back( thread( ICSegments, str_filename, isTRK, n_count, nReplicas, n_scalars, n_properties, ptrToVOXMM,
@@ -242,7 +245,7 @@ int trk2dictionary(
         threads[i].join();
     }
 
-
+    PROGRESS.close();
     printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
 
     threads.clear();
@@ -434,7 +437,10 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
     tempTotFibers = 0;
     temp_totICSegments = 0;
+    int incr_new = 0;
+    int incr_old = 0;
     // Iterate over streamlines
+
     for(int f=startpos; f<endpos; f++) 
     {        
 
@@ -490,8 +496,13 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
         fwrite( &kept, 1, 1, pDict_TRK_kept );
         totFibers[idx] = tempTotFibers;
         totICSegments[idx] = temp_totICSegments;
+        if (idx == 0){
+            incr_new = std::accumulate(totFibers.begin(), totFibers.end(), 0);
+            for(int i=incr_old; i<incr_new; i++)
+                PROGRESS.inc();
+            incr_old = incr_new;
+        }
     }
-
     fclose( fpTractogram1 );
     fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
