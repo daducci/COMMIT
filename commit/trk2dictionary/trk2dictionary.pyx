@@ -554,9 +554,9 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     # Concatenate files together
     cdef int discarded = 0
     for j in range(nthreads-1):
-        path_IC_f = path_out + f'/dictionary_IC_f_{j+1}.dict'
-        kept = np.fromfile( path_out + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
-        IC_f = np.fromfile( path_out + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
+        path_IC_f = path_temp + f'/dictionary_IC_f_{j+1}.dict'
+        kept = np.fromfile( path_temp + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
+        IC_f = np.fromfile( path_temp + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
         discarded += np.count_nonzero(kept==0)
         IC_f -= discarded
         IC_f_save = np.memmap( path_IC_f, dtype="uint32", mode='w+', shape=IC_f.shape )
@@ -641,7 +641,8 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     free( ptrTDI )
-    if exists(path_temp):
+    if nthreads > 1:
         shutil.rmtree(path_temp)
+
 
     LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )
