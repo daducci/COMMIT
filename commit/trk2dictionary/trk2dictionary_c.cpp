@@ -124,8 +124,8 @@ int trk2dictionary(
     minSegLen     = min_seg_len;
     minFiberLen   = min_fiber_len;
     maxFiberLen   = max_fiber_len;
-    totICSegments.resize( MAX_THREADS, 0 );
-    totFibers.resize( MAX_THREADS, 0 );
+    totICSegments.resize( threads_count, 0 );
+    totFibers.resize( threads_count, 0 );
     totECVoxels   = 0;
     totECSegments = 0;
 
