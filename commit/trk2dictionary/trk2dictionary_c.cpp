@@ -74,8 +74,8 @@ float           minSegLen, minFiberLen, maxFiberLen;
 
 // Threads variables
 vector<thread>  threads;
-vector<unsigned int>    totICSegments( MAX_THREADS, 0 ); 
-vector<unsigned int>    totFibers( MAX_THREADS, 0 );
+vector<unsigned int>    totICSegments; 
+vector<unsigned int>    totFibers;
 unsigned int            totECVoxels = 0;
 unsigned int            totECSegments = 0;
 
