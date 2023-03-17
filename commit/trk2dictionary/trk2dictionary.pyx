@@ -365,6 +365,15 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
 
     if threads < 1 or threads > 255 :
         ERROR( 'Number of threads must be between 1 and 255' )
+    
+    if threads > 1 :
+        path_temp = join(path_out 'temp')
+        if os.path.exists(path_temp):
+            shutil.rmtree(path_temp)
+        os.makedirs(path_temp)
+    else:
+        path_temp = path_out
+
 
     # Load data from files
     LOG( '\n   * Loading data:' )
@@ -559,49 +568,49 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     fileout = path_out + '/dictionary_TRK_kept.dict'
     dict_list = []
     for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_TRK_kept_{j}.dict' ]
+        dict_list += [ path_temp + f'/dictionary_TRK_kept_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_norm.dict'
     dict_list = []
     for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_TRK_norm_{j}.dict' ]
+        dict_list += [ path_temp + f'/dictionary_TRK_norm_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_len.dict'
     dict_list = []
     for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_TRK_len_{j}.dict' ]
+        dict_list += [ path_temp + f'/dictionary_TRK_len_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_lenTot.dict'
     dict_list = []
     for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_TRK_lenTot_{j}.dict' ]
+        dict_list += [ path_temp + f'/dictionary_TRK_lenTot_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_f.dict'
     dict_list = []
     for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_IC_f_{j}.dict' ]
+        dict_list += [ path_temp + f'/dictionary_IC_f_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_v.dict'
     dict_list = []
     for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_IC_v_{j}.dict' ]
+        dict_list += [ path_temp + f'/dictionary_IC_v_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_o.dict'
     dict_list = []
     for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_IC_o_{j}.dict' ]
+        dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_len.dict'
     dict_list = []
     for j in range(threads):
-        dict_list += [ path_out+f'/dictionary_IC_len_{j}.dict' ]
+        dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     # save TDI and MASK maps
@@ -632,5 +641,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     free( ptrTDI )
+    if os.path.exists(path_temp):
+        shutil.rmtree(path_temp)
 
     LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )
