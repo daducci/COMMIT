@@ -368,9 +368,9 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     
     if nthreads > 1 :
         path_temp = join(path_out, 'temp')
-        if os.path.exists(path_temp):
+        if exists(path_temp):
             shutil.rmtree(path_temp)
-        os.makedirs(path_temp)
+        makedirs(path_temp)
     else:
         path_temp = path_out
 
