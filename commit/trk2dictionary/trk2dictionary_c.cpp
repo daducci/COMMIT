@@ -271,6 +271,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
 
     unsigned short o;
     unsigned int v;
+    unsigned int   temp_totECSegments, temp_totECVoxels;
 
 
     filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v       = fopen(filename.c_str(),"wb");
@@ -281,7 +282,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         Vector<double> dir;
         double         longitude, colatitude;
         segKey         ec_seg;
-        int            ix, iy, iz, id, atLeastOne, temp_totECSegments, temp_totECVoxels;
+        int            ix, iy, iz, id, atLeastOne;
         float          peakMax;
         float          norms[ Np ];
         float          *ptr;
@@ -356,7 +357,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                         o = ptrHashTable[ox*181 + oy];
                         fwrite( &v, 4, 1, pDict_EC_v );
                         fwrite( &o, 2, 1, pDict_EC_o );
-                        temp_totECSegments ++;
+                        temp_totECSegments++;
                         atLeastOne = 1;
                         }
                     if ( atLeastOne>0 )
