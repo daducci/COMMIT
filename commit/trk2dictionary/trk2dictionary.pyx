@@ -545,7 +545,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
-        ptrMASK, ptrTDI, path_out, 1 if do_intersect else 0, ptrPeaksAffine,
+        ptrMASK, ptrTDI, path_temp, 1 if do_intersect else 0, ptrPeaksAffine,
         nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, nthreads  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
