@@ -124,6 +124,11 @@ int trk2dictionary(
     minSegLen     = min_seg_len;
     minFiberLen   = min_fiber_len;
     maxFiberLen   = max_fiber_len;
+    totICSegments.resize( MAX_THREADS, 0 );
+    totFibers.resize( MAX_THREADS, 0 );
+    totECVoxels   = 0;
+    totECSegments = 0;
+
 
 
     printf("\n   \033[0;32m* %d concurrent threads are supported\n ", threads_count ); 
@@ -239,8 +244,7 @@ int trk2dictionary(
 
 
     printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
-    totFibers.clear();
-    totICSegments.clear();
+
     threads.clear();
     printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
