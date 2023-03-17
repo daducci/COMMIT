@@ -267,7 +267,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
     string    filename;
     string    OUTPUT_path(path_out);
     std::size_t pos = OUTPUT_path.find("/temp");
-    OUTPUT_path = str.substr (0,pos);
+    OUTPUT_path = OUTPUT_path.substr (0,pos);
 
     unsigned short o;
     unsigned int v;
