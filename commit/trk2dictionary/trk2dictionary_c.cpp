@@ -271,7 +271,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
 
     unsigned short o;
     unsigned int v;
-    unsigned int   temp_totECSegments, temp_totECVoxels;
+    unsigned int temp_totECSegments = 0, temp_totECVoxels = 0;
 
 
     filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v       = fopen(filename.c_str(),"wb");
@@ -288,8 +288,6 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         float          *ptr;
         int            ox, oy;
         int            skip = 0;
-        temp_totECSegments = 0;
-        temp_totECVoxels = 0;
 
         for(iz=0; iz<dim.z; iz++)
         {
