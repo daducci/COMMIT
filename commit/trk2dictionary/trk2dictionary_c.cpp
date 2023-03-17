@@ -281,12 +281,14 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         Vector<double> dir;
         double         longitude, colatitude;
         segKey         ec_seg;
-        int            ix, iy, iz, id, atLeastOne;
+        int            ix, iy, iz, id, atLeastOne, temp_totECSegments, temp_totECVoxels;
         float          peakMax;
         float          norms[ Np ];
         float          *ptr;
         int            ox, oy;
         int            skip = 0;
+        temp_totECSegments = 0;
+        temp_totECVoxels = 0;
 
         for(iz=0; iz<dim.z; iz++)
         {
@@ -354,15 +356,17 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                         o = ptrHashTable[ox*181 + oy];
                         fwrite( &v, 4, 1, pDict_EC_v );
                         fwrite( &o, 2, 1, pDict_EC_o );
-                        totECSegments ++;
+                        temp_totECSegments ++;
                         atLeastOne = 1;
                         }
                     if ( atLeastOne>0 )
-                        totECVoxels++;
+                        temp_totECVoxels++;
                     }
                 }
         }
     }
+    totECSegments = temp_totECSegments;
+    totECVoxels = temp_totECVoxels;
 
     fclose( pDict_EC_v );
     fclose( pDict_EC_o );
@@ -386,7 +390,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     // Variables definition
     float           fiber[3][MAX_FIB_LEN] = {0} ;
     float           fiberNorm;   // normalization
-    unsigned int    N, v, tempTotFibers;
+    unsigned int    N, v, tempTotFibers, temp_totICSegments;
     unsigned short  o;
     unsigned char   kept;
     string          filename;
@@ -425,6 +429,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     fseek(fpTractogram1, offset, SEEK_SET);
 
     tempTotFibers = 0;
+    temp_totICSegments = 0;
     // Iterate over streamlines
     for(int f=startpos; f<endpos; f++) 
     {        
@@ -470,7 +475,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                 fwrite( &FiberLen,    1, 4, pDict_TRK_len );    // length of the streamline
                 fwrite( &FiberLenTot, 1, 4, pDict_TRK_lenTot ); // length of the streamline (considering the blur)
 
-                totICSegments[idx] += FiberSegments.size();
+                temp_totICSegments += FiberSegments.size();
                 sumFibers ++;
                 tempTotFibers ++;
                 kept = 1;
@@ -480,6 +485,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
         fwrite( &kept, 1, 1, pDict_TRK_kept );
         totFibers[idx] = tempTotFibers;
+        totICSegments[idx] = temp_totICSegments;
     }
 
     fclose( fpTractogram1 );
