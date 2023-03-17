@@ -641,7 +641,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
     free( ptrTDI )
-    if os.path.exists(path_temp):
+    if exists(path_temp):
         shutil.rmtree(path_temp)
 
     LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )
