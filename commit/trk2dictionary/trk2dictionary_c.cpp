@@ -131,10 +131,6 @@ int trk2dictionary(
     totECSegments = 0;
 
 
-
-    printf("\n   \033[0;32m* %d concurrent threads are supported\n ", threads_count ); 
-
-
     // Compute the batch size for each thread
     // ---------------------------------------
     int p_size = n_count > threads_count ? threads_count : n_count;
@@ -187,13 +183,11 @@ int trk2dictionary(
     OffsetArr[0] = ftell( fpTractogram );
 
     if(isTRK) {
-        // TODO: check if the file is a TRK file
         while( f != n_count) {
             fread( (char*)&N, 1, 4, fpTractogram ); // read the number of points in each streamline
             if( N >= MAX_FIB_LEN || N <= 0 ) return 0;   // check
             for( int k=0; k<N; k++){
                 fread((char*)Buff, 1, 12, fpTractogram);
-                // fseek(fpTractogram,4*n_scalars,SEEK_CUR);
             }
             fseek(fpTractogram,4*n_properties,SEEK_CUR);
             f++;
@@ -256,14 +250,6 @@ int trk2dictionary(
     printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
     int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
-    // for( int i = 0; i<threads_count; i++ ) {
-    //     threads.push_back( thread( ECSegments, ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrMASK, ptrTDI[i], ptrHashTable,
-    //                             path_out, ptrPeaksAffine, i) );
-    // }
-
-    // for( int i = 0; i<threads_count; i++ ) {
-    //     threads[i].join();
-    // }
 
     printf("     [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 

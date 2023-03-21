@@ -217,6 +217,9 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     blur_apply_to: array of bool
         For each input streamline, decide whether blur is applied or not to it (default : None, meaning apply to all).
 
+    blur_clust_thr: list of float
+        Clustering thresholds used to remove redundant streamlines from the input tractogram
+     
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
         each segment in a streamline (default : 500).
@@ -350,10 +353,6 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
             ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
         path_out = join(path_out,'COMMIT')
 
-    # create output path
-    print( f'\t- Output written to "{path_out}"' )
-    if not exists( path_out ):
-        makedirs( path_out )
 
     if nthreads is None :
         # Set to the number of CPUs in the system
@@ -367,12 +366,18 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         ERROR( 'Number of nthreads must be between 1 and 255' )
     
     if nthreads > 1 :
+        print( f'\t- Using parallel computation with {nthreads} threads' )
         path_temp = join(path_out, 'temp')
         if exists(path_temp):
             shutil.rmtree(path_temp)
         makedirs(path_temp)
     else:
         path_temp = path_out
+
+     # create output path
+    print( f'\t- Output written to "{path_out}"' )
+    if not exists( path_out ):
+        makedirs( path_out )
 
 
     # Load data from files
