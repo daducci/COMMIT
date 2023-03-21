@@ -193,11 +193,15 @@ int trk2dictionary(
             if( N >= MAX_FIB_LEN || N <= 0 ) return 0;   // check
             for( int k=0; k<N; k++){
                 fread((char*)Buff, 1, 12, fpTractogram);
-                fseek(fpTractogram,4*n_scalars,SEEK_CUR);
+                // fseek(fpTractogram,4*n_scalars,SEEK_CUR);
             }
             fseek(fpTractogram,4*n_properties,SEEK_CUR);
             f++;
-            OffsetArr[f] = ftell( fpTractogram );
+            current = ftell( fpTractogram );
+            for( int i = 1; i < threads_count; i++ ){
+                    if( f == Pos[i] ) 
+                        OffsetArr[i] = current;
+                }
         }
     } else {
 
