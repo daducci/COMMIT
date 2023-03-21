@@ -2,19 +2,23 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [2.0.0] - 2023-03-08
+## `v2.0.0`
+_2023-03-16_
 
-### Changed
+### Changed 🛠️
 - Default `ndirs=500` in `core.generate_kernels()` and in `trk2dictionary.run()`
 - Expire the deprecated `ndirs` parameter in `amico.core.setup()`
 - Expire the deprecated `filename_trk` and `gen_trk` parameters in `trk2dictionary.run()`
 - Removed unused parameter `ndirs` from `trk2dictionary_c.cpp()`
 
-### Added
+### Added ✨
 - Added trk2dictionary.run() parameter `blur_clust_thr`
 - Implemented clustering in trk2dictionary
 - Added trk2dictionary.run() parallel computation
 - Added trk2dictionary.run() parameter `threads`
+
+### Fixed 🐛
+- Bugfixes
 
 ## [1.6.4] - 2023-02-14
 
