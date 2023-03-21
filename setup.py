@@ -20,7 +20,18 @@ def get_extensions():
                      sources=[f'{package_name}/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
-    return [trk2dictionary, core, proximals]
+    spline_smoothing = Extension(name='commit.spline_smoothing',
+                     sources=['commit/spline_smoothing/spline_smoothing.pyx'],
+                     include_dirs=['commit/trk2dictionary', 'commit/spline_smoothing/psimpl_v7_src'],
+                     extra_compile_args=['-w'],
+                     language='c++')
+    bundle_o_graphy = Extension(name='commit.bundle_o_graphy',
+                     sources=['commit/bundle_o_graphy.pyx'],
+                     include_dirs=['commit/trk2dictionary', 'commit/spline_smoothing', 'commit/spline_smoothing/psimpl_v7_src'],
+                     extra_compile_args=['-w'],
+                     language='c++')
+
+    return [trk2dictionary, core, proximals, bundle_o_graphy, spline_smoothing]
 
 class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """

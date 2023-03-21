@@ -4,25 +4,37 @@ from __future__ import print_function
 cimport cython
 import numpy as np
 cimport numpy as np
+from scipy.stats import norm
+import random
 
+import copy
 import time
 import glob
 import sys
+import itertools
+import os
 from os import makedirs, remove, getcwd, listdir
 from os.path import exists, join as pjoin, isfile, isdir
 import nibabel
 import pickle
 import commit.models
 import commit.solvers
+import commit.bundle_o_graphy
+from commit.bundle_o_graphy cimport adapt_streamline, trk2dict_update, smooth, simple_smooth
+
 import amico.scheme
 import amico.lut
 import pyximport
+from libcpp cimport bool
 from pkg_resources import get_distribution
 
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
-def setup( lmax=12 ) :
+ADAPT = False
+
+
+def setup( lmax=12) :
     """General setup/initialization of the COMMIT framework.
 
     Parameters
@@ -396,6 +408,7 @@ cdef class Evaluation :
         if dictionary_info['ndirs'] != self.get_config('ndirs'):
             ERROR( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
         self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
+        self.DICTIONARY['dictionary_info'] = dictionary_info
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
@@ -419,6 +432,12 @@ cdef class Evaluation :
         # ------------------------
         print( '\t* Segments from the tracts... ', end='' )
         sys.stdout.flush()
+        if dictionary_info["adapt"]:
+            buffer_size = 100000000
+            self.DICTIONARY['buffer_size'] = buffer_size
+
+            num_vox = (np.prod(self.DICTIONARY['MASK'].shape)*100)
+            buff_array = np.repeat(num_vox, buffer_size)
 
         self.DICTIONARY['TRK'] = {}
         self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
@@ -426,6 +445,19 @@ cdef class Evaluation :
         self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
         self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
 
+            self.DICTIONARY['IC'] = {}
+            self.DICTIONARY['IC']['fiber'] = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 ), buff_array) ).astype(np.uint32)
+            self.DICTIONARY['IC']['v']     = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 ), buff_array) ).astype(np.uint32)
+            self.DICTIONARY['IC']['o']     = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 ), buff_array) ).astype(np.uint16)
+            self.DICTIONARY['IC']['len']   = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 ), buff_array) ).astype(np.float32)
+            self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size - buffer_size
+            self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
+        else:
+            self.DICTIONARY['TRK'] = {}
+            self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
+            self.DICTIONARY['TRK']['norm']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
+            self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
+            self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
 
         self.DICTIONARY['IC'] = {}
         self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
@@ -460,7 +492,12 @@ cdef class Evaluation :
         # -----------------------
         print( '\t* Segments from the peaks...  ', end='' )
         sys.stdout.flush()
-
+        # if dictionary_info["adapt"]:
+        if False:
+            self.DICTIONARY['EC'] = {}
+            self.DICTIONARY['EC']['v']  = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 ), buff_array) ).astype(np.uint32)
+            self.DICTIONARY['EC']['o']  = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 ), buff_array) ).astype(np.uint16)
+        else:
         self.DICTIONARY['EC'] = {}
         self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
         self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
@@ -509,8 +546,15 @@ cdef class Evaluation :
         lut = np.zeros( self.get_config('dim'), dtype=np.uint32 ).ravel()
         for i in xrange(idx.size) :
             lut[ idx[i] ] = i
-        self.DICTIONARY['IC'][ 'v'] = lut[ self.DICTIONARY['IC'][ 'v'] ]
-        self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
+
+        self.DICTIONARY["lut"] = lut
+
+        if dictionary_info["adapt"]:
+            self.DICTIONARY['IC']['v'][:-buffer_size] = lut[ self.DICTIONARY['IC'][ 'v'] [:-buffer_size] ]
+            self.DICTIONARY['EC']['v'][:-buffer_size] = lut[ self.DICTIONARY['EC'][ 'v'] [:-buffer_size] ]
+        else:
+            self.DICTIONARY['IC']['v'] = lut[ self.DICTIONARY['IC'][ 'v'] ]
+            self.DICTIONARY['EC']['v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
         self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
 
         print( '[ OK ]' )
@@ -518,7 +562,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def set_threads( self, n=None ) :
+    def set_threads( self, buffer_size=0, n=None, verbose=True ) :
         """Set the number of threads to use for the matrix-vector operations with A and A'.
 
         Parameters
@@ -526,6 +570,8 @@ cdef class Evaluation :
         n : integer
             Number of threads to use (default : number of CPUs in the system)
         """
+        if self.DICTIONARY['dictionary_info']['adapt'] and buffer_size==0:
+            buffer_size = self.DICTIONARY['buffer_size']
         if n is None :
             # Set to the number of CPUs in the system
             try :
@@ -549,6 +595,7 @@ cdef class Evaluation :
             long t, tot, i1, i2, N, c
             int i
 
+        if verbose:
         tic = time.time()
         LOG( '\n-> Distributing workload to different threads:' )
         print( '\t* Number of threads : %d' % n )
@@ -563,7 +610,9 @@ cdef class Evaluation :
                 N = np.floor( self.DICTIONARY['IC']['n']/n )
                 t = 1
                 tot = 0
-                C = np.bincount( self.DICTIONARY['IC']['v'] )
+                C = np.bincount( self.DICTIONARY['IC']['v'][:-buffer_size] )
+                r1= buffer_size + 10
+                r2= buffer_size - 10
                 for c in C :
                     tot += c
                     if tot >= N and t <= n :
@@ -582,7 +631,7 @@ cdef class Evaluation :
         if self.DICTIONARY['EC']['nE'] > 0 :
             self.THREADS['EC'] = np.zeros( n+1, dtype=np.uint32 )
             for i in xrange(n) :
-                self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
+                self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['v'], self.DICTIONARY['IC']['v'][:-buffer_size][ self.THREADS['IC'][i] ] )
             self.THREADS['EC'][n] = self.DICTIONARY['EC']['nE']
 
             # check if some threads are not assigned any segment
@@ -595,7 +644,7 @@ cdef class Evaluation :
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
             for i in xrange(n) :
-                self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
+                self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][:-buffer_size][ self.THREADS['IC'][i] ] )
             self.THREADS['ISO'][n] = self.DICTIONARY['nV']
 
             # check if some threads are not assigned any segment
@@ -604,7 +653,7 @@ cdef class Evaluation :
                 ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number', prefix='\n' )
         else :
             self.THREADS['ISO'] = None
-
+        if verbose:
         print( '[ OK ]' )
 
         # Distribute load for the computation of At*y product
@@ -614,8 +663,8 @@ cdef class Evaluation :
         if self.DICTIONARY['IC']['n'] > 0 :
             self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
             if n > 1 :
-                idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind='mergesort' )
-                C = np.bincount( self.DICTIONARY['IC']['fiber'] )
+                idx = np.argsort( self.DICTIONARY['IC']['fiber'][:-buffer_size], kind='mergesort' )
+                C = np.bincount( self.DICTIONARY['IC']['fiber'][:-buffer_size] )
                 t = tot = i1 = i2 = 0
                 N = np.floor(self.DICTIONARY['IC']['n']/n)
                 for c in C :
@@ -666,7 +715,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self, build_dir=None ) :
+    def build_operator( self, build_dir=None, adapt=False, verbose=True ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
@@ -693,6 +742,7 @@ cdef class Evaluation :
             ERROR( 'The selected model has EC compartments, but no peaks have been provided; check your data' )
 
         tic = time.time()
+        if verbose:
         LOG( '\n-> Building linear operator A:' )
 
         # need to pass these parameters at runtime for compiling the C code
@@ -738,7 +788,7 @@ cdef class Evaluation :
                 reload( sys.modules['commit.operator.operator'] )
 
         self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
-
+        if verbose:
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
@@ -756,8 +806,7 @@ cdef class Evaluation :
         y[y < 0] = 0
         return y
 
-
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
+    def fit( self, prop=None, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
         """Fit the model to the data.
 
         Parameters
@@ -878,14 +927,605 @@ cdef class Evaluation :
 
         # run solver
         t = time.time()
+        cdef int it
+        if self.DICTIONARY['dictionary_info']['adapt']:
+            LOG( '\n-> Running tractogram adaptation...' )
+            buff_size = self.run_adaptation(test_prop=prop, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+            self.save_results(buff_size=buff_size)
+
+        else:
         LOG( '\n-> Fit model:' )
 
         self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
-
         LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
+
+
+    def run_adaptation( self, test_prop=None, tol_fun=None, tol_x=None, max_iter=None, verbose=None, x0=None, regularisation=None, confidence_array=None ) :
+
+        cdef:
+            double [:] blurWeights
+            float [:,:] fib_list
+            int tempts, attempts, tot_attempts, move_all, n_count, buff_size
+            int* ptr_buff_size
+            bool goodMove
+            float [:] voxdim
+            int [:] dim, lengths, lengths_out
+            int *len_ptr, *len_ptr_out
+            size_t it, i
+            short [:] htable
+            short* ptrHashTable
+            float [:, :, ::1] niiWM_img
+            float* ptrMASK
+            float [:, :, ::1] niiTDI_img
+            float* ptrTDI
+            float* ptrISO
+            float [:, :, ::1] niiISO_img
+            float* ptrPEAKS
+            float [:, :, :, ::1] niiPEAKS_img
+            double [:, ::1] peaksAffine
+            double* ptrPeaksAffine
+            int Np
+            float [:] toVOXMM
+            float* ptrToVOXMM
+            double sigma
+
+            unsigned char [::1] TRK_kept_array# = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
+            np.float32_t [::1] TRK_norm_array# = np.ascontiguousarray( self.DICTIONARY['TRK']['norm'], dtype=np.float32 )
+            np.float32_t [::1] TRK_len_array# = np.ascontiguousarray( self.DICTIONARY['TRK']['len'], dtype=np.float32 )
+            np.float32_t [::1] TRK_Tot_segm_len_array# = np.ascontiguousarray( self.DICTIONARY['TRK']['lenTot'], dtype=np.float32 )
+
+            unsigned int [::1] pDict_IC_f_array# = np.ascontiguousarray( self.DICTIONARY['IC']['fiber'] ,dtype=np.uint32 )
+            unsigned int [::1] pDict_IC_v_array# = np.ascontiguousarray( self.DICTIONARY['IC']['v'] ,dtype=np.uint32 )
+            unsigned short [::1] pDict_IC_o_array# = np.ascontiguousarray( self.DICTIONARY['IC']['o'], dtype=np.ushort )
+            np.float32_t [::1] pDict_IC_len_array# = np.ascontiguousarray( self.DICTIONARY['IC']['len'], dtype=np.float32 )
+            unsigned int [::1] pDict_EC_v_array# = np.ascontiguousarray( self.DICTIONARY['EC']['v'], dtype=np.uint32 )
+            unsigned short [::1] pDict_EC_o_array# = np.ascontiguousarray( self.DICTIONARY['EC']['o'],dtype=np.ushort )
+            unsigned char* pDict_TRK_kept
+            float* pDict_TRK_norm
+            unsigned int* pDict_IC_f
+            unsigned int* pDict_IC_v
+            unsigned short* pDict_IC_o
+            float* pDict_IC_len
+            float* pDict_TRK_len
+            float* pDict_Tot_segm_len
+            unsigned int*  pDict_EC_v
+            unsigned short* pDict_EC_o
+
+
+        self.DICTIONARY['TRK']['kept'] = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
+        self.DICTIONARY['TRK']['norm'] = np.ascontiguousarray( self.DICTIONARY['TRK']['norm'], dtype=np.float32 )
+        self.DICTIONARY['TRK']['len'] = np.ascontiguousarray( self.DICTIONARY['TRK']['len'], dtype=np.float32 )
+        self.DICTIONARY['TRK']['lenTot'] = np.ascontiguousarray( self.DICTIONARY['TRK']['lenTot'], dtype=np.float32 )
+
+        self.DICTIONARY['IC']['fiber'] = np.ascontiguousarray( self.DICTIONARY['IC']['fiber'] ,dtype=np.uint32 )
+        self.DICTIONARY['IC']['v'] = np.ascontiguousarray( self.DICTIONARY['IC']['v'] ,dtype=np.uint32 )
+        self.DICTIONARY['IC']['o'] = np.ascontiguousarray( self.DICTIONARY['IC']['o'], dtype=np.ushort )
+        self.DICTIONARY['IC']['len'] = np.ascontiguousarray( self.DICTIONARY['IC']['len'], dtype=np.float32 )
+        self.DICTIONARY['EC']['v'] = np.ascontiguousarray( self.DICTIONARY['EC']['v'], dtype=np.uint32 )
+        self.DICTIONARY['EC']['o'] = np.ascontiguousarray( self.DICTIONARY['EC']['o'], dtype=np.ushort )
+
+        TRK_kept_array = self.DICTIONARY['TRK']['kept']
+        TRK_norm_array = self.DICTIONARY['TRK']['norm']
+        TRK_len_array = self.DICTIONARY['TRK']['len']
+        TRK_Tot_segm_len_array = self.DICTIONARY['TRK']['lenTot']
+
+        pDict_IC_f_array = self.DICTIONARY['IC']['fiber']
+        pDict_IC_v_array = self.DICTIONARY['IC']['v']
+        pDict_IC_o_array = self.DICTIONARY['IC']['o']
+        pDict_IC_len_array = self.DICTIONARY['IC']['len']
+        pDict_EC_v_array = self.DICTIONARY['EC']['v']
+        pDict_EC_o_array = self.DICTIONARY['EC']['o']
+
+        Backup_mit_dictionary = copy.deepcopy(self.DICTIONARY)
+
+        trk_file = self.DICTIONARY['dictionary_info']['filename_tractogram']
+        input_set_streamlines =  nibabel.streamlines.load(trk_file)
+        input_set_splines = commit.bundle_o_graphy.streamline2spline(input_set_streamlines.streamlines)
+        buff_size = self.DICTIONARY['buffer_size']
+        Nx = self.get_config('dim')[0]
+        Ny = self.get_config('dim')[1]
+        Nz = self.get_config('dim')[2]
+        Px = self.get_config('pixdim')[0]
+        Py = self.get_config('pixdim')[1]
+        Pz = self.get_config('pixdim')[2]
+        ndirs = self.get_config('ndirs')
+        niiTDI_img = np.ascontiguousarray( np.zeros((Nx,Ny,Nz),dtype=np.float32) )
+        ptrTDI  = &niiTDI_img[0,0,0]
+        htable = amico.lut.load_precomputed_hash_table(ndirs)
+        ptrHashTable = &htable[0]
+
+        wm_filename = self.DICTIONARY['dictionary_info']['filename_mask']
+        gm_filename = self.DICTIONARY['dictionary_info']['group_by']
+
+        # Priors values empirically set
+        priors          = {}
+        priors["add_fib"]   = .5
+        priors["kill_fib"]  = .5
+        lambda_RMSE     = 1000
+        lambda_bund     = 100
+        lambda_fib      = 10000 #np.round(1/100,2)
+        Track_Delta_E   = []
+        Track_Delta_E.append(np.inf)
+
+        print("Initilazing adaptation")
+        # Initial variance for movement and bundle extend adaptations
+        m_variance = 0.5
+        # m_variance = self.DICTIONARY['dictionary_info']['voxdim'][0]*4
+        b_variance = 2.
+
+        # Create structures to keep track of adaptations
+        print("Loading optimization parameters")
+        pmt = self.DICTIONARY['dictionary_info']['adapt_params']
+        proposals_dict = commit.bundle_o_graphy.create_prop_dict()
+        print("Computing temp schedule")
+        SA_schedule = commit.bundle_o_graphy.compute_temp_schedule(pmt)
+        interval = 50
+
+
+        if self.DICTIONARY['dictionary_info']['group_by']:
+            print("Retrieve connections")
+            # temp_d = commit.bundle_o_graphy.compute_assignments(trk_file, gm_filename)
+            connections_dict = commit.bundle_o_graphy.compute_assignments(trk_file, gm_filename)
+            print(f"total connections: {len(connections_dict)}")
+            # connections_dict = dict(list(temp_d.items())[len(temp_d)//2:])
+            # support_dict = dict(list(temp_d.items())[:len(temp_d)//2])
+            support_dict = {}
+            # sigma_arr = np.repeat(min(self.DICTIONARY['dictionary_info']['simplify_thrs']), len(Curr_set))
+            sigma_arr = np.repeat(.1, len(input_set_splines))
+        else:
+            connections_dict = None
+
+        print("Loading mask")
+        voxdim = np.ascontiguousarray( np.asanyarray( self.DICTIONARY['dictionary_info']['voxdim'] ).astype(np.float32) )
+        dim = np.ascontiguousarray( np.asanyarray( self.DICTIONARY['dictionary_info']['dim'] ).astype(np.int32) )
+        niiWM = nibabel.load( wm_filename )
+        niiWM_img = np.ascontiguousarray( np.asanyarray( niiWM.dataobj ).astype(np.float32) )
+        ptrMASK  = &niiWM_img[0,0,0]
+        vf_THR = self.DICTIONARY['dictionary_info']['vf_THR']
+        num_vox = np.prod(self.DICTIONARY['MASK'].shape)*100
+        nV = self.DICTIONARY['nV']
+        y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
+
+        # if extension == ".tck":
+        M = niiWM.affine.copy()
+        M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
+        toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
+        ptrToVOXMM = &toVOXMM[0]
+
+        if self.DICTIONARY['dictionary_info']['filename_ISO'] is not None :
+            niiISO = nibabel.load( self.DICTIONARY['dictionary_info']['filename_ISO'] )
+            niiISO_hdr = niiISO.header
+            if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
+                abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
+                WARNING( 'Dataset does not have the same geometry as the tractogram' )
+            niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
+            ptrISO  = &niiISO_img[0,0,0]
+        else :
+            print( '\t- No ISO map specified, using the whole white-matter \t' )
+            ptrISO = &niiWM_img[0,0,0]
+
+        if self.DICTIONARY['dictionary_info']['filename_peaks'] is not None :
+            niiPEAKS = nibabel.load( self.DICTIONARY['dictionary_info']['filename_peaks'] )
+            niiPEAKS_hdr = niiPEAKS.header
+            if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
+                abs(Px-niiPEAKS_hdr['pixdim'][1])>1e-3 or abs(Py-niiPEAKS_hdr['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS_hdr['pixdim'][3])>1e-3 ) :
+                WARNING( "Dataset does not have the same geometry as the tractogram" )
+            if niiPEAKS.shape[3] % 3 :
+                ERROR( 'PEAKS dataset must have 3*k volumes' )
+            if vf_THR < 0 or vf_THR > 1 :
+                ERROR( '"vf_THR" must be between 0 and 1' )
+            niiPEAKS_img = np.ascontiguousarray( np.asanyarray( niiPEAKS.dataobj ).astype(np.float32) )
+            ptrPEAKS = &niiPEAKS_img[0,0,0,0]
+            Np = niiPEAKS.shape[3]/3
+
+            # affine matrix to rotate gradien directions (if required)
+            if self.DICTIONARY['dictionary_info']['peaks_use_affine'] :
+                peaksAffine = np.ascontiguousarray( niiPEAKS.affine[:3,:3].T )
+            else :
+                peaksAffine = np.ascontiguousarray( np.eye(3) )
+            ptrPeaksAffine = &peaksAffine[0,0]
+        else :
+            Np = 0
+            ptrPEAKS = NULL
+            ptrPeaksAffine = NULL
+
+        flip_peaks = self.DICTIONARY['dictionary_info']['flip_peaks']
+        flip_peaks = np.array([False, False, False])
+        min_seg_len = self.DICTIONARY['dictionary_info']['min_seg_len']
+        min_fiber_len = self.DICTIONARY['dictionary_info']['min_fiber_len']
+        max_fiber_len = self.DICTIONARY['dictionary_info']['max_fiber_len']
+        if np.isscalar(self.DICTIONARY['dictionary_info']['fiber_shift']) :
+            fiber_shiftX = self.DICTIONARY['dictionary_info']['fiber_shift']
+            fiber_shiftY = self.DICTIONARY['dictionary_info']['fiber_shift']
+            fiber_shiftZ = self.DICTIONARY['dictionary_info']['fiber_shift']
+        else:
+            fiber_shiftX = self.DICTIONARY['dictionary_info']['fiber_shift'][0]
+            fiber_shiftY = self.DICTIONARY['dictionary_info']['fiber_shift'][1]
+            fiber_shiftZ = self.DICTIONARY['dictionary_info']['fiber_shift'][2]
+        # test = nibabel.streamlines.tractogram.Tractogram(input_set_splines,  affine_to_rasmm=niiWM.affine)
+        # nibabel.streamlines.save(test, 'input_movement.tck')
+
+        # Set of parameters for trajectory adaptation
+        tempts = 10
+        move_all = 1
+        end_opt =  False
+
+        print("Creating structure for optimization")
+        t1 = time.time()
+        temp_idx_dict = dict((idx, value) for idx,value in enumerate(self.DICTIONARY['IC']['fiber'][:-buff_size]))
+        segm_idx_dict = {}
+        for k, v in temp_idx_dict.items():
+            segm_idx_dict[v] = segm_idx_dict.get(v, []) + [k]
+        print(f"time required to create dict with {self.DICTIONARY['IC']['fiber'][:-buff_size].size} elements: {time.time() - t1}")
+        PROP =  np.random.randint(0,100,1)
+        if test_prop:
+            PROP =  test_prop
+        print("Starting adaptation")
+        t1 = time.time()
+        for it in xrange(self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']):
+            print(f"iteration: {it}, prop:{PROP}", end='\r')
+            # print(f"iteration: {it}, prop:{PROP}")
+            # TRK_kept_array = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
+            # TRK_norm_array = np.ascontiguousarray( self.DICTIONARY['TRK']['norm'], dtype=np.float32 )
+            # TRK_len_array = np.ascontiguousarray( self.DICTIONARY['TRK']['len'], dtype=np.float32 )
+            # TRK_Tot_segm_len_array = np.ascontiguousarray( self.DICTIONARY['TRK']['lenTot'], dtype=np.float32 )
+
+            # pDict_IC_f_array = np.ascontiguousarray( self.DICTIONARY['IC']['fiber'] ,dtype=np.uint32 )
+            # pDict_IC_v_array = np.ascontiguousarray( self.DICTIONARY['IC']['v'] ,dtype=np.uint32 )
+            # pDict_IC_o_array = np.ascontiguousarray( self.DICTIONARY['IC']['o'], dtype=np.ushort )
+            # pDict_IC_len_array = np.ascontiguousarray( self.DICTIONARY['IC']['len'], dtype=np.float32 )
+            # pDict_EC_v_array = np.ascontiguousarray( self.DICTIONARY['EC']['v'], dtype=np.uint32 )
+            # pDict_EC_o_array = np.ascontiguousarray( self.DICTIONARY['EC']['o'],dtype=np.ushort )
+
+            pt_Buff_seg_IC = self.DICTIONARY['IC']['fiber'].size - buff_size
+            pt_Buff_seg_EC = self.DICTIONARY['EC']['v'].size - buff_size
+            pDict_TRK_kept = &TRK_kept_array[0]
+            pDict_TRK_norm = &TRK_norm_array[0]
+            pDict_TRK_len = &TRK_len_array[0]
+            pDict_Tot_segm_len = &TRK_Tot_segm_len_array[0]
+
+            pDict_IC_f = &pDict_IC_f_array[pt_Buff_seg_IC]
+            pDict_IC_v = &pDict_IC_v_array[pt_Buff_seg_IC]
+            pDict_IC_o = &pDict_IC_o_array[pt_Buff_seg_IC]
+            pDict_IC_len = &pDict_IC_len_array[pt_Buff_seg_IC]
+            pDict_EC_v = &pDict_EC_v_array[pt_Buff_seg_EC]
+            pDict_EC_o = &pDict_EC_o_array[pt_Buff_seg_EC]
+
+
+            Backup_buffer = copy.deepcopy(buff_size)
+            backup_connections_dict = copy.deepcopy(connections_dict)
+            backup_support_dict = copy.deepcopy(support_dict)
+            ptr_buff_size = &buff_size
+            # PROP =  np.random.randint(0,100,1)
+            # PROP_CASE = [k for k, v in proposals_dict.iteritems() if PROP in v]
+            # PROP = 20
+            mean_sigma = None
+            Blur_sigma = None
+
+            if PROP <= 25:
+                pick_conn = random.choice(list(connections_dict.keys()))
+                pick_fib = np.random.choice( connections_dict[pick_conn] )
+                # pick_fib = 20
+                Backup_fib = copy.deepcopy(input_set_splines[pick_fib])
+                # for i in tempts:
+                goodMove = adapt_streamline(input_set_splines[pick_fib], ptrMASK, voxdim, dim, tempts, move_all, m_variance)
+                if not goodMove:
+                    print("not moved")
+                    input_set_splines[pick_fib] = Backup_fib
+                lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[pick_fib])] ).astype(np.int32) )
+                lengths_out = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[pick_fib])] ).astype(np.int32) )
+                len_ptr = &lengths[0]
+                len_ptr_out = &lengths_out[0]
+                n_count = 1
+                # sigma = sigma_arr[pick_fib]
+                sigma = 0
+                index_list = [pick_fib]
+                fib_list = np.array(input_set_splines[pick_fib])
+                smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
+                fib_list = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+
+                # upd_idx = [segm_idx_dict[k] for k in index_list]
+                # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
+                upd_idx = [np.where(self.DICTIONARY['IC']['fiber'][:-buff_size] == i)[0] for i in index_list]
+                upd_idx = [i for g in upd_idx for i in g]
+
+                diff_seg = np.sum([(self.DICTIONARY['IC']['fiber'][:-buff_size] == i).sum() for i in index_list])
+                # print(f"trk len prima: {TRK_len_array[pick_fib]}")
+                # print(f"trk len norm prima: {TRK_norm_array[pick_fib]}")
+                # print(f"trk tot segm norm prima: {TRK_Tot_segm_len_array[pick_fib]}")
+                
+
+                trk2dict_update(self.DICTIONARY["lut"], segm_idx_dict, index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
+                                Nx, Ny, Nz, Px, Py, Pz, n_count, fiber_shiftX, fiber_shiftY, fiber_shiftZ,
+                                min_seg_len, min_fiber_len, max_fiber_len, ptrPEAKS, ptrPeaksAffine, flip_peaks, Np, vf_THR,
+                                ptrMASK, ptrISO, ptrTDI, ptrToVOXMM, ndirs, ptrHashTable,
+                                pDict_TRK_kept, pDict_TRK_norm, pDict_IC_f, pDict_IC_v, pDict_IC_o, pDict_IC_len,
+                                pDict_TRK_len, pDict_Tot_segm_len, pDict_EC_v, pDict_EC_o, num_vox)
+
+                # print(f"trk len dopo: {TRK_len_array[pick_fib]}")
+                # print(f"trk len norm dopo: {TRK_norm_array[pick_fib]}")
+                # print(f"trk tot segm norm dopo: {TRK_Tot_segm_len_array[pick_fib]}")
+
+                # test = nibabel.streamlines.tractogram.Tractogram(input_set_splines,  affine_to_rasmm=niiWM.affine)
+                # nibabel.streamlines.save(test, 'test_movement.tck')
+
+            if  25 < PROP <= 50:
+                pick_conn = random.choice(list(support_dict.keys()))
+                connections_dict[pick_conn] = support_dict[pick_conn]
+                try:
+                    del support_dict[pick_conn]
+                except KeyError as e:
+                    print(e)
+
+                lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in connections_dict[pick_conn]] ).astype(np.int32) )
+                lengths_out = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in connections_dict[pick_conn]] ).astype(np.int32) )
+                len_ptr = &lengths[0]
+                len_ptr_out = &lengths_out[0]
+                n_count = len(connections_dict[pick_conn])
+                sigma = np.mean(sigma_arr[connections_dict[pick_conn]])
+                index_list = connections_dict[pick_conn]
+                fib_list = np.vstack([input_set_splines[f] for f in index_list])
+                smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
+                fib_list = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+
+                # upd_idx = [segm_idx_dict[k] for k in index_list]
+                # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
+
+                upd_idx = [np.where(self.DICTIONARY['IC']['fiber'][:-buff_size] == i)[0] for i in index_list]
+                upd_idx = [i for g in upd_idx for i in g]
+
+                diff_seg = len(upd_idx)
+
+                trk2dict_update(self.DICTIONARY["lut"], segm_idx_dict, index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
+                                Nx, Ny, Nz, Px, Py, Pz, n_count, fiber_shiftX, fiber_shiftY, fiber_shiftZ,
+                                min_seg_len, min_fiber_len, max_fiber_len, ptrPEAKS, ptrPeaksAffine, flip_peaks, Np, vf_THR,
+                                ptrMASK, ptrISO, ptrTDI, ptrToVOXMM, ndirs, ptrHashTable,
+                                pDict_TRK_kept, pDict_TRK_norm, pDict_IC_f, pDict_IC_v, pDict_IC_o, pDict_IC_len,
+                                pDict_TRK_len, pDict_Tot_segm_len, pDict_EC_v, pDict_EC_o, num_vox)
+
+                # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
+
+
+            if  50 < PROP <= 75:
+                pick_conn = random.choice(list(connections_dict.keys()))
+                support_dict[pick_conn] = connections_dict[pick_conn]
+                # pick_fib = np.random.choice( support_dict[pick_conn] )
+                try:
+                    del connections_dict[pick_conn]
+                except KeyError as e:
+                    print(e)
+                index_list = support_dict[pick_conn]
+
+                # upd_idx = [segm_idx_dict[k] for k in index_list]
+                # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
+                upd_idx = [np.where(self.DICTIONARY['IC']['fiber'][:-buff_size] == i)[0] for i in index_list]
+                upd_idx = [i for g in upd_idx for i in g]
+
+                self.DICTIONARY['TRK']['kept'][index_list] = 0
+                # print(f"nF before: {self.DICTIONARY['IC']['nF']}")
+                # self.DICTIONARY['IC']['nF'] -= len(index_list)
+
+                # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
+                buff_size += len(upd_idx)
+
+                # print(f"buffer_size: {buff_size}, num of fibs removed: {len(index_list)}")
+                # print(f"nF: {self.DICTIONARY['IC']['nF']}")
+                # print(f"TRK kept size: {self.DICTIONARY['TRK']['kept'].size}, non zeros:{np.count_nonzero(self.DICTIONARY['TRK']['kept'])}")
+                # print(f"TRK norm size: {self.DICTIONARY['TRK']['norm'].size}, non zeros:{np.count_nonzero(self.DICTIONARY['TRK']['norm'])}")
+
+
+            if  75 < PROP <= 100:
+                pick_conn = random.choice(list(connections_dict.keys()))
+                mean_sigma = round(np.mean([sigma_arr[i] for i in connections_dict[pick_conn]]),2)
+
+                Blur_sigma = -1
+                while Blur_sigma <= 0 or Blur_sigma > min(self.DICTIONARY['dictionary_info']['simplify_thrs']) + 1:
+                    Blur_sigma = round(np.random.normal(loc=mean_sigma, scale=b_variance),2)
+                sigma_arr[connections_dict[pick_conn]] = Blur_sigma
+                sigma = Blur_sigma
+                lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in connections_dict[pick_conn]] ).astype(np.int32) )
+                lengths_out = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in connections_dict[pick_conn]] ).astype(np.int32) )
+                len_ptr = &lengths[0]
+                len_ptr_out = &lengths_out[0]
+                n_count = len(connections_dict[pick_conn])
+                index_list = connections_dict[pick_conn]
+                fib_list = np.vstack([input_set_splines[f] for f in index_list])
+                smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
+                fib_list = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+
+                # upd_idx = [segm_idx_dict[k] for k in index_list]
+                # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
+                
+                upd_idx = [np.where(self.DICTIONARY['IC']['fiber'][:-buff_size] == i)[0] for i in index_list]
+                upd_idx = [i for g in upd_idx for i in g]
+
+                diff_seg = len(upd_idx)
+
+                trk2dict_update(self.DICTIONARY["lut"], segm_idx_dict, index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
+                                Nx, Ny, Nz, Px, Py, Pz, n_count, fiber_shiftX, fiber_shiftY, fiber_shiftZ,
+                                min_seg_len, min_fiber_len, max_fiber_len, ptrPEAKS, ptrPeaksAffine, flip_peaks, Np, vf_THR,
+                                ptrMASK, ptrISO, ptrTDI, ptrToVOXMM, ndirs, ptrHashTable,
+                                pDict_TRK_kept, pDict_TRK_norm, pDict_IC_f, pDict_IC_v, pDict_IC_o, pDict_IC_len,
+                                pDict_TRK_len, pDict_Tot_segm_len, pDict_EC_v, pDict_EC_o, num_vox)
+
+
+            self.update_dictionary(upd_idx, num_vox, buffer_size=buff_size) 
+
+            self.set_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False)
+
+            # print(f"size matrix A before: {self.A.shape}")
+            self.build_operator(adapt=True, verbose=False)
+            # print(f"size matrix A after: {self.A.shape}")
+            # print(f"get y: {self.get_y().shape}")
+            # print(f"A: {self.A.shape}")
+            # print(f"At: {self.A.T.shape}")
+            self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+
+            fit_error = self.get_fit_error(y_mea, nV) * lambda_RMSE
+            prior_bund_norm = len(connections_dict)/lambda_bund
+            prior_fibs_norm = sum(map(len, connections_dict.values()))/lambda_fib
+
+            tot_error = fit_error + prior_bund_norm + prior_fibs_norm
+            # print(f"{Track_Delta_E[-1]}")
+            cost = tot_error - Track_Delta_E[it]
+            # cost = tot_error - 1000
+
+            accept_prop = self.compute_cost(SA_schedule, it, cost, PROP, priors, mean_sigma=mean_sigma, b_variance=b_variance, blur_sigma=Blur_sigma, removed_connections=len(support_dict), num_connections=len(connections_dict))
+            # print(f"PROP: {PROP}, cost {cost}, num_bundles: {len(connections_dict)}, accepted? {accept_prop}")
+
+            if accept_prop:
+                Track_Delta_E.append(tot_error)
+                x0 = self.x
+                self.update_backup(Backup_mit_dictionary)
+            else:
+                Track_Delta_E.append(Track_Delta_E[it])
+                self.reverse_dictionary( Backup_mit_dictionary )
+                buff_size = Backup_buffer
+                connections_dict = backup_connections_dict
+                support_dict = backup_support_dict
+                if 0 < PROP <= 25:
+                    input_set_splines[pick_fib] = Backup_fib
+
+            if len(support_dict) == 0:
+                PROP =  np.random.randint(0,100,1)
+                while PROP > 25 and PROP <= 50:
+                    PROP =  np.random.randint(0,100,1)
+            else:
+                PROP =  np.random.randint(0,100,1)
+            # if it > interval and np.var(Track_Delta_E[-interval:]) < 10**-4:
+            #     end_opt = True
+            if it % 1000 == 0:
+                tol_fun *= 10
+
+            if end_opt and accept_prop:
+                break
+            # PROP = 80
+        print(f"time required for {it+1} iterations: {time.strftime('%H:%M:%S', time.gmtime(time.time() - t1))}")
+        fib_idx_save = [*connections_dict.values()]
+        fib_idx_save = [i for g in fib_idx_save for i in g]
+        lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in fib_idx_save] ).astype(np.int32) )
+        len_ptr = &lengths[0]
+        n_count = len(fib_idx_save)
+        fib_list = np.vstack([input_set_splines[f] for f in fib_idx_save])
+        # smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
+        fib_save = simple_smooth(fib_list, len_ptr, n_count)
+        fib_save = [input_set_splines[f] for f in fib_idx_save]
+
+        # fib_idx_save = [*connections_dict.values()]
+        # fibs_save = [input_set_splines[i] for g in fib_idx_save for i in g]
+        # fib_list = np.vstack([f for f in fibs_save])
+        # smoothed = np.ascontiguousarray( np.zeros( (3*10000, len(fibs_save)) ).astype(np.float32) )
+        # fibs_save = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+        
+        save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
+        nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
+
+        # self.update_dictionary(upd_idx, num_vox, buffer_size=buff_size)
+        # self.set_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False)
+        # self.build_operator(adapt=True, verbose=False)
+        # self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+
+        return buff_size
+
+    def update_dictionary(self, upd_idx, num_vox, buffer_size=None):
+
+        self.DICTIONARY['IC']['v'][upd_idx]      = num_vox
+        self.DICTIONARY['IC']['o'][upd_idx]      = num_vox
+        self.DICTIONARY['IC']['fiber'][upd_idx]  = num_vox
+        self.DICTIONARY['IC']['len'][upd_idx]    = num_vox
+
+        idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
+        self.DICTIONARY['IC']['v'][:]     = self.DICTIONARY['IC']['v'][ idx ].astype(np.uint32)
+        self.DICTIONARY['IC']['o'][:]     = self.DICTIONARY['IC']['o'][ idx ].astype(np.uint16)
+        self.DICTIONARY['IC']['fiber'][:] = self.DICTIONARY['IC']['fiber'][ idx ].astype(np.uint32)
+        self.DICTIONARY['IC']['len'][:]   = self.DICTIONARY['IC']['len'][ idx ].astype(np.float32)
+        del idx
+        self.DICTIONARY['IC']['n']  = self.DICTIONARY['IC']['fiber'].size - buffer_size
+        # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
+
+        idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
+        self.DICTIONARY['ISO']['v'][:] = self.DICTIONARY['ISO']['v'][ idx ]
+        del idx
+
+        if len(self.DICTIONARY['EC']['v'])>0:
+            self.DICTIONARY['EC']['v'][upd_idx] = num_vox
+            self.DICTIONARY['EC']['o'][upd_idx] = num_vox
+
+            idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
+            self.DICTIONARY['EC']['v'][:] = self.DICTIONARY['EC']['v'][ idx ].astype(np.uint32)
+            self.DICTIONARY['EC']['o'][:] = self.DICTIONARY['EC']['o'][ idx ].astype(np.uint16)
+            del idx
+            self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
+
+    def update_backup(self, Backup_mit_dictionary):
+
+        Backup_mit_dictionary['TRK']['kept'][:] = self.DICTIONARY['TRK']['kept'].astype(np.bool)
+        Backup_mit_dictionary['TRK']['norm'][:] = self.DICTIONARY['TRK']['norm'].astype(np.float32)
+        Backup_mit_dictionary['TRK']['len'][:] = self.DICTIONARY['TRK']['len'].astype(np.float32) 
+        Backup_mit_dictionary['TRK']['lenTot'][:] = self.DICTIONARY['TRK']['lenTot'].astype(np.float32)
+
+        Backup_mit_dictionary['IC']['v'][:]     = self.DICTIONARY['IC']['v'].astype(np.uint32)
+        Backup_mit_dictionary['IC']['o'][:]     = self.DICTIONARY['IC']['o'].astype(np.uint16)
+        Backup_mit_dictionary['IC']['fiber'][:] = self.DICTIONARY['IC']['fiber'].astype(np.uint32)
+        Backup_mit_dictionary['IC']['len'][:]   = self.DICTIONARY['IC']['len'].astype(np.float32)
+        Backup_mit_dictionary['IC']['n']        = self.DICTIONARY['IC']['n']
+        Backup_mit_dictionary['IC']['nF']       = self.DICTIONARY['IC']['nF']
+
+        Backup_mit_dictionary['ISO']['v'][:] = self.DICTIONARY['ISO']['v'].astype(np.float32)
+
+        if len(self.DICTIONARY['EC']['v'])>0:
+            Backup_mit_dictionary['EC']['v'][:]     = self.DICTIONARY['EC']['v'].astype(np.uint32)
+            Backup_mit_dictionary['EC']['o'][:]     = self.DICTIONARY['EC']['o'].astype(np.uint16)
+            Backup_mit_dictionary['EC']['nE']       = self.DICTIONARY['EC']['nE']
+
+    def reverse_dictionary(self, Backup_mit_dictionary):
+
+        self.DICTIONARY['TRK']['kept'][:] = Backup_mit_dictionary['TRK']['kept'].astype(np.bool)
+        self.DICTIONARY['TRK']['norm'][:] = Backup_mit_dictionary['TRK']['norm'].astype(np.float32)
+        self.DICTIONARY['TRK']['len'][:] = Backup_mit_dictionary['TRK']['len'].astype(np.float32) 
+        self.DICTIONARY['TRK']['lenTot'][:] = Backup_mit_dictionary['TRK']['lenTot'].astype(np.float32)
+
+        self.DICTIONARY['IC']['v'][:]     = Backup_mit_dictionary['IC']['v'].astype(np.uint32)
+        self.DICTIONARY['IC']['o'][:]     = Backup_mit_dictionary['IC']['o'].astype(np.uint16)
+        self.DICTIONARY['IC']['fiber'][:] = Backup_mit_dictionary['IC']['fiber'].astype(np.uint32)
+        self.DICTIONARY['IC']['len'][:]   = Backup_mit_dictionary['IC']['len'].astype(np.float32)
+        self.DICTIONARY['IC']['n']        = Backup_mit_dictionary['IC']['n']
+        # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
+
+        self.DICTIONARY['ISO']['v'][:]    = Backup_mit_dictionary['ISO']['v'].astype(np.float32)
+
+        if len(self.DICTIONARY['EC']['v'])>0:
+            self.DICTIONARY['EC']['v'][:] = Backup_mit_dictionary['EC']['v'].astype(np.uint32)
+            self.DICTIONARY['EC']['o'][:] = Backup_mit_dictionary['EC']['o'].astype(np.uint16)
+            self.DICTIONARY['EC']['nE'] = Backup_mit_dictionary['EC']['v'].size
+
+    def get_fit_error(self, y_mea, nV):
+        y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
+        tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+        return tmp.mean()
+
+
+    def compute_cost(self, SA_schedule, it, cost, PROP, priors,  mean_sigma=None, b_variance=None, blur_sigma=None, removed_connections=None, num_connections=None):
+        if cost < 0:
+            return True
+        else:
+            if 25 < PROP <= 50:
+                R = np.exp( -cost/SA_schedule[ it ] ) * (priors["kill_fib"]/priors["add_fib"]) * (removed_connections /(num_connections + 1) )
+            elif 50 < PROP <= 75:
+                R = np.exp( -cost/SA_schedule[ it ] ) * (priors["add_fib"]/priors["kill_fib"]) * (num_connections/(removed_connections + 1) )
+            elif 75 < PROP <= 100:
+                R = np.exp( -cost/SA_schedule[ it ] ) * (norm(mean_sigma, b_variance).pdf(mean_sigma) / norm(mean_sigma, b_variance).pdf(blur_sigma))
+            else:
+                R = np.exp( -cost/SA_schedule[ it ] )
+
+            if (min(1,R) > np.random.uniform(0, 1)):
+                return True
+
+            else:
+                return False
 
 
     def get_coeffs( self, get_normalized=True ):
@@ -921,14 +1561,14 @@ cdef class Evaluation :
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
         kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0] )
         xic = np.zeros( kept.size )
-        xic[kept==1] = x[:offset1]
+        xic[kept==1] = x[:offset1][kept==1]
         xec = x[offset1:offset2]
         xiso = x[offset2:]
 
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, buff_size=0 ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -1052,8 +1692,8 @@ cdef class Evaluation :
         if len(self.KERNELS['wmr']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
             tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
-            xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
-                weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
+            xv = np.bincount( self.DICTIONARY['IC']['v'][:-buff_size], minlength=nV,
+                weights=tmp[ self.DICTIONARY['IC']['fiber'][:-buff_size] ] * self.DICTIONARY['IC']['len'][:-buff_size]
             ).astype(np.float32)
             niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '[ OK ]' )
@@ -1064,7 +1704,7 @@ cdef class Evaluation :
         if len(self.KERNELS['wmh']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0]
             tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
-            xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
+            xv = np.bincount( self.DICTIONARY['EC']['v'][:-buff_size], weights=tmp, minlength=nV ).astype(np.float32)
             niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '[ OK ]' )
 

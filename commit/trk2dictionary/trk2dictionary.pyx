@@ -542,6 +542,13 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     dictionary_info['blur_apply_to'] = blur_apply_to
     dictionary_info['ndirs'] = ndirs
     dictionary_info['nthreads'] = nthreads
+    dictionary_info['simplify_thrs'] = simplify_thrs
+    dictionary_info['adapt'] = adapt_tractogram
+    dictionary_info['adapt_params'] = adapt_params
+    dictionary_info['voxdim'] = [Px, Py, Pz]
+    dictionary_info['dim'] = [Nx, Ny, Nz]
+    dictionary_info['group_by'] = group_by
+
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
