@@ -439,11 +439,11 @@ cdef class Evaluation :
             num_vox = (np.prod(self.DICTIONARY['MASK'].shape)*100)
             buff_array = np.repeat(num_vox, buffer_size)
 
-        self.DICTIONARY['TRK'] = {}
-        self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
-        self.DICTIONARY['TRK']['norm']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
-        self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
-        self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
+            self.DICTIONARY['TRK'] = {}
+            self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
+            self.DICTIONARY['TRK']['norm']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
+            self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
+            self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
 
             self.DICTIONARY['IC'] = {}
             self.DICTIONARY['IC']['fiber'] = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 ), buff_array) ).astype(np.uint32)
@@ -459,13 +459,13 @@ cdef class Evaluation :
             self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
             self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
 
-        self.DICTIONARY['IC'] = {}
-        self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
-        self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
-        self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
-        self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
-        self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
-        self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
+            self.DICTIONARY['IC'] = {}
+            self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
+            self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
+            self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
+            self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
+            self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
+            self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
 
         # reorder the segments based on the "v" field
         idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
@@ -498,9 +498,9 @@ cdef class Evaluation :
             self.DICTIONARY['EC']['v']  = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 ), buff_array) ).astype(np.uint32)
             self.DICTIONARY['EC']['o']  = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 ), buff_array) ).astype(np.uint16)
         else:
-        self.DICTIONARY['EC'] = {}
-        self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
-        self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
+            self.DICTIONARY['EC'] = {}
+            self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
+            self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
         self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
         # reorder the segments based on the "v" field
@@ -596,13 +596,13 @@ cdef class Evaluation :
             int i
 
         if verbose:
-        tic = time.time()
-        LOG( '\n-> Distributing workload to different threads:' )
-        print( '\t* Number of threads : %d' % n )
+            tic = time.time()
+            LOG( '\n-> Distributing workload to different threads:' )
+            print( '\t* Number of threads : %d' % n )
 
-        # Distribute load for the computation of A*x product
-        print( '\t* A operator...  ', end='' )
-        sys.stdout.flush()
+            # Distribute load for the computation of A*x product
+            print( '\t* A operator...  ', end='' )
+            sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
             self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
@@ -654,11 +654,11 @@ cdef class Evaluation :
         else :
             self.THREADS['ISO'] = None
         if verbose:
-        print( '[ OK ]' )
+            print( '[ OK ]' )
 
-        # Distribute load for the computation of At*y product
-        print( '\t* A\' operator... ', end='' )
-        sys.stdout.flush()
+            # Distribute load for the computation of At*y product
+            print( '\t* A\' operator... ', end='' )
+            sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
             self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
@@ -709,10 +709,10 @@ cdef class Evaluation :
                 ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number', prefix='\n' )
         else :
             self.THREADS['ISOt'] = None
+        if verbose:
+            print( '[ OK ]' )
 
-        print( '[ OK ]' )
-
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def build_operator( self, build_dir=None, adapt=False, verbose=True ) :
@@ -743,7 +743,7 @@ cdef class Evaluation :
 
         tic = time.time()
         if verbose:
-        LOG( '\n-> Building linear operator A:' )
+            LOG( '\n-> Building linear operator A:' )
 
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
@@ -789,7 +789,7 @@ cdef class Evaluation :
 
         self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
         if verbose:
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def get_y( self ):
@@ -934,13 +934,13 @@ cdef class Evaluation :
             self.save_results(buff_size=buff_size)
 
         else:
-        LOG( '\n-> Fit model:' )
+            LOG( '\n-> Fit model:' )
 
-        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
 
-        self.CONFIG['optimization']['fit_details'] = opt_details
-        self.CONFIG['optimization']['fit_time'] = time.time()-t
-        LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
+            self.CONFIG['optimization']['fit_details'] = opt_details
+            self.CONFIG['optimization']['fit_time'] = time.time()-t
+            LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
     def run_adaptation( self, test_prop=None, tol_fun=None, tol_x=None, max_iter=None, verbose=None, x0=None, regularisation=None, confidence_array=None ) :
@@ -1322,7 +1322,7 @@ cdef class Evaluation :
                 mean_sigma = round(np.mean([sigma_arr[i] for i in connections_dict[pick_conn]]),2)
 
                 Blur_sigma = -1
-                while Blur_sigma <= 0 or Blur_sigma > min(self.DICTIONARY['dictionary_info']['simplify_thrs']) + 1:
+                while Blur_sigma <= 0 or Blur_sigma > min(self.DICTIONARY['dictionary_info']['blur_clust_thr']) + 1:
                     Blur_sigma = round(np.random.normal(loc=mean_sigma, scale=b_variance),2)
                 sigma_arr[connections_dict[pick_conn]] = Blur_sigma
                 sigma = Blur_sigma

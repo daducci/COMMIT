@@ -20,7 +20,11 @@ class Vector
 
         void    operator=( const Vector<T> & v );
 
+        void 	Perp_Projection( const Vector<T> & v1, const Vector<T> & v2 );
+        void 	Add( const Vector<T> & v );
+
         Vector();
+        ~Vector();
         Vector( T _x, T _y, T _z );
 };
 
@@ -29,6 +33,9 @@ template <class T>
 Vector<T>::Vector()
 { x = y = z = 0; }
 
+template <class T>
+Vector<T>::~Vector()
+{ }
 
 template <class T>
 Vector<T>::Vector( T _x, T _y, T _z )
@@ -95,5 +102,22 @@ void Vector<T>::operator=( const Vector<T> & v )
     y = v.y;
     z = v.z;
 }
+
+template <class T>
+void Vector<T>::Perp_Projection( const Vector<T> & v1, const Vector<T> & v2 )			// vector of perpendicular projection of v1 on v2 using projection formula http://en.wikibooks.org/wiki/Linear_Algebra/Orthogonal_Projection_Onto_a_Line
+{
+	x = (v1.x*v2.x+v1.y*v2.y+v1.z+v2.z) / ( v2.x*v2.x+v2.y*v2.y+v2.z+v2.z ) * v2.x - v1.x;
+	y = (v1.x*v2.x+v1.y*v2.y+v1.z+v2.z) / ( v2.x*v2.x+v2.y*v2.y+v2.z+v2.z ) * v2.y - v1.y;
+	z = (v1.x*v2.x+v1.y*v2.y+v1.z+v2.z) / ( v2.x*v2.x+v2.y*v2.y+v2.z+v2.z ) * v2.z - v1.z;
+}
+
+template <class T>
+void Vector<T>::Add( const Vector<T> & v )
+{ 
+	x += v.x; 
+	y += v.y; 
+	z += v.z; 
+}
+typedef Vector<float> 		POINT;
 
 #endif

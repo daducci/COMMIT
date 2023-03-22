@@ -140,11 +140,11 @@ def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, c
     save_tractogram( tractogram_new, filename_out, bbox_valid_check=False )
     return filename_out
 
-cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_peaks=None, filename_mask=None, do_intersect=True,
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
-    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
+    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_thr=0,
     blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
-    TCK_ref_image=None, ndirs=500, nthreads=None
+    TCK_ref_image=None, ndirs=500, nthreads=None, adapt_tractogram=False, adapt_params=None, group_by=None
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -542,7 +542,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     dictionary_info['blur_apply_to'] = blur_apply_to
     dictionary_info['ndirs'] = ndirs
     dictionary_info['nthreads'] = nthreads
-    dictionary_info['simplify_thrs'] = simplify_thrs
+    dictionary_info['blur_clust_thr'] = blur_clust_thr
     dictionary_info['adapt'] = adapt_tractogram
     dictionary_info['adapt_params'] = adapt_params
     dictionary_info['voxdim'] = [Px, Py, Pz]

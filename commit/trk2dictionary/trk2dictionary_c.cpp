@@ -84,10 +84,11 @@ unsigned int            totECSegments = 0;
 // --- Functions Definitions ----
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, vector<Vector<double>>& P );
+void fiberForwardModel_update( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable);
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable);
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOXMM );
-
+void input_fiber( float* start, float* end, float fiber[3][MAX_FIB_LEN], float* ptrToVOXMM );
 
 // ---------- Parallel fuction --------------
 int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
@@ -798,6 +799,198 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
 }
 
 
+void trk2dictionary_update_run(
+    int* out, float* ptr_start,  int* lenghts, int*  idx_list, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count,
+    float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
+    float* ptrPEAKS, int Np, float vf_THR,  int ECix, int ECiy, int ECiz, float* _ptrMASK, float* _ptrISO, float* ptrTDI,
+    double* ptrPeaksAffine, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, float* ptrToVOXMM,
+    unsigned short ndirs, short* ptrHashTable, unsigned char* pDict_TRK_kept,
+    float* pDict_TRK_norm, unsigned int* pDict_IC_f, unsigned int* pDict_IC_v,
+    unsigned short* pDict_IC_o, float* pDict_IC_len, float* pDict_TRK_len, float* pDict_Tot_segm_len,
+    unsigned int*  pDict_EC_v, unsigned short* pDict_EC_o
+    )
+
+{
+    /*=========================*/
+    /*     IC compartments     */
+    /*=========================*/
+    float           fiber[3][MAX_FIB_LEN];
+    float           fiberNorm;
+    unsigned int    N = 0, totICSegments = 0, v, index;
+    unsigned short  o;
+    unsigned char   kept;
+    std::map<segKey,float>::iterator it;
+    float          *ptr_end;
+
+    std::map<segInVoxKey,float> FiberNorm;
+    std::map<segInVoxKey,float>::iterator itNorm;
+    segInVoxKey         inVoxKey;
+
+    // printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );    
+    // set global variables
+    dim.Set( Nx, Ny, Nz );
+    pixdim.Set( Px, Py, Pz );
+    fiberShiftXmm = fiber_shiftX * pixdim.x; // shift in mm for the coordinates
+    fiberShiftYmm = fiber_shiftY * pixdim.y;
+    fiberShiftZmm = fiber_shiftZ * pixdim.z;
+    ptrMASK       = _ptrMASK;
+    doIntersect   = true;
+    minSegLen     = min_seg_len;
+    minFiberLen   = min_fiber_len;
+    maxFiberLen   = max_fiber_len;
+    std::vector<double> fib_w;
+    P.resize( nReplicas);
+    // std::cout << "Updating dictionary" << std::endl;
+
+    // iterate over fibers
+    // ProgressBar PROGRESS( n_count );
+    // PROGRESS.setPrefix("     ");
+    for(int f=0; f<n_count ;f++)
+    {
+        // PROGRESS.inc();
+        totICSegments = 0;
+        ptr_end = ptr_start + lenghts[f] * 3;
+        // std::cout << "Reading fib "<< idx_list[f] << " w/ len "<< lenghts[f]<< std::endl;
+        input_fiber(ptr_start, ptr_end, fiber, ptrToVOXMM );
+        fiberForwardModel_update( fiber, lenghts[f], nReplicas, ptrBlurRho, ptrBlurAngle, ptrBlurWeights, true, ptrHashTable );
+        kept = 0;
+        if ( FiberSegments.size() > 0 )
+        {
+            if ( FiberLen > minFiberLen && FiberLen < maxFiberLen )
+            {
+                // add segments to files
+                for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
+                {
+                    // NB: plese note inverted ordering for 'v'
+                    v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
+                    o = it->first.o;
+                    *pDict_IC_f = idx_list[f];
+                    ++pDict_IC_f;
+                    *pDict_IC_v = v;
+                    ++pDict_IC_v;
+                    *pDict_IC_o = o;
+                    ++pDict_IC_o;
+                    *pDict_IC_len = it->second/FiberLen;
+                    ++pDict_IC_len;
+                    ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
+                    inVoxKey.set( it->first.x, it->first.y, it->first.z );
+                    FiberNorm[inVoxKey] += it->second;
+                }
+                for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
+                    fiberNorm += pow(itNorm->second,2);
+                fiberNorm = sqrt(fiberNorm);
+                FiberNorm.clear();
+                pDict_TRK_norm[idx_list[f]] = fiberNorm;
+                // ++pDict_TRK_norm;
+                pDict_TRK_len[idx_list[f]] = FiberLen;
+                // ++pDict_TRK_len;
+                pDict_Tot_segm_len[idx_list[f]] = FiberLenTot;
+                // ++pDict_Tot_segm_len;
+                totICSegments += FiberSegments.size();
+                *out = totICSegments;
+                ++out;
+                kept = 1;
+            }
+        }
+        pDict_TRK_kept[idx_list[f]] = kept;
+        // ++pDict_TRK_kept;
+        ptr_start += 3*lenghts[f];
+    }
+    // PROGRESS.close();
+
+    // printf("     [ fiber idx %d kept, %d segments in total ]\n", totFibers, totICSegments );
+
+
+    /*=========================*/
+    /*     EC compartments     */
+    /*=========================*/
+    unsigned int totECSegments = 0, totECVoxels = 0;
+
+    // printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
+    if ( ptrPEAKS != NULL )
+    {
+        Vector<double> dir;
+        double         longitude, colatitude;
+        segKey         ec_seg;
+        int            ix, iy, iz, id, atLeastOne;
+        float          peakMax;
+        float          norms[ Np ];
+        float          *ptr;
+        int            ox, oy;
+
+        // PROGRESS.reset( dim.z );
+        for(iz=0; iz<dim.z ;iz++)
+        {
+            // PROGRESS.inc();
+            for(iy=0; iy<dim.y ;iy++)
+            for(ix=0; ix<dim.x ;ix++)
+            {
+                // check if in mask previously computed from IC segments
+                if ( ptrTDI[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+
+                peakMax = -1;
+                for(id=0; id<Np ;id++)
+                {
+                    ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+                    dir.x = ptr[0];
+                    dir.y = ptr[1];
+                    dir.z = ptr[2];
+                    norms[id] = dir.norm();
+                    if ( norms[id] > peakMax )
+                        peakMax = norms[id];
+                }
+
+                if ( peakMax > 0 )
+                {
+                    ec_seg.x  = ix;
+                    ec_seg.y  = iy;
+                    ec_seg.z  = iz;
+                    atLeastOne = 0;
+                    for(id=0; id<Np ;id++)
+                    {
+                        if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
+
+                        // get the orientation of the current peak
+                        ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+
+                        // multiply by the affine matrix
+                        dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
+                        dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
+                        dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
+
+                        // flip axes if requested
+                        dir.x *= 1;
+                        dir.y *= 1;
+                        dir.z *= 1;
+                        if ( dir.y < 0 )
+                        {
+                            // ensure to be in the right hemisphere (the one where kernels were pre-computed)
+                            dir.x = -dir.x;
+                            dir.y = -dir.y;
+                            dir.z = -dir.z;
+                        }
+                        colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
+                        longitude  = atan2( dir.y, dir.x );
+                        ox = (int)round(colatitude/M_PI*180.0);
+                        oy = (int)round(longitude/M_PI*180.0);
+                        v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
+                        o = ptrHashTable[ox*181 + oy];
+                        *pDict_EC_v = v;
+                        ++pDict_EC_v;
+                        *pDict_EC_o = o;
+                        ++pDict_EC_o;
+                        totECSegments++;
+                        atLeastOne = 1;
+                    }
+                    if ( atLeastOne>0 )
+                        totECVoxels++;
+                }
+            }
+        }
+        // PROGRESS.close();
+    }
+}
+
 // Read a fiber from file .trk
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 {
@@ -837,4 +1030,19 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float* ptrToV
     }
 
     return i;
+}
+
+void input_fiber( float* start, float* end, float fiber[3][MAX_FIB_LEN], float* ptrToVOXMM ){
+    int i = 0;
+    // int N = 0;
+    while( start < end ) {
+        fiber[0][i] = start[0] * ptrToVOXMM[0] + start[1] * ptrToVOXMM[1] + start[2] * ptrToVOXMM[2]  + ptrToVOXMM[3];;
+        fiber[1][i] = start[1] * ptrToVOXMM[4] + start[1] * ptrToVOXMM[5] + start[2] * ptrToVOXMM[6]  + ptrToVOXMM[7];;
+        fiber[2][i] = start[2] * ptrToVOXMM[8] + start[1] * ptrToVOXMM[9] + start[2] * ptrToVOXMM[10] + ptrToVOXMM[11];;
+        
+        // N+=3;
+        start += 3;
+        // std::cout << "Point " << i << " x: " << fiber[0][i] << " y: " << fiber[1][i]<< " z: " << fiber[2][i] << std::endl;
+        i++;
+    }
 }
