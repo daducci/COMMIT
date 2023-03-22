@@ -48,7 +48,7 @@ class CustomBuildExtCommand(build_ext):
 
         # if not specified via '-j N' option, set compilation using max number of cores
         if self.parallel is None:
-            self.parallel = cpu_count()
+            self.parallel = 1
         print( f'Parallel compilation using {self.parallel} threads' )
 
         # Call original build_ext command
