@@ -12,7 +12,7 @@ from dipy.segment.clustering import QuickBundlesX
 from dipy.segment.metric import AveragePointwiseEuclideanMetric
 from dipy.segment.featurespeed import ResampleFeature
 from dipy.tracking.streamline import set_number_of_points
-from os.path import join, exists, splitext, dirname, isdir
+from os.path import join, exists, splitext, dirname, isdir, isfile
 from os import makedirs, remove, system, listdir
 import time
 import amico
@@ -77,7 +77,7 @@ def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
 
     return centroids_out
 
-def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, centroid_type='original',
+def tractogram_cluster( filename_in, filename_out, filename_reference, thresholds, n_pts=20, centroid_type='closer',
                         random=True, verbose=False, smooth=False, get_size=False ):
     """ Cluster streamlines in a tractogram.
     """
@@ -92,15 +92,6 @@ def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, c
 
     if verbose :
         print( f'- {len(tractogram.streamlines)} streamlines found' )
-    
-
-    if np.isscalar( thresholds ) :
-        thresholds = [ thresholds ]
-    if len(thresholds)>1 :
-        filename_out = join(dirname(filename_in), f'{filename_in[:-4]}_clustered_thr_{thresholds[0]}_{thresholds[0]}.tck' )
-    else :
-        filename_out = join(dirname(filename_in), f'{filename_in[:-4]}_clustered_thr_{thresholds[0]}.tck' )
-
 
     metric   = AveragePointwiseEuclideanMetric( ResampleFeature( nb_points=n_pts ) )
 
@@ -130,12 +121,6 @@ def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, c
         print( 'value of option centroid_type NOT valid!' )
         return False
 
-
-    if verbose :
-        print( f'  * {len(centroids)} centroids' )
-
-    if verbose :
-        print( f'- Save to "{filename_out}"' )
     tractogram_new = sft.from_sft( centroids, tractogram )
     save_tractogram( tractogram_new, filename_out, bbox_valid_check=False )
     return filename_out
@@ -324,27 +309,6 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     if filename_tractogram is None:
         ERROR( '"filename_tractogram" not defined' )
 
-    if np.isscalar(blur_clust_thr):
-        blur_clust_thr = np.array( [blur_clust_thr] )
-
-    if blur_clust_thr[0]> 0:
-        LOG( '\n-> Running tractogram clustering:' )
-        extension = splitext(filename_tractogram)[1]
-        if filename_mask is None and TCK_ref_image is None:
-            if extension == ".tck":
-                ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
-            elif extension == ".trk":
-                filename_reference = "same"
-            else:
-                ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
-        else:
-            if filename_mask is not None:
-                filename_reference = filename_mask
-            else:
-                filename_reference = TCK_ref_image
-
-        filename_tractogram = tractogram_cluster( filename_tractogram, filename_reference, blur_clust_thr)
-
     if path_out is None:
         path_out = dirname(filename_tractogram)
         if path_out == '':
@@ -353,6 +317,10 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
             ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
         path_out = join(path_out,'COMMIT')
 
+    # create output path
+    print( f'\t- Output written to "{path_out}"' )
+    if not exists( path_out ):
+        makedirs( path_out )
 
     if nthreads is None :
         # Set to the number of CPUs in the system
@@ -374,10 +342,42 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     else:
         path_temp = path_out
 
-     # create output path
-    print( f'\t- Output written to "{path_out}"' )
-    if not exists( path_out ):
-        makedirs( path_out )
+
+    if np.isscalar(blur_clust_thr):
+        blur_clust_thr = np.array( [blur_clust_thr] )
+
+    if blur_clust_thr[0]> 0:
+        if len(blur_clust_thr)>1 :
+            file_concat = ""
+            for r in blur_clust_thr:
+                file_concat += f"_{r}"
+            filename_out = join(dirname(filename_tractogram), f'{filename_tractogram[:-4]}_clustered_thr' + file_concat + '.tck' )
+        else :
+            filename_out = join(dirname(filename_tractogram), f'{filename_tractogram[:-4]}_clustered_thr_{blur_clust_thr[0]}.tck' )
+
+        LOG( '\n-> Running tractogram clustering:' )
+        print( f'\t- Input tractogram "{filename_tractogram}"' )
+        print( f'\t- Clustering threshold = {blur_clust_thr}' )
+        
+        extension = splitext(filename_tractogram)[1]
+        if filename_mask is None and TCK_ref_image is None:
+            if extension == ".tck":
+                ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
+            elif extension == ".trk":
+                filename_reference = "same"
+            else:
+                ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
+        else:
+            if filename_mask is not None:
+                filename_reference = filename_mask
+            else:
+                filename_reference = TCK_ref_image
+        if isfile(filename_out):
+            print( f'\t- Overwriting tractogram "{filename_out}"' )
+        else:
+            print( f'\t- Output tractogram "{filename_out}"' )
+        filename_tractogram = tractogram_cluster( filename_tractogram, filename_out, filename_reference, blur_clust_thr)
+
 
 
     # Load data from files

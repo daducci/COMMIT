@@ -16,7 +16,7 @@ _2023-03-21_
 - Added trk2dictionary.run() parameter `blur_clust_thr`
 - Implemented clustering in trk2dictionary
 - Added trk2dictionary.run() parallel computation
-- Added trk2dictionary.run() parameter `threads`
+- Added trk2dictionary.run() parameter `nthreads`
 - Parallel compilation
 
 ### Fixed 🐛
