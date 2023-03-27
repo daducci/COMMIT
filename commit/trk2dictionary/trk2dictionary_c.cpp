@@ -91,11 +91,11 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOX
 
 // ---------- Parallel fuction --------------
 int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
-float* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
+double* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos );
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx);
+    double** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx);
 
 
 
@@ -107,7 +107,7 @@ int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* _ptrMASK, float** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+    float* _ptrMASK, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
     float* ptrToVOXMM, short* ptrHashTable, int threads_count
 )
@@ -259,7 +259,7 @@ int trk2dictionary(
 
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads){
+    double** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads){
 
     // Variables definition
     string    filename;
@@ -379,7 +379,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
 /*                                                Parallel Function                                                 */
 /********************************************************************************************************************/
 
-int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, float* ptrTDI, double* ptrBlurRho, 
+int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, double* ptrBlurRho, 
 double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos ) 
 {

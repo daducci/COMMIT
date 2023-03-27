@@ -30,7 +30,7 @@ cdef extern from "trk2dictionary_c.cpp":
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars,
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-        float* _ptrMASK, float** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+        float* _ptrMASK, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
         float* ptrTractsAffine, short* prtHashTable, int threads_count
     ) nogil
@@ -479,8 +479,8 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     cdef float* ptrPEAKS
     cdef float [:, :, :, ::1] niiPEAKS_img
     cdef int Np
-    cdef float [:,:, :,::1] niiTDI_img = np.ascontiguousarray( np.zeros((nthreads,Nx,Ny,Nz),dtype=np.float32) )
-    cdef float** ptrTDI = <float**>malloc( nthreads * sizeof(float*) )
+    cdef double [:,:, :,::1] niiTDI_img = np.ascontiguousarray( np.zeros((nthreads,Nx,Ny,Nz),dtype=np.float64) )
+    cdef double** ptrTDI = <double**>malloc( nthreads * sizeof(double*) )
     for i in range(nthreads):
         ptrTDI[i] = &niiTDI_img[i,0,0,0]
 
