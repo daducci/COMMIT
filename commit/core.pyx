@@ -1095,17 +1095,17 @@ cdef class Evaluation :
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
         ptrToVOXMM = &toVOXMM[0]
 
-        if self.DICTIONARY['dictionary_info']['filename_ISO'] is not None :
-            niiISO = nibabel.load( self.DICTIONARY['dictionary_info']['filename_ISO'] )
-            niiISO_hdr = niiISO.header
-            if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
-                abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
-                WARNING( 'Dataset does not have the same geometry as the tractogram' )
-            niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
-            ptrISO  = &niiISO_img[0,0,0]
-        else :
-            print( '\t- No ISO map specified, using the whole white-matter \t' )
-            ptrISO = &niiWM_img[0,0,0]
+        # if self.DICTIONARY['dictionary_info']['filename_ISO'] is not None :
+        niiISO = nibabel.load( self.DICTIONARY['dictionary_mask'] )
+        niiISO_hdr = niiISO.header
+        if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
+            abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
+            WARNING( 'Dataset does not have the same geometry as the tractogram' )
+        niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
+        ptrISO  = &niiISO_img[0,0,0]
+        # else :
+        #     print( '\t- No ISO map specified, using the whole white-matter \t' )
+        #     ptrISO = &niiWM_img[0,0,0]
 
         if self.DICTIONARY['dictionary_info']['filename_peaks'] is not None :
             niiPEAKS = nibabel.load( self.DICTIONARY['dictionary_info']['filename_peaks'] )
