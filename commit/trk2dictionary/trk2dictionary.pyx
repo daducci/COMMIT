@@ -49,6 +49,13 @@ cpdef cat_function( infilename, outfilename ):
                 shutil.copyfileobj( inFile, outfile )
                 remove( fname )
 
+cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz ):
+    cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
+    cdef int i
+    for i in xrange(v.size):
+        tdi[ v[i] ] += l[i]
+    return tdi
+
 def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
     ''' Returns the streamlines from the input tractogram which are
         closer to the centroids of the input clusters. Streamlines are resampled
@@ -486,6 +493,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
 
     cdef double [:, ::1] peaksAffine
     cdef double* ptrPeaksAffine
+
     if filename_peaks is not None :
         print( '\t- EC orientations' )
         niiPEAKS = nibabel.load( filename_peaks )
@@ -628,11 +636,14 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     else :
         TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
-    niiTDI_img_save= np.zeros_like(niiTDI_img[0,:,:,:])
-    for i in range(nthreads):
-        niiTDI_img_save += niiTDI_img[i,:,:,:]
+    v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
+    l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
-    niiTDI = nibabel.Nifti1Image( niiTDI_img_save.astype(np.float32), TDI_affine )
+    cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
+    niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz )
+    niiTDI_img_save = np.reshape( niiTDI_mem, niiMASK.shape, order='F' )
+
+    niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
     niiTDI_hdr = _get_header( niiTDI )
     niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
     nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
@@ -645,7 +656,6 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    free( ptrTDI )
     if nthreads > 1:
         shutil.rmtree(path_temp)
 
