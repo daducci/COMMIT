@@ -405,9 +405,9 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
 
     if extension == ".trk":
         print ( f'\t\t- geometry taken from "{filename_tractogram}"' )
-        Nx = hdr['dimensions'][0]
-        Ny = hdr['dimensions'][1]
-        Nz = hdr['dimensions'][2]
+        Nx = int(hdr['dimensions'][0])
+        Ny = int(hdr['dimensions'][1])
+        Nz = int(hdr['dimensions'][2])
         Px = hdr['voxel_sizes'][0]
         Py = hdr['voxel_sizes'][1]
         Pz = hdr['voxel_sizes'][2]
@@ -639,7 +639,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
     l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
-    cdef np.float32_t [::1] niiTDI_mem = np.zeros( niiMASK.shape[0]*niiMASK.shape[1]*niiMASK.shape[2], dtype=np.float32 )
+    cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
     niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz )
     niiTDI_img_save = np.reshape( niiTDI_mem, niiMASK.shape, order='F' )
 
