@@ -639,7 +639,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
     l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
-    cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
+    cdef np.float32_t [::1] niiTDI_mem = np.zeros( niiMASK.shape[0]*niiMASK.shape[1]*niiMASK.shape[2], dtype=np.float32 )
     niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz )
     niiTDI_img_save = np.reshape( niiTDI_mem, niiMASK.shape, order='F' )
 
