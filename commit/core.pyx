@@ -1096,7 +1096,8 @@ cdef class Evaluation :
         ptrToVOXMM = &toVOXMM[0]
 
         # if self.DICTIONARY['dictionary_info']['filename_ISO'] is not None :
-        niiISO = nibabel.load( self.DICTIONARY['dictionary_mask'] )
+        # niiISO = nibabel.load( self.DICTIONARY['dictionary_mask'] )
+        niiISO = nibabel.load( pjoin(self.get_config('TRACKING_path'),'dictionary_%s.nii.gz'%self.get_config('dictionary_mask')) )
         niiISO_hdr = niiISO.header
         if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
             abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
@@ -1404,6 +1405,8 @@ cdef class Evaluation :
                 break
             # PROP = 80
         print(f"time required for {it+1} iterations: {time.strftime('%H:%M:%S', time.gmtime(time.time() - t1))}")
+        print(f"self.x {self.x}")
+        print(f"self.x.shape {self.x.shape}")
         fib_idx_save = [*connections_dict.values()]
         fib_idx_save = [i for g in fib_idx_save for i in g]
         lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in fib_idx_save] ).astype(np.int32) )
@@ -1412,13 +1415,13 @@ cdef class Evaluation :
         fib_list = np.vstack([input_set_splines[f] for f in fib_idx_save])
         # smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
         fib_save = simple_smooth(fib_list, len_ptr, n_count)
-        fib_save = [input_set_splines[f] for f in fib_idx_save]
+        # fib_save = [input_set_splines[f] for f in fib_idx_save]
 
         # fib_idx_save = [*connections_dict.values()]
         # fibs_save = [input_set_splines[i] for g in fib_idx_save for i in g]
         # fib_list = np.vstack([f for f in fibs_save])
         # smoothed = np.ascontiguousarray( np.zeros( (3*10000, len(fibs_save)) ).astype(np.float32) )
-        # fibs_save = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+        # fib_save = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
         
         save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
         nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))

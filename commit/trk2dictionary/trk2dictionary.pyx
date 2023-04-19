@@ -219,7 +219,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     blur_clust_thr: list of float
         Clustering thresholds used to remove redundant streamlines from the input tractogram
-     
+
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
         each segment in a streamline (default : 500).
