@@ -31,7 +31,7 @@ def get_extensions():
                      extra_compile_args=['-w'],
                      language='c++')
 
-    return [trk2dictionary, core, proximals, bundle_o_graphy, spline_smoothing]
+    return [trk2dictionary, core, proximals, spline_smoothing, bundle_o_graphy]
 
 class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """
