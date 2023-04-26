@@ -1465,7 +1465,7 @@ cdef class Evaluation :
 
     def update_backup(self, Backup_mit_dictionary):
 
-        Backup_mit_dictionary['TRK']['kept'][:] = self.DICTIONARY['TRK']['kept'].astype(np.bool)
+        Backup_mit_dictionary['TRK']['kept'][:] = self.DICTIONARY['TRK']['kept'].astype(np.bool_)
         Backup_mit_dictionary['TRK']['norm'][:] = self.DICTIONARY['TRK']['norm'].astype(np.float32)
         Backup_mit_dictionary['TRK']['len'][:] = self.DICTIONARY['TRK']['len'].astype(np.float32) 
         Backup_mit_dictionary['TRK']['lenTot'][:] = self.DICTIONARY['TRK']['lenTot'].astype(np.float32)
@@ -1486,7 +1486,7 @@ cdef class Evaluation :
 
     def reverse_dictionary(self, Backup_mit_dictionary):
 
-        self.DICTIONARY['TRK']['kept'][:] = Backup_mit_dictionary['TRK']['kept'].astype(np.bool)
+        self.DICTIONARY['TRK']['kept'][:] = Backup_mit_dictionary['TRK']['kept'].astype(np.bool_)
         self.DICTIONARY['TRK']['norm'][:] = Backup_mit_dictionary['TRK']['norm'].astype(np.float32)
         self.DICTIONARY['TRK']['len'][:] = Backup_mit_dictionary['TRK']['len'].astype(np.float32) 
         self.DICTIONARY['TRK']['lenTot'][:] = Backup_mit_dictionary['TRK']['lenTot'].astype(np.float32)
