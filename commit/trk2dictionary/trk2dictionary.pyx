@@ -12,7 +12,7 @@ from dipy.segment.clustering import QuickBundlesX
 from dipy.segment.metric import AveragePointwiseEuclideanMetric
 from dipy.segment.featurespeed import ResampleFeature
 from dipy.tracking.streamline import set_number_of_points
-from os.path import join, exists, splitext, dirname, isdir
+from os.path import join, exists, splitext, dirname, isdir, isfile
 from os import makedirs, remove, system, listdir
 import time
 import amico
@@ -30,7 +30,7 @@ cdef extern from "trk2dictionary_c.cpp":
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars,
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-        float* _ptrMASK, float** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+        float* _ptrMASK, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
         float* ptrTractsAffine, short* prtHashTable, int threads_count
     ) nogil
@@ -48,6 +48,13 @@ cpdef cat_function( infilename, outfilename ):
             with open( fname, 'rb' ) as inFile:
                 shutil.copyfileobj( inFile, outfile )
                 remove( fname )
+
+cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz ):
+    cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
+    cdef int i
+    for i in xrange(v.size):
+        tdi[ v[i] ] += l[i]
+    return tdi
 
 def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
     ''' Returns the streamlines from the input tractogram which are
@@ -77,8 +84,8 @@ def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
 
     return centroids_out
 
-def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, centroid_type='original',
-                        random=True, verbose=False, smooth=False, get_size=False ):
+def tractogram_cluster( filename_in, filename_out, filename_reference, thresholds, n_pts=20, centroid_type='closer',
+                        random=False, verbose=False, smooth=False, get_size=False ):
     """ Cluster streamlines in a tractogram.
     """
     if verbose :
@@ -93,15 +100,6 @@ def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, c
     if verbose :
         print( f'- {len(tractogram.streamlines)} streamlines found' )
     
-
-    if np.isscalar( thresholds ) :
-        thresholds = [ thresholds ]
-    if len(thresholds)>1 :
-        filename_out = join(dirname(filename_in), f'{filename_in[:-4]}_clustered_thr_{thresholds[0]}_{thresholds[0]}.tck' )
-    else :
-        filename_out = join(dirname(filename_in), f'{filename_in[:-4]}_clustered_thr_{thresholds[0]}.tck' )
-
-
     metric   = AveragePointwiseEuclideanMetric( ResampleFeature( nb_points=n_pts ) )
 
     if verbose :
@@ -130,19 +128,13 @@ def tractogram_cluster( filename_in, filename_reference, thresholds, n_pts=20, c
         print( 'value of option centroid_type NOT valid!' )
         return False
 
-
-    if verbose :
-        print( f'  * {len(centroids)} centroids' )
-
-    if verbose :
-        print( f'- Save to "{filename_out}"' )
     tractogram_new = sft.from_sft( centroids, tractogram )
     save_tractogram( tractogram_new, filename_out, bbox_valid_check=False )
     return filename_out
 
-cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, do_intersect=True,
+cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_peaks=None, filename_mask=None, do_intersect=True,
     fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
-    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_thr=0,
+    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
     blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
     TCK_ref_image=None, ndirs=500, nthreads=None, adapt_tractogram=False, adapt_params=None, group_by=None
     ):
@@ -324,27 +316,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if filename_tractogram is None:
         ERROR( '"filename_tractogram" not defined' )
 
-    if np.isscalar(blur_clust_thr):
-        blur_clust_thr = np.array( [blur_clust_thr] )
-
-    if blur_clust_thr[0]> 0:
-        LOG( '\n-> Running tractogram clustering:' )
-        extension = splitext(filename_tractogram)[1]
-        if filename_mask is None and TCK_ref_image is None:
-            if extension == ".tck":
-                ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
-            elif extension == ".trk":
-                filename_reference = "same"
-            else:
-                ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
-        else:
-            if filename_mask is not None:
-                filename_reference = filename_mask
-            else:
-                filename_reference = TCK_ref_image
-
-        filename_tractogram = tractogram_cluster( filename_tractogram, filename_reference, blur_clust_thr)
-
     if path_out is None:
         path_out = dirname(filename_tractogram)
         if path_out == '':
@@ -353,6 +324,10 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
         path_out = join(path_out,'COMMIT')
 
+    # create output path
+    print( f'\t- Output written to "{path_out}"' )
+    if not exists( path_out ):
+        makedirs( path_out )
 
     if nthreads is None :
         # Set to the number of CPUs in the system
@@ -374,10 +349,42 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else:
         path_temp = path_out
 
-     # create output path
-    print( f'\t- Output written to "{path_out}"' )
-    if not exists( path_out ):
-        makedirs( path_out )
+
+    if np.isscalar(blur_clust_thr):
+        blur_clust_thr = np.array( [blur_clust_thr] )
+
+    if blur_clust_thr[0]> 0:
+        if len(blur_clust_thr)>1 :
+            file_concat = ""
+            for r in blur_clust_thr:
+                file_concat += f"_{r}"
+            filename_out = join(dirname(filename_tractogram), f'{filename_tractogram[:-4]}_clustered_thr' + file_concat + '.tck' )
+        else :
+            filename_out = join(dirname(filename_tractogram), f'{filename_tractogram[:-4]}_clustered_thr_{blur_clust_thr[0]}.tck' )
+
+        LOG( '\n-> Running tractogram clustering:' )
+        print( f'\t- Input tractogram "{filename_tractogram}"' )
+        print( f'\t- Clustering threshold = {blur_clust_thr}' )
+        
+        extension = splitext(filename_tractogram)[1]
+        if filename_mask is None and TCK_ref_image is None:
+            if extension == ".tck":
+                ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
+            elif extension == ".trk":
+                filename_reference = "same"
+            else:
+                ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
+        else:
+            if filename_mask is not None:
+                filename_reference = filename_mask
+            else:
+                filename_reference = TCK_ref_image
+        if isfile(filename_out):
+            print( f'\t- Overwriting tractogram "{filename_out}"' )
+        else:
+            print( f'\t- Output tractogram "{filename_out}"' )
+        filename_tractogram = tractogram_cluster( filename_tractogram, filename_out, filename_reference, blur_clust_thr)
+
 
 
     # Load data from files
@@ -398,9 +405,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     if extension == ".trk":
         print ( f'\t\t- geometry taken from "{filename_tractogram}"' )
-        Nx = hdr['dimensions'][0]
-        Ny = hdr['dimensions'][1]
-        Nz = hdr['dimensions'][2]
+        Nx = int(hdr['dimensions'][0])
+        Ny = int(hdr['dimensions'][1])
+        Nz = int(hdr['dimensions'][2])
         Px = hdr['voxel_sizes'][0]
         Py = hdr['voxel_sizes'][1]
         Pz = hdr['voxel_sizes'][2]
@@ -479,8 +486,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrPEAKS
     cdef float [:, :, :, ::1] niiPEAKS_img
     cdef int Np
-    cdef float [:,:, :,::1] niiTDI_img = np.ascontiguousarray( np.zeros((nthreads,Nx,Ny,Nz),dtype=np.float32) )
-    cdef float** ptrTDI = <float**>malloc( nthreads * sizeof(float*) )
+    cdef double [:,:, :,::1] niiTDI_img = np.ascontiguousarray( np.zeros((nthreads,Nx,Ny,Nz),dtype=np.float64) )
+    cdef double** ptrTDI = <double**>malloc( nthreads * sizeof(double*) )
     for i in range(nthreads):
         ptrTDI[i] = &niiTDI_img[i,0,0,0]
 
@@ -635,9 +642,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else :
         TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
-    niiTDI_img_save= np.zeros_like(niiTDI_img[0,:,:,:])
-    for i in range(nthreads):
-        niiTDI_img_save += niiTDI_img[i,:,:,:]
+    v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
+    l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
+
+    cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
+    niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz )
+    niiTDI_img_save = np.reshape( niiTDI_mem, niiMASK.shape, order='F' )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
     niiTDI_hdr = _get_header( niiTDI )
@@ -652,7 +662,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    free( ptrTDI )
     if nthreads > 1:
         shutil.rmtree(path_temp)
 
