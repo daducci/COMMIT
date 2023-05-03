@@ -35,10 +35,7 @@ cdef extern from "trk2dictionary_c.cpp":
         unsigned int*  pDict_EC_v, unsigned short* pDict_EC_o
         ) nogil
 
-cdef extern from "spline_smoothing_c.cpp":
-    int do_spline_smoothing(
-        float* ptr_npaFiberI, int nP, float* ptr_npaFiberO, float ratio, float segment_len
-        ) nogil
+
 
 @cython.boundscheck(True)
 cdef double random_uniform():
@@ -93,39 +90,39 @@ cdef inline int randint(int lower, int upper) nogil:
     return rand() % (upper - lower + 1)
 
 
-cdef smooth(float [:,:] streamlines, int* ptrlengths, int n_count, float[:,:] streamlines_out, int* ptrlengths_out):
+# cdef smooth(float [:,:] streamlines, int* ptrlengths, int n_count, float[:,:] streamlines_out, int* ptrlengths_out):
     
-    cdef float [:, ::1] npaFiberO = np.ascontiguousarray( np.zeros( (3*10000,1) ).astype(np.float32) )
-    cdef float* ptr_npaFiberO = &npaFiberO[0,0]
+#     cdef float [:, ::1] npaFiberO = np.ascontiguousarray( np.zeros( (3*10000,1) ).astype(np.float32) )
+#     cdef float* ptr_npaFiberO = &npaFiberO[0,0]
 
-    cdef float* ptr_start = &streamlines[0,0]
+#     cdef float* ptr_start = &streamlines[0,0]
     
-    trk_fiber_out = []
-    for f in range(n_count):
-        n =  do_spline_smoothing( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
-        ptrlengths_out[f] = n
-        if n != 0 :
-            streamline = np.reshape( npaFiberO[:3*n].copy(), (n,3) )
-            trk_fiber_out.append( streamline )
-        ptr_start+= 3*ptrlengths[f]
-    streamlines_out = np.vstack([s for s in trk_fiber_out])
-    return streamlines_out
+#     trk_fiber_out = []
+#     for f in range(n_count):
+#         n =  do_spline_smoothing( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
+#         ptrlengths_out[f] = n
+#         if n != 0 :
+#             streamline = np.reshape( npaFiberO[:3*n].copy(), (n,3) )
+#             trk_fiber_out.append( streamline )
+#         ptr_start+= 3*ptrlengths[f]
+#     streamlines_out = np.vstack([s for s in trk_fiber_out])
+#     return streamlines_out
 
 
-cdef simple_smooth(float [:,:] streamlines, int* ptrlengths, int n_count):
-    cdef float [:, ::1] npaFiberO = np.ascontiguousarray( np.zeros( (3*10000,1) ).astype(np.float32) )
-    cdef float* ptr_npaFiberO = &npaFiberO[0,0]
+# cdef simple_smooth(float [:,:] streamlines, int* ptrlengths, int n_count):
+#     cdef float [:, ::1] npaFiberO = np.ascontiguousarray( np.zeros( (3*10000,1) ).astype(np.float32) )
+#     cdef float* ptr_npaFiberO = &npaFiberO[0,0]
 
-    cdef float* ptr_start = &streamlines[0,0]
+#     cdef float* ptr_start = &streamlines[0,0]
     
-    trk_fiber_out = []
-    for f in xrange(n_count):
-        n =  do_spline_smoothing( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
-        if n != 0 :
-            streamline = np.reshape( npaFiberO[:3*n].copy(), (n,3) )
-            trk_fiber_out.append( streamline )
-        ptr_start+= 3*ptrlengths[f]
-    return trk_fiber_out
+#     trk_fiber_out = []
+#     for f in xrange(n_count):
+#         n =  do_spline_smoothing( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
+#         if n != 0 :
+#             streamline = np.reshape( npaFiberO[:3*n].copy(), (n,3) )
+#             trk_fiber_out.append( streamline )
+#         ptr_start+= 3*ptrlengths[f]
+#     return trk_fiber_out
 
 cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] voxdim, int[:] dim, int tempts, int pt_adapt, double m_variance )nogil:
     """Compute the length of a streamline.

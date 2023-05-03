@@ -20,7 +20,8 @@ import pickle
 import commit.models
 import commit.solvers
 import commit.bundle_o_graphy
-from commit.bundle_o_graphy cimport adapt_streamline, trk2dict_update, smooth, simple_smooth
+from commit.bundle_o_graphy cimport adapt_streamline, trk2dict_update
+from dicelib.tractogram cimport smooth_fib#, simple_smooth
 
 import amico.scheme
 import amico.lut
@@ -1226,7 +1227,7 @@ cdef class Evaluation :
                 index_list = [pick_fib]
                 fib_list = np.array(input_set_splines[pick_fib])
                 smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
-                fib_list = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+                fib_list = smooth_fib(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
                 # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
@@ -1270,7 +1271,7 @@ cdef class Evaluation :
                 index_list = connections_dict[pick_conn]
                 fib_list = np.vstack([input_set_splines[f] for f in index_list])
                 smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
-                fib_list = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+                fib_list = smooth_fib(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
                 # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
@@ -1335,7 +1336,7 @@ cdef class Evaluation :
                 index_list = connections_dict[pick_conn]
                 fib_list = np.vstack([input_set_splines[f] for f in index_list])
                 smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
-                fib_list = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+                fib_list = smooth_fib(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
                 # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
@@ -1405,7 +1406,6 @@ cdef class Evaluation :
                 break
             # PROP = 80
         print(f"time required for {it+1} iterations: {time.strftime('%H:%M:%S', time.gmtime(time.time() - t1))}")
-        print(f"self.x {self.x}")
         print(f"self.x.shape {self.x.shape}")
         fib_idx_save = [*connections_dict.values()]
         fib_idx_save = [i for g in fib_idx_save for i in g]
@@ -1413,23 +1413,10 @@ cdef class Evaluation :
         len_ptr = &lengths[0]
         n_count = len(fib_idx_save)
         fib_list = np.vstack([input_set_splines[f] for f in fib_idx_save])
-        # smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
-        fib_save = simple_smooth(fib_list, len_ptr, n_count)
-        # fib_save = [input_set_splines[f] for f in fib_idx_save]
+        # fib_save = simple_smooth(fib_list, len_ptr, n_count)
 
-        # fib_idx_save = [*connections_dict.values()]
-        # fibs_save = [input_set_splines[i] for g in fib_idx_save for i in g]
-        # fib_list = np.vstack([f for f in fibs_save])
-        # smoothed = np.ascontiguousarray( np.zeros( (3*10000, len(fibs_save)) ).astype(np.float32) )
-        # fib_save = smooth(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
-        
-        save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
-        nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
-
-        # self.update_dictionary(upd_idx, num_vox, buffer_size=buff_size)
-        # self.set_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False)
-        # self.build_operator(adapt=True, verbose=False)
-        # self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+        # save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
+        # nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
 
         return buff_size
 

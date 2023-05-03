@@ -1,6 +1,8 @@
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
+from dicelib import get_include
+
 # name of the package
 package_name = 'commit'
 
@@ -15,23 +17,20 @@ def get_extensions():
     core = Extension(name=f'{package_name}.core',
                      sources=[f'{package_name}/core.pyx'],
                      extra_compile_args=['-w'],
+                     include_dirs = get_include(),
                      language='c++')
     proximals = Extension(name=f'{package_name}.proximals',
                      sources=[f'{package_name}/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
-    spline_smoothing = Extension(name='commit.spline_smoothing',
-                     sources=['commit/spline_smoothing/spline_smoothing.pyx'],
-                     include_dirs=['commit/trk2dictionary', 'commit/spline_smoothing/psimpl_v7_src'],
-                     extra_compile_args=['-w'],
-                     language='c++')
+
     bundle_o_graphy = Extension(name='commit.bundle_o_graphy',
                      sources=['commit/bundle_o_graphy.pyx'],
-                     include_dirs=['commit/trk2dictionary', 'commit/spline_smoothing', 'commit/spline_smoothing/psimpl_v7_src'],
+                     include_dirs=['commit/trk2dictionary'],
                      extra_compile_args=['-w'],
                      language='c++')
 
-    return [trk2dictionary, core, proximals, spline_smoothing, bundle_o_graphy]
+    return [trk2dictionary, core, proximals, bundle_o_graphy]
 
 class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """
@@ -73,7 +72,6 @@ setup(
     packages=[f'{package_name}', f'{package_name}.operator'],
     cmdclass={'build_ext': CustomBuildExtCommand},
     ext_modules=get_extensions(),
-    setup_requires=['Cython>=0.29', 'numpy>=1.12', 'wheel'],
     install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-amico>=1.3.2'],
     package_data={f'{package_name}.operator': ["*.*"]}
 )

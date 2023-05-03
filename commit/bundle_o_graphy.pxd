@@ -7,8 +7,6 @@ cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] vox
 cdef double random_gaussian(double mov_var)
 cdef void assign_random_gaussian_pt(double[:] out, int assign_ix, double mov_var)
 cdef gaussian(int n, double mov_var)
-cdef simple_smooth(float [:,:] streamlines, int* ptrlengths, int n_count)
-cdef smooth(float [:,:] streamlines, int* ptrlengths, int n_count, float[:,:] streamlines_out, int* ptrlengths_out)
 cdef trk2dict_update(
     lut, segm_dict, index_list, diff_seg, float [:,:] streamlines, int* lengths, int* ptr_buff_size, double blur_core_extent, int Nx, int Ny, int Nz,
     float Px, float Py, float Pz, int n_count,float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
