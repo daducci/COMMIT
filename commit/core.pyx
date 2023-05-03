@@ -21,7 +21,7 @@ import commit.models
 import commit.solvers
 import commit.bundle_o_graphy
 from commit.bundle_o_graphy cimport adapt_streamline, trk2dict_update
-from dicelib.tractogram cimport smooth_fib#, simple_smooth
+from dicelib.tractogram cimport smooth_fib, simple_smooth
 
 import amico.scheme
 import amico.lut
@@ -1413,10 +1413,10 @@ cdef class Evaluation :
         len_ptr = &lengths[0]
         n_count = len(fib_idx_save)
         fib_list = np.vstack([input_set_splines[f] for f in fib_idx_save])
-        # fib_save = simple_smooth(fib_list, len_ptr, n_count)
+        fib_save = simple_smooth(fib_list, len_ptr, n_count)
 
-        # save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
-        # nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
+        save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
+        nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
 
         return buff_size
 
