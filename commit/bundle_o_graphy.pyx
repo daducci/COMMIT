@@ -332,7 +332,9 @@ def streamline2spline(input_set_streamlines, smth=0.3, parallel=False):
 
 def compute_assignments(input_tractogram_filename, gm_filename):
     try:
-        os.system( f'tck2connectome -force -symmetric -assignment_radial_search 2 -out_assignments {input_tractogram_filename}_fibers_assignment.txt {input_tractogram_filename} {gm_filename} {input_tractogram_filename}_connectome.csv' )
+        # os.system( f'tck2connectome -force -symmetric -assignment_radial_search 2 -out_assignments {input_tractogram_filename}_fibers_assignment.txt {input_tractogram_filename} {gm_filename} {input_tractogram_filename}_connectome.csv' )
+        os.system( f'dice_tractogram_cluster.py {input_tractogram_filename} --save_assignments {input_tractogram_filename}_fibers_assignment.txt --atlas {gm_filename} --reference {gm_filename}' )
+        
         asgn = np.loadtxt(f"{input_tractogram_filename}_fibers_assignment.txt", dtype =float).astype(int)
         asgn = [tuple(sorted(c)) for c in asgn]
         connections = list(conn for conn,_ in itertools.groupby(asgn))
