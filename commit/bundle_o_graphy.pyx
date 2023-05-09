@@ -9,6 +9,8 @@ cimport numpy as np
 from collections import defaultdict
 from libc.math cimport sqrt, log
 from dipy.tracking.streamline import set_number_of_points
+from dicelib.streamline import smooth
+
 import os
 import tqdm
 from rdp import rdp
@@ -90,26 +92,18 @@ cdef inline int randint(int lower, int upper) nogil:
     return rand() % (upper - lower + 1)
 
 
-# cdef smooth(float [:,:] streamlines, int* ptrlengths, int n_count, float[:,:] streamlines_out, int* ptrlengths_out):
-    
-#     cdef float [:, ::1] npaFiberO = np.ascontiguousarray( np.zeros( (3*10000,1) ).astype(np.float32) )
-#     cdef float* ptr_npaFiberO = &npaFiberO[0,0]
-
-#     cdef float* ptr_start = &streamlines[0,0]
-    
-#     trk_fiber_out = []
-#     for f in range(n_count):
-#         n =  do_spline_smoothing( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
-#         ptrlengths_out[f] = n
-#         if n != 0 :
-#             streamline = np.reshape( npaFiberO[:3*n].copy(), (n,3) )
-#             trk_fiber_out.append( streamline )
-#         ptr_start+= 3*ptrlengths[f]
-#     streamlines_out = np.vstack([s for s in trk_fiber_out])
-#     return streamlines_out
+cpdef smooth_fib(streamlines, lengths, int n_count):
+    trk_fiber_out = []
+    lengths_out = np.zeros(n_count, dtype=int)
+    for f in range(n_count):
+        streamline, n =  smooth( streamlines[f], lengths[f], 1, 1 )
+        lengths_out[f] = n
+        trk_fiber_out.append( streamline )
+    streamlines_out = np.vstack([s for s in trk_fiber_out])
+    return streamlines_out, lengths_out
 
 
-# cdef simple_smooth(float [:,:] streamlines, int* ptrlengths, int n_count):
+# cdef smooth_tractogram(float [:,:] streamlines, int* ptrlengths, int n_count):
 #     cdef float [:, ::1] npaFiberO = np.ascontiguousarray( np.zeros( (3*10000,1) ).astype(np.float32) )
 #     cdef float* ptr_npaFiberO = &npaFiberO[0,0]
 
@@ -117,12 +111,13 @@ cdef inline int randint(int lower, int upper) nogil:
     
 #     trk_fiber_out = []
 #     for f in xrange(n_count):
-#         n =  do_spline_smoothing( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
+#         n =  smooth( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
 #         if n != 0 :
 #             streamline = np.reshape( npaFiberO[:3*n].copy(), (n,3) )
 #             trk_fiber_out.append( streamline )
 #         ptr_start+= 3*ptrlengths[f]
 #     return trk_fiber_out
+
 
 cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] voxdim, int[:] dim, int tempts, int pt_adapt, double m_variance )nogil:
     """Compute the length of a streamline.

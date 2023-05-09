@@ -19,10 +19,8 @@ import nibabel
 import pickle
 import commit.models
 import commit.solvers
-import commit.bundle_o_graphy
 from commit.bundle_o_graphy cimport adapt_streamline, trk2dict_update
-from dicelib.tractogram cimport smooth_fib, simple_smooth
-
+from commit.bundle_o_graphy import smooth_fib
 import amico.scheme
 import amico.lut
 import pyximport
@@ -953,7 +951,7 @@ cdef class Evaluation :
             int* ptr_buff_size
             bool goodMove
             float [:] voxdim
-            int [:] dim, lengths, lengths_out
+            int [:] dim, lengths_out
             int *len_ptr, *len_ptr_out
             size_t it, i
             short [:] htable
@@ -1217,17 +1215,15 @@ cdef class Evaluation :
                 if not goodMove:
                     print("not moved")
                     input_set_splines[pick_fib] = Backup_fib
-                lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[pick_fib])] ).astype(np.int32) )
-                lengths_out = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[pick_fib])] ).astype(np.int32) )
-                len_ptr = &lengths[0]
-                len_ptr_out = &lengths_out[0]
+                lengths =  [len(input_set_splines[pick_fib])]
                 n_count = 1
                 # sigma = sigma_arr[pick_fib]
                 sigma = 0
                 index_list = [pick_fib]
-                fib_list = np.array(input_set_splines[pick_fib])
-                smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
-                fib_list = smooth_fib(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+                fib_list = input_set_splines[pick_fib]
+                fib_list, lengths_out = smooth_fib(fib_list, lengths, n_count)
+                lengths_out = np.ascontiguousarray( lengths_out.astype(np.int32) )
+                len_ptr_out = &lengths_out[0]
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
                 # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
@@ -1262,16 +1258,14 @@ cdef class Evaluation :
                 except KeyError as e:
                     print(e)
 
-                lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in connections_dict[pick_conn]] ).astype(np.int32) )
-                lengths_out = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in connections_dict[pick_conn]] ).astype(np.int32) )
-                len_ptr = &lengths[0]
-                len_ptr_out = &lengths_out[0]
+                lengths = [len(input_set_splines[f]) for f in connections_dict[pick_conn]]
                 n_count = len(connections_dict[pick_conn])
                 sigma = np.mean(sigma_arr[connections_dict[pick_conn]])
                 index_list = connections_dict[pick_conn]
-                fib_list = np.vstack([input_set_splines[f] for f in index_list])
-                smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
-                fib_list = smooth_fib(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+                fib_list = [input_set_splines[f] for f in index_list]
+                fib_list, lengths_out = smooth_fib(fib_list, lengths, n_count)
+                lengths_out = np.ascontiguousarray( lengths_out.astype(np.int32) )
+                len_ptr_out = &lengths_out[0]
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
                 # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
@@ -1328,15 +1322,13 @@ cdef class Evaluation :
                     Blur_sigma = round(np.random.normal(loc=mean_sigma, scale=b_variance),2)
                 sigma_arr[connections_dict[pick_conn]] = Blur_sigma
                 sigma = Blur_sigma
-                lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in connections_dict[pick_conn]] ).astype(np.int32) )
-                lengths_out = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in connections_dict[pick_conn]] ).astype(np.int32) )
-                len_ptr = &lengths[0]
-                len_ptr_out = &lengths_out[0]
+                lengths = [len(input_set_splines[f]) for f in connections_dict[pick_conn]]
                 n_count = len(connections_dict[pick_conn])
                 index_list = connections_dict[pick_conn]
                 fib_list = np.vstack([input_set_splines[f] for f in index_list])
-                smoothed = np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
-                fib_list = smooth_fib(fib_list, len_ptr, n_count, smoothed, len_ptr_out)
+                fib_list, lengths_out = smooth_fib(fib_list, lengths, n_count)
+                lengths_out = np.ascontiguousarray( lengths_out.astype(np.int32) )
+                len_ptr_out = &lengths_out[0]
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
                 # upd_idx = list(set([item for sublist in upd_idx for item in sublist]))
@@ -1410,10 +1402,9 @@ cdef class Evaluation :
         fib_idx_save = [*connections_dict.values()]
         fib_idx_save = [i for g in fib_idx_save for i in g]
         lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in fib_idx_save] ).astype(np.int32) )
-        len_ptr = &lengths[0]
         n_count = len(fib_idx_save)
         fib_list = np.vstack([input_set_splines[f] for f in fib_idx_save])
-        fib_save = simple_smooth(fib_list, len_ptr, n_count)
+        fib_save, _ = smooth_fib(fib_list, lengths, n_count)
 
         save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
         nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
