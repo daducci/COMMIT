@@ -12,6 +12,8 @@ from dipy.segment.clustering import QuickBundlesX
 from dipy.segment.metric import AveragePointwiseEuclideanMetric
 from dipy.segment.featurespeed import ResampleFeature
 from dipy.tracking.streamline import set_number_of_points
+
+import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
 from os import makedirs, remove, system, listdir
 import time
@@ -56,87 +58,12 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
         tdi[ v[i] ] += l[i]
     return tdi
 
-def get_streamlines_close_to_centroids( clusters, streamlines, cluster_pts ):
-    ''' Returns the streamlines from the input tractogram which are
-        closer to the centroids of the input clusters. Streamlines are resampled
-        to cluster_pts before processing.
-    '''
-    sample_streamlines = set_number_of_points( streamlines, cluster_pts )
-    centroids_out = []
 
-    for cluster in clusters:
-        minDis      = 1e10
-        minDis_idx  = -1 
-        centroid_fw = cluster.centroid
-        centroid_bw = cluster.centroid[::-1] 
-        for i in cluster.indices:  
-            d1 = np.linalg.norm( centroid_fw - sample_streamlines[i] )
-            d2 = np.linalg.norm( centroid_bw - sample_streamlines[i] )
-            if d1>d2:
-                dm = d2
-            else:
-                dm = d1
-            
-            if dm < minDis:
-                minDis = dm 
-                minDis_idx = i
-        centroids_out.append( streamlines[minDis_idx] )
-
-    return centroids_out
-
-def tractogram_cluster( filename_in, filename_out, filename_reference, thresholds, n_pts=20, centroid_type='closer',
-                        random=False, verbose=False, smooth=False, get_size=False ):
-    """ Cluster streamlines in a tractogram.
-    """
-    if verbose :
-        print( f'-> Clustering "{filename_in}":' )
-
-    tractogram = load_tractogram( filename_in, reference=filename_reference, bbox_valid_check=False )
-
-    if len(tractogram.streamlines)==0:
-        print( 'NO streamlines found' )
-        return False    
-
-    if verbose :
-        print( f'- {len(tractogram.streamlines)} streamlines found' )
-
-    metric   = AveragePointwiseEuclideanMetric( ResampleFeature( nb_points=n_pts ) )
-
-    if verbose :
-        print( '- Running QuickBundlesX...' )
-    if random == False :
-        clusters = QuickBundlesX( thresholds, metric ).cluster( tractogram.streamlines )
-    else:
-        rng = np.random.RandomState()
-        ordering = np.arange(len(tractogram.streamlines))
-        rng.shuffle(ordering)
-        clusters = QuickBundlesX( thresholds, metric ).cluster( tractogram.streamlines, ordering=ordering )
-    if verbose :
-        print( f'  * {len(clusters.leaves)} clusters in lowest level'  )
-
-
-    if centroid_type=='original' :
-        if verbose :
-            print( '- Keep the centroids, without replacing them with closest streamline in input tractogram' )
-        centroids = [cluster.centroid for cluster in clusters.leaves]
-    elif centroid_type=='closer':
-        if verbose :
-            print( '- Replace centroids with closest streamline in input tractogram' )
-        centroids = get_streamlines_close_to_centroids( clusters.leaves, tractogram.streamlines, n_pts )
-
-    else :
-        print( 'value of option centroid_type NOT valid!' )
-        return False
-
-    tractogram_new = sft.from_sft( centroids, tractogram )
-    save_tractogram( tractogram_new, filename_out, bbox_valid_check=False )
-    return filename_out
-
-cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_peaks=None, filename_mask=None, do_intersect=True,
-    fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
-    vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
-    blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
-    TCK_ref_image=None, ndirs=500, nthreads=None
+cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_peaks=None, filename_mask=None,
+            filename_atlas=None, do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
+            vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
+            blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
+            TCK_ref_image=None, ndirs=500, nthreads=None
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -209,9 +136,9 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     blur_apply_to: array of bool
         For each input streamline, decide whether blur is applied or not to it (default : None, meaning apply to all).
 
-    blur_clust_thr: list of float
-        Clustering thresholds used to remove redundant streamlines from the input tractogram
-     
+    blur_clust_thr: float
+        Clustering threshold used to remove redundant streamlines from the input tractogram
+
     ndirs : int
         Number of orientations on the sphere used to discretize the orientation of each
         each segment in a streamline (default : 500).
@@ -354,14 +281,6 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         blur_clust_thr = np.array( [blur_clust_thr] )
 
     if blur_clust_thr[0]> 0:
-        if len(blur_clust_thr)>1 :
-            file_concat = ""
-            for r in blur_clust_thr:
-                file_concat += f"_{r}"
-            filename_out = join(dirname(filename_tractogram), f'{filename_tractogram[:-4]}_clustered_thr' + file_concat + '.tck' )
-        else :
-            filename_out = join(dirname(filename_tractogram), f'{filename_tractogram[:-4]}_clustered_thr_{blur_clust_thr[0]}.tck' )
-
         LOG( '\n-> Running tractogram clustering:' )
         print( f'\t- Input tractogram "{filename_tractogram}"' )
         print( f'\t- Clustering threshold = {blur_clust_thr}' )
@@ -379,12 +298,21 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
                 filename_reference = filename_mask
             else:
                 filename_reference = TCK_ref_image
+
+        filename_out = join(path_out,f'{filename_tractogram}_clustered_thr_{blur_clust_thr}.tck')
         if isfile(filename_out):
             print( f'\t- Overwriting tractogram "{filename_out}"' )
         else:
             print( f'\t- Output tractogram "{filename_out}"' )
-        filename_tractogram = tractogram_cluster( filename_tractogram, filename_out, filename_reference, blur_clust_thr)
+        if filename_atlas:
+            os.system(f"dicelib_tractogram_cluster {filename_tractogram} --reference {filename_reference}"+
+            f"--threshold {blur_clust_thr} --out {path_out} --atlas {filename_atlas}"+
+            f"--nthreads {nthreads}")
+        else:
+            os.system(f"dicelib_tractogram_cluster {filename_tractogram} --reference {filename_reference}"+
+            f"--threshold {blur_clust_thr} --out {path_out} --nthreads {nthreads}")
 
+        filename_tractogram = filename_out
 
 
     # Load data from files
