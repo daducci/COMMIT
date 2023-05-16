@@ -299,20 +299,21 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
             else:
                 filename_reference = TCK_ref_image
 
-        filename_out = join(path_out,f'{filename_tractogram}_clustered_thr_{blur_clust_thr[0]}.tck')
+        filename_out = join(path_out,f'{filename_tractogram[:-4]}_clustered_thr_{blur_clust_thr[0]}.tck')
         file_assignments = join(path_out,f'{filename_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt')
+        path_out_bundles = join(path_out,f'{filename_tractogram}_clustered_thr_{blur_clust_thr[0]}_bundles')
         print(f"file ass in commit: {file_assignments}")
         if isfile(filename_out):
             print( f'\t- Overwriting tractogram "{filename_out}"' )
         else:
             print( f'\t- Output tractogram "{filename_out}"' )
         if filename_atlas:
-            os.system(f"dice_tractogram_cluster.py {filename_tractogram} --reference {filename_reference} "+
-            f"--clust_threshold {blur_clust_thr[0]} --out {path_out} --atlas {filename_atlas} "+
-            f"--n_threads {nthreads} --save_assignments {file_assignments}")
+            os.system(f"dice_tractogram_cluster.py {filename_tractogram} --reference {filename_atlas} "+
+            f"--clust_threshold {blur_clust_thr[0]} --out {path_out_bundles} --atlas {filename_atlas} "+
+            f"--split --n_threads {nthreads} --save_assignments {file_assignments} -f")
         else:
-            os.system(f"dice_tractogram_cluster.py {filename_tractogram} --reference {filename_reference} "+
-            f"--clust_threshold {blur_clust_thr[0]} --out {path_out} --n_threads {nthreads}")
+            os.system(f"dice_tractogram_cluster.py {filename_tractogram} --reference {filename_atlas} "+
+            f"--split --clust_threshold {blur_clust_thr[0]} --out {path_out_bundles} --n_threads {nthreads} -f")
 
         filename_tractogram = filename_out
 
