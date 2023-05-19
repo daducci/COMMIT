@@ -76,7 +76,6 @@ cdef void assign_random_gaussian_pt(double[:] out, int assign_ix, double mov_var
     out[assign_ix + 2] = stdDev * x3 * w
 
 
-
 cdef gaussian(int n, double mov_var):
     cdef int i
     cdef double[:] result = np.zeros(n, dtype='f8', order='C')
@@ -93,14 +92,29 @@ cdef inline int randint(int lower, int upper) nogil:
 
 
 cpdef smooth_fib(streamlines, lengths, int n_count):
+    cdef float [:,:] streamline_out =  np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
     trk_fiber_out = []
-    lengths_out = np.zeros(n_count, dtype=int)
+    lengths_out = np.zeros(n_count, dtype=np.int32)
+
     for f in range(n_count):
-        streamline, n =  smooth( streamlines[f], lengths[f], 1, 1 )
+        streamline, n = smooth( streamlines[f], lengths[f], 1, 1 )
         lengths_out[f] = n
         trk_fiber_out.append( streamline )
     streamlines_out = np.vstack([s for s in trk_fiber_out])
+    lengths_out = np.ascontiguousarray( lengths_out).astype(np.int32)
     return streamlines_out, lengths_out
+
+cpdef smooth_final(streamlines, lengths, int n_count):
+    cdef float [:,:] streamline_out =  np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
+    trk_fiber_out = []
+    lengths_out = np.zeros(n_count, dtype=np.int32)
+
+    for f in range(n_count):
+        streamline, n = smooth( streamlines[f], lengths[f], 1, 1 )
+        lengths_out[f] = n
+        trk_fiber_out.append( streamline )
+
+    return trk_fiber_out
 
 
 # cdef smooth_tractogram(float [:,:] streamlines, int* ptrlengths, int n_count):
@@ -108,7 +122,7 @@ cpdef smooth_fib(streamlines, lengths, int n_count):
 #     cdef float* ptr_npaFiberO = &npaFiberO[0,0]
 
 #     cdef float* ptr_start = &streamlines[0,0]
-    
+
 #     trk_fiber_out = []
 #     for f in xrange(n_count):
 #         n =  smooth( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
@@ -194,6 +208,7 @@ cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] vox
             if i<tempts-1:
                 goodMove = True
     return goodMove
+
 
 cdef trk2dict_update(lut, segm_dict, index_list, diff_seg, float [:,:] streamlines, int* ptrlengths, int* ptr_buff_size, double blur_core_extent, int Nx, int Ny, int Nz,
                     float Px, float Py, float Pz, int n_count,float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
@@ -288,7 +303,6 @@ cdef trk2dict_update(lut, segm_dict, index_list, diff_seg, float [:,:] streamlin
     ptr_buff_size[0] += diff_seg_temp
 
 
-
 def create_prop_dict():
     prop_Dict       =   {}
     prop_Dict["MV"] =   np.arange(0, 25, 1)
@@ -296,6 +310,7 @@ def create_prop_dict():
     prop_Dict["B"]  =   np.arange(50, 75, 1)
     prop_Dict["K"]  =   np.arange(75, 100, 1)
     return prop_Dict
+
 
 def compute_temp_schedule(opt_params):
     startTemp   = opt_params["startTemp"]
@@ -307,16 +322,19 @@ def compute_temp_schedule(opt_params):
     # SA_schedule = np.repeat(1, MAX_ITER)
     return SA_schedule
 
+
 def tractogram_2spline(input_tractogram):
     with Pool(28) as p:
         Sft_prop = list(tqdm.tqdm(p.imap(spline_repr, input_tractogram), total=len(input_tractogram)))
         return Sft_prop
+
 
 def spline_repr(Fb, smooth=0.3):
     # reduced = rdp(Fb, epsilon=smooth, algo="iter")
     # if len(reduced) < 6 or np.isnan(np.sum(reduced)):
     reduced = set_number_of_points(Fb, 6)
     return reduced
+
 
 def streamline2spline(input_set_streamlines, smth=0.3, parallel=False):
     if parallel:
@@ -325,22 +343,39 @@ def streamline2spline(input_set_streamlines, smth=0.3, parallel=False):
         input_set_spline = [spline_repr(Fb, smooth=smth) for Fb in tqdm.tqdm(input_set_streamlines)]
     return input_set_spline
 
-def compute_assignments(input_tractogram_filename, gm_filename):
-    try:
-        # os.system( f'tck2connectome -force -symmetric -assignment_radial_search 2 -out_assignments {input_tractogram_filename}_fibers_assignment.txt {input_tractogram_filename} {gm_filename} {input_tractogram_filename}_connectome.csv' )
-        os.system( f'dice_tractogram_cluster.py {input_tractogram_filename} --save_assignments {input_tractogram_filename}_fibers_assignment.txt --atlas {gm_filename} --reference {gm_filename}' )
-        
-        asgn = np.loadtxt(f"{input_tractogram_filename}_fibers_assignment.txt", dtype =float).astype(int)
-        asgn = [tuple(sorted(c)) for c in asgn]
-        connections = list(conn for conn,_ in itertools.groupby(asgn))
-        connections_dict = dict((idx, value) for idx,value in enumerate(asgn))
 
-        reversed_dict = {}
-        for k, v in connections_dict.items():
-            reversed_dict[v] = reversed_dict.get(v, []) + [k]
-        # reversed_dict = defaultdict(list) #defaultdict(set) and replace append() with add() to remove duplicates
-        # for key, value in connections_dict.items():
-        #     reversed_dict[value].append(key)
-    except Exception as e:
-        print(e)
+def compute_assignments(dictionary):
+    # os.system( f'tck2connectome -force -symmetric -assignment_radial_search 2 -out_assignments {input_tractogram_filename}_fibers_assignment.txt {input_tractogram_filename} {gm_filename} {input_tractogram_filename}_connectome.csv' )
+    # os.system( f'dice_tractogram_cluster.py {input_tractogram_filename} --save_assignments {input_tractogram_filename}_fibers_assignment.txt --atlas {gm_filename} --reference {gm_filename}' )
+
+    file_assignments = os.path.join(dictionary['path_out'], f"{dictionary['filename_tractogram']}_clustered_thr_{float(dictionary['blur_clust_thr'][0])}_assignments.txt")
+    os.system(f"dice_tractogram_cluster.py {dictionary['filename_tractogram']} --reference {dictionary['atlas']} "+
+        f"--clust_threshold {dictionary['blur_clust_thr'][0]} --atlas {dictionary['atlas']} "+
+        f"--n_threads {dictionary['nthreads']} --save_assignments {file_assignments} -f -v")
+    
+    print(f"Assignments file: {file_assignments}")
+    asgn = np.loadtxt(file_assignments, dtype =float).astype(int)
+    asgn = [tuple(sorted(c)) for c in asgn]
+    connections = list(conn for conn,_ in itertools.groupby(asgn))
+    connections_dict = dict((idx, value) for idx,value in enumerate(asgn))
+
+    reversed_dict = {}
+    for k, v in connections_dict.items():
+        reversed_dict[v] = reversed_dict.get(v, []) + [k]
+    # reversed_dict = defaultdict(list) #defaultdict(set) and replace append() with add() to remove duplicates
+    # for key, value in connections_dict.items():
+    #     reversed_dict[value].append(key)
+
+    return reversed_dict
+
+
+def assignments_to_dict(assignments_file):
+    asgn = np.loadtxt(assignments_file, dtype =float).astype(int)
+    asgn = [tuple(sorted(c)) for c in asgn]
+    connections = list(conn for conn,_ in itertools.groupby(asgn))
+    connections_dict = dict((idx, value) for idx,value in enumerate(asgn))
+
+    reversed_dict = {}
+    for k, v in connections_dict.items():
+        reversed_dict[v] = reversed_dict.get(v, []) + [k]
     return reversed_dict

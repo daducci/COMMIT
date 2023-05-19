@@ -20,7 +20,7 @@ import pickle
 import commit.models
 import commit.solvers
 from commit.bundle_o_graphy cimport adapt_streamline, trk2dict_update
-from commit.bundle_o_graphy import smooth_fib
+from commit.bundle_o_graphy import smooth_fib, smooth_final
 import amico.scheme
 import amico.lut
 import pyximport
@@ -953,7 +953,8 @@ cdef class Evaluation :
             float [:] voxdim
             int [:] dim, lengths_out
             int *len_ptr, *len_ptr_out
-            size_t it, i
+            size_t i
+            int it
             short [:] htable
             short* ptrHashTable
             float [:, :, ::1] niiWM_img
@@ -1037,7 +1038,7 @@ cdef class Evaluation :
         ptrHashTable = &htable[0]
 
         wm_filename = self.DICTIONARY['dictionary_info']['filename_mask']
-        gm_filename = self.DICTIONARY['dictionary_info']['group_by']
+        gm_filename = self.DICTIONARY['dictionary_info']['atlas']
 
         # Priors values empirically set
         priors          = {}
@@ -1064,10 +1065,10 @@ cdef class Evaluation :
         interval = 50
 
 
-        if self.DICTIONARY['dictionary_info']['group_by']:
+        if self.DICTIONARY['dictionary_info']['atlas']:
             print("Retrieve connections")
-            # temp_d = commit.bundle_o_graphy.compute_assignments(trk_file, gm_filename)
-            connections_dict = commit.bundle_o_graphy.compute_assignments(trk_file, gm_filename)
+            connections_dict = commit.bundle_o_graphy.compute_assignments(self.DICTIONARY['dictionary_info'])
+            # connections_dict = commit.bundle_o_graphy.assignments_to_dict( self.DICTIONARY['dictionary_info']['assignments'])
             print(f"total connections: {len(connections_dict)}")
             # connections_dict = dict(list(temp_d.items())[len(temp_d)//2:])
             # support_dict = dict(list(temp_d.items())[:len(temp_d)//2])
@@ -1165,7 +1166,11 @@ cdef class Evaluation :
             PROP =  test_prop
         print("Starting adaptation")
         t1 = time.time()
-        for it in xrange(self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']):
+        it = 0
+        while True:
+        # for it in xrange(self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']):
+            if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] and accept_prop:
+                break
             print(f"iteration: {it}, prop:{PROP}", end='\r')
             # print(f"iteration: {it}, prop:{PROP}")
             # TRK_kept_array = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
@@ -1220,9 +1225,8 @@ cdef class Evaluation :
                 # sigma = sigma_arr[pick_fib]
                 sigma = 0
                 index_list = [pick_fib]
-                fib_list = input_set_splines[pick_fib]
-                fib_list, lengths_out = smooth_fib(fib_list, lengths, n_count)
-                lengths_out = np.ascontiguousarray( lengths_out.astype(np.int32) )
+                fib_list_in = [input_set_splines[pick_fib]]
+                fib_list, lengths_out = smooth_fib(fib_list_in, lengths, n_count)
                 len_ptr_out = &lengths_out[0]
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
@@ -1262,9 +1266,8 @@ cdef class Evaluation :
                 n_count = len(connections_dict[pick_conn])
                 sigma = np.mean(sigma_arr[connections_dict[pick_conn]])
                 index_list = connections_dict[pick_conn]
-                fib_list = [input_set_splines[f] for f in index_list]
-                fib_list, lengths_out = smooth_fib(fib_list, lengths, n_count)
-                lengths_out = np.ascontiguousarray( lengths_out.astype(np.int32) )
+                fib_list_in = [input_set_splines[f] for f in index_list]
+                fib_list, lengths_out = smooth_fib(fib_list_in, lengths, n_count)
                 len_ptr_out = &lengths_out[0]
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
@@ -1325,9 +1328,8 @@ cdef class Evaluation :
                 lengths = [len(input_set_splines[f]) for f in connections_dict[pick_conn]]
                 n_count = len(connections_dict[pick_conn])
                 index_list = connections_dict[pick_conn]
-                fib_list = np.vstack([input_set_splines[f] for f in index_list])
-                fib_list, lengths_out = smooth_fib(fib_list, lengths, n_count)
-                lengths_out = np.ascontiguousarray( lengths_out.astype(np.int32) )
+                fib_list_in = [input_set_splines[f] for f in index_list]
+                fib_list, lengths_out = smooth_fib(fib_list_in, lengths, n_count)
                 len_ptr_out = &lengths_out[0]
 
                 # upd_idx = [segm_idx_dict[k] for k in index_list]
@@ -1363,9 +1365,8 @@ cdef class Evaluation :
             prior_fibs_norm = sum(map(len, connections_dict.values()))/lambda_fib
 
             tot_error = fit_error + prior_bund_norm + prior_fibs_norm
-            # print(f"{Track_Delta_E[-1]}")
+
             cost = tot_error - Track_Delta_E[it]
-            # cost = tot_error - 1000
 
             accept_prop = self.compute_cost(SA_schedule, it, cost, PROP, priors, mean_sigma=mean_sigma, b_variance=b_variance, blur_sigma=Blur_sigma, removed_connections=len(support_dict), num_connections=len(connections_dict))
             # print(f"PROP: {PROP}, cost {cost}, num_bundles: {len(connections_dict)}, accepted? {accept_prop}")
@@ -1397,14 +1398,14 @@ cdef class Evaluation :
             if end_opt and accept_prop:
                 break
             # PROP = 80
-        print(f"time required for {it+1} iterations: {time.strftime('%H:%M:%S', time.gmtime(time.time() - t1))}")
-        print(f"self.x.shape {self.x.shape}")
+            it += 1
+
         fib_idx_save = [*connections_dict.values()]
         fib_idx_save = [i for g in fib_idx_save for i in g]
         lengths = np.ascontiguousarray( np.asanyarray( [len(input_set_splines[f]) for f in fib_idx_save] ).astype(np.int32) )
         n_count = len(fib_idx_save)
-        fib_list = np.vstack([input_set_splines[f] for f in fib_idx_save])
-        fib_save, _ = smooth_fib(fib_list, lengths, n_count)
+        fib_list_in = [input_set_splines[f] for f in fib_idx_save]
+        fib_save = smooth_final(fib_list_in, lengths, n_count)
 
         save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
         nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))

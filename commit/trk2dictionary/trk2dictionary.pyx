@@ -63,7 +63,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
             filename_atlas=None, do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
             blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
-            TCK_ref_image=None, ndirs=500, nthreads=None
+            TCK_ref_image=None, ndirs=500, adapt_tractogram=False, adapt_params=None, nthreads=None
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -280,6 +280,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     if np.isscalar(blur_clust_thr):
         blur_clust_thr = np.array( [blur_clust_thr] )
 
+    file_assignments = None
     if blur_clust_thr[0]> 0:
         LOG( '\n-> Running tractogram clustering:' )
         print( f'\t- Input tractogram "{filename_tractogram}"' )
@@ -302,7 +303,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         filename_out = join(path_out,f'{filename_tractogram[:-4]}_clustered_thr_{float(blur_clust_thr[0])}.tck')
         file_assignments = join(path_out,f'{filename_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt')
         path_out_bundles = join(path_out,f'{filename_tractogram}_clustered_thr_{blur_clust_thr[0]}_bundles')
-        print(f"file ass in commit: {file_assignments}")
+
         if isfile(filename_out):
             print( f'\t- Overwriting tractogram "{filename_out}"' )
         else:
@@ -486,7 +487,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     dictionary_info['adapt_params'] = adapt_params
     dictionary_info['voxdim'] = [Px, Py, Pz]
     dictionary_info['dim'] = [Nx, Ny, Nz]
-    dictionary_info['group_by'] = group_by
+    dictionary_info['atlas'] = filename_atlas
 
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
