@@ -1170,6 +1170,7 @@ cdef class Evaluation :
         while True:
         # for it in xrange(self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']):
             if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] and accept_prop:
+                it += 1
                 break
             print(f"iteration: {it}, prop:{PROP}", end='\r')
             # print(f"iteration: {it}, prop:{PROP}")
