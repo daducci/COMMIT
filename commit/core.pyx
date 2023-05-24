@@ -1169,7 +1169,7 @@ cdef class Evaluation :
         it = 0
         while True:
         # for it in xrange(self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']):
-            if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] and accept_prop:
+            if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] * 0.9 and accept_prop:
                 break
             print(f"iteration: {it}, prop:{PROP}", end='\r')
             # print(f"iteration: {it}, prop:{PROP}")
@@ -1491,26 +1491,23 @@ cdef class Evaluation :
 
 
     def compute_cost(self, SA_schedule, it, cost, PROP, priors,  mean_sigma=None, b_variance=None, blur_sigma=None, removed_connections=None, num_connections=None):
-        try:
-            if cost < 0:
-                return True
+        if cost < 0:
+            return True
+        else:
+            if 25 < PROP <= 50:
+                R = np.exp( -cost/SA_schedule[ it ] ) * (priors["kill_fib"]/priors["add_fib"]) * (removed_connections /(num_connections + 1) )
+            elif 50 < PROP <= 75:
+                R = np.exp( -cost/SA_schedule[ it ] ) * (priors["add_fib"]/priors["kill_fib"]) * (num_connections/(removed_connections + 1) )
+            elif 75 < PROP <= 100:
+                R = np.exp( -cost/SA_schedule[ it ] ) * (norm(mean_sigma, b_variance).pdf(mean_sigma) / norm(mean_sigma, b_variance).pdf(blur_sigma))
             else:
-                if 25 < PROP <= 50:
-                    R = np.exp( -cost/SA_schedule[ it ] ) * (priors["kill_fib"]/priors["add_fib"]) * (removed_connections /(num_connections + 1) )
-                elif 50 < PROP <= 75:
-                    R = np.exp( -cost/SA_schedule[ it ] ) * (priors["add_fib"]/priors["kill_fib"]) * (num_connections/(removed_connections + 1) )
-                elif 75 < PROP <= 100:
-                    R = np.exp( -cost/SA_schedule[ it ] ) * (norm(mean_sigma, b_variance).pdf(mean_sigma) / norm(mean_sigma, b_variance).pdf(blur_sigma))
-                else:
-                    R = np.exp( -cost/SA_schedule[ it ] )
+                R = np.exp( -cost/SA_schedule[ it ] )
 
-                if (min(1,R) > np.random.uniform(0, 1)):
-                    return True
+            if (min(1,R) > np.random.uniform(0, 1)):
+                return True
 
-                else:
-                    return False
-        except Exception as e:
-            print(f"iteration: {it}, cost: {cost}, R: {R}, num elements in SA_schedule: {len(SA_schedule)}")
+            else:
+                return False
 
 
     def get_coeffs( self, get_normalized=True ):
