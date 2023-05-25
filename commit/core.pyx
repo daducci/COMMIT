@@ -970,6 +970,8 @@ cdef class Evaluation :
             int Np
             float [:] toVOXMM
             float* ptrToVOXMM
+            float [:] toRASMM
+            float* ptrToRASMM
             double sigma
 
             unsigned char [::1] TRK_kept_array# = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
@@ -1024,6 +1026,7 @@ cdef class Evaluation :
         trk_file = self.DICTIONARY['dictionary_info']['filename_tractogram']
         input_set_streamlines =  nibabel.streamlines.load(trk_file)
         input_set_splines = commit.bundle_o_graphy.streamline2spline(input_set_streamlines.streamlines)
+
         buff_size = self.DICTIONARY['buffer_size']
         Nx = self.get_config('dim')[0]
         Ny = self.get_config('dim')[1]
@@ -1078,6 +1081,7 @@ cdef class Evaluation :
         else:
             connections_dict = None
 
+
         print("Loading mask")
         voxdim = np.ascontiguousarray( np.asanyarray( self.DICTIONARY['dictionary_info']['voxdim'] ).astype(np.float32) )
         dim = np.ascontiguousarray( np.asanyarray( self.DICTIONARY['dictionary_info']['dim'] ).astype(np.int32) )
@@ -1094,6 +1098,12 @@ cdef class Evaluation :
         M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
         ptrToVOXMM = &toVOXMM[0]
+
+        # back to RASMM
+        M = niiWM.affine.copy()
+        M[:3, :3] = M[:3, :3].dot( np.diag([Px,Py,Pz]) )
+        toRASMM = np.ravel(M).astype('<f4')
+        ptrToRASMM = &toRASMM[0]
 
         # if self.DICTIONARY['dictionary_info']['filename_ISO'] is not None :
         # niiISO = nibabel.load( self.DICTIONARY['dictionary_mask'] )
@@ -1216,7 +1226,7 @@ cdef class Evaluation :
                 # pick_fib = 20
                 Backup_fib = copy.deepcopy(input_set_splines[pick_fib])
                 # for i in tempts:
-                goodMove = adapt_streamline(input_set_splines[pick_fib], ptrMASK, voxdim, dim, tempts, move_all, m_variance)
+                goodMove = adapt_streamline(input_set_splines[pick_fib], ptrMASK, voxdim, dim, ptrToVOXMM, ptrToRASMM, tempts, move_all, m_variance)
                 if not goodMove:
                     print("not moved")
                     input_set_splines[pick_fib] = Backup_fib

@@ -133,7 +133,7 @@ cpdef smooth_final(streamlines, lengths, int n_count):
 #     return trk_fiber_out
 
 
-cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] voxdim, int[:] dim, int tempts, int pt_adapt, double m_variance )nogil:
+cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] voxdim, int[:] dim, float* ptrToVOXMM, float* ptrToRASMM, int tempts, int pt_adapt, double m_variance )nogil:
     """Compute the length of a streamline.
 
     Parameters
@@ -166,14 +166,22 @@ cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] vox
             random_displ = np.array(gaussian(3, m_variance))
             temp_pt = np.array([0.,0.,0.])
         for i in xrange(tempts):
-            ptr[0] = ( ptr[0] + random_displ[0] ) / voxdim[0]
-            ptr[1] = ( ptr[1] + random_displ[1] ) / voxdim[1]
-            ptr[2] = ( ptr[2] + random_displ[2] ) / voxdim[2]
-            vox_x = <int> ptr[0]
-            vox_y = <int> ptr[1]
-            vox_z = <int> ptr[2]
+            temp_pt[0] = ptr[0] * ptrToVOXMM[0] + ptr[1] * ptrToVOXMM[1] + ptr[2] * ptrToVOXMM[2]  + ptrToVOXMM[3]
+            temp_pt[1] = ptr[0] * ptrToVOXMM[4] + ptr[1] * ptrToVOXMM[5] + ptr[2] * ptrToVOXMM[6]  + ptrToVOXMM[7]
+            temp_pt[2] = ptr[0] * ptrToVOXMM[8] + ptr[1] * ptrToVOXMM[9] + ptr[2] * ptrToVOXMM[10] + ptrToVOXMM[11]
+
+            temp_pt[0] = ( ptr[0] + random_displ[0] )# / voxdim[0]
+            temp_pt[1] = ( ptr[1] + random_displ[1] )# / voxdim[1]
+            temp_pt[2] = ( ptr[2] + random_displ[2] )# / voxdim[2]
+
+            vox_x = <int> temp_pt[0]
+            vox_y = <int> temp_pt[1]
+            vox_z = <int> temp_pt[2]
             # length += sqrt( (ptr[3]-ptr[0])**2 + (ptr[4]-ptr[1])**2 + (ptr[5]-ptr[2])**2 )
             if ( ptrMASK[ vox_z + dim[2] * ( vox_y + dim[1] * vox_x ) ] != 0 ):
+                ptr[0] = temp_pt[0] * ptrToRASMM[0] + temp_pt[1] * ptrToRASMM[1] + temp_pt[2] * ptrToRASMM[2]  + ptrToRASMM[3]
+                ptr[1] = temp_pt[0] * ptrToRASMM[4] + temp_pt[1] * ptrToRASMM[5] + temp_pt[2] * ptrToRASMM[6]  + ptrToRASMM[7]
+                ptr[2] = temp_pt[0] * ptrToRASMM[8] + temp_pt[1] * ptrToRASMM[9] + temp_pt[2] * ptrToRASMM[10] + ptrToRASMM[11]
                 break
         if i<tempts-1:
             goodMove = True
@@ -185,25 +193,29 @@ cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] vox
                     temp_pt = np.array([0.,0.,0.])
                 # printf("%f - %f - %f\n", ptr[0], ptr[1],ptr[2])
                 # printf("displacement: [%f, %f, %f]\n", random_displ[0], random_displ[1], random_displ[2])
+                temp_pt[0] = ptr[0] * ptrToVOXMM[0] + ptr[1] * ptrToVOXMM[1] + ptr[2] * ptrToVOXMM[2]  + ptrToVOXMM[3]
+                temp_pt[1] = ptr[0] * ptrToVOXMM[4] + ptr[1] * ptrToVOXMM[5] + ptr[2] * ptrToVOXMM[6]  + ptrToVOXMM[7]
+                temp_pt[2] = ptr[0] * ptrToVOXMM[8] + ptr[1] * ptrToVOXMM[9] + ptr[2] * ptrToVOXMM[10] + ptrToVOXMM[11]
 
-                temp_pt[0] = ( ptr[0] + random_displ[0] ) / voxdim[0]
-                temp_pt[1] = ( ptr[1] + random_displ[1] ) / voxdim[1]
-                temp_pt[2] = ( ptr[2] + random_displ[2] ) / voxdim[2]
+                temp_pt[0] = ( ptr[0] + random_displ[0] )# / voxdim[0]
+                temp_pt[1] = ( ptr[1] + random_displ[1] )# / voxdim[1]
+                temp_pt[2] = ( ptr[2] + random_displ[2] )# / voxdim[2]
+
                 vox_x = <int> temp_pt[0]
                 vox_y = <int> temp_pt[1]
                 vox_z = <int> temp_pt[2]
-                # printf("%f - %f - %f\n", ptr[0], ptr[1],ptr[2])
 
                 # length += sqrt( (ptr[3]-ptr[0])**2 + (ptr[4]-ptr[1])**2 + (ptr[5]-ptr[2])**2 )
                 if ( ptrMASK[ vox_z + dim[2] * ( vox_y + dim[1] * vox_x ) ] != 0 ):
+                    temp_pt[0] = temp_pt[0] * ptrToRASMM[0] + temp_pt[1] * ptrToRASMM[1] + temp_pt[2] * ptrToRASMM[2]  + ptrToRASMM[3]
+                    temp_pt[1] = temp_pt[0] * ptrToRASMM[4] + temp_pt[1] * ptrToRASMM[5] + temp_pt[2] * ptrToRASMM[6]  + ptrToRASMM[7]
+                    temp_pt[2] = temp_pt[0] * ptrToRASMM[8] + temp_pt[1] * ptrToRASMM[9] + temp_pt[2] * ptrToRASMM[10] + ptrToRASMM[11]
+
                     ptr[0] = temp_pt[0]
                     ptr[1] = temp_pt[1]
                     ptr[2] = temp_pt[2]
                     break
-                else:
-                    temp_pt[0] = ptr[0]
-                    temp_pt[1] = ptr[1]
-                    temp_pt[2] = ptr[2]
+
             ptr += 3
             if i<tempts-1:
                 goodMove = True
@@ -342,6 +354,16 @@ def streamline2spline(input_set_streamlines, smth=0.3, parallel=False):
     else:
         input_set_spline = [spline_repr(Fb, smooth=smth) for Fb in tqdm.tqdm(input_set_streamlines)]
     return input_set_spline
+
+def streamline_to_voxmm(streamlines, affine):
+    streamlines_voxmm = []
+    for streamline in streamlines:
+        streamline_voxmm = []
+        for point in streamline:
+            point_voxmm = np.dot(affine, np.array([point[0], point[1], point[2], 1]))[:3]
+            streamline_voxmm.append(point_voxmm)
+        streamlines_voxmm.append(streamline_voxmm)
+    return streamlines_voxmm
 
 
 def compute_assignments(dictionary):
