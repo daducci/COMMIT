@@ -1,7 +1,6 @@
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-from dicelib import get_include
 
 # name of the package
 package_name = 'commit'
@@ -17,7 +16,6 @@ def get_extensions():
     core = Extension(name=f'{package_name}.core',
                      sources=[f'{package_name}/core.pyx'],
                      extra_compile_args=['-w'],
-                     include_dirs = get_include(),
                      language='c++')
     proximals = Extension(name=f'{package_name}.proximals',
                      sources=[f'{package_name}/proximals.pyx'],
