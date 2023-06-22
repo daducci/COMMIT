@@ -1422,7 +1422,8 @@ cdef class Evaluation :
         fib_list_in = [input_set_splines[f] for f in fib_idx_save]
         fib_save = smooth_final(fib_list_in, lengths, n_count)
 
-        save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=niiWM.affine)
+        # create tractogram object and save
+        save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=np.eye(4))
         nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
 
         return buff_size

@@ -323,7 +323,7 @@ def tractogram_2spline(input_tractogram):
 def spline_repr(Fb, smooth=0.3):
     # reduced = rdp(Fb, epsilon=smooth, algo="iter")
     # if len(reduced) < 6 or np.isnan(np.sum(reduced)):
-    reduced = set_number_of_points(Fb, 6)
+    reduced = set_number_of_points(Fb, 7)
     return reduced
 
 
