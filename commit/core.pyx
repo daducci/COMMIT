@@ -971,7 +971,6 @@ cdef class Evaluation :
             float [:] toVOXMM
             float* ptrToVOXMM
             float [:] toRASMM
-            float* ptrToRASMM
             double sigma
 
             unsigned char [::1] TRK_kept_array# = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
@@ -995,6 +994,12 @@ cdef class Evaluation :
             float* pDict_Tot_segm_len
             unsigned int*  pDict_EC_v
             unsigned short* pDict_EC_o
+            float [:,::1] to_RASMM
+            float [:,::1] to_VOXMM
+            float [:] abc_to_RASMM
+            float [:] abc_to_VOXMM
+            float [:,::1] inverse
+            float [:,::1] M_c
 
 
         self.DICTIONARY['TRK']['kept'] = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
@@ -1095,15 +1100,15 @@ cdef class Evaluation :
 
         # if extension == ".tck":
         M = niiWM.affine.copy()
+        M_c = np.ascontiguousarray(M, dtype=np.float32)
+        inverse = np.ascontiguousarray(np.linalg.inv(M), dtype=np.float32) #inverse of affine
+        to_VOXMM = inverse[:3, :3]
+        abc_to_VOXMM = inverse[:3, 3]
+        to_RASMM = M_c[:3, :3]
+        abc_to_RASMM = M_c[:3, 3]
         M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
         ptrToVOXMM = &toVOXMM[0]
-
-        # back to RASMM
-        M = niiWM.affine.copy()
-        M[:3, :3] = M[:3, :3].dot( np.diag([Px,Py,Pz]) )
-        toRASMM = np.ravel(M).astype('<f4')
-        ptrToRASMM = &toRASMM[0]
 
         # if self.DICTIONARY['dictionary_info']['filename_ISO'] is not None :
         # niiISO = nibabel.load( self.DICTIONARY['dictionary_mask'] )
@@ -1226,7 +1231,7 @@ cdef class Evaluation :
                 # pick_fib = 20
                 Backup_fib = copy.deepcopy(input_set_splines[pick_fib])
                 # for i in tempts:
-                goodMove = adapt_streamline(input_set_splines[pick_fib], ptrMASK, voxdim, dim, ptrToVOXMM, ptrToRASMM, tempts, move_all, m_variance)
+                goodMove = adapt_streamline(input_set_splines[pick_fib], to_RASMM, abc_to_RASMM, to_VOXMM, abc_to_VOXMM, tempts, move_all, m_variance, niiWM_img)
                 if not goodMove:
                     print("not moved")
                     input_set_splines[pick_fib] = Backup_fib

@@ -8,6 +8,7 @@ import numpy as np
 cimport numpy as np
 from collections import defaultdict
 from libc.math cimport sqrt, log
+from libc.math cimport round as cround
 from dipy.tracking.streamline import set_number_of_points
 from dicelib.streamline import smooth
 
@@ -104,6 +105,7 @@ cpdef smooth_fib(streamlines, lengths, int n_count):
     lengths_out = np.ascontiguousarray( lengths_out).astype(np.int32)
     return streamlines_out, lengths_out
 
+
 cpdef smooth_final(streamlines, lengths, int n_count):
     cdef float [:,:] streamline_out =  np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
     trk_fiber_out = []
@@ -117,23 +119,21 @@ cpdef smooth_final(streamlines, lengths, int n_count):
     return trk_fiber_out
 
 
-# cdef smooth_tractogram(float [:,:] streamlines, int* ptrlengths, int n_count):
-#     cdef float [:, ::1] npaFiberO = np.ascontiguousarray( np.zeros( (3*10000,1) ).astype(np.float32) )
-#     cdef float* ptr_npaFiberO = &npaFiberO[0,0]
 
-#     cdef float* ptr_start = &streamlines[0,0]
+cdef float [:] apply_affine(float [:] pt, float [:,::1] M,
+                                float [:] abc, float [:] pt_aff) nogil:
 
-#     trk_fiber_out = []
-#     for f in xrange(n_count):
-#         n =  smooth( ptr_start, ptrlengths[f], ptr_npaFiberO, 1, 1 )
-#         if n != 0 :
-#             streamline = np.reshape( npaFiberO[:3*n].copy(), (n,3) )
-#             trk_fiber_out.append( streamline )
-#         ptr_start+= 3*ptrlengths[f]
-#     return trk_fiber_out
+    pt_aff[0] = ((pt[0]*M[0,0] + pt[1]*M[1,0] + pt[2]*M[2,0]) + abc[0])
+    pt_aff[1] = ((pt[0]*M[0,1] + pt[1]*M[1,1] + pt[2]*M[2,1]) + abc[1])
+    pt_aff[2] = ((pt[0]*M[0,2] + pt[1]*M[1,2] + pt[2]*M[2,2]) + abc[2])
+
+    return pt_aff
 
 
-cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] voxdim, int[:] dim, float* ptrToVOXMM, float* ptrToRASMM, int tempts, int pt_adapt, double m_variance )nogil:
+
+cdef bool adapt_streamline( float [:,:] streamline, float [:,::1] to_RASMM, float [:] abc_to_RASMM,
+                            float [:,::1] to_VOXMM, float [:] abc_to_VOXMM, int tempts, int pt_adapt,
+                            double m_variance, float [:, :, ::1] niiWM_img):
     """Compute the length of a streamline.
 
     Parameters
@@ -151,72 +151,51 @@ cdef bool adapt_streamline( float [:,:] streamline, float* ptrMASK, float[:] vox
 
     cdef:
         int n = streamline.shape[0]
-        int i, vox_x, vox_y, vox_z
+        int i,j, vox_x, vox_y, vox_z
         double [:] random_displ
-        float* ptr = &streamline[0,0]
-        float* ptr_end = ptr+n*3-3
         bool goodMove = False
         float length = 0.0
         int choose_pt = randint(0,n)
-        double [:] temp_pt
+        float [:] temp_pt = np.zeros(3, dtype='f4', order='C')
+        float [:] rand_pt = np.zeros(3, dtype='f4', order='C')
 
     if pt_adapt==0:
-        ptr = ptr + choose_pt*3-3
-        with gil:
-            random_displ = np.array(gaussian(3, m_variance))
-            temp_pt = np.array([0.,0.,0.])
+        rand_pt = streamline[choose_pt,:]
+        random_displ = np.array(gaussian(3, m_variance))
         for i in xrange(tempts):
-            temp_pt[0] = ptr[0] * ptrToVOXMM[0] + ptr[1] * ptrToVOXMM[1] + ptr[2] * ptrToVOXMM[2]  + ptrToVOXMM[3]
-            temp_pt[1] = ptr[0] * ptrToVOXMM[4] + ptr[1] * ptrToVOXMM[5] + ptr[2] * ptrToVOXMM[6]  + ptrToVOXMM[7]
-            temp_pt[2] = ptr[0] * ptrToVOXMM[8] + ptr[1] * ptrToVOXMM[9] + ptr[2] * ptrToVOXMM[10] + ptrToVOXMM[11]
+            temp_pt[:] = apply_affine(rand_pt, to_VOXMM, abc_to_VOXMM, temp_pt)
+            temp_pt[0] += random_displ[0]
+            temp_pt[1] += random_displ[1]
+            temp_pt[2] += random_displ[2]
 
-            temp_pt[0] = ( ptr[0] + random_displ[0] )# / voxdim[0]
-            temp_pt[1] = ( ptr[1] + random_displ[1] )# / voxdim[1]
-            temp_pt[2] = ( ptr[2] + random_displ[2] )# / voxdim[2]
+            vox_x = <int> cround(temp_pt[0])
+            vox_y = <int> cround(temp_pt[1])
+            vox_z = <int> cround(temp_pt[2])
 
-            vox_x = <int> temp_pt[0]
-            vox_y = <int> temp_pt[1]
-            vox_z = <int> temp_pt[2]
-            # length += sqrt( (ptr[3]-ptr[0])**2 + (ptr[4]-ptr[1])**2 + (ptr[5]-ptr[2])**2 )
-            if ( ptrMASK[ vox_z + dim[2] * ( vox_y + dim[1] * vox_x ) ] != 0 ):
-                ptr[0] = temp_pt[0] * ptrToRASMM[0] + temp_pt[1] * ptrToRASMM[1] + temp_pt[2] * ptrToRASMM[2]  + ptrToRASMM[3]
-                ptr[1] = temp_pt[0] * ptrToRASMM[4] + temp_pt[1] * ptrToRASMM[5] + temp_pt[2] * ptrToRASMM[6]  + ptrToRASMM[7]
-                ptr[2] = temp_pt[0] * ptrToRASMM[8] + temp_pt[1] * ptrToRASMM[9] + temp_pt[2] * ptrToRASMM[10] + ptrToRASMM[11]
+            if ( niiWM_img[vox_x, vox_y, vox_z] != 0 ):
+                streamline[choose_pt,:] = apply_affine(temp_pt, to_RASMM, abc_to_RASMM, temp_pt)
                 break
         if i<tempts-1:
             goodMove = True
     else:
-        while ptr<ptr_end:
+        for j in xrange(n):
             for i in xrange(tempts):
-                with gil:
-                    random_displ = np.array(gaussian(3, m_variance))
-                    temp_pt = np.array([0.,0.,0.])
-                # printf("%f - %f - %f\n", ptr[0], ptr[1],ptr[2])
-                # printf("displacement: [%f, %f, %f]\n", random_displ[0], random_displ[1], random_displ[2])
-                temp_pt[0] = ptr[0] * ptrToVOXMM[0] + ptr[1] * ptrToVOXMM[1] + ptr[2] * ptrToVOXMM[2]  + ptrToVOXMM[3]
-                temp_pt[1] = ptr[0] * ptrToVOXMM[4] + ptr[1] * ptrToVOXMM[5] + ptr[2] * ptrToVOXMM[6]  + ptrToVOXMM[7]
-                temp_pt[2] = ptr[0] * ptrToVOXMM[8] + ptr[1] * ptrToVOXMM[9] + ptr[2] * ptrToVOXMM[10] + ptrToVOXMM[11]
+                random_displ = np.array(gaussian(3, m_variance))
+                temp_pt[:] = apply_affine(streamline[j,:], to_VOXMM, abc_to_VOXMM, temp_pt)
 
-                temp_pt[0] = ( ptr[0] + random_displ[0] )# / voxdim[0]
-                temp_pt[1] = ( ptr[1] + random_displ[1] )# / voxdim[1]
-                temp_pt[2] = ( ptr[2] + random_displ[2] )# / voxdim[2]
+                temp_pt[0] += random_displ[0]
+                temp_pt[1] += random_displ[1]
+                temp_pt[2] += random_displ[2]
 
-                vox_x = <int> temp_pt[0]
-                vox_y = <int> temp_pt[1]
-                vox_z = <int> temp_pt[2]
+                vox_x = <int>  cround(temp_pt[0])
+                vox_y = <int>  cround(temp_pt[1])
+                vox_z = <int>  cround(temp_pt[2])
 
                 # length += sqrt( (ptr[3]-ptr[0])**2 + (ptr[4]-ptr[1])**2 + (ptr[5]-ptr[2])**2 )
-                if ( ptrMASK[ vox_z + dim[2] * ( vox_y + dim[1] * vox_x ) ] != 0 ):
-                    temp_pt[0] = temp_pt[0] * ptrToRASMM[0] + temp_pt[1] * ptrToRASMM[1] + temp_pt[2] * ptrToRASMM[2]  + ptrToRASMM[3]
-                    temp_pt[1] = temp_pt[0] * ptrToRASMM[4] + temp_pt[1] * ptrToRASMM[5] + temp_pt[2] * ptrToRASMM[6]  + ptrToRASMM[7]
-                    temp_pt[2] = temp_pt[0] * ptrToRASMM[8] + temp_pt[1] * ptrToRASMM[9] + temp_pt[2] * ptrToRASMM[10] + ptrToRASMM[11]
-
-                    ptr[0] = temp_pt[0]
-                    ptr[1] = temp_pt[1]
-                    ptr[2] = temp_pt[2]
+                if ( niiWM_img[vox_x, vox_y, vox_z] != 0 ):
+                    streamline[j] = apply_affine(temp_pt, to_RASMM, abc_to_RASMM, temp_pt)
                     break
 
-            ptr += 3
             if i<tempts-1:
                 goodMove = True
     return goodMove
