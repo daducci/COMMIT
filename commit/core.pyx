@@ -1169,13 +1169,6 @@ cdef class Evaluation :
         move_all = 1
         end_opt =  False
 
-        print("Creating structure for optimization")
-        t1 = time.time()
-        temp_idx_dict = dict((idx, value) for idx,value in enumerate(self.DICTIONARY['IC']['fiber'][:-buff_size]))
-        segm_idx_dict = {}
-        for k, v in temp_idx_dict.items():
-            segm_idx_dict[v] = segm_idx_dict.get(v, []) + [k]
-        print(f"time required to create dict with {self.DICTIONARY['IC']['fiber'][:-buff_size].size} elements: {time.time() - t1}")
         PROP =  np.random.randint(0,100,1)
         if test_prop:
             PROP =  test_prop
@@ -1225,7 +1218,7 @@ cdef class Evaluation :
             mean_sigma = None
             Blur_sigma = None
 
-            if PROP <= 25:
+            if PROP <= -1:
                 pick_conn = random.choice(list(connections_dict.keys()))
                 pick_fib = np.random.choice( connections_dict[pick_conn] )
                 # pick_fib = 20
@@ -1255,7 +1248,7 @@ cdef class Evaluation :
                 # print(f"trk tot segm norm prima: {TRK_Tot_segm_len_array[pick_fib]}")
                 
 
-                trk2dict_update(self.DICTIONARY["lut"], segm_idx_dict, index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
+                trk2dict_update(self.DICTIONARY["lut"], index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
                                 Nx, Ny, Nz, Px, Py, Pz, n_count, fiber_shiftX, fiber_shiftY, fiber_shiftZ,
                                 min_seg_len, min_fiber_len, max_fiber_len, ptrPEAKS, ptrPeaksAffine, flip_peaks, Np, vf_THR,
                                 ptrMASK, ptrISO, ptrTDI, ptrToVOXMM, ndirs, ptrHashTable,
@@ -1269,7 +1262,7 @@ cdef class Evaluation :
                 # test = nibabel.streamlines.tractogram.Tractogram(input_set_splines,  affine_to_rasmm=niiWM.affine)
                 # nibabel.streamlines.save(test, 'test_movement.tck')
 
-            if  25 < PROP <= 50:
+            if  0 <= PROP <= 33:
                 pick_conn = random.choice(list(support_dict.keys()))
                 connections_dict[pick_conn] = support_dict[pick_conn]
                 try:
@@ -1293,7 +1286,7 @@ cdef class Evaluation :
 
                 diff_seg = len(upd_idx)
 
-                trk2dict_update(self.DICTIONARY["lut"], segm_idx_dict, index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
+                trk2dict_update(self.DICTIONARY["lut"], index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
                                 Nx, Ny, Nz, Px, Py, Pz, n_count, fiber_shiftX, fiber_shiftY, fiber_shiftZ,
                                 min_seg_len, min_fiber_len, max_fiber_len, ptrPEAKS, ptrPeaksAffine, flip_peaks, Np, vf_THR,
                                 ptrMASK, ptrISO, ptrTDI, ptrToVOXMM, ndirs, ptrHashTable,
@@ -1303,7 +1296,7 @@ cdef class Evaluation :
                 # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
 
 
-            if  50 < PROP <= 75:
+            if  33 < PROP <= 67:
                 pick_conn = random.choice(list(connections_dict.keys()))
                 support_dict[pick_conn] = connections_dict[pick_conn]
                 # pick_fib = np.random.choice( support_dict[pick_conn] )
@@ -1331,7 +1324,7 @@ cdef class Evaluation :
                 # print(f"TRK norm size: {self.DICTIONARY['TRK']['norm'].size}, non zeros:{np.count_nonzero(self.DICTIONARY['TRK']['norm'])}")
 
 
-            if  75 < PROP <= 100:
+            if  67 < PROP <= 100:
                 pick_conn = random.choice(list(connections_dict.keys()))
                 mean_sigma = round(np.mean([sigma_arr[i] for i in connections_dict[pick_conn]]),2)
 
@@ -1355,7 +1348,7 @@ cdef class Evaluation :
 
                 diff_seg = len(upd_idx)
 
-                trk2dict_update(self.DICTIONARY["lut"], segm_idx_dict, index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
+                trk2dict_update(self.DICTIONARY["lut"], index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
                                 Nx, Ny, Nz, Px, Py, Pz, n_count, fiber_shiftX, fiber_shiftY, fiber_shiftZ,
                                 min_seg_len, min_fiber_len, max_fiber_len, ptrPEAKS, ptrPeaksAffine, flip_peaks, Np, vf_THR,
                                 ptrMASK, ptrISO, ptrTDI, ptrToVOXMM, ndirs, ptrHashTable,
