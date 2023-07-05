@@ -93,7 +93,7 @@ cdef inline int randint(int lower, int upper) nogil:
 
 
 cpdef smooth_fib(streamlines, lengths, int n_count):
-    cdef float [:,:] streamline_out =  np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
+    cdef float [:,:] streamline_out =  np.ascontiguousarray( np.zeros( (3*1000,n_count) ).astype(np.float32) )
     trk_fiber_out = []
     lengths_out = np.zeros(n_count, dtype=np.int32)
 
@@ -107,7 +107,7 @@ cpdef smooth_fib(streamlines, lengths, int n_count):
 
 
 cpdef smooth_final(streamlines, lengths, int n_count):
-    cdef float [:,:] streamline_out =  np.ascontiguousarray( np.zeros( (3*10000,n_count) ).astype(np.float32) )
+    cdef float [:,:] streamline_out =  np.ascontiguousarray( np.zeros( (3*1000,n_count) ).astype(np.float32) )
     trk_fiber_out = []
     lengths_out = np.zeros(n_count, dtype=np.int32)
 
