@@ -1394,7 +1394,7 @@ cdef class Evaluation :
 
             if len(support_dict) == 0:
                 PROP =  np.random.randint(0,100,1)
-                while PROP >33 and PROP <= 67:
+                while PROP <= 33:
                     PROP =  np.random.randint(0,100,1)
             else:
                 PROP =  np.random.randint(0,100,1)
