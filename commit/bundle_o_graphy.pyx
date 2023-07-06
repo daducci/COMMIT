@@ -350,9 +350,12 @@ def compute_assignments(dictionary):
     # os.system( f'dice_tractogram_cluster.py {input_tractogram_filename} --save_assignments {input_tractogram_filename}_fibers_assignment.txt --atlas {gm_filename} --reference {gm_filename}' )
 
     file_assignments = os.path.join(dictionary['path_out'], f"{dictionary['filename_tractogram']}_clustered_thr_{float(dictionary['blur_clust_thr'][0])}_assignments.txt")
-    os.system(f"dice_tractogram_cluster.py {dictionary['filename_tractogram']} --reference {dictionary['atlas']} "+
-        f"--clust_threshold {dictionary['blur_clust_thr'][0]} --atlas {dictionary['atlas']} "+
-        f"--n_threads {dictionary['nthreads']} --save_assignments {file_assignments} -f -v")
+    # os.system(f"dice_tractogram_cluster.py {dictionary['filename_tractogram']} --reference {dictionary['atlas']} "+
+    #     f"--clust_threshold {dictionary['blur_clust_thr'][0]} --atlas {dictionary['atlas']} "+
+    #     f"--n_threads {dictionary['nthreads']} --save_assignments {file_assignments} -f -v")
+
+    os.system(f"dice_tractogram_assing.py {dictionary['filename_tractogram']} {dictionary['atlas']} {dictionary['atlas']} " +
+        f"--conn_threshold {dictionary['blur_clust_thr'][0]} --save_assignments {file_assignments} -f -v")
     
     print(f"Assignments file: {file_assignments}")
     asgn = np.loadtxt(file_assignments, dtype =float).astype(int)
