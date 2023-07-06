@@ -311,7 +311,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         if filename_atlas:
             os.system(f"dice_tractogram_cluster.py {filename_tractogram} --reference {filename_atlas} "+
             f"--clust_threshold {blur_clust_thr[0]} -out {path_out_bundles} --atlas {filename_atlas} "+
-            f"--split --n_threads {nthreads} --save_assignments {file_assignments} -f")
+            f"--split --n_threads {nthreads} --save_assignments {file_assignments} -ro -f")
         else:
             os.system(f"dice_tractogram_cluster.py {filename_tractogram} --reference {filename_atlas} "+
             f"--split --clust_threshold {blur_clust_thr[0]} -out {path_out_bundles} --n_threads {nthreads} -f")
