@@ -714,7 +714,7 @@ cdef class Evaluation :
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self, build_dir=None, adapt=False, verbose=True ) :
+    def build_operator( self, build_dir=None, verbose=True ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
@@ -929,8 +929,8 @@ cdef class Evaluation :
         cdef int it
         if self.DICTIONARY['dictionary_info']['adapt']:
             LOG( '\n-> Running tractogram adaptation...' )
-            buff_size = self.run_adaptation(test_prop=prop, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
-            self.save_results(buff_size=buff_size)
+            buff_size, idx_adapted = self.run_adaptation(test_prop=prop, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+            self.save_results(buff_size=buff_size, idx_adapted=idx_adapted)
 
         else:
             LOG( '\n-> Fit model:' )
@@ -1361,7 +1361,7 @@ cdef class Evaluation :
             self.set_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False)
 
             # print(f"size matrix A before: {self.A.shape}")
-            self.build_operator(adapt=True, verbose=False)
+            self.build_operator(verbose=False)
             # print(f"size matrix A after: {self.A.shape}")
             # print(f"get y: {self.get_y().shape}")
             # print(f"A: {self.A.shape}")
@@ -1419,7 +1419,7 @@ cdef class Evaluation :
         save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=np.eye(4))
         nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
 
-        return buff_size
+        return buff_size, fib_idx_save
 
     def update_dictionary(self, upd_idx, num_vox, buffer_size=None):
 
@@ -1503,11 +1503,11 @@ cdef class Evaluation :
         if cost < 0:
             return True
         else:
-            if 25 < PROP <= 50:
+            if 0 <= PROP <= 33:
                 R = np.exp( -cost/SA_schedule[ it ] ) * (priors["kill_fib"]/priors["add_fib"]) * (removed_connections /(num_connections + 1) )
-            elif 50 < PROP <= 75:
+            elif 33 < PROP <= 67:
                 R = np.exp( -cost/SA_schedule[ it ] ) * (priors["add_fib"]/priors["kill_fib"]) * (num_connections/(removed_connections + 1) )
-            elif 75 < PROP <= 100:
+            elif 67 < PROP <= 100:
                 R = np.exp( -cost/SA_schedule[ it ] ) * (norm(mean_sigma, b_variance).pdf(mean_sigma) / norm(mean_sigma, b_variance).pdf(blur_sigma))
             else:
                 R = np.exp( -cost/SA_schedule[ it ] )
@@ -1559,7 +1559,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, buff_size=0 ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, buff_size=0, idx_adapted=None ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -1747,7 +1747,14 @@ cdef class Evaluation :
         if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+            if idx_adapted is None :
+                xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+            else:
+                xic[ idx_adapted ] *= self.DICTIONARY['TRK']['lenTot'][ idx_adapted ] / self.DICTIONARY['TRK']['len'][ idx_adapted ]
+                xic = xic[ idx_adapted ]
+        else:
+            if idx_adapted is not None:
+                xic = xic[ idx_adapted ]
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
