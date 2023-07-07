@@ -1389,7 +1389,7 @@ cdef class Evaluation :
                 buff_size = Backup_buffer
                 connections_dict = backup_connections_dict
                 support_dict = backup_support_dict
-                if 0 < PROP <= 25:
+                if PROP < -1:
                     input_set_splines[pick_fib] = Backup_fib
 
             if len(support_dict) == 0:
