@@ -244,6 +244,8 @@ int trk2dictionary(
     }
 
     PROGRESS->close();
+    totFibers.clear();
+
     printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
 
     threads.clear();
