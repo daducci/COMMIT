@@ -1179,6 +1179,8 @@ cdef class Evaluation :
         # for it in xrange(self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']):
             if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] * 0.9 and accept_prop:
                 break
+            elif it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']:
+                break
             print(f"iteration: {it}, prop:{PROP}", end='\r')
             # print(f"iteration: {it}, prop:{PROP}")
             # TRK_kept_array = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
