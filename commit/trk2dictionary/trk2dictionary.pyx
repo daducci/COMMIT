@@ -6,12 +6,7 @@ import numpy as np
 cimport numpy as np
 from libc.stdlib cimport malloc, free
 import nibabel
-from dipy.io.stateful_tractogram import StatefulTractogram as sft
-from dipy.io.streamline import load_tractogram, save_tractogram
-from dipy.segment.clustering import QuickBundlesX
-from dipy.segment.metric import AveragePointwiseEuclideanMetric
-from dipy.segment.featurespeed import ResampleFeature
-from dipy.tracking.streamline import set_number_of_points
+from dicelib.clustering import run_clustering
 
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
@@ -59,11 +54,11 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
     return tdi
 
 
-cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_peaks=None, filename_mask=None,
-            filename_atlas=None, do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
-            vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False],
-            blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0, blur_gauss_min=0.1, blur_apply_to=None,
-            TCK_ref_image=None, ndirs=500, nthreads=None
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None,
+            do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
+            vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
+            blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
+            blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, n_threads=None
     ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -143,7 +138,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         Number of orientations on the sphere used to discretize the orientation of each
         each segment in a streamline (default : 500).
 
-    nthreads: int
+    n_threads: int
         Number of threads. If nothing is specified, the value used is the number of CPUs available
     """
 
@@ -256,19 +251,19 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     if not exists( path_out ):
         makedirs( path_out )
 
-    if nthreads is None :
+    if n_threads is None :
         # Set to the number of CPUs in the system
         try :
             import multiprocessing
-            nthreads = multiprocessing.cpu_count()
+            n_threads = multiprocessing.cpu_count()
         except :
-            nthreads = 1
+            n_threads = 1
 
-    if nthreads < 1 or nthreads > 255 :
-        ERROR( 'Number of nthreads must be between 1 and 255' )
+    if n_threads < 1 or n_threads > 255 :
+        ERROR( 'Number of n_threads must be between 1 and 255' )
     
-    if nthreads > 1 :
-        print( f'\t- Using parallel computation with {nthreads} threads' )
+    if n_threads > 1 :
+        print( f'\t- Using parallel computation with {n_threads} threads' )
         path_temp = join(path_out, 'temp')
         if exists(path_temp):
             shutil.rmtree(path_temp)
@@ -289,8 +284,6 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         if filename_mask is None and TCK_ref_image is None:
             if extension == ".tck":
                 ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
-            elif extension == ".trk":
-                filename_reference = "same"
             else:
                 ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
         else:
@@ -307,13 +300,13 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
             print( f'\t- Overwriting tractogram "{filename_out}"' )
         else:
             print( f'\t- Output tractogram "{filename_out}"' )
-        if filename_atlas:
-            os.system(f"dice_tractogram_cluster.py {filename_tractogram} --reference {filename_atlas} "+
-            f"--clust_threshold {blur_clust_thr[0]} --out {path_out_bundles} --atlas {filename_atlas} "+
-            f"--split --n_threads {nthreads} --save_assignments {file_assignments} -f")
+        if blur_clust_groupby:
+            run_clustering(file_name_in=filename_tractogram, output_folder=path_out_bundles, atlas=blur_clust_groupby,
+                            reference=blur_clust_groupby, clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
+                            n_threads=n_threads, split=True, force=True) 
         else:
-            os.system(f"dice_tractogram_cluster.py {filename_tractogram} --reference {filename_atlas} "+
-            f"--split --clust_threshold {blur_clust_thr[0]} --out {path_out_bundles} --n_threads {nthreads} -f")
+            run_clustering(file_name_in=filename_tractogram, reference=filename_reference, clust_thr=blur_clust_thr[0],
+                            n_threads=n_threads, force=True)
 
         filename_tractogram = filename_out
 
@@ -417,9 +410,9 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     cdef float* ptrPEAKS
     cdef float [:, :, :, ::1] niiPEAKS_img
     cdef int Np
-    cdef double [:,:, :,::1] niiTDI_img = np.ascontiguousarray( np.zeros((nthreads,Nx,Ny,Nz),dtype=np.float64) )
-    cdef double** ptrTDI = <double**>malloc( nthreads * sizeof(double*) )
-    for i in range(nthreads):
+    cdef double [:,:, :,::1] niiTDI_img = np.ascontiguousarray( np.zeros((n_threads,Nx,Ny,Nz),dtype=np.float64) )
+    cdef double** ptrTDI = <double**>malloc( n_threads * sizeof(double*) )
+    for i in range(n_threads):
         ptrTDI[i] = &niiTDI_img[i,0,0,0]
 
     cdef double [:, ::1] peaksAffine
@@ -480,7 +473,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     dictionary_info['blur_sigma'] = blur_sigma
     dictionary_info['blur_apply_to'] = blur_apply_to
     dictionary_info['ndirs'] = ndirs
-    dictionary_info['nthreads'] = nthreads
+    dictionary_info['n_threads'] = n_threads
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
         pickle.dump(dictionary_info, dictionary_info_file, protocol=2)
 
@@ -490,14 +483,14 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_temp, 1 if do_intersect else 0, ptrPeaksAffine,
-        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, nthreads  );
+        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, n_threads  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
 
     # Concatenate files together
     cdef int discarded = 0
-    for j in range(nthreads-1):
+    for j in range(n_threads-1):
         path_IC_f = path_temp + f'/dictionary_IC_f_{j+1}.dict'
         kept = np.fromfile( path_temp + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
         IC_f = np.fromfile( path_temp + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
@@ -511,49 +504,49 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
 
     fileout = path_out + '/dictionary_TRK_kept.dict'
     dict_list = []
-    for j in range(nthreads):
+    for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_TRK_kept_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_norm.dict'
     dict_list = []
-    for j in range(nthreads):
+    for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_TRK_norm_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_len.dict'
     dict_list = []
-    for j in range(nthreads):
+    for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_TRK_len_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_TRK_lenTot.dict'
     dict_list = []
-    for j in range(nthreads):
+    for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_TRK_lenTot_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_f.dict'
     dict_list = []
-    for j in range(nthreads):
+    for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_IC_f_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_v.dict'
     dict_list = []
-    for j in range(nthreads):
+    for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_IC_v_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_o.dict'
     dict_list = []
-    for j in range(nthreads):
+    for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
     cat_function( dict_list, fileout )
 
     fileout = path_out + '/dictionary_IC_len.dict'
     dict_list = []
-    for j in range(nthreads):
+    for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
     cat_function( dict_list, fileout )
 
@@ -587,7 +580,7 @@ cpdef run( filename_tractogram=None, path_out=None, blur_clust_thr=0, filename_p
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    if nthreads > 1:
+    if n_threads > 1:
         shutil.rmtree(path_temp)
 
 
