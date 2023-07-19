@@ -7,7 +7,7 @@ cimport numpy as np
 from libc.stdlib cimport malloc, free
 import nibabel
 from dicelib.clustering import run_clustering
-
+from dicelib.tractogram import info as streamlines_count
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
 from os import makedirs, remove, system, listdir
@@ -276,7 +276,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         blur_clust_thr = np.array( [blur_clust_thr] )
 
     if blur_clust_thr[0]> 0:
-        LOG( '\n-> Running tractogram clustering:' )
+        LOG( '\n   * Running tractogram clustering:' )
         print( f'\t- Input tractogram "{filename_tractogram}"' )
         print( f'\t- Clustering threshold = {blur_clust_thr}' )
         
@@ -301,11 +301,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         else:
             print( f'\t- Output tractogram "{filename_out}"' )
         if blur_clust_groupby:
-            run_clustering(file_name_in=filename_tractogram, output_folder=path_out_bundles, atlas=blur_clust_groupby,
+            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_out_bundles, atlas=blur_clust_groupby,
                             reference=blur_clust_groupby, clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
                             n_threads=n_threads, split=True, force=True) 
         else:
-            run_clustering(file_name_in=filename_tractogram, reference=filename_reference, clust_thr=blur_clust_thr[0],
+            idx_centroids = run_clustering(file_name_in=filename_tractogram, reference=filename_reference, clust_thr=blur_clust_thr[0],
                             n_threads=n_threads, force=True)
 
         filename_tractogram = filename_out
@@ -454,6 +454,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # write dictionary information info file
     dictionary_info = {}
     dictionary_info['filename_tractogram'] = filename_tractogram
+    dictionary_info['tractogram_centr_idx'] = idx_centroids 
     dictionary_info['TCK_ref_image'] = TCK_ref_image
     dictionary_info['path_out'] = path_out
     dictionary_info['filename_peaks'] = filename_peaks

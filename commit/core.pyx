@@ -1116,7 +1116,12 @@ cdef class Evaluation :
         if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+            if len( dictionary_info["tractogram_centr_idx"] ) > 0 :
+                dictionary_info["tractogram_centr_idx"][dictionary_info["tractogram_centr_idx"]>0] *= xic[self.DICTIONARY['TRK']['kept']]
+                dictionary_info["tractogram_centr_idx"][dictionary_info["tractogram_centr_idx"]>0] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+                xic = dictionary_info["tractogram_centr_idx"]
+            else:
+                xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
