@@ -250,6 +250,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     print( f'\t- Output written to "{path_out}"' )
     if not exists( path_out ):
         makedirs( path_out )
+    
+    path_temp = join(path_out, 'temp')
+    print( f'\t- Temporary files written to "{path_temp}"' )
+    
+    if exists(path_temp):
+        shutil.rmtree(path_temp)
+    makedirs(path_temp)
 
     if n_threads is None :
         # Set to the number of CPUs in the system
@@ -264,13 +271,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     
     if n_threads > 1 :
         print( f'\t- Using parallel computation with {n_threads} threads' )
-        path_temp = join(path_out, 'temp')
-        if exists(path_temp):
-            shutil.rmtree(path_temp)
-        makedirs(path_temp)
-    else:
-        path_temp = path_out
-
 
     if np.isscalar(blur_clust_thr):
         blur_clust_thr = np.array( [blur_clust_thr] )
@@ -278,9 +278,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if blur_clust_thr[0]> 0:
         LOG( '\n   * Running tractogram clustering:' )
         print( f'\t- Input tractogram "{filename_tractogram}"' )
-        print( f'\t- Clustering threshold = {blur_clust_thr}' )
-        
+        print( f'\t- Clustering threshold = {blur_clust_thr[0]}' )
+        input_hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
+        input_n_count = int(input_hdr['count'])
+
         extension = splitext(filename_tractogram)[1]
+
         if filename_mask is None and TCK_ref_image is None:
             if extension == ".tck":
                 ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
@@ -291,23 +294,17 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                 filename_reference = filename_mask
             else:
                 filename_reference = TCK_ref_image
+        input_tractogram = os.path.basename(filename_tractogram)[:-4]
+        filename_out = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
+        file_assignments = join( path_temp, f'{input_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt' )
 
-        filename_out = join(path_out,f'{filename_tractogram[:-4]}_clustered_thr_{float(blur_clust_thr[0])}.tck')
-        file_assignments = join(path_out,f'{filename_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt')
-        path_out_bundles = join(path_out,f'{filename_tractogram}_clustered_thr_{blur_clust_thr[0]}_bundles')
-        print(f"file ass in commit: {file_assignments}")
-        if isfile(filename_out):
-            print( f'\t- Overwriting tractogram "{filename_out}"' )
-        else:
-            print( f'\t- Output tractogram "{filename_out}"' )
         if blur_clust_groupby:
-            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_out_bundles, atlas=blur_clust_groupby,
+            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
                             reference=blur_clust_groupby, clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
                             n_threads=n_threads, split=True, force=True) 
         else:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, reference=filename_reference, clust_thr=blur_clust_thr[0],
                             n_threads=n_threads, force=True)
-
         filename_tractogram = filename_out
 
 
@@ -326,6 +323,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
 
     hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
+        
 
     if extension == ".trk":
         print ( f'\t\t- geometry taken from "{filename_tractogram}"' )
@@ -366,7 +364,10 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     print( f'\t\t- {Nx} x {Ny} x {Nz}' )
     print( f'\t\t- {Px:.4f} x {Py:.4f} x {Pz:.4f}' )
-    print( f'\t\t- {n_count} streamlines' )
+    if blur_clust_thr[0]> 0:
+        print( f'\t\t- {input_n_count} streamlines' )
+    else:
+        print( f'\t\t- {n_count} streamlines' )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         ERROR( 'The max dim size is 2^16 voxels' )
 
@@ -454,6 +455,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # write dictionary information info file
     dictionary_info = {}
     dictionary_info['filename_tractogram'] = filename_tractogram
+    dictionary_info['n_count'] = input_n_count
     dictionary_info['tractogram_centr_idx'] = idx_centroids 
     dictionary_info['TCK_ref_image'] = TCK_ref_image
     dictionary_info['path_out'] = path_out
@@ -581,8 +583,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    if n_threads > 1:
-        shutil.rmtree(path_temp)
+    shutil.rmtree(path_temp)
 
 
     LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )

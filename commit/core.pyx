@@ -1117,9 +1117,12 @@ cdef class Evaluation :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             if len( dictionary_info["tractogram_centr_idx"] ) > 0 :
-                dictionary_info["tractogram_centr_idx"][dictionary_info["tractogram_centr_idx"]>0] *= xic[self.DICTIONARY['TRK']['kept']]
-                dictionary_info["tractogram_centr_idx"][dictionary_info["tractogram_centr_idx"]>0] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
-                xic = dictionary_info["tractogram_centr_idx"]
+                ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
+                unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
+                unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
+                unravel_weights[unravel_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+                xic = unravel_weights
+                
             else:
                 xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
