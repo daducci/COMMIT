@@ -1,22 +1,20 @@
 #!python
 # cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
 from __future__ import print_function
-import cython
 import numpy as np
 cimport numpy as np
 from libc.stdlib cimport malloc, free
 import nibabel
 from dicelib.clustering import run_clustering
-from dicelib.tractogram import info as streamlines_count
+
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
-from os import makedirs, remove, system, listdir
+from os import makedirs, remove
 import time
 import amico
 import pickle
 from amico.util import LOG, NOTE, WARNING, ERROR
 from pkg_resources import get_distribution
-import multiprocessing
 import shutil
 
 from libcpp cimport bool
@@ -275,6 +273,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if np.isscalar(blur_clust_thr):
         blur_clust_thr = np.array( [blur_clust_thr] )
 
+    input_n_count = 0
     if blur_clust_thr[0]> 0:
         LOG( '\n   * Running tractogram clustering:' )
         print( f'\t- Input tractogram "{filename_tractogram}"' )
@@ -301,11 +300,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if blur_clust_groupby:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
                             reference=blur_clust_groupby, clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
-                            n_threads=n_threads, split=True, force=True) 
+                            n_threads=n_threads, split=True, force=True, verbose=True) 
         else:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, reference=filename_reference, clust_thr=blur_clust_thr[0],
                             n_threads=n_threads, force=True)
         filename_tractogram = filename_out
+
 
 
     # Load data from files
