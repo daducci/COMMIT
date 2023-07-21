@@ -273,7 +273,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if np.isscalar(blur_clust_thr):
         blur_clust_thr = np.array( [blur_clust_thr] )
 
-    input_n_count = 0
     if blur_clust_thr[0]> 0:
         LOG( '\n   * Running tractogram clustering:' )
         print( f'\t- Input tractogram "{filename_tractogram}"' )
@@ -455,8 +454,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # write dictionary information info file
     dictionary_info = {}
     dictionary_info['filename_tractogram'] = filename_tractogram
-    dictionary_info['n_count'] = input_n_count
-    dictionary_info['tractogram_centr_idx'] = idx_centroids 
+    if blur_clust_thr[0]> 0:
+        dictionary_info['n_count'] = input_n_count
+        dictionary_info['tractogram_centr_idx'] = idx_centroids 
     dictionary_info['TCK_ref_image'] = TCK_ref_image
     dictionary_info['path_out'] = path_out
     dictionary_info['filename_peaks'] = filename_peaks
