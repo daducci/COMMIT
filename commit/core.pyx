@@ -1116,7 +1116,7 @@ cdef class Evaluation :
         if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            if len( dictionary_info["tractogram_centr_idx"] ) > 0 :
+            if "tractogram_centr_idx" in dictionary_info.keys():
                 ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
                 unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
                 unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
