@@ -299,7 +299,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if blur_clust_groupby:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
                             reference=blur_clust_groupby, clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
-                            n_threads=n_threads, split=True, force=True, verbose=True) 
+                            n_threads=n_threads, split=True, force=True, verbose=False) 
         else:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, reference=filename_reference, clust_thr=blur_clust_thr[0],
                             n_threads=n_threads, force=True)
@@ -455,6 +455,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info = {}
     dictionary_info['filename_tractogram'] = filename_tractogram
     if blur_clust_thr[0]> 0:
+        idx_centroids = np.array(idx_centroids, dtype=np.uint32)
         dictionary_info['n_count'] = input_n_count
         dictionary_info['tractogram_centr_idx'] = idx_centroids 
     dictionary_info['TCK_ref_image'] = TCK_ref_image
