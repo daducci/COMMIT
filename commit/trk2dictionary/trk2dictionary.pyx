@@ -56,8 +56,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
-            blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, n_threads=None
-    ):
+            blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, n_threads=None,
+            keep_temp=False
+            ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
@@ -584,7 +585,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    shutil.rmtree(path_temp)
+    if not keep_temp:
+        shutil.rmtree(path_temp)
 
 
     LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )
