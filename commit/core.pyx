@@ -1116,14 +1116,19 @@ cdef class Evaluation :
         if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            if "tractogram_centr_idx" in dictionary_info.keys():
-                ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
-                unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
-                unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
+        if "tractogram_centr_idx" in dictionary_info.keys():
+            ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
+            unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
+            unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
+            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 unravel_weights[unravel_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                 xic = unravel_weights
-                
             else:
+                unravel_weights[unravel_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
+                xic = unravel_weights
+                
+        else:
+            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
