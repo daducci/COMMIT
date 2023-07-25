@@ -1120,11 +1120,14 @@ cdef class Evaluation :
             ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
             unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
             unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
+            temp_weights = unravel_weights[ordered_idx]
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
-                unravel_weights[unravel_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+                temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+                unravel_weights[ordered_idx] = temp_weights
                 xic = unravel_weights
             else:
-                unravel_weights[unravel_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
+                temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
+                unravel_weights[ordered_idx] = temp_weights
                 xic = unravel_weights
                 
         else:
