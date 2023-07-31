@@ -254,7 +254,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     print( f'\t- Temporary files written to "{path_temp}"' )
     
     if exists(path_temp):
-        shutil.rmtree(path_temp)
+        shutil.rmtree(path_temp, ignore_errors=True)
     makedirs(path_temp)
 
     if n_threads is None :
@@ -303,7 +303,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             path_streamline_idx = join( path_temp,"streamline_idx.npy")
             np.save( path_streamline_idx, temp_idx )
             idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
-                            reference=blur_clust_groupby, clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
+                            clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
                             temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose) 
         else:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, clust_thr=blur_clust_thr[0],
