@@ -57,8 +57,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
             blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, n_threads=None,
-            keep_temp=False
-            ):
+            keep_temp=False, verbose=False ):
+
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
     during the inversion of the linear system.
@@ -300,10 +300,10 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if blur_clust_groupby:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
                             clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
-                            n_threads=n_threads, force=True, verbose=False) 
+                            n_threads=n_threads, force=True, verbose=verbose) 
         else:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, clust_thr=blur_clust_thr[0],
-                            n_threads=n_threads, force=True)
+                            n_threads=n_threads, force=True, verbose=verbose)
         filename_tractogram = filename_out
 
 
