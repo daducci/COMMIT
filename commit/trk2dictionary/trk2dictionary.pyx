@@ -294,6 +294,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         input_tractogram = os.path.basename(filename_tractogram)[:-4]
         filename_out = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
         file_assignments = join( path_temp, f'{input_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt' )
+        verbose_lvl = 4 if verbose else 1
 
         if blur_clust_groupby:
             hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
@@ -302,10 +303,10 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             np.save( path_streamline_idx, temp_idx )
             idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
                             clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
-                            temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose) 
+                            temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose_lvl) 
         else:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, clust_thr=blur_clust_thr[0],
-                            n_threads=n_threads, force=True, verbose=verbose)
+                            n_threads=n_threads, force=True, verbose=verbose_lvl)
         filename_tractogram = filename_out
 
 
