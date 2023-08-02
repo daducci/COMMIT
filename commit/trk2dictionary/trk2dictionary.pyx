@@ -56,7 +56,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
-            blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, n_threads=None,
+            blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, n_threads=-1,
             keep_temp=False, verbose=False
             ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
@@ -139,6 +139,10 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     n_threads: int
         Number of threads. If nothing is specified, the value used is the number of CPUs available
+        in the system (default : -1).
+
+    keep_temp: boolean
+        If True, the temporary files are not deleted (default : False).
     """
 
     # check the value of ndirs
@@ -255,21 +259,19 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     
     if exists(path_temp):
         shutil.rmtree(path_temp, ignore_errors=True)
-    makedirs(path_temp)
+    makedirs(path_temp, exist_ok=True)
 
-    if n_threads is None :
+    if n_threads == 0 or n_threads > 255 :
+        ERROR( 'Number of n_threads must be between 1 and 255' )
+        
+    if n_threads == -1 :
         # Set to the number of CPUs in the system
         try :
-            import multiprocessing
-            n_threads = multiprocessing.cpu_count()
+            n_threads = os.cpu_count()
         except :
             n_threads = 1
 
-    if n_threads < 1 or n_threads > 255 :
-        ERROR( 'Number of n_threads must be between 1 and 255' )
-    
-    if n_threads > 1 :
-        print( f'\t- Using parallel computation with {n_threads} threads' )
+    print( f'\t- Using parallel computation with {n_threads} threads' )
 
     if np.isscalar(blur_clust_thr):
         blur_clust_thr = np.array( [blur_clust_thr] )
@@ -288,11 +290,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                 ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
             else:
                 ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
-        else:
-            if filename_mask is not None:
-                filename_reference = filename_mask
-            else:
-                filename_reference = TCK_ref_image
+
         input_tractogram = os.path.basename(filename_tractogram)[:-4]
         filename_out = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
         file_assignments = join( path_temp, f'{input_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt' )
@@ -307,7 +305,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                             temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose) 
         else:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, clust_thr=blur_clust_thr[0],
-                            n_threads=n_threads, force=True)
+                            n_threads=n_threads, force=True, verbose=verbose)
         filename_tractogram = filename_out
 
 
