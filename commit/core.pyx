@@ -396,6 +396,7 @@ cdef class Evaluation :
         if dictionary_info['ndirs'] != self.get_config('ndirs'):
             ERROR( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
         self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
+        self.DICTIONARY['n_threads'] = dictionary_info['n_threads']
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
@@ -527,12 +528,9 @@ cdef class Evaluation :
             Number of threads to use (default : number of CPUs in the system)
         """
         if n is None :
-            # Set to the number of CPUs in the system
-            try :
-                import multiprocessing
-                n = multiprocessing.cpu_count()
-            except :
-                n = 1
+            # Use the same number of threads used in trk2dictionary
+            n = self.DICTIONARY['n_threads']
+
 
         if n < 1 or n > 255 :
             ERROR( 'Number of threads must be between 1 and 255' )
