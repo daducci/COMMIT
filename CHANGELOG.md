@@ -2,13 +2,17 @@
 # Change Log
 All notable changes to COMMIT will be documented in this file.
 
-## [1.6.5] - 2023-02-18
+## [1.6.5] - 2023-08-03
 
 ### Changed
 - Build output goes into 'build'
+- Require `dmri-amico>=1.3.2,<2.0.0`
 
 ### Added
 - Parallel compilation
+
+### Fixed
+- Solve [#121](https://github.com/daducci/COMMIT/issues/121)
 
 ## [1.6.4] - 2023-02-14
 
