@@ -11,10 +11,13 @@
 - Switched to proprietary license (see `LICENSE` file)
 
 ### ✨Added
-- Added trk2dictionary.run() parameter `blur_clust_thr`
-- Implemented clustering in trk2dictionary
-- Added trk2dictionary.run() parallel computation
-- Added trk2dictionary.run() parameter `nthreads`
+- Added clustering in trk2dictionary.run()
+    * geometry-based clustering using `blur_clust_thr` parameter
+    * anatomical information streamlines clustering based on their endpoints using `blur_clust_groupby` parameter
+
+- Added trk2dictionary.run() parallel computation using `n_threads` parameter
+- Changed internal streamlines representation using `blur_core_extent` and `blur_gauss_extent` parameters
+- Added possibility to keep temporal files created by parallel trk2dictionary.run() and clustering using `keep_temp` parameter
 - Parallel compilation
 
 ### 🐛Fixed
