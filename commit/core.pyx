@@ -408,6 +408,7 @@ cdef class Evaluation :
             ERROR( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
         self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
         self.DICTIONARY['dictionary_info'] = dictionary_info
+        self.DICTIONARY['n_threads'] = dictionary_info['n_threads']
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
@@ -572,12 +573,9 @@ cdef class Evaluation :
         if self.DICTIONARY['dictionary_info']['adapt'] and buffer_size==0:
             buffer_size = self.DICTIONARY['buffer_size']
         if n is None :
-            # Set to the number of CPUs in the system
-            try :
-                import multiprocessing
-                n = multiprocessing.cpu_count()
-            except :
-                n = 1
+            # Use the same number of threads used in trk2dictionary
+            n = self.DICTIONARY['n_threads']
+
 
         if n < 1 or n > 255 :
             ERROR( 'Number of threads must be between 1 and 255' )
@@ -1749,14 +1747,23 @@ cdef class Evaluation :
         if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            if idx_adapted is None :
-                xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+        if "tractogram_centr_idx" in dictionary_info.keys():
+            ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
+            unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
+            unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
+            temp_weights = unravel_weights[ordered_idx]
+            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+                unravel_weights[ordered_idx] = temp_weights
+                xic = unravel_weights
             else:
-                xic[ idx_adapted ] *= self.DICTIONARY['TRK']['lenTot'][ idx_adapted ] / self.DICTIONARY['TRK']['len'][ idx_adapted ]
-                xic = xic[ idx_adapted ]
+                temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
+                unravel_weights[ordered_idx] = temp_weights
+                xic = unravel_weights
+                
         else:
-            if idx_adapted is not None:
-                xic = xic[ idx_adapted ]
+            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)

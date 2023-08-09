@@ -1,26 +1,30 @@
-
 # Change Log
-All notable changes to COMMIT will be documented in this file.
+### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.0.0`
-_2023-03-21_
-
-### Changed 🛠️
+## `v2.0.0`<br>_2023-08-##_
+### 🛠️Changed
 - Default `ndirs=500` in `core.generate_kernels()` and in `trk2dictionary.run()`
 - Expire the deprecated `ndirs` parameter in `amico.core.setup()`
 - Expire the deprecated `filename_trk` and `gen_trk` parameters in `trk2dictionary.run()`
 - Removed unused parameter `ndirs` from `trk2dictionary_c.cpp()`
 - Build output goes into `build`
+- Switched to proprietary license (see `LICENSE` file)
 
-### Added ✨
-- Added trk2dictionary.run() parameter `blur_clust_thr`
-- Implemented clustering in trk2dictionary
-- Added trk2dictionary.run() parallel computation
-- Added trk2dictionary.run() parameter `nthreads`
+### ✨Added
+- Added clustering in trk2dictionary.run()
+    * geometry-based clustering using `blur_clust_thr` parameter
+    * anatomical information streamlines clustering based on their endpoints using `blur_clust_groupby` parameter
+
+- Added trk2dictionary.run() parallel computation using `n_threads` parameter
+- Changed internal streamlines representation using `blur_core_extent` and `blur_gauss_extent` parameters
+- Added possibility to keep temporal files created by parallel trk2dictionary.run() and clustering using `keep_temp` parameter
 - Parallel compilation
 
-### Fixed 🐛
+### 🐛Fixed
 - Bugfixes
+
+---
+---
 
 ## [1.6.4] - 2023-02-14
 

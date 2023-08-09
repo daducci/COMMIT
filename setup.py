@@ -70,6 +70,7 @@ setup(
     packages=[f'{package_name}', f'{package_name}.operator'],
     cmdclass={'build_ext': CustomBuildExtCommand},
     ext_modules=get_extensions(),
-    install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-amico>=1.3.2'],
+    setup_requires=['Cython>=0.29', 'numpy>=1.12', 'wheel'],
+    install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dmri-amico>=1.3.2'],
     package_data={f'{package_name}.operator': ["*.*"]}
 )
