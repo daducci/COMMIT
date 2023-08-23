@@ -11,6 +11,8 @@ from libc.math cimport sqrt, log
 from libc.math cimport round as cround
 from dipy.tracking.streamline import set_number_of_points
 from dicelib.streamline import smooth
+from dicelib.connectivity import assign
+from dicelib import ui
 
 import os
 import tqdm
@@ -19,7 +21,8 @@ from rdp import rdp
 from libcpp cimport bool
 from libc.stdlib cimport rand, srand, RAND_MAX
 from libc.time cimport time
-from libc.stdio cimport printf
+
+from concurrent.futures import ThreadPoolExecutor as tdp
 
 
 from amico.util import LOG, NOTE, WARNING, ERROR
@@ -128,6 +131,12 @@ cdef float [:] apply_affine(float [:] pt, float [:,::1] M,
     pt_aff[2] = ((pt[0]*M[0,2] + pt[1]*M[1,2] + pt[2]*M[2,2]) + abc[2])
 
     return pt_aff
+
+
+def compute_chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
 
 
 
@@ -321,9 +330,9 @@ def tractogram_2spline(input_tractogram):
 
 
 def spline_repr(Fb, smooth=0.3):
-    # reduced = rdp(Fb, epsilon=smooth, algo="iter")
+    reduced = rdp(Fb, epsilon=smooth, algo="iter")
     # if len(reduced) < 6 or np.isnan(np.sum(reduced)):
-    reduced = set_number_of_points(Fb, 7)
+    # reduced = set_number_of_points(Fb, 7)
     return reduced
 
 
@@ -333,6 +342,7 @@ def streamline2spline(input_set_streamlines, smth=0.3, parallel=False):
     else:
         input_set_spline = [spline_repr(Fb, smooth=smth) for Fb in tqdm.tqdm(input_set_streamlines)]
     return input_set_spline
+
 
 def streamline_to_voxmm(streamlines, affine):
     streamlines_voxmm = []
@@ -345,7 +355,7 @@ def streamline_to_voxmm(streamlines, affine):
     return streamlines_voxmm
 
 
-def compute_assignments(dictionary):
+def compute_assignments(dictionary, num_streamlines, MAX_THREAD, conn_threshold=2.):
     # os.system( f'tck2connectome -force -symmetric -assignment_radial_search 2 -out_assignments {input_tractogram_filename}_fibers_assignment.txt {input_tractogram_filename} {gm_filename} {input_tractogram_filename}_connectome.csv' )
     # os.system( f'dice_tractogram_cluster.py {input_tractogram_filename} --save_assignments {input_tractogram_filename}_fibers_assignment.txt --atlas {gm_filename} --reference {gm_filename}' )
 
@@ -354,23 +364,49 @@ def compute_assignments(dictionary):
     #     f"--clust_threshold {dictionary['blur_clust_thr'][0]} --atlas {dictionary['atlas']} "+
     #     f"--n_threads {dictionary['nthreads']} --save_assignments {file_assignments} -f -v")
 
-    os.system(f"dice_tractogram_assing.py {dictionary['filename_tractogram']} {dictionary['atlas']} {dictionary['atlas']} " +
-        f"--conn_threshold {dictionary['blur_clust_thr'][0]} --save_assignments {file_assignments} -f -v")
+    # os.system(f"dice_tractogram_assing.py {dictionary['filename_tractogram']} {dictionary['atlas']} {dictionary['atlas']} " +
+    #     f"--conn_threshold {dictionary['blur_clust_thr'][0]} --save_assignments {file_assignments} -f -v")
+
+
+    chunk_size = int(num_streamlines / MAX_THREAD)
+    chunk_groups = [
+        e for e in compute_chunks(
+            np.arange(num_streamlines),
+            chunk_size)]
+
+    chunks_asgn = []
     
-    print(f"Assignments file: {file_assignments}")
-    asgn = np.loadtxt(file_assignments, dtype =float).astype(int)
-    asgn = [tuple(sorted(c)) for c in asgn]
-    connections = list(conn for conn,_ in itertools.groupby(asgn))
-    connections_dict = dict((idx, value) for idx,value in enumerate(asgn))
+    pbar_array = np.zeros(MAX_THREAD, dtype=np.int32)
+    input_tractogram = dictionary['filename_tractogram']
+    with ui.ProgressBar(multithread_progress=pbar_array, total=num_streamlines,
+                        disable=0) as pbar:
+        with tdp(max_workers=MAX_THREAD) as executor:
+            future = [executor.submit(assign,
+                                    input_tractogram,
+                                    pbar_array,
+                                    i,
+                                    start_chunk=int(chunk_groups[i][0]),
+                                    end_chunk=int(chunk_groups[i][len(chunk_groups[i]) - 1] + 1),
+                                    gm_map_file=dictionary['atlas'],
+                                    threshold=conn_threshold) for i in range(len(chunk_groups))]
+            chunks_asgn = [f.result() for f in future]
+            chunks_asgn = [c for f in chunks_asgn for c in f]
 
-    reversed_dict = {}
-    for k, v in connections_dict.items():
-        reversed_dict[v] = reversed_dict.get(v, []) + [k]
-    # reversed_dict = defaultdict(list) #defaultdict(set) and replace append() with add() to remove duplicates
-    # for key, value in connections_dict.items():
-    #     reversed_dict[value].append(key)
 
-    return reversed_dict
+    with open(file_assignments, "w") as text_file:
+        for reg in chunks_asgn:
+            print('%d %d' % (int(reg[0]), int(reg[1])), file=text_file)
+
+   
+    conn_dict = {} 
+    for i in range(len(chunks_asgn)): 
+        # create integer keys 
+        key = tuple(sorted(chunks_asgn[i])) 
+        key = [int(k) for k in key] 
+        key = tuple(key) 
+        conn_dict[key] = conn_dict.get(key, []) + [i] 
+
+    return conn_dict
 
 
 def assignments_to_dict(assignments_file):

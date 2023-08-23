@@ -57,7 +57,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
             blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, adapt_tractogram=False,
-            adapt_params=None,n_threads=-1, keep_temp=False, verbose=2
+            adapt_params=None, n_threads=-1, keep_temp=False, verbose=2
             ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -313,7 +313,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         filename_tractogram = filename_out
 
 
-
     # Load data from files
     LOG( '\n   * Loading data:' )
     cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
@@ -484,13 +483,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['blur_sigma'] = blur_sigma
     dictionary_info['blur_apply_to'] = blur_apply_to
     dictionary_info['ndirs'] = ndirs
-    dictionary_info['nthreads'] = nthreads
+    dictionary_info['nthreads'] = n_threads
     dictionary_info['blur_clust_thr'] = blur_clust_thr
     dictionary_info['adapt'] = adapt_tractogram
     dictionary_info['adapt_params'] = adapt_params
     dictionary_info['voxdim'] = [Px, Py, Pz]
     dictionary_info['dim'] = [Nx, Ny, Nz]
-    dictionary_info['atlas'] = filename_atlas
+    dictionary_info['atlas'] = blur_clust_groupby
 
     dictionary_info['n_threads'] = n_threads
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
@@ -599,7 +598,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    if not keep_temp:
+    if not keep_temp and not adapt_tractogram:
         shutil.rmtree(path_temp)
 
 

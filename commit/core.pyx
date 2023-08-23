@@ -79,6 +79,7 @@ cdef class Evaluation :
     cdef public THREADS
     cdef public A
     cdef public x
+    cdef public blur_core_extent
     cdef public CONFIG
     cdef public confidence_map_img
 
@@ -1028,7 +1029,7 @@ cdef class Evaluation :
 
         trk_file = self.DICTIONARY['dictionary_info']['filename_tractogram']
         input_set_streamlines =  nibabel.streamlines.load(trk_file)
-        input_set_splines = commit.bundle_o_graphy.streamline2spline(input_set_streamlines.streamlines)
+        # input_set_splines = commit.bundle_o_graphy.streamline2spline(input_set_streamlines.streamlines)
 
         buff_size = self.DICTIONARY['buffer_size']
         Nx = self.get_config('dim')[0]
@@ -1065,29 +1066,27 @@ cdef class Evaluation :
         # Create structures to keep track of adaptations
         print("Loading optimization parameters")
         pmt = self.DICTIONARY['dictionary_info']['adapt_params']
-        proposals_dict = commit.bundle_o_graphy.create_prop_dict()
         print("Computing temp schedule")
         SA_schedule = commit.bundle_o_graphy.compute_temp_schedule(pmt)
-        interval = 50
 
 
         if self.DICTIONARY['dictionary_info']['atlas']:
             print("Retrieve connections")
-            connections_dict = commit.bundle_o_graphy.compute_assignments(self.DICTIONARY['dictionary_info'])
+            connections_dict = commit.bundle_o_graphy.compute_assignments(self.DICTIONARY['dictionary_info'], len(input_set_streamlines.streamlines), self.DICTIONARY['dictionary_info']['nthreads'] )
             # connections_dict = commit.bundle_o_graphy.assignments_to_dict( self.DICTIONARY['dictionary_info']['assignments'])
-            print(f"total connections: {len(connections_dict)}")
-            # connections_dict = dict(list(temp_d.items())[len(temp_d)//2:])
-            # support_dict = dict(list(temp_d.items())[:len(temp_d)//2])
+            print(f"total number of connections: {len(connections_dict)}")
             support_dict = {}
-            # sigma_arr = np.repeat(min(self.DICTIONARY['dictionary_info']['simplify_thrs']), len(Curr_set))
-            sigma_arr = np.repeat(.1, len(input_set_splines))
+            sigma_arr = np.repeat(self.DICTIONARY['dictionary_info']['blur_core_extent'], len(input_set_streamlines.streamlines))
         else:
             connections_dict = None
 
+        # Move to spline representation
+        input_set_splines = commit.bundle_o_graphy.streamline2spline(input_set_streamlines.streamlines, parallel=True)
+
 
         print("Loading mask")
-        voxdim = np.ascontiguousarray( np.asanyarray( self.DICTIONARY['dictionary_info']['voxdim'] ).astype(np.float32) )
-        dim = np.ascontiguousarray( np.asanyarray( self.DICTIONARY['dictionary_info']['dim'] ).astype(np.int32) )
+        # voxdim = np.ascontiguousarray( np.asanyarray( self.DICTIONARY['dictionary_info']['voxdim'] ).astype(np.float32) )
+        # dim = np.ascontiguousarray( np.asanyarray( self.DICTIONARY['dictionary_info']['dim'] ).astype(np.int32) )
         niiWM = nibabel.load( wm_filename )
         niiWM_img = np.ascontiguousarray( np.asanyarray( niiWM.dataobj ).astype(np.float32) )
         ptrMASK  = &niiWM_img[0,0,0]
@@ -1105,21 +1104,18 @@ cdef class Evaluation :
         to_RASMM = M_c[:3, :3]
         abc_to_RASMM = M_c[:3, 3]
         M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
+
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
         ptrToVOXMM = &toVOXMM[0]
 
-        # if self.DICTIONARY['dictionary_info']['filename_ISO'] is not None :
-        # niiISO = nibabel.load( self.DICTIONARY['dictionary_mask'] )
         niiISO = nibabel.load( pjoin(self.get_config('TRACKING_path'),'dictionary_%s.nii.gz'%self.get_config('dictionary_mask')) )
         niiISO_hdr = niiISO.header
+
         if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
             abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
             WARNING( 'Dataset does not have the same geometry as the tractogram' )
         niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
         ptrISO  = &niiISO_img[0,0,0]
-        # else :
-        #     print( '\t- No ISO map specified, using the whole white-matter \t' )
-        #     ptrISO = &niiWM_img[0,0,0]
 
         if self.DICTIONARY['dictionary_info']['filename_peaks'] is not None :
             niiPEAKS = nibabel.load( self.DICTIONARY['dictionary_info']['filename_peaks'] )
@@ -1159,8 +1155,6 @@ cdef class Evaluation :
             fiber_shiftX = self.DICTIONARY['dictionary_info']['fiber_shift'][0]
             fiber_shiftY = self.DICTIONARY['dictionary_info']['fiber_shift'][1]
             fiber_shiftZ = self.DICTIONARY['dictionary_info']['fiber_shift'][2]
-        # test = nibabel.streamlines.tractogram.Tractogram(input_set_splines,  affine_to_rasmm=niiWM.affine)
-        # nibabel.streamlines.save(test, 'input_movement.tck')
 
         # Set of parameters for trajectory adaptation
         tempts = 10
@@ -1329,7 +1323,7 @@ cdef class Evaluation :
                 mean_sigma = round(np.mean([sigma_arr[i] for i in connections_dict[pick_conn]]),2)
 
                 Blur_sigma = -1
-                while Blur_sigma <= 0 or Blur_sigma > min(self.DICTIONARY['dictionary_info']['blur_clust_thr']) + 1:
+                while Blur_sigma <= 0: #or Blur_sigma < min(self.DICTIONARY['dictionary_info']['blur_clust_thr']) - 1:
                     Blur_sigma = round(np.random.normal(loc=mean_sigma, scale=b_variance),2)
                 sigma_arr[connections_dict[pick_conn]] = Blur_sigma
                 sigma = Blur_sigma
@@ -1415,11 +1409,16 @@ cdef class Evaluation :
         fib_list_in = [input_set_splines[f] for f in fib_idx_save]
         fib_save = smooth_final(fib_list_in, lengths, n_count)
 
+        # save corresponding sigmas
+        sigma_arr = sigma_arr[fib_idx_save]
+        self.blur_core_extent = sigma_arr
+
         # create tractogram object and save
         save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=np.eye(4))
         nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
 
         return buff_size, fib_idx_save
+
 
     def update_dictionary(self, upd_idx, num_vox, buffer_size=None):
 
@@ -1451,6 +1450,7 @@ cdef class Evaluation :
             del idx
             self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
+
     def update_backup(self, Backup_mit_dictionary):
 
         Backup_mit_dictionary['TRK']['kept'][:] = self.DICTIONARY['TRK']['kept'].astype(np.bool_)
@@ -1472,6 +1472,7 @@ cdef class Evaluation :
             Backup_mit_dictionary['EC']['o'][:]     = self.DICTIONARY['EC']['o'].astype(np.uint16)
             Backup_mit_dictionary['EC']['nE']       = self.DICTIONARY['EC']['nE']
 
+
     def reverse_dictionary(self, Backup_mit_dictionary):
 
         self.DICTIONARY['TRK']['kept'][:] = Backup_mit_dictionary['TRK']['kept'].astype(np.bool_)
@@ -1492,6 +1493,7 @@ cdef class Evaluation :
             self.DICTIONARY['EC']['v'][:] = Backup_mit_dictionary['EC']['v'].astype(np.uint32)
             self.DICTIONARY['EC']['o'][:] = Backup_mit_dictionary['EC']['o'].astype(np.uint16)
             self.DICTIONARY['EC']['nE'] = Backup_mit_dictionary['EC']['v'].size
+
 
     def get_fit_error(self, y_mea, nV):
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
@@ -1747,7 +1749,7 @@ cdef class Evaluation :
         if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-        if "tractogram_centr_idx" in dictionary_info.keys():
+        if "tractogram_centr_idx" in dictionary_info.keys() and  idx_adapted is None:
             ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
             unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
             unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
@@ -1763,7 +1765,11 @@ cdef class Evaluation :
                 
         else:
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
-                xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+                if idx_adapted:
+                    xic[ idx_adapted ] *= self.DICTIONARY['TRK']['lenTot'][ idx_adapted ] / self.DICTIONARY['TRK']['len'][ idx_adapted ]
+                    xic = xic[ idx_adapted ]
+                else:
+                    xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
@@ -1776,7 +1782,7 @@ cdef class Evaluation :
         print( '\t\t- results.pickle... ', end='' )
         sys.stdout.flush()
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-            pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+            pickle.dump( [self.CONFIG, self.x, x, self.blur_core_extent], fid, protocol=2 )
         print( '        [ OK ]' )
 
         if save_est_dwi :
