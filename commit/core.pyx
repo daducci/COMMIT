@@ -1351,7 +1351,7 @@ cdef class Evaluation :
             # print(f"size matrix A before: {self.A.shape}")
             self.build_operator(verbose=False)
             
-            self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+            self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=regularisation, confidence_array=confidence_array, gpu=False)
             
             fit_error = self.get_fit_error(y_mea, nV) * lambda_RMSE
             prior_bund_norm = len(connections_dict)/lambda_bund

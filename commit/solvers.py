@@ -304,8 +304,8 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = Tru
             confidence_array = torch.from_numpy(confidence_array).cuda()
         # run fista_torch
         return fista_torch( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
-    
-    # return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
+    else:
+        return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
     
    
 
