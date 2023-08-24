@@ -27,6 +27,7 @@ import pyximport
 from libcpp cimport bool
 from pkg_resources import get_distribution
 
+
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
@@ -493,15 +494,9 @@ cdef class Evaluation :
         # -----------------------
         print( '\t* Segments from the peaks...  ', end='' )
         sys.stdout.flush()
-        # if dictionary_info["adapt"]:
-        if False:
-            self.DICTIONARY['EC'] = {}
-            self.DICTIONARY['EC']['v']  = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 ), buff_array) ).astype(np.uint32)
-            self.DICTIONARY['EC']['o']  = np.concatenate( (np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 ), buff_array) ).astype(np.uint16)
-        else:
-            self.DICTIONARY['EC'] = {}
-            self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
-            self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
+        self.DICTIONARY['EC'] = {}
+        self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
+        self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
         self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
         # reorder the segments based on the "v" field
@@ -999,7 +994,7 @@ cdef class Evaluation :
             float [:] abc_to_VOXMM
             float [:,::1] inverse
             float [:,::1] M_c
-
+            
 
         self.DICTIONARY['TRK']['kept'] = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
         self.DICTIONARY['TRK']['norm'] = np.ascontiguousarray( self.DICTIONARY['TRK']['norm'], dtype=np.float32 )
@@ -1349,8 +1344,8 @@ cdef class Evaluation :
                                 pDict_TRK_kept, pDict_TRK_norm, pDict_IC_f, pDict_IC_v, pDict_IC_o, pDict_IC_len,
                                 pDict_TRK_len, pDict_Tot_segm_len, pDict_EC_v, pDict_EC_o, num_vox)
 
-
-            self.update_dictionary(upd_idx, num_vox, buffer_size=buff_size) 
+            
+            self.update_dictionary(upd_idx, num_vox, buffer_size=buff_size)
 
             self.set_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False)
 
@@ -1442,17 +1437,18 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['len'][upd_idx]    = num_vox
 
         idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
-        self.DICTIONARY['IC']['v'][:]     = self.DICTIONARY['IC']['v'][ idx ].astype(np.uint32)
-        self.DICTIONARY['IC']['o'][:]     = self.DICTIONARY['IC']['o'][ idx ].astype(np.uint16)
-        self.DICTIONARY['IC']['fiber'][:] = self.DICTIONARY['IC']['fiber'][ idx ].astype(np.uint32)
-        self.DICTIONARY['IC']['len'][:]   = self.DICTIONARY['IC']['len'][ idx ].astype(np.float32)
+
+        self.DICTIONARY['IC']['v'][:]     = self.DICTIONARY['IC']['v'][ idx ]#.astype(np.uint32)
+        self.DICTIONARY['IC']['o'][:]     = self.DICTIONARY['IC']['o'][ idx ]#.astype(np.uint16)
+        self.DICTIONARY['IC']['fiber'][:] = self.DICTIONARY['IC']['fiber'][ idx ]#.astype(np.uint32)
+        self.DICTIONARY['IC']['len'][:]   = self.DICTIONARY['IC']['len'][ idx ]#.astype(np.float32)
         del idx
         self.DICTIONARY['IC']['n']  = self.DICTIONARY['IC']['fiber'].size - buffer_size
         # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
 
-        idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
-        self.DICTIONARY['ISO']['v'][:] = self.DICTIONARY['ISO']['v'][ idx ]
-        del idx
+        # idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
+        # self.DICTIONARY['ISO']['v'][:] = self.DICTIONARY['ISO']['v'][ idx ]
+        # del idx
 
         if len(self.DICTIONARY['EC']['v'])>0:
             self.DICTIONARY['EC']['v'][upd_idx] = num_vox
