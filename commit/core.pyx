@@ -1163,7 +1163,6 @@ cdef class Evaluation :
         t1 = time.time()
         it = 0
         while True:
-            time_iter = time.time()            
             if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] * 0.9 and accept_prop:
                 break
             elif it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']:
@@ -1350,20 +1349,11 @@ cdef class Evaluation :
             self.set_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False)
 
             # print(f"size matrix A before: {self.A.shape}")
-            time_build = time.time()
             self.build_operator(verbose=False)
-            time_build = time.time() - time_build
-            print(f"build operator time: {time_build}")
             
-            time_solve = time.time()
             self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
-            time_solve = time.time() - time_solve
-            print(f"solve time: {time_solve}")
             
-            time_get_fit_error = time.time()
             fit_error = self.get_fit_error(y_mea, nV) * lambda_RMSE
-            time_get_fit_error = time.time() - time_get_fit_error
-            print(f"get fit error time: {time_get_fit_error}")
             prior_bund_norm = len(connections_dict)/lambda_bund
             prior_fibs_norm = sum(map(len, connections_dict.values()))/lambda_fib
 
@@ -1377,16 +1367,10 @@ cdef class Evaluation :
             if accept_prop:
                 Track_Delta_E.append(tot_error)
                 x0 = self.x
-                time_update = time.time()
                 self.update_backup(Backup_mit_dictionary)
-                time_update = time.time() - time_update
-                print(f"update backup time: {time_update}")
             else:
                 Track_Delta_E.append(Track_Delta_E[it])
-                time_update = time.time()
                 self.reverse_dictionary( Backup_mit_dictionary )
-                time_update = time.time() - time_update
-                print(f"update backup time: {time_update}")
                 buff_size = Backup_buffer
                 connections_dict = backup_connections_dict
                 support_dict = backup_support_dict
@@ -1408,8 +1392,7 @@ cdef class Evaluation :
                 break
             # PROP = 80
             it += 1
-            time_iter = time.time() - time_iter
-            print(f"iteration time: {time_iter}")
+
 
         fib_idx_save = [*connections_dict.values()]
         fib_idx_save = [i for g in fib_idx_save for i in g]
@@ -1438,10 +1421,10 @@ cdef class Evaluation :
 
         idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
 
-        self.DICTIONARY['IC']['v'][:]     = self.DICTIONARY['IC']['v'][ idx ]#.astype(np.uint32)
-        self.DICTIONARY['IC']['o'][:]     = self.DICTIONARY['IC']['o'][ idx ]#.astype(np.uint16)
-        self.DICTIONARY['IC']['fiber'][:] = self.DICTIONARY['IC']['fiber'][ idx ]#.astype(np.uint32)
-        self.DICTIONARY['IC']['len'][:]   = self.DICTIONARY['IC']['len'][ idx ]#.astype(np.float32)
+        self.DICTIONARY['IC']['v'][:]     = self.DICTIONARY['IC']['v'][ idx ]
+        self.DICTIONARY['IC']['o'][:]     = self.DICTIONARY['IC']['o'][ idx ]
+        self.DICTIONARY['IC']['fiber'][:] = self.DICTIONARY['IC']['fiber'][ idx ]
+        self.DICTIONARY['IC']['len'][:]   = self.DICTIONARY['IC']['len'][ idx ]
         del idx
         self.DICTIONARY['IC']['n']  = self.DICTIONARY['IC']['fiber'].size - buffer_size
         # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
