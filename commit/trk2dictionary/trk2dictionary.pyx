@@ -26,7 +26,7 @@ cdef extern from "trk2dictionary_c.cpp":
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
-        int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
+        int* nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
         float* ptrTractsAffine, short* prtHashTable, int threads_count
     ) nogil
 
@@ -55,7 +55,7 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None,
             do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
-            blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
+            blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=[0.0], blur_gauss_extent=0.0,
             blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, adapt_tractogram=False,
             adapt_params=None, n_threads=-1, keep_temp=False, verbose=2
             ):
@@ -118,7 +118,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         To obtain the blur effect, streamlines are duplicated and organized in a cartesian grid;
         this parameter controls the spacing of the grid in mm (defaut : 0.25).
 
-    blur_core_extent: float
+    blur_core_extent: list of float
         Extent of the core inside which the segments have equal contribution to the central one (default : 0.0).
 
     blur_gauss_extent: float
@@ -165,7 +165,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( '"fiber_shift" must be a scalar or a vector with 3 elements' )
 
     # check for invalid parameters in the blur
-    if blur_core_extent < 0 :
+    if np.any(np.array(blur_core_extent) < 0) :
+
         ERROR( 'The extent of the core must be non-negative' )
 
     if blur_gauss_extent < 0 :
@@ -190,46 +191,80 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     print( f'\t- Min streamline len    = {min_fiber_len:.2f} mm' )
     print( f'\t- Max streamline len    = {max_fiber_len:.2f} mm' )
 
+    hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
+    nb_streamlines = int(hdr['count'])
+
     # check blur params
     cdef :
         double [:] blurRho
         double [:] blurAngle
-        double [:] blurWeights
+        double [:,:] blurWeights
         bool [:] blurApplyTo
-        int nReplicas
+        int [:] nReplicas
         float blur_sigma
+        size_t i = 0
+        size_t j = 0
 
-    if (blur_gauss_extent==0 and blur_core_extent==0) or (blur_spacing==0) :
-        nReplicas = 1
+    if (blur_gauss_extent==0 and blur_core_extent[0]==0) or (blur_spacing==0) :
+        nReplicas = np.array([1]).astype(np.int32)
         blurRho = np.array( [0.0], np.double )
         blurAngle = np.array( [0.0], np.double )
-        blurWeights = np.array( [1], np.double )
+        blurWeights = np.array( [1,1], np.double )
     else:
-        tmp = np.arange(0,blur_core_extent+blur_gauss_extent+1e-6,blur_spacing)
-        tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
-        x, y = np.meshgrid( tmp, tmp )
-        r = np.sqrt( x*x + y*y )
-        idx = (r <= blur_core_extent+blur_gauss_extent)
-        blurRho = r[idx]
-        blurAngle = np.arctan2(y,x)[idx]
-        nReplicas = blurRho.size
-
-        blurWeights = np.empty( nReplicas, np.double  )
+        nReplicas = np.empty( nb_streamlines, np.int32 )
         if blur_gauss_extent == 0 :
-            blurWeights[:] = 1.0
+            tmp = np.arange(0,np.max(blur_core_extent[j])+blur_gauss_extent+1e-6,blur_spacing)
+            tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
+            x, y = np.meshgrid( tmp, tmp )
+            r = np.sqrt( x*x + y*y )
+            idx = (r <= blur_core_extent[j]+blur_gauss_extent)
+            blurRho = r[idx]
+            blurAngle = np.arctan2(y,x)[idx]
+            max_nReplicas = blurRho.size
+            blurWeights = np.empty( (nb_streamlines, max_nReplicas), np.double  )
+            for j in range(nb_streamlines):
+                tmp = np.arange(0,blur_core_extent[j]+blur_gauss_extent+1e-6,blur_spacing)
+                tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
+                x, y = np.meshgrid( tmp, tmp )
+                r = np.sqrt( x*x + y*y )
+                idx = (r <= blur_core_extent[j]+blur_gauss_extent)
+                blurRho = r[idx]
+                blurAngle = np.arctan2(y,x)[idx]
+                nReplicas[j] = blurRho.size
+                for i in range(nReplicas[j]):
+                    blurWeights[j,i] = 1.0
         else:
             blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.log( blur_gauss_min ) )
-            for i in xrange(nReplicas):
-                if blurRho[i] <= blur_core_extent :
-                    blurWeights[i] = 1.0
-                else:
-                    blurWeights[i] = np.exp( -(blurRho[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
+            tmp = np.arange(0,np.max(blur_core_extent[j])+blur_gauss_extent+1e-6,blur_spacing)
+            tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
+            x, y = np.meshgrid( tmp, tmp )
+            r = np.sqrt( x*x + y*y )
+            idx = (r <= blur_core_extent[j]+blur_gauss_extent)
+            blurRho = r[idx]
+            blurAngle = np.arctan2(y,x)[idx]
+            max_nReplicas = blurRho.size
+            blurWeights = np.empty( (nb_streamlines, max_nReplicas), np.double  )
+            for j in range(nb_streamlines):
+                tmp = np.arange(0,blur_core_extent[j]+blur_gauss_extent+1e-6,blur_spacing)
+                tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
+                x, y = np.meshgrid( tmp, tmp )
+                r = np.sqrt( x*x + y*y )
+                idx = (r <= blur_core_extent[j]+blur_gauss_extent)
+                blurRho = r[idx]
+                blurAngle = np.arctan2(y,x)[idx]
+                nReplicas[j] = blurRho.size
+                for i in range(nReplicas[j]):
+                    if blurRho[i] <= blur_core_extent[j] :
+                        blurWeights[j,i] = 1.0
+                    else:
+                        blurWeights[j,i] = np.exp( -(blurRho[i] - blur_core_extent[j])**2 / (2.0*blur_sigma**2) )
 
-    if nReplicas == 1 :
+    if nReplicas[0] == 1 :
         print( '\t- Do not blur streamlines' )
     else :
         print( '\t- Blur streamlines:' )
-        print( f'\t\t- core extent  = {blur_core_extent:.3f}' )
+        if len(blur_core_extent)==1:
+            print( f'\t\t- core extent  = {blur_core_extent[0]:.3f}' )
         print( f'\t\t- gauss extent = {blur_gauss_extent:.3f} (sigma = {blur_sigma:.3f})' )
         print( f'\t\t- grid spacing = {blur_spacing:.3f}' )
         print( f'\t\t- weights = [ {np.min(blurWeights):.3f} ... {np.max(blurWeights):.3f} ]' )
@@ -501,7 +536,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_temp, 1 if do_intersect else 0, ptrPeaksAffine,
-        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, n_threads  );
+        &nReplicas[0], &blurRho[0], &blurAngle[0], &blurWeights[0,0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, n_threads  );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None

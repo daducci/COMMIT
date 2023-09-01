@@ -598,14 +598,16 @@ cdef class Evaluation :
             sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
+            print(f"buffer_size: {buffer_size}")
             self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
             if n > 1 :
                 N = np.floor( self.DICTIONARY['IC']['n']/n )
                 t = 1
                 tot = 0
-                C = np.bincount( self.DICTIONARY['IC']['v'][:-buffer_size] )
-                r1= buffer_size + 10
-                r2= buffer_size - 10
+                if buffer_size > 0:
+                    C = np.bincount( self.DICTIONARY['IC']['v'][:-buffer_size] )
+                else:
+                    C = np.bincount( self.DICTIONARY['IC']['v'] )
                 for c in C :
                     tot += c
                     if tot >= N and t <= n :
@@ -636,8 +638,12 @@ cdef class Evaluation :
 
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
-            for i in xrange(n) :
-                self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][:-buffer_size][ self.THREADS['IC'][i] ] )
+            if buffer_size > 0:
+                for i in xrange(n) :
+                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][:-buffer_size][ self.THREADS['IC'][i] ] )
+            else:
+                for i in xrange(n) :
+                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
             self.THREADS['ISO'][n] = self.DICTIONARY['nV']
 
             # check if some threads are not assigned any segment
@@ -655,23 +661,40 @@ cdef class Evaluation :
 
         if self.DICTIONARY['IC']['n'] > 0 :
             self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
-            if n > 1 :
-                idx = np.argsort( self.DICTIONARY['IC']['fiber'][:-buffer_size], kind='mergesort' )
-                C = np.bincount( self.DICTIONARY['IC']['fiber'][:-buffer_size] )
-                t = tot = i1 = i2 = 0
-                N = np.floor(self.DICTIONARY['IC']['n']/n)
-                for c in C :
-                    i2 += c
-                    tot += c
-                    if tot >= N :
-                        self.THREADS['ICt'][ i1:i2 ] = t
-                        t += 1
-                        if t==n-1 :
-                            break
-                        i1 = i2
-                        tot = c
-                self.THREADS['ICt'][idx] = self.THREADS['ICt'].copy()
-
+            if buffer_size > 0:
+                if n > 1 :
+                    idx = np.argsort( self.DICTIONARY['IC']['fiber'][:-buffer_size], kind='mergesort' )
+                    C = np.bincount( self.DICTIONARY['IC']['fiber'][:-buffer_size] )
+                    t = tot = i1 = i2 = 0
+                    N = np.floor(self.DICTIONARY['IC']['n']/n)
+                    for c in C :
+                        i2 += c
+                        tot += c
+                        if tot >= N :
+                            self.THREADS['ICt'][ i1:i2 ] = t
+                            t += 1
+                            if t==n-1 :
+                                break
+                            i1 = i2
+                            tot = c
+                    self.THREADS['ICt'][idx] = self.THREADS['ICt'].copy()
+            else:
+                if n > 1 :
+                    idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind='mergesort' )
+                    C = np.bincount( self.DICTIONARY['IC']['fiber'] )
+                    t = tot = i1 = i2 = 0
+                    N = np.floor(self.DICTIONARY['IC']['n']/n)
+                    for c in C :
+                        i2 += c
+                        tot += c
+                        if tot >= N :
+                            self.THREADS['ICt'][ i1:i2 ] = t
+                            t += 1
+                            if t==n-1 :
+                                break
+                            i1 = i2
+                            tot = c
+                    self.THREADS['ICt'][idx] = self.THREADS['ICt'].copy()
         else :
             self.THREADS['ICt'] = None
 
@@ -708,7 +731,7 @@ cdef class Evaluation :
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self, build_dir=None, verbose=True ) :
+    def build_operator( self, build_dir=None, verbose=True, use_gpu=False ) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
@@ -775,12 +798,17 @@ cdef class Evaluation :
 
             pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
+        if use_gpu:
+            import commit.operatorGPU as operatorGPU
+            print("Building GPU operator")
+            self.A =  operatorGPU.LinearOperatorGPU( self.DICTIONARY, self.KERNELS )
+        else:
             if not 'commit.operator.operator' in sys.modules :
                 import commit.operator.operator
             else :
                 reload( sys.modules['commit.operator.operator'] )
 
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+            self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
         if verbose:
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -799,7 +827,7 @@ cdef class Evaluation :
         y[y < 0] = 0
         return y
 
-    def fit( self, prop=None, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
+    def fit( self, prop=None, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False, use_gpu=False) :
         """Fit the model to the data.
 
         Parameters
@@ -929,7 +957,7 @@ cdef class Evaluation :
         else:
             LOG( '\n-> Fit model:' )
 
-            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array, gpu=use_gpu)
 
             self.CONFIG['optimization']['fit_details'] = opt_details
             self.CONFIG['optimization']['fit_time'] = time.time()-t
@@ -1351,7 +1379,7 @@ cdef class Evaluation :
             # print(f"size matrix A before: {self.A.shape}")
             self.build_operator(verbose=False)
             
-            self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=regularisation, confidence_array=confidence_array, gpu=False)
+            self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=regularisation, confidence_array=confidence_array, gpu=True)
             
             fit_error = self.get_fit_error(y_mea, nV) * lambda_RMSE
             prior_bund_norm = len(connections_dict)/lambda_bund
