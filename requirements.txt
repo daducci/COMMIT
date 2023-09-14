@@ -4,4 +4,5 @@ Cython>=0.29
 numpy>=1.12
 scipy>=1.0
 dipy>=1.0
-dmri-amico>=1.3.0
+dmri-dicelib>=1.0.0
+dmri-amico>=2.0.0

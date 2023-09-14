@@ -22,19 +22,14 @@ from pkg_resources import get_distribution
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
-def setup( lmax=12, ndirs=None ) :
+def setup( lmax=12 ) :
     """General setup/initialization of the COMMIT framework.
 
     Parameters
     ----------
     lmax : int
         Maximum SH order to use for the rotation phase (default : 12)
-     ndirs : int
-        DEPRECATED. Now, all directions are precomputed.
     """
-    if ndirs is not None:
-        WARNING('"ndirs" parameter is deprecated')
-
     amico.setup( lmax )
 
 
@@ -252,7 +247,7 @@ cdef class Evaluation :
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
 
-    def generate_kernels( self, regenerate=False, lmax=12, ndirs=32761 ) :
+    def generate_kernels( self, regenerate=False, lmax=12, ndirs=500 ) :
         """Generate the high-resolution response functions for each compartment.
         Dispatch to the proper function, depending on the model.
 
@@ -263,12 +258,12 @@ cdef class Evaluation :
         lmax : int
             Maximum SH order to use for the rotation procedure (default : 12)
         ndirs : int
-            Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 32761)
+            Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 500)
         """
         LOG( '\n-> Simulating with "%s" model:' % self.model.name )
 
         if not amico.lut.is_valid( ndirs ):
-            ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761 (default)]' )
+            ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
         if self.scheme is None :
             ERROR( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
@@ -401,6 +396,7 @@ cdef class Evaluation :
         if dictionary_info['ndirs'] != self.get_config('ndirs'):
             ERROR( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
         self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
+        self.DICTIONARY['n_threads'] = dictionary_info['n_threads']
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
@@ -532,12 +528,9 @@ cdef class Evaluation :
             Number of threads to use (default : number of CPUs in the system)
         """
         if n is None :
-            # Set to the number of CPUs in the system
-            try :
-                import multiprocessing
-                n = multiprocessing.cpu_count()
-            except :
-                n = 1
+            # Use the same number of threads used in trk2dictionary
+            n = self.DICTIONARY['n_threads']
+
 
         if n < 1 or n > 255 :
             ERROR( 'Number of threads must be between 1 and 255' )
@@ -1121,7 +1114,23 @@ cdef class Evaluation :
         if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
             if stat_coeffs == 'all' :
                 ERROR( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+        if "tractogram_centr_idx" in dictionary_info.keys():
+            ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
+            unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
+            unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
+            temp_weights = unravel_weights[ordered_idx]
+            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+                unravel_weights[ordered_idx] = temp_weights
+                xic = unravel_weights
+            else:
+                temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
+                unravel_weights[ordered_idx] = temp_weights
+                xic = unravel_weights
+                
+        else:
+            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
