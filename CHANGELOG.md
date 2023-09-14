@@ -1,7 +1,7 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.0.0`<br>_2023-08-##_
+## `v2.0.0`<br>_2023-09-14_
 ### 🛠️Changed
 - Default `ndirs=500` in `core.generate_kernels()` and in `trk2dictionary.run()`
 - Expire the deprecated `ndirs` parameter in `amico.core.setup()`
