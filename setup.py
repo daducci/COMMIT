@@ -63,6 +63,6 @@ setup(
     cmdclass={'build_ext': CustomBuildExtCommand},
     ext_modules=get_extensions(),
     setup_requires=['Cython>=0.29', 'numpy>=1.12', 'wheel'],
-    install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-amico>=2.0.0'],
+    install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-dicelib>=1.0.0', 'dmri-amico>=2.0.0'],
     package_data={f'{package_name}.operator': ["*.*"]}
 )
