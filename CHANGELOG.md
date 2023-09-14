@@ -24,7 +24,15 @@
 - Bugfixes
 
 ---
----
+
+## [1.6.5] - 2023-08-03
+
+### Changed
+- Build output goes into 'build'
+- Require `dmri-amico>=1.3.2,<2.0.0`
+
+### Fixed
+- Solve [#121](https://github.com/daducci/COMMIT/issues/121)
 
 ## [1.6.4] - 2023-02-14
 
