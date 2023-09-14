@@ -69,11 +69,11 @@ def init_regularisation(commit_evaluation,
                 corresponding to the compartment.
 
 
-    structureIC - np.array(list(list)) :
+    structureIC - np.array(list(list), dtype=np.object_) :
         group structure for the IC compartment.
             This field is necessary only if regterm[0]=commit.solver.group_sparsity.
             Example:
-                structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]])
+                structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
 
                 that is equivalent to
                             [0,1,2,3,4,5]        [6]
