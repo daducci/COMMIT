@@ -1,7 +1,7 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.0.0`<br>_2023-08-##_
+## `v2.0.0`<br>_2023-09-14_
 ### 🛠️Changed
 - Default `ndirs=500` in `core.generate_kernels()` and in `trk2dictionary.run()`
 - Expire the deprecated `ndirs` parameter in `amico.core.setup()`
@@ -24,7 +24,15 @@
 - Bugfixes
 
 ---
----
+
+## [1.6.5] - 2023-08-03
+
+### Changed
+- Build output goes into 'build'
+- Require `dmri-amico>=1.3.2,<2.0.0`
+
+### Fixed
+- Solve [#121](https://github.com/daducci/COMMIT/issues/121)
 
 ## [1.6.4] - 2023-02-14
 
