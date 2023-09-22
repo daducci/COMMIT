@@ -5,7 +5,6 @@ cimport cython
 import numpy as np
 cimport numpy as np
 from scipy.stats import norm
-import random
 
 import copy
 import time
@@ -598,7 +597,6 @@ cdef class Evaluation :
             sys.stdout.flush()
 
         if self.DICTIONARY['IC']['n'] > 0 :
-            print(f"buffer_size: {buffer_size}")
             self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
             if n > 1 :
                 N = np.floor( self.DICTIONARY['IC']['n']/n )
@@ -731,7 +729,7 @@ cdef class Evaluation :
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def build_operator( self, build_dir=None, verbose=True, use_gpu=False ) :
+    def build_operator( self, build_dir=None, verbose=True) :
         """Compile/build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
         NB: needs to call this function to update pointers to data structures in case
@@ -798,17 +796,12 @@ cdef class Evaluation :
 
             pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
-        if use_gpu:
-            import commit.operatorGPU as operatorGPU
-            print("Building GPU operator")
-            self.A =  operatorGPU.LinearOperatorGPU( self.DICTIONARY, self.KERNELS )
-        else:
             if not 'commit.operator.operator' in sys.modules :
                 import commit.operator.operator
             else :
                 reload( sys.modules['commit.operator.operator'] )
 
-            self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
         if verbose:
             LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -827,7 +820,7 @@ cdef class Evaluation :
         y[y < 0] = 0
         return y
 
-    def fit( self, prop=None, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False, use_gpu=False) :
+    def fit( self, prop=None, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
         """Fit the model to the data.
 
         Parameters
@@ -957,7 +950,7 @@ cdef class Evaluation :
         else:
             LOG( '\n-> Fit model:' )
 
-            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array, gpu=use_gpu)
+            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
 
             self.CONFIG['optimization']['fit_details'] = opt_details
             self.CONFIG['optimization']['fit_time'] = time.time()-t
@@ -966,6 +959,9 @@ cdef class Evaluation :
 
     def run_adaptation( self, test_prop=None, tol_fun=None, tol_x=None, max_iter=None, verbose=None, x0=None, regularisation=None, confidence_array=None ) :
 
+        # fix the seed for reproducibility
+        print(self.DICTIONARY['dictionary_info']["seed"])
+        np.random.seed( self.DICTIONARY['dictionary_info']["seed"] )
         cdef:
             double [:] blurWeights
             float [:,:] fib_list
@@ -1190,25 +1186,14 @@ cdef class Evaluation :
         print("Starting adaptation")
         t1 = time.time()
         it = 0
+        it_time = 0
         while True:
             if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] * 0.9 and accept_prop:
                 break
             elif it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']:
                 break
-            print(f"iteration: {it}, prop:{PROP}", end='\r')
-            # print(f"iteration: {it}, prop:{PROP}")
-            # TRK_kept_array = np.ascontiguousarray( self.DICTIONARY['TRK']['kept'] ,dtype=np.uint8 )
-            # TRK_norm_array = np.ascontiguousarray( self.DICTIONARY['TRK']['norm'], dtype=np.float32 )
-            # TRK_len_array = np.ascontiguousarray( self.DICTIONARY['TRK']['len'], dtype=np.float32 )
-            # TRK_Tot_segm_len_array = np.ascontiguousarray( self.DICTIONARY['TRK']['lenTot'], dtype=np.float32 )
-
-            # pDict_IC_f_array = np.ascontiguousarray( self.DICTIONARY['IC']['fiber'] ,dtype=np.uint32 )
-            # pDict_IC_v_array = np.ascontiguousarray( self.DICTIONARY['IC']['v'] ,dtype=np.uint32 )
-            # pDict_IC_o_array = np.ascontiguousarray( self.DICTIONARY['IC']['o'], dtype=np.ushort )
-            # pDict_IC_len_array = np.ascontiguousarray( self.DICTIONARY['IC']['len'], dtype=np.float32 )
-            # pDict_EC_v_array = np.ascontiguousarray( self.DICTIONARY['EC']['v'], dtype=np.uint32 )
-            # pDict_EC_o_array = np.ascontiguousarray( self.DICTIONARY['EC']['o'],dtype=np.ushort )
-
+            print(f"iteration: {it}, prop:{PROP}, iteration time= {it_time}")
+            t0 = time.time()
             pt_Buff_seg_IC = self.DICTIONARY['IC']['fiber'].size - buff_size
             pt_Buff_seg_EC = self.DICTIONARY['EC']['v'].size - buff_size
             pDict_TRK_kept = &TRK_kept_array[0]
@@ -1235,7 +1220,7 @@ cdef class Evaluation :
             Blur_sigma = None
 
             if PROP <= -1:
-                pick_conn = random.choice(list(connections_dict.keys()))
+                pick_conn = np.random.choice(list(connections_dict.keys()))
                 pick_fib = np.random.choice( connections_dict[pick_conn] )
                 # pick_fib = 20
                 Backup_fib = copy.deepcopy(input_set_splines[pick_fib])
@@ -1279,7 +1264,9 @@ cdef class Evaluation :
                 # nibabel.streamlines.save(test, 'test_movement.tck')
 
             if  0 <= PROP <= 33:
-                pick_conn = random.choice(list(support_dict.keys()))
+                t_prop = time.time()
+                pick_conn = np.random.choice(np.arange(len(list(support_dict.keys()))))
+                pick_conn = list(support_dict.keys())[pick_conn]
                 connections_dict[pick_conn] = support_dict[pick_conn]
                 try:
                     del support_dict[pick_conn]
@@ -1301,19 +1288,25 @@ cdef class Evaluation :
                 upd_idx = [i for g in upd_idx for i in g]
 
                 diff_seg = len(upd_idx)
+                print(f"time for proposal: {time.time()-t_prop}")
 
+                t_dict = time.time()
                 trk2dict_update(self.DICTIONARY["lut"], index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
                                 Nx, Ny, Nz, Px, Py, Pz, n_count, fiber_shiftX, fiber_shiftY, fiber_shiftZ,
                                 min_seg_len, min_fiber_len, max_fiber_len, ptrPEAKS, ptrPeaksAffine, flip_peaks, Np, vf_THR,
                                 ptrMASK, ptrISO, ptrTDI, ptrToVOXMM, ndirs, ptrHashTable,
                                 pDict_TRK_kept, pDict_TRK_norm, pDict_IC_f, pDict_IC_v, pDict_IC_o, pDict_IC_len,
                                 pDict_TRK_len, pDict_Tot_segm_len, pDict_EC_v, pDict_EC_o, num_vox)
+                
+                print(f"time to run trk2dict: {time.time()-t_dict}")
 
                 # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
 
 
             if  33 < PROP <= 67:
-                pick_conn = random.choice(list(connections_dict.keys()))
+                t_prop = time.time()
+                pick_conn = np.random.choice(np.arange(len(list(connections_dict.keys()))))
+                pick_conn = list(connections_dict.keys())[pick_conn]
                 support_dict[pick_conn] = connections_dict[pick_conn]
                 # pick_fib = np.random.choice( support_dict[pick_conn] )
                 try:
@@ -1333,7 +1326,7 @@ cdef class Evaluation :
 
                 # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
                 buff_size += len(upd_idx)
-
+                print(f"time for proposal: {time.time()-t_prop}")
                 # print(f"buffer_size: {buff_size}, num of fibs removed: {len(index_list)}")
                 # print(f"nF: {self.DICTIONARY['IC']['nF']}")
                 # print(f"TRK kept size: {self.DICTIONARY['TRK']['kept'].size}, non zeros:{np.count_nonzero(self.DICTIONARY['TRK']['kept'])}")
@@ -1341,7 +1334,9 @@ cdef class Evaluation :
 
 
             if  67 < PROP <= 100:
-                pick_conn = random.choice(list(connections_dict.keys()))
+                t_prop = time.time()
+                pick_conn = np.random.choice(np.arange(len(list(connections_dict.keys()))))
+                pick_conn = list(connections_dict.keys())[pick_conn]
                 mean_sigma = round(np.mean([sigma_arr[i] for i in connections_dict[pick_conn]]),2)
 
                 Blur_sigma = -1
@@ -1363,7 +1358,9 @@ cdef class Evaluation :
                 upd_idx = [i for g in upd_idx for i in g]
 
                 diff_seg = len(upd_idx)
+                print(f"time for proposal: {time.time()-t_prop}")
 
+                t_dict = time.time()
                 trk2dict_update(self.DICTIONARY["lut"], index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
                                 Nx, Ny, Nz, Px, Py, Pz, n_count, fiber_shiftX, fiber_shiftY, fiber_shiftZ,
                                 min_seg_len, min_fiber_len, max_fiber_len, ptrPEAKS, ptrPeaksAffine, flip_peaks, Np, vf_THR,
@@ -1371,17 +1368,26 @@ cdef class Evaluation :
                                 pDict_TRK_kept, pDict_TRK_norm, pDict_IC_f, pDict_IC_v, pDict_IC_o, pDict_IC_len,
                                 pDict_TRK_len, pDict_Tot_segm_len, pDict_EC_v, pDict_EC_o, num_vox)
 
-            
-            self.update_dictionary(upd_idx, num_vox, buffer_size=buff_size)
+                print(f"time to run trk2dict: {time.time()-t_dict}")
 
+            t_update = time.time()
+            self.update_dictionary(upd_idx, num_vox, buffer_size=buff_size)
+            print(f"time for dictionary update: {time.time()-t_update}")
+            
+            t_thread = time.time()
             self.set_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False)
+            print(f"time for thread update: {time.time()-t_thread}")
 
             # print(f"size matrix A before: {self.A.shape}")
             self.build_operator(verbose=False)
             
-            self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=regularisation, confidence_array=confidence_array, gpu=True)
-            
+            t_solve = time.time()
+            self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=regularisation, confidence_array=confidence_array)
+            print(f"time for solve: {time.time()-t_solve}")
+
+            t_error = time.time()
             fit_error = self.get_fit_error(y_mea, nV) * lambda_RMSE
+            print(f"time for error: {time.time()-t_error}")
             prior_bund_norm = len(connections_dict)/lambda_bund
             prior_fibs_norm = sum(map(len, connections_dict.values()))/lambda_fib
 
@@ -1389,7 +1395,9 @@ cdef class Evaluation :
 
             cost = tot_error - Track_Delta_E[it]
 
+            t_cost = time.time()
             accept_prop = self.compute_cost(SA_schedule, it, cost, PROP, priors, mean_sigma=mean_sigma, b_variance=b_variance, blur_sigma=Blur_sigma, removed_connections=len(support_dict), num_connections=len(connections_dict))
+            print(f"time for cost: {time.time()-t_cost}")
             # print(f"PROP: {PROP}, cost {cost}, num_bundles: {len(connections_dict)}, accepted? {accept_prop}")
 
             if accept_prop:
@@ -1398,7 +1406,9 @@ cdef class Evaluation :
                 self.update_backup(Backup_mit_dictionary)
             else:
                 Track_Delta_E.append(Track_Delta_E[it])
+                t_reverse = time.time()
                 self.reverse_dictionary( Backup_mit_dictionary )
+                print(f"time for reverse dictionary: {time.time()-t_reverse}")
                 buff_size = Backup_buffer
                 connections_dict = backup_connections_dict
                 support_dict = backup_support_dict
@@ -1420,6 +1430,7 @@ cdef class Evaluation :
                 break
             # PROP = 80
             it += 1
+            it_time = time.time() - t0
 
 
         fib_idx_save = [*connections_dict.values()]

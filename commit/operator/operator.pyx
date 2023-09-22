@@ -4,7 +4,6 @@
 import cython
 import numpy as np
 cimport numpy as np
-import torch
 
 # Interfaces to actual C code performing the multiplications
 cdef extern void COMMIT_A(
@@ -190,4 +189,3 @@ cdef class LinearOperator :
                 )
 
         return v_out
-

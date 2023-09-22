@@ -57,7 +57,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=[0.0], blur_gauss_extent=0.0,
             blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, adapt_tractogram=False,
-            adapt_params=None, n_threads=-1, keep_temp=False, verbose=2
+            adapt_params=None, seed=None, n_threads=-1, keep_temp=False, verbose=2
             ):
     """Perform the conversion of a tractoram to the sparse data-structure internally
     used by COMMIT to perform the matrix-vector multiplications with the operator A
@@ -165,14 +165,14 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( '"fiber_shift" must be a scalar or a vector with 3 elements' )
 
     # check for invalid parameters in the blur
-    if np.any(np.array(blur_core_extent) < 0) :
-
+    blur_core_extent = np.array(blur_core_extent)
+    if np.any(blur_core_extent< 0) :
         ERROR( 'The extent of the core must be non-negative' )
 
     if blur_gauss_extent < 0 :
         ERROR( 'The extent of the blur must be non-negative' )
 
-    if blur_gauss_extent > 0 or blur_core_extent > 0:
+    if blur_gauss_extent > 0 or np.all(blur_core_extent > 0):
         if blur_spacing <= 0 :
             ERROR( 'The grid spacing of the blur must be positive' )
 
@@ -205,19 +205,21 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         size_t i = 0
         size_t j = 0
 
-    if (blur_gauss_extent==0 and blur_core_extent[0]==0) or (blur_spacing==0) :
+    if (blur_gauss_extent==0 and np.all(blur_core_extent==0)) or (blur_spacing==0) :
         nReplicas = np.array([1]).astype(np.int32)
         blurRho = np.array( [0.0], np.double )
         blurAngle = np.array( [0.0], np.double )
         blurWeights = np.array( [1,1], np.double )
     else:
         nReplicas = np.empty( nb_streamlines, np.int32 )
+        if blur_core_extent.size == 1:
+            blur_core_extent = np.repeat(blur_core_extent, nb_streamlines).astype(np.float32)
         if blur_gauss_extent == 0 :
-            tmp = np.arange(0,np.max(blur_core_extent[j])+blur_gauss_extent+1e-6,blur_spacing)
+            tmp = np.arange(0,np.max(blur_core_extent)+blur_gauss_extent+1e-6,blur_spacing)
             tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
             x, y = np.meshgrid( tmp, tmp )
             r = np.sqrt( x*x + y*y )
-            idx = (r <= blur_core_extent[j]+blur_gauss_extent)
+            idx = (r <= blur_core_extent+blur_gauss_extent)
             blurRho = r[idx]
             blurAngle = np.arctan2(y,x)[idx]
             max_nReplicas = blurRho.size
@@ -235,11 +237,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                     blurWeights[j,i] = 1.0
         else:
             blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.log( blur_gauss_min ) )
-            tmp = np.arange(0,np.max(blur_core_extent[j])+blur_gauss_extent+1e-6,blur_spacing)
+            tmp = np.arange(0,np.max(blur_core_extent)+blur_gauss_extent+1e-6,blur_spacing)
             tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
             x, y = np.meshgrid( tmp, tmp )
             r = np.sqrt( x*x + y*y )
-            idx = (r <= blur_core_extent[j]+blur_gauss_extent)
+            idx = (r <= np.max(blur_core_extent)+blur_gauss_extent)
             blurRho = r[idx]
             blurAngle = np.arctan2(y,x)[idx]
             max_nReplicas = blurRho.size
@@ -525,6 +527,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['voxdim'] = [Px, Py, Pz]
     dictionary_info['dim'] = [Nx, Ny, Nz]
     dictionary_info['atlas'] = blur_clust_groupby
+    dictionary_info["seed"] = seed
 
     dictionary_info['n_threads'] = n_threads
     with open( join(path_out,'dictionary_info.pickle'), 'wb+' ) as dictionary_info_file:
