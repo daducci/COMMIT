@@ -1,6 +1,17 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.0.1`<br>_2023-10-05_
+### 🛠️Changed
+- Bump `dmri-dicelib` to `v1.0.1`
+- Bump `dmri-amico` to `v2.0.1`
+
+### 🐛Fixed
+- Inhomogeneous shape array (dtype=np.object_)
+
+---
+---
+
 ## `v2.0.0`<br>_2023-09-14_
 ### 🛠️Changed
 - Default `ndirs=500` in `core.generate_kernels()` and in `trk2dictionary.run()`
@@ -23,6 +34,7 @@
 ### 🐛Fixed
 - Bugfixes
 
+---
 ---
 
 ## [1.6.5] - 2023-08-03
