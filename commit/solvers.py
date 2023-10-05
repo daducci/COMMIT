@@ -141,7 +141,7 @@ def init_regularisation(commit_evaluation,
                 newStructureIC.append(group)
                 newWeightsIC.append(weightsIC[count])
 
-        structureIC = np.array(newStructureIC)
+        structureIC = np.array(newStructureIC, dtype=np.object_)
         weightsIC = np.array(newWeightsIC)
 
     regularisation['structureIC'] = structureIC
