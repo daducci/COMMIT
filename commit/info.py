@@ -23,7 +23,7 @@ These weights can be easily estimated by solving a convenient global convex opti
 """
 URL                 = 'https://github.com/daducci/COMMIT'
 DOWNLOAD_URL        = "N/A"
-LICENSE             = 'BSD license'
+LICENSE             = 'Proprietary license'
 AUTHOR              = 'Alessandro Daducci'
 AUTHOR_EMAIL        = 'alessandro.daducci@univr.it'
 PLATFORMS           = "OS independent"
