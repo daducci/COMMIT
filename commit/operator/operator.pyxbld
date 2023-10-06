@@ -2,6 +2,7 @@ import numpy
 from os import utime
 from os.path import dirname, join
 from setuptools import Extension
+import sys
 
 # pass parameters to the compiler at runtime
 # [TODO] find a way to avoid using this fake module
@@ -29,11 +30,25 @@ def make_ext(modname, pyxfilename):
     if config.build_dir is None:
         utime( join(path,filename), None)
 
+    include_dirs = [numpy.get_include()]
+    libraries = []
+    library_dirs = []
+    extra_compile_args = []
+    if sys.platform.startswith('win32'):
+        include_dirs.append('C:/Users/clori/Desktop/pthreads-w32-2-9-1-release/include')
+        libraries.append('pthreadVC2')
+        library_dirs.append('C:/Users/clori/Desktop/pthreads-w32-2-9-1-release/lib/x64')
+        extra_compile_args.extend(['/std:c++14', '/fp:fast', '/DHAVE_STRUCT_TIMESPEC'])
+    if sys.platform.startswith('darwin') or sys.platform.startswith('linux'):
+        extra_compile_args.extend(['-w', '-O3', '-Ofast'])
+
     return Extension(name=modname,
-                     sources=[pyxfilename, join(path, filename)],
-                     include_dirs=[numpy.get_include()],
-                     define_macros=[('nTHREADS', config.nTHREADS),
+                    sources=[pyxfilename, join(path, filename)],
+                    include_dirs=include_dirs,
+                    libraries=libraries,
+                    library_dirs=library_dirs,
+                    define_macros=[('nTHREADS', config.nTHREADS),
                                     ('nIC', config.nIC),
                                     ('nEC', config.nEC),
                                     ('nISO', config.nISO)],
-                     extra_compile_args=['-w', '-O3', '-Ofast'])
+                    extra_compile_args=extra_compile_args)
