@@ -194,6 +194,86 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
     nb_streamlines = int(hdr['count'])
 
+
+    if min_seg_len < 0 :
+        ERROR( '"min_seg_len" must be >= 0' )
+    if min_fiber_len < 0 :
+        ERROR( '"min_fiber_len" must be >= 0' )
+    if max_fiber_len < min_fiber_len :
+        ERROR( '"max_fiber_len" must be >= "min_fiber_len"' )
+
+    if filename_tractogram is None:
+        ERROR( '"filename_tractogram" not defined' )
+
+    if path_out is None:
+        path_out = dirname(filename_tractogram)
+        if path_out == '':
+            path_out = '.'
+        if not isdir(path_out):
+            ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
+        path_out = join(path_out,'COMMIT')
+
+    # create output path
+    print( f'\t- Output written to "{path_out}"' )
+    if not exists( path_out ):
+        makedirs( path_out )
+    
+    path_temp = join(path_out, 'temp')
+    print( f'\t- Temporary files written to "{path_temp}"' )
+    
+    if exists(path_temp):
+        shutil.rmtree(path_temp, ignore_errors=True)
+    makedirs(path_temp, exist_ok=True)
+
+    if n_threads == 0 or n_threads > 255 :
+        ERROR( 'Number of n_threads must be between 1 and 255' )
+        
+    if n_threads == -1 :
+        # Set to the number of CPUs in the system
+        try :
+            n_threads = os.cpu_count()
+        except :
+            n_threads = 1
+
+    print( f'\t- Using parallel computation with {n_threads} threads' )
+
+    if np.isscalar(blur_clust_thr):
+        blur_clust_thr = np.array( [blur_clust_thr] )
+
+    file_assignments = None
+    if blur_clust_thr[0]> 0:
+        LOG( '\n   * Running tractogram clustering:' )
+        print( f'\t- Input tractogram "{filename_tractogram}"' )
+        print( f'\t- Clustering threshold = {blur_clust_thr[0]}' )
+        
+
+        extension = splitext(filename_tractogram)[1]
+
+        if filename_mask is None and TCK_ref_image is None:
+            if extension == ".tck":
+                ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
+            else:
+                ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
+
+        input_tractogram = os.path.basename(filename_tractogram)[:-4]
+
+        if blur_clust_groupby:
+            file_assignments = join( path_temp, f'{input_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt' )
+            hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
+            temp_idx = np.arange(int(hdr['count']))
+            path_streamline_idx = join( path_temp,"streamline_idx.npy")
+            np.save( path_streamline_idx, temp_idx )
+            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
+                            clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
+                            temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose) 
+        else:
+            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, clust_thr=blur_clust_thr[0],
+                            force=True, verbose=verbose)
+        filename_tractogram = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
+
+    input_hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
+    nb_streamlines = int(input_hdr['count'])
+
     # check blur params
     cdef :
         double [:] blurRho
@@ -271,84 +351,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         print( f'\t\t- grid spacing = {blur_spacing:.3f}' )
         print( f'\t\t- weights = [ {np.min(blurWeights):.3f} ... {np.max(blurWeights):.3f} ]' )
 
-    if min_seg_len < 0 :
-        ERROR( '"min_seg_len" must be >= 0' )
-    if min_fiber_len < 0 :
-        ERROR( '"min_fiber_len" must be >= 0' )
-    if max_fiber_len < min_fiber_len :
-        ERROR( '"max_fiber_len" must be >= "min_fiber_len"' )
-
-    if filename_tractogram is None:
-        ERROR( '"filename_tractogram" not defined' )
-
-    if path_out is None:
-        path_out = dirname(filename_tractogram)
-        if path_out == '':
-            path_out = '.'
-        if not isdir(path_out):
-            ERROR( '"path_out" cannot be inferred from "filename_tractogram"' )
-        path_out = join(path_out,'COMMIT')
-
-    # create output path
-    print( f'\t- Output written to "{path_out}"' )
-    if not exists( path_out ):
-        makedirs( path_out )
-    
-    path_temp = join(path_out, 'temp')
-    print( f'\t- Temporary files written to "{path_temp}"' )
-    
-    if exists(path_temp):
-        shutil.rmtree(path_temp, ignore_errors=True)
-    makedirs(path_temp, exist_ok=True)
-
-    if n_threads == 0 or n_threads > 255 :
-        ERROR( 'Number of n_threads must be between 1 and 255' )
-        
-    if n_threads == -1 :
-        # Set to the number of CPUs in the system
-        try :
-            n_threads = os.cpu_count()
-        except :
-            n_threads = 1
-
-    print( f'\t- Using parallel computation with {n_threads} threads' )
-
-    if np.isscalar(blur_clust_thr):
-        blur_clust_thr = np.array( [blur_clust_thr] )
-
-    file_assignments = None
-    if blur_clust_thr[0]> 0:
-        LOG( '\n   * Running tractogram clustering:' )
-        print( f'\t- Input tractogram "{filename_tractogram}"' )
-        print( f'\t- Clustering threshold = {blur_clust_thr[0]}' )
-        input_hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
-        input_n_count = int(input_hdr['count'])
-
-        extension = splitext(filename_tractogram)[1]
-
-        if filename_mask is None and TCK_ref_image is None:
-            if extension == ".tck":
-                ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
-            else:
-                ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
-
-        input_tractogram = os.path.basename(filename_tractogram)[:-4]
-        filename_out = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
-
-        if blur_clust_groupby:
-            file_assignments = join( path_temp, f'{input_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt' )
-            hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
-            temp_idx = np.arange(int(hdr['count']))
-            path_streamline_idx = join( path_temp,"streamline_idx.npy")
-            np.save( path_streamline_idx, temp_idx )
-            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
-                            clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
-                            temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose) 
-        else:
-            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, clust_thr=blur_clust_thr[0],
-                            force=True, verbose=verbose)
-        filename_tractogram = filename_out
-
 
     # Load data from files
     LOG( '\n   * Loading data:' )
@@ -406,10 +408,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     print( f'\t\t- {Nx} x {Ny} x {Nz}' )
     print( f'\t\t- {Px:.4f} x {Py:.4f} x {Pz:.4f}' )
-    if blur_clust_thr[0]> 0:
-        print( f'\t\t- {input_n_count} streamlines' )
-    else:
-        print( f'\t\t- {n_count} streamlines' )
+    print( f'\t\t- {nb_streamlines} streamlines' )
+
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         ERROR( 'The max dim size is 2^16 voxels' )
 
@@ -499,7 +499,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['filename_tractogram'] = filename_tractogram
     if blur_clust_thr[0]> 0:
         idx_centroids = np.array(idx_centroids, dtype=np.uint32)
-        dictionary_info['n_count'] = input_n_count
+        dictionary_info['n_count'] = nb_streamlines
         dictionary_info['tractogram_centr_idx'] = idx_centroids 
     dictionary_info['TCK_ref_image'] = TCK_ref_image
     dictionary_info['path_out'] = path_out

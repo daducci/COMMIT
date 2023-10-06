@@ -1095,7 +1095,7 @@ cdef class Evaluation :
             # connections_dict = commit.bundle_o_graphy.assignments_to_dict( self.DICTIONARY['dictionary_info']['assignments'])
             print(f"total number of connections: {len(connections_dict)}")
             support_dict = {}
-            sigma_arr = np.repeat(self.DICTIONARY['dictionary_info']['blur_core_extent'], len(input_set_streamlines.streamlines))
+            sigma_arr = self.DICTIONARY['dictionary_info']['blur_core_extent']
         else:
             connections_dict = None
 
@@ -1477,8 +1477,8 @@ cdef class Evaluation :
             self.DICTIONARY['EC']['o'][upd_idx] = num_vox
 
             idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
-            self.DICTIONARY['EC']['v'][:] = self.DICTIONARY['EC']['v'][ idx ].astype(np.uint32)
-            self.DICTIONARY['EC']['o'][:] = self.DICTIONARY['EC']['o'][ idx ].astype(np.uint16)
+            self.DICTIONARY['EC']['v'][:] = self.DICTIONARY['EC']['v'][ idx ]#.astype(np.uint32)
+            self.DICTIONARY['EC']['o'][:] = self.DICTIONARY['EC']['o'][ idx ]#.astype(np.uint16)
             del idx
             self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
