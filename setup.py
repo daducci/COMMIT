@@ -1,5 +1,6 @@
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
+import os
 
 # name of the package
 package_name = 'commit'
@@ -48,6 +49,10 @@ class CustomBuildExtCommand(build_ext):
 import sys
 sys.path.insert(0, f'./{package_name}/')
 import info
+
+# create the 'build' directory
+if not os.path.exists('build'):
+    os.makedirs('build')
 
 # install the package
 setup(
