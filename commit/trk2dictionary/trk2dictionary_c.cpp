@@ -171,7 +171,7 @@ int trk2dictionary(
     // Open tractogram file and compute the offset for each thread
     // -----------------------------------------------------------------
     unsigned long long int current;
-    unsigned long long int OffsetArr[threads_count];
+    unsigned long long int *OffsetArr = new unsigned long long int[threads_count];
     int f = 0;
     float Buff[3];
     int N;
@@ -283,7 +283,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         segKey         ec_seg;
         int            ix, iy, iz, id, atLeastOne;
         float          peakMax;
-        float          norms[ Np ];
+        float          *norms = new float[Np];
         float          *ptr;
         int            ox, oy;
         int            skip = 0;
