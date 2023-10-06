@@ -1,13 +1,14 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.0.1`<br>_2023-10-05_
+## `v2.0.1`<br>_2023-10-06_
 ### 🛠️Changed
 - Bump `dmri-dicelib` to `v1.0.1`
 - Bump `dmri-amico` to `v2.0.1`
 
 ### 🐛Fixed
-- Inhomogeneous shape array (dtype=np.object_)
+- Add `dtype=np.object_` to inhomogemeous shape arrays
+- Fix `egg_base` option in `setup.cfg` (create the `build` folder before running `setup()`)
 
 ---
 ---
