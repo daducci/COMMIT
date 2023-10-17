@@ -1,9 +1,9 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.0.1`<br>_2023-10-06_
+## `v2.0.1`<br>_2023-10-17_
 ### 🛠️Changed
-- Bump `dmri-dicelib` to `v1.0.1`
+- Bump `dmri-dicelib` to `v1.0.2`
 - Bump `dmri-amico` to `v2.0.1`
 
 ### 🐛Fixed
