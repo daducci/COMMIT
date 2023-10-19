@@ -198,6 +198,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         bool [:] blurApplyTo
         int nReplicas
         float blur_sigma
+        cdef int i=0
 
     if (blur_gauss_extent==0 and blur_core_extent==0) or (blur_spacing==0) :
         nReplicas = 1

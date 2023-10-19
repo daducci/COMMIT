@@ -240,7 +240,7 @@ cdef class Evaluation :
         """
         # Call the specific model constructor
         if hasattr(commit.models, model_name ) :
-            self.model = getattr(commit.models,model_name)()
+            self.model = getattr(commit.models, model_name)()
         else :
             ERROR( 'Model "%s" not recognized' % model_name )
 
@@ -271,7 +271,10 @@ cdef class Evaluation :
         if self.model.id=='VolumeFractions' and ndirs!=1:
             ndirs = 1
             print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
-
+        if self.model.restrictedISO is not None and ndirs!=1:
+            ndirs = 1
+            print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
+ 
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
@@ -926,7 +929,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, ISO_map=None ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -1131,6 +1134,10 @@ cdef class Evaluation :
         else:
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+
+        if self.model.restrictedISO :
+            ISO_map = nibabel.load(ISO_map).get_fdata()
+            xic = self.model._reweight(xic, self.DICTIONARY, ISO_map, niiIC_img)
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
