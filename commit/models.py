@@ -9,6 +9,7 @@ import numpy as np
 from amico.models import BaseModel, StickZeppelinBall as _StickZeppelinBall, CylinderZeppelinBall as _CylinderZeppelinBall
 
 try:
+    sys.path.append(environ["WIP_MODEL"])
     extension = Extension(name='commitwipmodels', language='c++', sources=[os.environ['WIP_MODEL'] + '/commitwipmodels.pyx'])
     build_extension = _get_build_extension()
     build_extension.extensions = cythonize([extension],
