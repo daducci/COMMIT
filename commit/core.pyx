@@ -271,9 +271,10 @@ cdef class Evaluation :
         if self.model.id=='VolumeFractions' and ndirs!=1:
             ndirs = 1
             print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
-        if self.model.restrictedISO is not None and ndirs!=1:
-            ndirs = 1
-            print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
+        if 'commitwipmodels' in sys.modules :
+            if self.model.restrictedISO is not None and ndirs!=1:
+                ndirs = 1
+                print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
  
         # store some values for later use
         self.set_config('lmax', lmax)
@@ -1135,9 +1136,10 @@ cdef class Evaluation :
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
-        if self.model.restrictedISO :
-            ISO_map = nibabel.load(ISO_map).get_fdata()
-            xic = self.model._reweight(xic, self.DICTIONARY, ISO_map, niiIC_img)
+        if "commitwipmodels" in sys.modules:
+            if self.model.restrictedISO :
+                ISO_map = nibabel.load(ISO_map).get_fdata()
+                xic = self.model._reweight(xic, self.DICTIONARY, ISO_map, niiIC_img)
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
