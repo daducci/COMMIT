@@ -7,6 +7,7 @@ from Cython.Build.Inline import _get_build_extension
 from Cython.Build import cythonize
 import numpy as np
 from amico.models import BaseModel, StickZeppelinBall as _StickZeppelinBall, CylinderZeppelinBall as _CylinderZeppelinBall
+from amico.util import ERROR
 
 try:
     sys.path.append(environ["WIP_MODEL"])
@@ -62,8 +63,8 @@ class VolumeFractions(BaseModel):
         params['name'] = self.name
         return params
 
-    # def set_solver(self):
-    #     ERROR('Not implemented')
+    def set_solver(self):
+        ERROR('Not implemented')
 
     def generate(self, out_path, aux, idx_in, idx_out, ndirs):
         return
@@ -83,5 +84,5 @@ class VolumeFractions(BaseModel):
         KERNELS['iso'] = np.ones((0, nS), dtype=np.float32)
         return KERNELS
 
-    # def fit(self, evaluation):
-    #     ERROR('Not implemented')
+    def fit(self, evaluation):
+        ERROR('Not implemented')
