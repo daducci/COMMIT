@@ -8,7 +8,6 @@ import os
 from amico.models import StickZeppelinBall as _StickZeppelinBall, CylinderZeppelinBall as _CylinderZeppelinBall, VolumeFractions as _VolumeFractions
 
 try:
-    print('\n\nCOMMIT_WIP_MODEL\n\n')
     sys.path.append(environ["WIP_MODEL"])
     extension = Extension(name='commitwipmodels', language='c++', sources=[os.environ['WIP_MODEL'] + '/commitwipmodels.pyx'])
     build_extension = _get_build_extension()
