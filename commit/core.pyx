@@ -594,10 +594,24 @@ cdef class Evaluation :
             self.THREADS['EC'] = None
 
         if self.DICTIONARY['nV'] > 0 :
-            self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
-            for i in xrange(n) :
-                self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-            self.THREADS['ISO'][n] = self.DICTIONARY['nV']
+            if self.DICTIONARY['ISO']['nV'] > 0 :
+                self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
+                N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+                t = 1
+                tot = 0
+                C = np.bincount( self.DICTIONARY['ISO']['v'] )
+                for c in C :
+                    tot += c
+                    if tot >= N and t <= n :
+                        self.THREADS['ISO'][t] = self.THREADS['ISO'][t-1] + tot
+                        t += 1
+                        tot = 0
+                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
+            else:
+                self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
+                for i in xrange(n) :
+                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
+                self.THREADS['ISO'][n] = self.DICTIONARY['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
