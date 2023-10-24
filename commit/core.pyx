@@ -486,14 +486,13 @@ cdef class Evaluation :
 
         self.DICTIONARY['ISO'] = {}
 
-        self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
+        self.DICTIONARY['ISO']['v']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
+        if self.DICTIONARY['ISO']['v'].size > 0:
+            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
+        else:
+            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['MASK'].sum()
 
-        vx, vy, vz = ( self.DICTIONARY['MASK'] > 0 ).nonzero() # [TODO] find a way to avoid using int64 (not necessary and waste of memory)
-        vx = vx.astype(np.int32)
-        vy = vy.astype(np.int32)
-        vz = vz.astype(np.int32)
-        self.DICTIONARY['ISO']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
-        del vx, vy, vz
+        self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
         # reorder the segments based on the "v" field
         idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
