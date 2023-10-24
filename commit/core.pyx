@@ -930,7 +930,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, ISO_map=None ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -1138,8 +1138,7 @@ cdef class Evaluation :
 
         if "commitwipmodels" in sys.modules:
             if self.model.restrictedISO :
-                ISO_map = nibabel.load(ISO_map).get_fdata()
-                xic = self.model._reweight(xic, self.DICTIONARY, ISO_map, niiIC_img)
+                xic = self.model._reweight(xic, self.DICTIONARY, niiISO_img, niiIC_img)
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
