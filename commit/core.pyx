@@ -611,7 +611,7 @@ cdef class Evaluation :
                 self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
                 for i in xrange(n) :
                     self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-                self.THREADS['ISO'][n] = self.DICTIONARY['nV']
+                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
@@ -667,7 +667,7 @@ cdef class Evaluation :
             N = np.floor( self.DICTIONARY['nV']/n )
             for i in xrange(1,n) :
                 self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
-            self.THREADS['ISOt'][n] = self.DICTIONARY['nV']
+            self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
