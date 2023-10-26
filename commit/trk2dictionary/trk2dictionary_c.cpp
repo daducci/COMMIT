@@ -80,6 +80,8 @@ vector<unsigned int>    totFibers;
 unsigned int            totECVoxels = 0;
 unsigned int            totECSegments = 0;
 
+// progressbar verbosity
+int verbosity = 0;
 
 // --- Functions Definitions ----
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
@@ -109,7 +111,7 @@ int trk2dictionary(
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
-    float* ptrToVOXMM, short* ptrHashTable, int threads_count
+    float* ptrToVOXMM, short* ptrHashTable, int threads_count, int verbose
 )
 {
 
@@ -129,6 +131,7 @@ int trk2dictionary(
     totFibers.resize( threads_count, 0 );
     totECVoxels   = 0;
     totECSegments = 0;
+    verbosity     = verbose;
 
 
     // Compute the batch size for each thread
@@ -229,8 +232,11 @@ int trk2dictionary(
     printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
     // unsigned int width = 25;
     // PROGRESS = new ProgressBar( (unsigned int) n_count, (unsigned int) width);
-    PROGRESS->reset((unsigned int) n_count);
-    PROGRESS->setPrefix("     ");
+    if (verbosity > 0)
+    {
+        PROGRESS->reset((unsigned int) n_count);
+        PROGRESS->setPrefix("     ");
+    }
     // ---- Original ------
     for( int i = 0; i<threads_count; i++ ){
         threads.push_back( thread( ICSegments, str_filename, isTRK, n_count, nReplicas, n_scalars, n_properties, ptrToVOXMM,
@@ -243,7 +249,8 @@ int trk2dictionary(
         threads[i].join();
     }
 
-    PROGRESS->close();
+    if (verbosity > 0)
+        PROGRESS->close();
 
     printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
     totFibers.clear();
@@ -487,11 +494,16 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
         fwrite( &kept, 1, 1, pDict_TRK_kept );
         totFibers[idx] = tempTotFibers;
         totICSegments[idx] = temp_totICSegments;
-        if (idx == 0){
-            incr_new = std::accumulate(totFibers.begin(), totFibers.end(), 0);
-            for(int i=incr_old; i<incr_new; i++)
-                PROGRESS->inc();
-            incr_old = incr_new;
+
+        if (verbosity > 0)
+        {
+            if (idx == 0)
+            {
+                incr_new = std::accumulate(totFibers.begin(), totFibers.end(), 0);
+                for(int i=incr_old; i<incr_new; i++)
+                    PROGRESS->inc();
+                incr_old = incr_new;
+            }
         }
     }
     fclose( fpTractogram1 );
