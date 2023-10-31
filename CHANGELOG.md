@@ -1,14 +1,14 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.0.1`<br>_2023-10-17_
+## `v2.0.1`<br>_2023-10-31_
 ### 🛠️Changed
-- Bump `dmri-dicelib` to `v1.0.2`
-- Bump `dmri-amico` to `v2.0.1`
+- Bump dependencies
 
 ### 🐛Fixed
 - Add `dtype=np.object_` to inhomogemeous shape arrays
 - Fix `egg_base` option in `setup.cfg` (create the `build` folder before running `setup()`)
+- Fix `trk2didtionary` crash when run from Jupyter notebooks (removed C-level stdout from Jupyter notebook)
 
 ---
 ---
