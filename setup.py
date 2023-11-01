@@ -1,5 +1,6 @@
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
+import os
 
 # name of the package
 package_name = 'commit'
@@ -49,6 +50,10 @@ import sys
 sys.path.insert(0, f'./{package_name}/')
 import info
 
+# create the 'build' directory
+if not os.path.exists('build'):
+    os.makedirs('build')
+
 # install the package
 setup(
     name=info.NAME,
@@ -63,6 +68,6 @@ setup(
     cmdclass={'build_ext': CustomBuildExtCommand},
     ext_modules=get_extensions(),
     setup_requires=['Cython>=0.29', 'numpy>=1.12', 'wheel'],
-    install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-dicelib>=1.0.0', 'dmri-amico>=2.0.0'],
+    install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-dicelib==1.0.3', 'dmri-amico>=2.0.1'],
     package_data={f'{package_name}.operator': ["*.*"]}
 )

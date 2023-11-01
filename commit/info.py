@@ -3,7 +3,7 @@
 # Format version as expected by setup.py (string of form "X.Y.Z")
 _version_major = 2
 _version_minor = 0
-_version_micro = 0
+_version_micro = 1
 _version_extra = '' #'.dev'
 __version__    = "%s.%s.%s%s" % (_version_major,_version_minor,_version_micro,_version_extra)
 
@@ -23,7 +23,7 @@ These weights can be easily estimated by solving a convenient global convex opti
 """
 URL                 = 'https://github.com/daducci/COMMIT'
 DOWNLOAD_URL        = "N/A"
-LICENSE             = 'BSD license'
+LICENSE             = 'Proprietary license'
 AUTHOR              = 'Alessandro Daducci'
 AUTHOR_EMAIL        = 'alessandro.daducci@univr.it'
 PLATFORMS           = "OS independent"
