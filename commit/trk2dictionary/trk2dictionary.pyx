@@ -6,6 +6,7 @@ cimport numpy as np
 from libc.stdlib cimport malloc, free
 import nibabel
 from dicelib.clustering import run_clustering
+from dicelib.ui import _in_notebook
 
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
@@ -27,7 +28,7 @@ cdef extern from "trk2dictionary_c.cpp":
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
-        float* ptrTractsAffine, short* prtHashTable, int threads_count
+        float* ptrTractsAffine, short* prtHashTable, int threads_count, int verbose
     ) nogil
 
 def _get_header( niiFILE ):
@@ -295,7 +296,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             else:
                 ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
 
-        input_tractogram = os.path.basename(filename_tractogram)[:-4]
+        input_tractogram = os.path.basename(filename_tractogram)[:len(os.path.basename(filename_tractogram))-4]
         filename_out = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
 
         if blur_clust_groupby:
@@ -494,7 +495,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrTDI, path_temp, 1 if do_intersect else 0, ptrPeaksAffine,
-        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, n_threads  );
+        nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, n_threads, verbose if not _in_notebook() else 0 );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
