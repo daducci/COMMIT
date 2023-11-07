@@ -664,7 +664,8 @@ cdef class Evaluation :
 
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
-            N = np.floor( self.DICTIONARY['nV']/n )
+            N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+
             for i in xrange(1,n) :
                 self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
             self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
