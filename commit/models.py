@@ -22,6 +22,14 @@ try:
     build_extension.run()
     from commitwipmodels import *
 
+except ValueError:
+    # check if .so file exists
+    if os.path.isfile(os.environ['WIP_MODEL'] + '/commitwipmodels.cpython-38-x86_64-linux-gnu.so'):
+        from commitwipmodels import *
+    else:
+        print("ValueError: 'COMMIT_WIP_MODEL' not found in environ")
+        pass
+
 except KeyError:
     print("KeyError: 'COMMIT_WIP_MODEL' not found in environ")
     pass
