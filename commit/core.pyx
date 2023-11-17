@@ -16,6 +16,7 @@ import commit.models
 import commit.solvers
 import amico.scheme
 import amico.lut
+from importlib import reload, invalidate_caches
 import pyximport
 from pkg_resources import get_distribution
 
@@ -170,7 +171,7 @@ cdef class Evaluation :
             ERROR( 'Scheme does not match with input data' )
         if self.scheme.dwi_count == 0 :
             ERROR( 'There are no DWI volumes in the data' )
-        
+
         # Check for Nan or Inf values in raw data
         if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
             if replace_bad_voxels is not None:
@@ -733,6 +734,9 @@ cdef class Evaluation :
             if not 'commit.operator.operator' in sys.modules :
                 import commit.operator.operator
             else :
+                invalidate_caches()
+                del sys.modules['commit.operator.operator']
+                import commit.operator.operator
                 reload( sys.modules['commit.operator.operator'] )
 
         self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
@@ -1127,7 +1131,7 @@ cdef class Evaluation :
                 temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
                 unravel_weights[ordered_idx] = temp_weights
                 xic = unravel_weights
-                
+
         else:
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
