@@ -98,7 +98,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     double** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx);
 
-int ISOcompartments(char* path_out);
+int ISOcompartments(double** ptrTDI, char* path_out, int idx);
 
 
 
@@ -268,7 +268,7 @@ int trk2dictionary(
     /*=========================*/
     printf( "\n   \033[0;32m* Exporting ISO compartments:\033[0m\n" );
 
-    int totISO = ISOcompartments(path_out);
+    int totISO = ISOcompartments(ptrTDI, path_out, threads_count);
 
     printf("     [ %d voxels ]\n", totISO );
 
@@ -393,8 +393,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
 
 
 
-int ISOcompartments(char* path_out)
-{
+int ISOcompartments(double** ptrTDI, char* path_out, int threads){
     // Variables definition
     string    filename;
     string    OUTPUT_path(path_out);
@@ -405,12 +404,23 @@ int ISOcompartments(char* path_out)
     filename = OUTPUT_path+"/dictionary_ISO_v.dict";        FILE* pDict_ISO_v   = fopen( filename.c_str(),   "wb" );
 
     int            ix, iy, iz, id, atLeastOne;
+    int            skip = 0;
 
     for(iz=0; iz<dim.z ;iz++){
         for(iy=0; iy<dim.y ;iy++)
         for(ix=0; ix<dim.x ;ix++){
             // check if in mask previously computed from IC segments
-            if ( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+            for(int i =0; i<threads; i++){
+                if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ){
+                    skip += 1;
+                }
+            }
+            if(skip==threads){
+                skip = 0;
+                continue;
+            }
+            skip = 0;
+            if ( ptrMASK && ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
             if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
             v = ix + dim.x * ( iy + dim.y * iz );
             fwrite( &v, 4, 1, pDict_ISO_v );    

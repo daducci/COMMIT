@@ -582,6 +582,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
     cat_function( dict_list, fileout )
 
+
     # save TDI and MASK maps
     if TCK_ref_image is not None:
         TDI_affine = _get_affine( niiREF )
@@ -597,7 +598,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
     niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz )
-    niiTDI_img_save = np.reshape( niiTDI_mem, niiMASK.shape, order='F' )
+    niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
     niiTDI_hdr = _get_header( niiTDI )
@@ -608,6 +609,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
     else :
         niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), TDI_affine )
+
     niiMASK_hdr = _get_header( niiMASK )
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
