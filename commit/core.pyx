@@ -69,6 +69,7 @@ cdef class Evaluation :
     cdef public A
     cdef public x
     cdef public CONFIG
+    cdef public temp_data
     cdef public confidence_map_img
 
     def __init__( self, study_path='.', subject='.' ) :
@@ -93,6 +94,7 @@ cdef class Evaluation :
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
+        self.temp_data = {}
         self.set_config('version', get_distribution('dmri-commit').version)
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
@@ -107,10 +109,15 @@ cdef class Evaluation :
 
     def set_config( self, key, value ) :
         self.CONFIG[ key ] = value
+        self.temp_data[ key ] = value
 
 
     def get_config( self, key ) :
         return self.CONFIG.get( key )
+
+
+    def get_temp_data( self, key ) :
+        return self.temp_data.get( key )
 
 
     def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
@@ -783,7 +790,7 @@ cdef class Evaluation :
         max_iter : integer
             Maximum number of iterations (default : 100)
         verbose : boolean
-            Level of verbosity: 0=no print, 1=print progress (default : True)
+            Level of verbosity: 0=no print, 1=print info at each iteration, 2=print progress bar, 3=print debug info (default : True)
         x0 : np.array
             Initial guess for the solution of the problem (default : None)
         regularisation : commit.solvers.init_regularisation object
@@ -1111,8 +1118,6 @@ cdef class Evaluation :
         # Configuration and results
         print( '\t* Configuration and results:' )
 
-        print( '\t\t- streamline_weights.txt... ', end='' )
-        sys.stdout.flush()
         xic, _, _ = self.get_coeffs()
         if stat_coeffs != 'all' and xic.size > 0 :
             xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
@@ -1138,7 +1143,7 @@ cdef class Evaluation :
             ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
             unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
             unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
-            temp_weights = unravel_weights[ordered_idx]
+            temp_weights = unravel_weights[ordered_idx] 
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                 unravel_weights[ordered_idx] = temp_weights
@@ -1152,9 +1157,20 @@ cdef class Evaluation :
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
-        if "commitwipmodels" in sys.modules:
-            if self.model.restrictedISO :
-                xic = self.model._reweight(xic, self.DICTIONARY, niiISO_img, niiIC_img)
+        
+        self.temp_data['DICTIONARY'] = self.DICTIONARY
+        self.temp_data['niiIC_img'] = niiIC_img
+        self.temp_data['niiEC_img'] = niiEC_img
+        self.temp_data['niiISO_img'] = niiISO_img
+        self.temp_data['streamline_weights'] = xic
+        self.temp_data['RESULTS_path'] = RESULTS_path
+
+        if hasattr(self.model, '_postprocess'):
+            self.model._postprocess(self.temp_data, verbose=self.CONFIG['optimization']['verbose'])
+        else:
+            print( '\t\t- streamline_weights.txt... ', end='' )
+            sys.stdout.flush()
+
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
