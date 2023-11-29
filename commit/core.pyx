@@ -780,7 +780,7 @@ cdef class Evaluation :
         return y
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=2, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
         """Fit the model to the data.
 
         Parameters
@@ -790,7 +790,7 @@ cdef class Evaluation :
         max_iter : integer
             Maximum number of iterations (default : 100)
         verbose : boolean
-            Level of verbosity: 0=no print, 1=print info at each iteration, 2=print progress bar, 3=print debug info (default : True)
+            Level of verbosity: 0=no print, 1=print info at each iteration, 2=print progress bar, 3=print debug info (default : 2)
         x0 : np.array
             Initial guess for the solution of the problem (default : None)
         regularisation : commit.solvers.init_regularisation object
