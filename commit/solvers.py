@@ -157,16 +157,16 @@ def regularisation2omegaprox(regularisation):
     normEC  = regularisation.get('normEC')
     normISO = regularisation.get('normISO')
     if not normIC in list_regnorms:
-        raise ValueError('normIC must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
+        raise ValueError('normIC not implemented')
     if not normEC in list_regnorms:
-        raise ValueError('normEC must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
+        raise ValueError('normEC not implemented')
     if not normISO in list_regnorms:
-        raise ValueError('normISO must be one of commit.solvers.{group_sparsity,non_negative,norm1,norm2}')
+        raise ValueError('normISO not implemented')
 
     ## NNLS case
     if (lambdaIC == 0.0 and lambdaEC == 0.0 and lambdaISO == 0.0) or (normIC == non_negative and normEC == non_negative and normISO == non_negative):
         omega = lambda x: 0.0
-        prox  = lambda x: non_negativity(x, 0, len(x))
+        prox  = lambda x, lam_fac: non_negativity(x, 0, len(x))
         return omega, prox
 
     ## All other cases
@@ -176,19 +176,19 @@ def regularisation2omegaprox(regularisation):
     sizeIC  = regularisation.get('sizeIC')
     if lambdaIC == 0.0:
         omegaIC = lambda x: 0.0
-        proxIC  = lambda x: x
+        proxIC  = lambda x, scaling: x
     elif normIC == non_negative:
         omegaIC = lambda x: 0.0
-        proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
+        proxIC  = lambda x, scaling: non_negativity(x, startIC, sizeIC)
     elif normIC == norm1:
         omegaIC = lambda x: lambdaIC * sum( x[startIC:sizeIC] )
-        proxIC  = lambda x: soft_thresholding(x, lambdaIC, startIC, sizeIC)
+        proxIC  = lambda x, scaling: soft_thresholding(x, scaling*lambdaIC, startIC, sizeIC)
     # elif normIC == norm2:
     #     omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
     #     proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
     elif normIC == group_sparsity:
         structureIC = regularisation.get('structureIC')
-        groupWeightIC   = regularisation.get('weightsIC')
+        groupWeightIC = regularisation.get('weightsIC')
         if not len(structureIC) == len(groupWeightIC):
             raise ValueError('Number of groups and weights do not coincide.')
         group_norm = regularisation.get('group_norm')
@@ -206,7 +206,7 @@ def regularisation2omegaprox(regularisation):
             pos += g.size
 
         omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, group_norm )
-        proxIC  = lambda x:  prox_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, group_norm )
+        proxIC  = lambda x, scaling:  prox_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, group_norm ) #TODO: check if step size needs to be considered
     else:
         raise ValueError('Type of regularisation for IC compartment not recognized.')
 
@@ -216,13 +216,13 @@ def regularisation2omegaprox(regularisation):
     sizeEC  = regularisation.get('sizeEC')
     if lambdaEC == 0.0:
         omegaEC = lambda x: 0.0
-        proxEC  = lambda x: x
+        proxEC  = lambda x, scaling: x
     elif normEC == non_negative:
         omegaEC = lambda x: 0.0
-        proxEC  = lambda x: non_negativity(x, startEC, sizeEC)
+        proxEC  = lambda x, scaling: non_negativity(x, startEC, sizeEC)
     elif normEC == norm1:
         omegaEC = lambda x: lambdaEC * sum( x[startEC:(startEC+sizeEC)] )
-        proxEC  = lambda x: soft_thresholding(x, lambdaEC, startEC, sizeEC)
+        proxEC  = lambda x, scaling: soft_thresholding(x, scaling*lambdaEC, startEC, sizeEC)
     # elif normEC == norm2:
     #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
@@ -234,13 +234,13 @@ def regularisation2omegaprox(regularisation):
     sizeISO  = regularisation.get('sizeISO')
     if lambdaISO == 0.0:
         omegaISO = lambda x: 0.0
-        proxISO  = lambda x: x
+        proxISO  = lambda x, scaling: x
     elif normISO == non_negative:
         omegaISO = lambda x: 0.0
-        proxISO  = lambda x: non_negativity(x, startISO, sizeISO)
+        proxISO  = lambda x, scaling: non_negativity(x, startISO, sizeISO)
     elif normISO == norm1:
         omegaISO = lambda x: lambdaISO * sum( x[startISO:(startISO+sizeISO)] )
-        proxISO  = lambda x: soft_thresholding(x, lambdaISO, startISO, sizeISO)
+        proxISO  = lambda x, scaling: soft_thresholding(x, scaling*lambdaISO, startISO, sizeISO)
     # elif normISO == norm2:
     #     omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)])
     #     proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
@@ -248,7 +248,8 @@ def regularisation2omegaprox(regularisation):
         raise ValueError('Type of regularisation for ISO compartment not recognized.')
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
-    prox = lambda x: non_negativity(proxIC(proxEC(proxISO(x))),0,x.size) # non negativity is redunduntly forced
+    # prox = lambda x: non_negativity(proxIC(proxEC(proxISO(x))),0,x.size) # non negativity is redunduntly forced
+    prox = lambda x: proxIC(proxEC(proxISO(x)))
 
     return omega, prox
 
@@ -275,7 +276,7 @@ def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0=No
     """
     if regularisation is None:
         omega = lambda x: 0.0
-        prox  = lambda x: non_negativity(x, 0, x.size)
+        prox  = lambda x, scaling: non_negativity(x, 0, x.size)
     else:
         omega, prox = regularisation2omegaprox(regularisation)
 
@@ -288,7 +289,7 @@ def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0=No
     return fista( y, A, At, omega, prox, confidence_array, tol_fun, tol_x, max_iter, verbose, x0)
 
 
-def fista( y, A, At, omega, proximal, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=False, x0=None) :
+def fista( y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=False, x0=None) :
     """
     Solve the regularised least squares problem
 
@@ -316,7 +317,7 @@ def fista( y, A, At, omega, proximal, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max
         res = A.dot(xhat) - y
         grad = np.asarray(At.dot(res))
 
-    proximal( xhat )
+    prox( xhat, 1.0 )
     reg_term = omega( xhat )
     prev_obj = 0.5 * np.linalg.norm(res)**2 + reg_term
 
@@ -347,7 +348,7 @@ def fista( y, A, At, omega, proximal, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max
         x = xhat - step_size*grad
 
         # Non-smooth step
-        proximal( x )
+        prox( x, step_size )
         reg_term_x = omega( x )
 
         # Check stepsize
@@ -367,7 +368,7 @@ def fista( y, A, At, omega, proximal, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max
             x = xhat - step_size*grad
 
             # Non-smooth step
-            proximal( x )
+            prox( x, step_size )
             reg_term_x = omega( x )
 
             # Check stepsize
