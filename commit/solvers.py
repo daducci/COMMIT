@@ -260,7 +260,6 @@ def regularisation2omegaprox(regularisation):
 def evaluate_model(y, A, x, regularisation = None):
     if regularisation is None:
         omega = lambda x: 0.0
-        prox  = lambda x: non_negativity(x, 0, len(x))
     else:
         omega, _ = regularisation2omegaprox(regularisation)
 
