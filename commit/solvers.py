@@ -14,14 +14,13 @@ eps = np.finfo(float).eps
 from commit.proximals import (non_negativity,
                              omega_group_sparsity,
                              prox_group_sparsity,
-                             soft_thresholding,
-                             projection_onto_l2_ball)
+                             soft_thresholding)# removed, for now, projection_onto_l2_ball
 group_sparsity = -1
 non_negative = 0
 norm1 = 1
 norm2 = 2
 norminf = np.inf
-list_regnorms = [group_sparsity, non_negative, norm1, norm2]
+list_regnorms = [group_sparsity, non_negative, norm1] # removed, for now, norm2
 list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
 
 
