@@ -175,21 +175,22 @@ def regularisation2omegaprox(regularisation):
         return omega, prox
 
     ## All other cases
+
     # Intracellular Compartment
     startIC = regularisation.get('startIC')
     sizeIC  = regularisation.get('sizeIC')
     if lambdaIC == 0.0:
         omegaIC = lambda x: 0.0
         proxIC  = lambda x: x
-    elif normIC == norm2:
-        omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
-        proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
-    elif normIC == norm1:
-        omegaIC = lambda x: lambdaIC * sum( x[startIC:sizeIC] )
-        proxIC  = lambda x: soft_thresholding(x, lambdaIC, startIC, sizeIC)
     elif normIC == non_negative:
         omegaIC = lambda x: 0.0
         proxIC  = lambda x: non_negativity(x, startIC, sizeIC)
+    elif normIC == norm1:
+        omegaIC = lambda x: lambdaIC * sum( x[startIC:sizeIC] )
+        proxIC  = lambda x: soft_thresholding(x, lambdaIC, startIC, sizeIC)
+    # elif normIC == norm2:
+    #     omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
+    #     proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
     elif normIC == group_sparsity:
         structureIC = regularisation.get('structureIC')
         groupWeightIC   = regularisation.get('weightsIC')
@@ -221,15 +222,15 @@ def regularisation2omegaprox(regularisation):
     if lambdaEC == 0.0:
         omegaEC = lambda x: 0.0
         proxEC  = lambda x: x
-    elif normEC == norm2:
-        omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
-        proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
-    elif normEC == norm1:
-        omegaEC = lambda x: lambdaEC * sum( x[startEC:(startEC+sizeEC)] )
-        proxEC  = lambda x: soft_thresholding(x, lambdaEC, startEC, sizeEC)
     elif normEC == non_negative:
         omegaEC = lambda x: 0.0
         proxEC  = lambda x: non_negativity(x, startEC, sizeEC)
+    elif normEC == norm1:
+        omegaEC = lambda x: lambdaEC * sum( x[startEC:(startEC+sizeEC)] )
+        proxEC  = lambda x: soft_thresholding(x, lambdaEC, startEC, sizeEC)
+    # elif normEC == norm2:
+    #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
+    #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
     else:
         raise ValueError('Type of regularisation for EC compartment not recognized.')
 
@@ -239,15 +240,15 @@ def regularisation2omegaprox(regularisation):
     if lambdaISO == 0.0:
         omegaISO = lambda x: 0.0
         proxISO  = lambda x: x
-    elif normISO == norm2:
-        omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)])
-        proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
-    elif normISO == norm1:
-        omegaISO = lambda x: lambdaISO * sum( x[startISO:(startISO+sizeISO)] )
-        proxISO  = lambda x: soft_thresholding(x, lambdaISO, startISO, sizeISO)
     elif normISO == non_negative:
         omegaISO = lambda x: 0.0
         proxISO  = lambda x: non_negativity(x, startISO, sizeISO)
+    elif normISO == norm1:
+        omegaISO = lambda x: lambdaISO * sum( x[startISO:(startISO+sizeISO)] )
+        proxISO  = lambda x: soft_thresholding(x, lambdaISO, startISO, sizeISO)
+    # elif normISO == norm2:
+    #     omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)])
+    #     proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
     else:
         raise ValueError('Type of regularisation for ISO compartment not recognized.')
 
