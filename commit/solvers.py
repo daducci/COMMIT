@@ -130,7 +130,7 @@ def init_regularisation(commit_evaluation,
         newStructureIC = []
         newWeightsIC = []
         for count, group in enumerate(structureIC):
-            group = idx_in_kept[group]   
+            group = idx_in_kept[group]
             idx_to_delete = np.where(group==-1)[0]
             if idx_to_delete.size>0:
                 group = np.delete(group,idx_to_delete)
@@ -267,7 +267,7 @@ def evaluate_model(y, A, x, regularisation = None):
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 
-def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = True, x0 = None, regularisation = None, confidence_array = None):
+def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0=None, regularisation=None, confidence_array=None):
     """
     Solve the regularised least squares problem
 
@@ -289,11 +289,11 @@ def solve(y, A, At, tol_fun = 1e-4, tol_x = 1e-6, max_iter = 1000, verbose = Tru
 
     if confidence_array is not None:
         confidence_array = np.sqrt(confidence_array)
-   
-    return fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, prox, confidence_array)
-   
 
-def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqrt_W) :
+    return fista( y, A, At, omega, prox, confidence_array, tol_fun, tol_x, max_iter, verbose, x0)
+
+
+def fista( y, A, At, omega, proximal, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=False, x0=None) :
     """
     Solve the regularised least squares problem
 
@@ -310,13 +310,15 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqr
     """
 
     # Initialization
+    if x0 is None:
+        x0 = np.zeros(A.shape[1])
     xhat = x0.copy()
     x = np.zeros_like(xhat)
     if sqrt_W is not None:
-        res = sqrt_W * (A.dot(xhat) - y) 
+        res = sqrt_W * (A.dot(xhat) - y)
         grad = np.asarray(At.dot(sqrt_W * res))
     else:
-        res = A.dot(xhat) - y 
+        res = A.dot(xhat) - y
         grad = np.asarray(At.dot(res))
 
     proximal( xhat )
@@ -326,14 +328,14 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqr
     told = 1
     beta = 0.9
     prev_x = xhat.copy()
-    qfval = prev_obj    
+    qfval = prev_obj
 
     # Step size computation
     if sqrt_W is not None:
         L = ( np.linalg.norm( sqrt_W * A.dot(grad) ) / np.linalg.norm(grad) )**2
-    else:    
+    else:
         L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
-    mu = 1.9 / L
+    step_size = 1.9 / L
 
     # Main loop
     if verbose :
@@ -347,7 +349,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqr
             sys.stdout.flush()
 
         # Smooth step
-        x = xhat - mu*grad
+        x = xhat - step_size*grad
 
         # Non-smooth step
         proximal( x )
@@ -355,7 +357,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqr
 
         # Check stepsize
         tmp = x-xhat
-        q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
+        q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/step_size * np.linalg.norm(tmp)**2 + reg_term_x
         if sqrt_W is not None:
             res = sqrt_W * ( A.dot(x) - y )
         else:
@@ -366,8 +368,8 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqr
         # Backtracking
         while curr_obj > q :
             # Smooth step
-            mu = beta*mu
-            x = xhat - mu*grad
+            step_size = beta*step_size
+            x = xhat - step_size*grad
 
             # Non-smooth step
             proximal( x )
@@ -375,7 +377,7 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqr
 
             # Check stepsize
             tmp = x-xhat
-            q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/mu * np.linalg.norm(tmp)**2 + reg_term_x
+            q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/step_size * np.linalg.norm(tmp)**2 + reg_term_x
             if sqrt_W is not None:
                 res = sqrt_W * ( A.dot(x) - y )
             else:
@@ -418,14 +420,14 @@ def fista( y, A, At, tol_fun, tol_x, max_iter, verbose, x0, omega, proximal, sqr
         else:
             res = A.dot(xhat) - y
             grad = np.asarray(At.dot(res))
-        
+
         # Update variables
         iter += 1
         prev_obj = curr_obj
         prev_x = x.copy()
         told = t
         qfval = 0.5 * np.linalg.norm(res)**2
-    
+
     if verbose :
         print( "< Stopping criterion: %s >" % criterion )
 
