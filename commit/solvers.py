@@ -206,7 +206,7 @@ def regularisation2omegaprox(regularisation):
             pos += g.size
 
         omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, group_norm )
-        proxIC  = lambda x, scaling:  prox_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, group_norm ) #TODO: check if step size needs to be considered
+        proxIC  = lambda x, scaling:  prox_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, scaling*lambdaIC, group_norm ) #TODO: verify if results are better now
     else:
         raise ValueError('Type of regularisation for IC compartment not recognized.')
 
