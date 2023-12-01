@@ -50,7 +50,7 @@ def init_regularisation(commit_evaluation,
             regnorms[2] corresponds to the Isotropic compartment
 
             Each regnorms[k] must be one of commit.solvers.
-                                {group_sparsity, non_negative, norm1, norm2}.
+                                {non_negative, norm1, group_sparsity}.
 
             commit.solvers.group_sparsity considers both the non-overlapping
                 and the hierarchical group sparsity (see [1]). This option is
@@ -64,10 +64,6 @@ def init_regularisation(commit_evaluation,
 
             commit.solvers.norm1 penalises with the 1-norm of the coefficients
                 corresponding to the compartment.
-
-            commit.solvers.norm2 penalises with the 2-norm of the coefficients
-                corresponding to the compartment.
-
 
     structureIC - np.array(list(list), dtype=np.object_) :
         group structure for the IC compartment.
