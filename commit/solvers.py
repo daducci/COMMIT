@@ -133,17 +133,17 @@ def regularisation2omegaprox(regularisation):
     lambdaEC  = float(regularisation.get('lambdaEC'))
     lambdaISO = float(regularisation.get('lambdaISO'))
     if lambdaIC<0.0 or lambdaEC<0.0 or lambdaISO<0.0:
-        raise ValueError('Negative regularisation parameters are not allowed')
+        raise ValueError('Negative regularisation strengths are not allowed')
 
     regIC  = regularisation.get('regIC')
     regEC  = regularisation.get('regEC')
     regISO = regularisation.get('regISO')
     if not regIC in list_regularizers:
-        raise ValueError('regIC not implemented')
+        raise ValueError('Regularizer for the IC compartment not implemented')
     if not regEC in list_regularizers:
-        raise ValueError('regEC not implemented')
+        raise ValueError('Regularizer for the EC compartment not implemented')
     if not regISO in list_regularizers:
-        raise ValueError('regISO not implemented')
+        raise ValueError('Regularizer for the ISO compartment not implemented')
 
     # Intracellular Compartment
     startIC = regularisation.get('startIC')
@@ -167,7 +167,7 @@ def regularisation2omegaprox(regularisation):
         structureIC = regularisation.get('structureIC')
         groupWeightIC = regularisation.get('weightsIC')
         if not len(structureIC) == len(groupWeightIC):
-            raise ValueError('Number of groups and weights do not coincide.')
+            raise ValueError('Number of groups and weights do not match')
 
         # convert to new data structure (needed for faster access)
         N = np.sum([g.size for g in structureIC])
@@ -185,8 +185,6 @@ def regularisation2omegaprox(regularisation):
             proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC),startIC,sizeIC)
         else:
             proxIC = lambda x, scaling: prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC)
-    else:
-        raise ValueError('Type of regularisation for IC compartment not recognized.')
 
     # Extracellular Compartment
     startEC = regularisation.get('startEC')
@@ -206,8 +204,6 @@ def regularisation2omegaprox(regularisation):
     # elif regEC == 'l2':
     #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
-    else:
-        raise ValueError('Type of regularisation for EC compartment not recognized.')
 
     # Isotropic Compartment
     startISO = regularisation.get('startISO')
@@ -227,8 +223,6 @@ def regularisation2omegaprox(regularisation):
     # elif regISO == 'l2':
     #     omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)])
     #     proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
-    else:
-        raise ValueError('Type of regularisation for ISO compartment not recognized.')
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
     prox = lambda x, scaling: proxIC(proxEC(proxISO(x,scaling),scaling),scaling)
