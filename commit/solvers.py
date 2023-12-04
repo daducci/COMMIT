@@ -14,14 +14,12 @@ eps = np.finfo(float).eps
  # removed, for now, projection_onto_l2_ball
 from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding
 list_regnorms = [None, 'l1', 'group_sparsity'] # removed 'l2' as never tested
-list_group_sparsity_norms = ['l2'] # removed 'np.inf' because of issue #54
-
 
 def init_regularisation(
     commit_evaluation,
     regnorms = (None, None, None),
     is_nonnegative = (True, True, True),
-    structureIC = None, weightsIC = None, group_norm = 2,
+    structureIC = None, weightsIC = None,
     lambdas = (0.0, 0.0, 0.0)
 ):
     """
@@ -77,11 +75,6 @@ def init_regularisation(
     weightsIC - np.array(np.float64) :
         this defines the weights associated to each group of structure IC.
 
-    group_norm - number :
-        norm type for the 'group_sparsity' penalisation of the IC compartment.
-            To be chosen among { 'l2' }.
-            Default: group_norm = 'l2'.
-
     References:
         [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
     """
@@ -132,8 +125,7 @@ def init_regularisation(
 
     regularisation['structureIC'] = structureIC
     regularisation['weightsIC']   = weightsIC
-    regularisation['group_norm']  = group_norm
-
+\
     return regularisation
 
 
@@ -160,15 +152,15 @@ def regularisation2omegaprox(regularisation):
     if normIC is None:
         omegaIC = lambda x: 0.0
         if regularisation.get('nnIC')==True:
-            proxIC = lambda x, scaling: non_negativity(x,startIC,sizeIC)
+            proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: x
+            proxIC = lambda x, _: x
     elif normIC == 'l1':
         omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC],1)
         if regularisation.get('nnIC'):
             proxIC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: non_negativity(x,startIC,sizeIC)
+            proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
     # elif normIC == 'l2':
     #     omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
     #     proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
@@ -177,9 +169,6 @@ def regularisation2omegaprox(regularisation):
         groupWeightIC = regularisation.get('weightsIC')
         if not len(structureIC) == len(groupWeightIC):
             raise ValueError('Number of groups and weights do not coincide.')
-        group_norm = regularisation.get('group_norm')
-        if not group_norm in list_group_sparsity_norms:
-            raise ValueError('Wrong norm in the structured sparsity term. Choose between %s.' % str(list_group_sparsity_norms))
 
         # convert to new data structure (needed for faster access)
         N = np.sum([g.size for g in structureIC])
@@ -191,12 +180,12 @@ def regularisation2omegaprox(regularisation):
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
 
-        omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, group_norm )
+        omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC )
         #TODO: verify if COMMIT2 results are better than before
         if regularisation.get('nnIC'):
-            proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC,group_norm),startIC,sizeIC)
+            proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC),startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC,group_norm)
+            proxIC = lambda x, scaling: prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC)
     else:
         raise ValueError('Type of regularisation for IC compartment not recognized.')
 
@@ -206,9 +195,9 @@ def regularisation2omegaprox(regularisation):
     if normEC is None:
         omegaEC = lambda x: 0.0
         if regularisation.get('nnEC')==True:
-            proxEC = lambda x, scaling: non_negativity(x,startEC,sizeEC)
+            proxEC = lambda x, _: non_negativity(x,startEC,sizeEC)
         else:
-            proxEC = lambda x, scaling: x
+            proxEC = lambda x, _: x
     elif normEC == 'l1':
         omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)],1)
         if regularisation.get('nnEC'):
@@ -227,9 +216,9 @@ def regularisation2omegaprox(regularisation):
     if normISO is None:
         omegaISO = lambda x: 0.0
         if regularisation.get('nnISO')==True:
-            proxISO = lambda x, scaling: non_negativity(x,startISO,sizeISO)
+            proxISO = lambda x, _: non_negativity(x,startISO,sizeISO)
         else:
-            proxISO  = lambda x, scaling: x
+            proxISO  = lambda x, _: x
     elif normISO == 'l1':
         omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)],1)
         if regularisation.get('nnISO'):
@@ -269,7 +258,7 @@ def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0=No
     """
     if regularisation is None:
         omega = lambda x: 0.0
-        prox  = lambda x, scaling: x
+        prox  = lambda x, _: x
     else:
         omega, prox = regularisation2omegaprox(regularisation)
 
