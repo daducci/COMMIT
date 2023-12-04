@@ -125,7 +125,7 @@ def init_regularisation(
 
     regularisation['structureIC'] = structureIC
     regularisation['weightsIC']   = weightsIC
-\
+
     return regularisation
 
 
