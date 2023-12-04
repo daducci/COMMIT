@@ -27,7 +27,7 @@ list_group_sparsity_norms = [norm2]#, norminf] # removed because of issue #54
 def init_regularisation(commit_evaluation,
                         regnorms = (non_negative, non_negative, non_negative),
                         structureIC = None, weightsIC = None, group_norm = 2,
-                        lambdas = (.0,.0,.0)):
+                        lambdas = (0.0, 0.0, 0.0)):
     """
     Initialise the data structure that defines Omega in
 
@@ -48,8 +48,8 @@ def init_regularisation(commit_evaluation,
             regnorms[1] corresponds to the Extracellular compartment
             regnorms[2] corresponds to the Isotropic compartment
 
-            Each regnorms[k] must be one of commit.solvers.
-                                {non_negative, norm1, group_sparsity}.
+            Each regnorms[k] must be one of:
+                                {None, non_negative, norm1, group_sparsity}.
 
             commit.solvers.group_sparsity considers both the non-overlapping
                 and the hierarchical group sparsity (see [1]). This option is
@@ -77,10 +77,8 @@ def init_regularisation(commit_evaluation,
                 which has two non overlapping groups, one of which is the union
                 of two other non-overlapping groups.
 
-
     weightsIC - np.array(np.float64) :
         this defines the weights associated to each group of structure IC.
-
 
     group_norm - number :
         norm type for the commit.solver.group_sparsity penalisation of the IC compartment.
@@ -93,7 +91,6 @@ def init_regularisation(commit_evaluation,
             The lambdas correspond to the onse described in the mathematical
             formulation of the regularisation term
             $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
-
 
     References:
         [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
@@ -150,7 +147,7 @@ def regularisation2omegaprox(regularisation):
     lambdaIC  = float(regularisation.get('lambdaIC'))
     lambdaEC  = float(regularisation.get('lambdaEC'))
     lambdaISO = float(regularisation.get('lambdaISO'))
-    if lambdaIC < 0.0 or lambdaEC < 0.0 or lambdaISO < 0.0:
+    if lambdaIC<0.0 or lambdaEC<0.0 or lambdaISO<0.0:
         raise ValueError('Negative regularisation parameters are not allowed')
 
     normIC  = regularisation.get('normIC')
@@ -163,10 +160,10 @@ def regularisation2omegaprox(regularisation):
     if not normISO in list_regnorms:
         raise ValueError('normISO not implemented')
 
-    ## NNLS case
-    if (lambdaIC == 0.0 and lambdaEC == 0.0 and lambdaISO == 0.0) or (normIC == non_negative and normEC == non_negative and normISO == non_negative):
+    ## without regularization
+    if (lambdaIC==0.0 and lambdaEC==0.0 and lambdaISO==0.0) or (normIC==None and normEC==None and normISO==None):
         omega = lambda x: 0.0
-        prox  = lambda x, lam_fac: non_negativity(x, 0, len(x))
+        prox  = lambda x, scaling: x
         return omega, prox
 
     ## All other cases
@@ -174,7 +171,7 @@ def regularisation2omegaprox(regularisation):
     # Intracellular Compartment
     startIC = regularisation.get('startIC')
     sizeIC  = regularisation.get('sizeIC')
-    if lambdaIC == 0.0:
+    if normIC is None:
         omegaIC = lambda x: 0.0
         proxIC  = lambda x, scaling: x
     elif normIC == non_negative:
@@ -214,7 +211,7 @@ def regularisation2omegaprox(regularisation):
     # Extracellular Compartment
     startEC = regularisation.get('startEC')
     sizeEC  = regularisation.get('sizeEC')
-    if lambdaEC == 0.0:
+    if normEC is None:
         omegaEC = lambda x: 0.0
         proxEC  = lambda x, scaling: x
     elif normEC == non_negative:
@@ -232,7 +229,7 @@ def regularisation2omegaprox(regularisation):
     # Isotropic Compartment
     startISO = regularisation.get('startISO')
     sizeISO  = regularisation.get('sizeISO')
-    if lambdaISO == 0.0:
+    if normISO is None:
         omegaISO = lambda x: 0.0
         proxISO  = lambda x, scaling: x
     elif normISO == non_negative:
@@ -248,9 +245,7 @@ def regularisation2omegaprox(regularisation):
         raise ValueError('Type of regularisation for ISO compartment not recognized.')
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
-    # prox = lambda x: non_negativity(proxIC(proxEC(proxISO(x))),0,x.size) # non negativity is redunduntly forced
     prox = lambda x, scaling: proxIC(proxEC(proxISO(x,scaling),scaling),scaling)
-
     return omega, prox
 
 
