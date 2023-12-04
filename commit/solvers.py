@@ -181,7 +181,7 @@ def regularisation2omegaprox(regularisation):
         omegaIC = lambda x: 0.0
         proxIC  = lambda x, scaling: non_negativity(x, startIC, sizeIC)
     elif normIC == norm1:
-        omegaIC = lambda x: lambdaIC * sum( x[startIC:sizeIC] )
+        omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC],1)
         proxIC  = lambda x, scaling: soft_thresholding(x, scaling*lambdaIC, startIC, sizeIC)
     # elif normIC == norm2:
     #     omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
@@ -221,7 +221,7 @@ def regularisation2omegaprox(regularisation):
         omegaEC = lambda x: 0.0
         proxEC  = lambda x, scaling: non_negativity(x, startEC, sizeEC)
     elif normEC == norm1:
-        omegaEC = lambda x: lambdaEC * sum( x[startEC:(startEC+sizeEC)] )
+        omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)],1)
         proxEC  = lambda x, scaling: soft_thresholding(x, scaling*lambdaEC, startEC, sizeEC)
     # elif normEC == norm2:
     #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
@@ -239,7 +239,7 @@ def regularisation2omegaprox(regularisation):
         omegaISO = lambda x: 0.0
         proxISO  = lambda x, scaling: non_negativity(x, startISO, sizeISO)
     elif normISO == norm1:
-        omegaISO = lambda x: lambdaISO * sum( x[startISO:(startISO+sizeISO)] )
+        omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)],1)
         proxISO  = lambda x, scaling: soft_thresholding(x, scaling*lambdaISO, startISO, sizeISO)
     # elif normISO == norm2:
     #     omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)])
