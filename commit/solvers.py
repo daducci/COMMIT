@@ -13,11 +13,11 @@ eps = np.finfo(float).eps
 
  # removed, for now, projection_onto_l2_ball
 from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding
-list_regnorms = [None, 'l1', 'group_sparsity'] # removed 'l2' as never tested
+list_regularizers = [None, 'sparsity', 'group_sparsity']
 
 def init_regularisation(
     commit_evaluation,
-    regnorms = (None, None, None),
+    regularizers = (None, None, None),
     is_nonnegative = (True, True, True),
     structureIC = None, weightsIC = None,
     lambdas = (0.0, 0.0, 0.0)
@@ -31,13 +31,13 @@ def init_regularisation(
     commit_evaluation - commit.Evaluation object :
         'dictionary' and 'model' have to be loaded beforehand.
 
-    regnorms - tuple :
+    regularizers - tuple :
         sets the penalty term to be used for each compartment:
-            regnorms[0] corresponds to the Intracellular compartment
-            regnorms[1] corresponds to the Extracellular compartment
-            regnorms[2] corresponds to the Isotropic compartment
-        Each regnorms[k] must be one of: {None, 'l1', 'group_sparsity'}:
-            'l1' penalises with the 1-norm of the coefficients
+            regularizers[0] corresponds to the Intracellular compartment
+            regularizers[1] corresponds to the Extracellular compartment
+            regularizers[2] corresponds to the Isotropic compartment
+        Each regularizers[k] must be one of: {None, 'sparsity', 'group_sparsity'}:
+            'sparsity' penalises with the 1-norm of the coefficients
                 corresponding to the compartment.
             'group_sparsity' penalises according to the following formulation (see [1]):
                 $\Omega(x) = \lambda \sum_{g\in G} w_g |x_g|
@@ -87,9 +87,9 @@ def init_regularisation(
     regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
     regularisation['sizeISO']  = int( commit_evaluation.DICTIONARY['nV'] * commit_evaluation.KERNELS['iso'].shape[0])
 
-    regularisation['normIC']  = regnorms[0]
-    regularisation['normEC']  = regnorms[1]
-    regularisation['normISO'] = regnorms[2]
+    regularisation['regIC']  = regularizers[0]
+    regularisation['regEC']  = regularizers[1]
+    regularisation['regISO'] = regularizers[2]
 
     regularisation['lambdaIC']  = float( lambdas[0] )
     regularisation['lambdaEC']  = float( lambdas[1] )
@@ -122,7 +122,6 @@ def init_regularisation(
 
         structureIC = np.array(newStructureIC, dtype=np.object_)
         weightsIC = np.array(newWeightsIC)
-
     regularisation['structureIC'] = structureIC
     regularisation['weightsIC']   = weightsIC
 
@@ -136,35 +135,35 @@ def regularisation2omegaprox(regularisation):
     if lambdaIC<0.0 or lambdaEC<0.0 or lambdaISO<0.0:
         raise ValueError('Negative regularisation parameters are not allowed')
 
-    normIC  = regularisation.get('normIC')
-    normEC  = regularisation.get('normEC')
-    normISO = regularisation.get('normISO')
-    if not normIC in list_regnorms:
-        raise ValueError('normIC not implemented')
-    if not normEC in list_regnorms:
-        raise ValueError('normEC not implemented')
-    if not normISO in list_regnorms:
-        raise ValueError('normISO not implemented')
+    regIC  = regularisation.get('regIC')
+    regEC  = regularisation.get('regEC')
+    regISO = regularisation.get('regISO')
+    if not regIC in list_regularizers:
+        raise ValueError('regIC not implemented')
+    if not regEC in list_regularizers:
+        raise ValueError('regEC not implemented')
+    if not regISO in list_regularizers:
+        raise ValueError('regISO not implemented')
 
     # Intracellular Compartment
     startIC = regularisation.get('startIC')
     sizeIC  = regularisation.get('sizeIC')
-    if normIC is None:
+    if regIC is None:
         omegaIC = lambda x: 0.0
         if regularisation.get('nnIC')==True:
             proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
         else:
             proxIC = lambda x, _: x
-    elif normIC == 'l1':
+    elif regIC == 'sparsity':
         omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC],1)
         if regularisation.get('nnIC'):
             proxIC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
         else:
             proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
-    # elif normIC == 'l2':
+    # elif regIC == 'l2':
     #     omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
     #     proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
-    elif normIC == 'group_sparsity':
+    elif regIC == 'group_sparsity':
         structureIC = regularisation.get('structureIC')
         groupWeightIC = regularisation.get('weightsIC')
         if not len(structureIC) == len(groupWeightIC):
@@ -192,19 +191,19 @@ def regularisation2omegaprox(regularisation):
     # Extracellular Compartment
     startEC = regularisation.get('startEC')
     sizeEC  = regularisation.get('sizeEC')
-    if normEC is None:
+    if regEC is None:
         omegaEC = lambda x: 0.0
         if regularisation.get('nnEC')==True:
             proxEC = lambda x, _: non_negativity(x,startEC,sizeEC)
         else:
             proxEC = lambda x, _: x
-    elif normEC == 'l1':
+    elif regEC == 'sparsity':
         omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)],1)
         if regularisation.get('nnEC'):
             proxEC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC),startEC,sizeEC)
         else:
             proxEC = lambda x, scaling: soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC)
-    # elif normEC == 'l2':
+    # elif regEC == 'l2':
     #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
     else:
@@ -213,19 +212,19 @@ def regularisation2omegaprox(regularisation):
     # Isotropic Compartment
     startISO = regularisation.get('startISO')
     sizeISO  = regularisation.get('sizeISO')
-    if normISO is None:
+    if regISO is None:
         omegaISO = lambda x: 0.0
         if regularisation.get('nnISO')==True:
             proxISO = lambda x, _: non_negativity(x,startISO,sizeISO)
         else:
             proxISO  = lambda x, _: x
-    elif normISO == 'l1':
+    elif regISO == 'sparsity':
         omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)],1)
         if regularisation.get('nnISO'):
             proxISO  = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO),startISO,sizeISO)
         else:
             proxISO  = lambda x, scaling: soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO)
-    # elif normISO == 'l2':
+    # elif regISO == 'l2':
     #     omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)])
     #     proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
     else:
