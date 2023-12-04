@@ -249,7 +249,7 @@ def regularisation2omegaprox(regularisation):
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
     # prox = lambda x: non_negativity(proxIC(proxEC(proxISO(x))),0,x.size) # non negativity is redunduntly forced
-    prox = lambda x: proxIC(proxEC(proxISO(x)))
+    prox = lambda x, scaling: proxIC(proxEC(proxISO(x,scaling),scaling),scaling)
 
     return omega, prox
 
