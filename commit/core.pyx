@@ -731,15 +731,11 @@ cdef class Evaluation :
 
             pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
-            if not 'commit.operator.operator' in sys.modules :
-                import commit.operator.operator
-            else :
-                invalidate_caches()
+            if 'commit.operator.operator' in sys.modules :
                 del sys.modules['commit.operator.operator']
-                import commit.operator.operator
-                reload( sys.modules['commit.operator.operator'] )
+            import commit.operator.operator
 
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        self.A = commit.operator.operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
