@@ -88,15 +88,15 @@ int verbosity = 0;
 
 // --- Functions Definitions ----
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
-void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, unsigned int w_offset, bool doApplyBlur, short* ptrHashTable, vector<Vector<double>>& P );
-void fiberForwardModel_update( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable);
+void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, vector<Vector<double>>& P );
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable);
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOXMM );
 void input_fiber( float* start, float* end, float fiber[3][MAX_FIB_LEN], float* ptrToVOXMM );
 
+
 // ---------- Parallel fuction --------------
-int ICSegments( char* str_filename, int isTRK, int n_count, int* nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
+int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
 double* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos );
 
@@ -450,7 +450,7 @@ int ISOcompartments(double** ptrTDI, char* path_out, int threads){
 /*                                                Parallel Function                                                 */
 /********************************************************************************************************************/
 
-int ICSegments( char* str_filename, int isTRK, int n_count, int* nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, double* ptrBlurRho, 
+int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, double* ptrBlurRho, 
 double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos ) 
 {
@@ -472,7 +472,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
     segInVoxKey inVoxKey; 
 
-    // P.resize(nReplicas);
+    P.resize(nReplicas);
 
 
     // Creo e apro i files per i risultati
@@ -510,8 +510,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
         else
             N = read_fiberTCK( fpTractogram1, fiber , ptrToVOXMM );
 
-        P.resize(nReplicas[f]);
-        fiberForwardModel( fiber, N, nReplicas[f], ptrBlurRho, ptrBlurAngle, ptrBlurWeights, f, ptrBlurApplyTo[f], ptrHashTable, P );
+
+        fiberForwardModel( fiber, N, nReplicas, ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo[f], ptrHashTable, P );
 
         kept = 0;
 
@@ -585,7 +585,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 /********************************************************************************************************************/
 /*                                                 fiberForwardModel                                                */
 /********************************************************************************************************************/
-void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, unsigned int w_offset, bool doApplyBlur, short* ptrHashTable, vector<Vector<double>>& P )
+void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, vector<Vector<double>>& P )
 {
     thread_local static Vector<double> S1, S2, S1m, S2m, P_old, P_int, q, n, nr, qxn, qxqxn;
     thread_local static Vector<double> vox, vmin, vmax, dir1, dir2;
@@ -686,7 +686,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
             if ( !doApplyBlur && k>0 )
                 continue;
 
-            if ( ptrBlurWeights[w_offset+k] < 1e-3 )
+            if ( ptrBlurWeights[k] < 1e-3 )
                 continue;
 
             P_old.x = P[k].x;
@@ -701,7 +701,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 
                 /* save segment */
                 if ( doIntersect==false )
-                    segmentForwardModel( P_old, P[k], k, ptrBlurWeights[w_offset+k], ptrHashTable );
+                    segmentForwardModel( P_old, P[k], k, ptrBlurWeights[k], ptrHashTable );
                 else
                 {
                     S1m.x = P_old.x;
@@ -722,7 +722,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                             )
                         {
                             // same voxel, no need to compute intersections
-                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[w_offset+k], ptrHashTable );
+                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable );
                             break;
                         }
 
@@ -740,7 +740,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                             P_int.x = S1m.x + t*dir1.x;
                             P_int.y = S1m.y + t*dir1.y;
                             P_int.z = S1m.z + t*dir1.z;
-                            segmentForwardModel( S1m, P_int, k,  ptrBlurWeights[w_offset+k], ptrHashTable );
+                            segmentForwardModel( S1m, P_int, k, ptrBlurWeights[k], ptrHashTable );
                             S1m.x = P_int.x;
                             S1m.y = P_int.y;
                             S1m.z = P_int.z;
@@ -748,7 +748,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                         else
                         {
                             // add the segment S1S2 and stop iterating
-                            segmentForwardModel( S1m, S2m, k,  ptrBlurWeights[w_offset+k], ptrHashTable );
+                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable );
                             break;
                         }
                     }
@@ -757,6 +757,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
         }
     }
 }
+
 
 void fiberForwardModel_update( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable )
 {
@@ -1238,6 +1239,7 @@ void trk2dictionary_update_run(
     }
 }
 
+
 // Read a fiber from file .trk
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )
 {
@@ -1261,6 +1263,7 @@ unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int n
     return N;
 }
 
+
 // Read a fiber from file .tck
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float* ptrToVOXMM )
 {
@@ -1278,6 +1281,7 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN], float* ptrToV
 
     return i;
 }
+
 
 void input_fiber( float* start, float* end, float fiber[3][MAX_FIB_LEN], float* ptrToVOXMM ){
     int i = 0;

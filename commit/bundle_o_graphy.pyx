@@ -43,13 +43,13 @@ cdef extern from "trk2dictionary_c.cpp":
 
 
 
-@cython.boundscheck(True)
+@cython.boundscheck(False)
 cdef double random_uniform():
     cdef double r = rand()
     return r / RAND_MAX
 
 
-@cython.boundscheck(True)
+@cython.boundscheck(False)
 cdef double random_gaussian(double mov_var):
     cdef double x1, x2, x3, w
     cdef double stdDev = mov_var
@@ -143,20 +143,6 @@ def compute_chunks(lst, n):
 cdef bool adapt_streamline( float [:,:] streamline, float [:,::1] to_RASMM, float [:] abc_to_RASMM,
                             float [:,::1] to_VOXMM, float [:] abc_to_VOXMM, int tempts, int pt_adapt,
                             double m_variance, float [:, :, ::1] niiWM_img):
-    """Compute the length of a streamline.
-
-    Parameters
-    ----------
-    streamline : Nx3 numpy array
-        The streamline data
-    n : int
-        Writes first n points of the streamline. If n<=0 (default), writes all points
-
-    Returns
-    -------
-    length : double
-        Length of the streamline in mm
-    """
 
     cdef:
         int n = streamline.shape[0]
@@ -200,7 +186,6 @@ cdef bool adapt_streamline( float [:,:] streamline, float [:,::1] to_RASMM, floa
                 vox_y = <int>  cround(temp_pt[1])
                 vox_z = <int>  cround(temp_pt[2])
 
-                # length += sqrt( (ptr[3]-ptr[0])**2 + (ptr[4]-ptr[1])**2 + (ptr[5]-ptr[2])**2 )
                 if ( niiWM_img[vox_x, vox_y, vox_z] != 0 ):
                     streamline[j] = apply_affine(temp_pt, to_RASMM, abc_to_RASMM, temp_pt)
                     break
@@ -208,6 +193,57 @@ cdef bool adapt_streamline( float [:,:] streamline, float [:,::1] to_RASMM, floa
             if i<tempts-1:
                 goodMove = True
     return goodMove
+
+
+cpdef compute_gradient(int vox_x, int vox_y, int vox_z, float [:, :, ::1] niiWM_img):
+    cdef int i = 0
+    cdef int[:] vox_max = np.array([0,0,0])
+    cdef int [:,:] neighbors = np.array([[-1,-1,-1],[-1,-1,0],[-1,-1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,1,-1],[-1,1,0],[-1,1,1],
+                                        [0,-1,-1],[0,-1,0],[0,-1,1],[0,0,-1],[0,0,1],[0,1,-1],[0,1,0],[0,1,1],
+                                        [1,-1,-1],[1,-1,0],[1,-1,1],[1,0,-1],[1,0,0],[1,0,1],[1,1,-1],[1,1,0],[1,1,1]])
+
+    for i in range(26):
+        vox_max[0] = vox_x + neighbors[i,0]
+        vox_max[1] = vox_y + neighbors[i,1]
+        vox_max[2] = vox_z + neighbors[i,2]
+        if niiWM_img[vox_max[0], vox_max[1], vox_max[2]] < niiWM_img[vox_x, vox_y, vox_z]:
+            vox_x = vox_max[0]
+            vox_y = vox_max[1]
+            vox_z = vox_max[2]
+
+    return vox_x, vox_y, vox_z
+
+
+
+cpdef adapt_streamline_informed( float [:,:] streamline, float [:,::1] to_RASMM, float [:] abc_to_RASMM,
+                            float [:,::1] to_VOXMM, float [:] abc_to_VOXMM, double m_variance,
+                            float [:, :, ::1] niiWM_img, float [:] pt_start, float [:] pt_end):
+
+    cdef:
+        int n = streamline.shape[0]
+        int i,j, vox_x, vox_y, vox_z, vox_x_max, vox_y_max, vox_z_max, dir_x, dir_y, dir_z
+        double [:] random_displ
+        float [:] temp_pt = np.zeros(3, dtype='f4', order='C')
+
+
+    for j in xrange(n):
+        temp_pt[:] = apply_affine(streamline[j,:], to_VOXMM, abc_to_VOXMM, temp_pt)
+        vox_x = <int>  cround(temp_pt[0])
+        vox_y = <int>  cround(temp_pt[1])
+        vox_z = <int>  cround(temp_pt[2])
+
+        vox_x_max, vox_y_max, vox_z_max = compute_gradient(vox_x, vox_y, vox_z, niiWM_img)
+
+        # compute gaussian random displacement centered in vox_x_max, vox_y_max, vox_z_max
+        random_displ = np.array(gaussian(3, m_variance))
+        print(f"random displ: {random_displ}")
+        temp_pt[0] = vox_x_max + random_displ[0]
+        temp_pt[1] = vox_y_max + random_displ[1]
+        temp_pt[2] = vox_z_max + random_displ[2]
+
+        streamline[j] = apply_affine(temp_pt, to_RASMM, abc_to_RASMM, temp_pt)
+
+
 
 
 cdef trk2dict_update(lut, index_list, diff_seg, float [:,:] streamlines, int* ptrlengths, int* ptr_buff_size, double blur_core_extent, int Nx, int Ny, int Nz,

@@ -1240,7 +1240,7 @@ cdef class Evaluation :
             mean_sigma = None
             Blur_sigma = None
 
-            if PROP <= -1:
+            if 0 <= PROP <= 33:
                 pick_conn = np.random.choice(list(connections_dict.keys()))
                 pick_fib = np.random.choice( connections_dict[pick_conn] )
                 # pick_fib = 20
@@ -1284,7 +1284,7 @@ cdef class Evaluation :
                 # test = nibabel.streamlines.tractogram.Tractogram(input_set_splines,  affine_to_rasmm=niiWM.affine)
                 # nibabel.streamlines.save(test, 'test_movement.tck')
 
-            if  0 <= PROP <= 33:
+            if  PROP < -1:
                 t_prop = time.time()
                 pick_conn = np.random.choice(np.arange(len(list(support_dict.keys()))))
                 pick_conn = list(support_dict.keys())[pick_conn]
@@ -1449,7 +1449,8 @@ cdef class Evaluation :
 
             if end_opt and accept_prop:
                 break
-            # PROP = 80
+            if test_prop:
+                PROP = test_prop
             it += 1
             it_time = time.time() - t0
 
@@ -1526,174 +1527,7 @@ cdef class Evaluation :
             Backup_mit_dictionary['EC']['nE']       = self.DICTIONARY['EC']['nE']
 
 
-    def update_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False):
-        """Set the number of threads to use for the matrix-vector operations with A and A'.
 
-        Parameters
-        ----------
-        n : integer
-            Number of threads to use (default : number of CPUs in the system)
-        """
-        if self.DICTIONARY['dictionary_info']['adapt'] and buffer_size==0:
-            buffer_size = self.DICTIONARY['buffer_size']
-        n = self.DICTIONARY['n_threads']
-
-
-        if n < 1 or n > 255 :
-            ERROR( 'Number of threads must be between 1 and 255' )
-        if self.DICTIONARY is None :
-            ERROR( 'Dictionary not loaded; call "load_dictionary()" first' )
-        if self.KERNELS is None :
-            ERROR( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
-
-        self.THREADS = {}
-        self.THREADS['n'] = n
-
-        cdef :
-            long [:] C
-            long t, tot, i1, i2, N, c
-            int i
-
-        if verbose:
-            tic = time.time()
-            LOG( '\n-> Distributing workload to different threads:' )
-            print( '\t* Number of threads : %d' % n )
-
-            # Distribute load for the computation of A*x product
-            print( '\t* A operator...  ', end='' )
-            sys.stdout.flush()
-
-        if self.DICTIONARY['IC']['n'] > 0 :
-            self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
-            if n > 1 :
-                N = np.floor( self.DICTIONARY['IC']['n']/n )
-                t = 1
-                tot = 0
-                if buffer_size > 0:
-                    C = np.bincount( self.DICTIONARY['IC']['v'][:-buffer_size] )
-                else:
-                    C = np.bincount( self.DICTIONARY['IC']['v'] )
-                for c in C :
-                    tot += c
-                    if tot >= N and t <= n :
-                        self.THREADS['IC'][t] = self.THREADS['IC'][t-1] + tot
-                        t += 1
-                        tot = 0
-            self.THREADS['IC'][n] = self.DICTIONARY['IC']['n']
-
-            # check if some threads are not assigned any segment
-            if np.count_nonzero( np.diff( self.THREADS['IC'].astype(np.int32) ) <= 0 ) :
-                self.THREADS = None
-                ERROR( 'Too many threads for the IC compartments to evaluate; try decreasing the number', prefix='\n' )
-        else :
-            self.THREADS['IC'] = None
-
-        if self.DICTIONARY['EC']['nE'] > 0 :
-            self.THREADS['EC'] = np.zeros( n+1, dtype=np.uint32 )
-            for i in xrange(n) :
-                self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['v'], self.DICTIONARY['IC']['v'][:-buffer_size][ self.THREADS['IC'][i] ] )
-            self.THREADS['EC'][n] = self.DICTIONARY['EC']['nE']
-
-            # check if some threads are not assigned any segment
-            if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
-                self.THREADS = None
-                ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number', prefix='\n' )
-        else :
-            self.THREADS['EC'] = None
-
-        if self.DICTIONARY['nV'] > 0 :
-            self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
-            if buffer_size > 0:
-                for i in xrange(n) :
-                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][:-buffer_size][ self.THREADS['IC'][i] ] )
-            else:
-                for i in xrange(n) :
-                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-            self.THREADS['ISO'][n] = self.DICTIONARY['nV']
-
-            # check if some threads are not assigned any segment
-            if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
-                self.THREADS = None
-                ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number', prefix='\n' )
-        else :
-            self.THREADS['ISO'] = None
-        if verbose:
-            print( '[ OK ]' )
-
-            # Distribute load for the computation of At*y product
-            print( '\t* A\' operator... ', end='' )
-            sys.stdout.flush()
-
-        if self.DICTIONARY['IC']['n'] > 0 :
-            self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
-            if buffer_size > 0:
-                if n > 1 :
-                    idx = np.argsort( self.DICTIONARY['IC']['fiber'][:-buffer_size], kind='mergesort' )
-                    C = np.bincount( self.DICTIONARY['IC']['fiber'][:-buffer_size] )
-                    t = tot = i1 = i2 = 0
-                    N = np.floor(self.DICTIONARY['IC']['n']/n)
-                    for c in C :
-                        i2 += c
-                        tot += c
-                        if tot >= N :
-                            self.THREADS['ICt'][ i1:i2 ] = t
-                            t += 1
-                            if t==n-1 :
-                                break
-                            i1 = i2
-                            tot = c
-                    self.THREADS['ICt'][idx] = self.THREADS['ICt'].copy()
-            else:
-                if n > 1 :
-                    idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind='mergesort' )
-                    C = np.bincount( self.DICTIONARY['IC']['fiber'] )
-                    t = tot = i1 = i2 = 0
-                    N = np.floor(self.DICTIONARY['IC']['n']/n)
-                    for c in C :
-                        i2 += c
-                        tot += c
-                        if tot >= N :
-                            self.THREADS['ICt'][ i1:i2 ] = t
-                            t += 1
-                            if t==n-1 :
-                                break
-                            i1 = i2
-                            tot = c
-                    self.THREADS['ICt'][idx] = self.THREADS['ICt'].copy()
-        else :
-            self.THREADS['ICt'] = None
-
-        if self.DICTIONARY['EC']['nE'] > 0 :
-            self.THREADS['ECt'] = np.zeros( n+1, dtype=np.uint32 )
-            N = np.floor( self.DICTIONARY['EC']['nE']/n )
-            for i in xrange(1,n) :
-                self.THREADS['ECt'][i] = self.THREADS['ECt'][i-1] + N
-            self.THREADS['ECt'][n] = self.DICTIONARY['EC']['nE']
-
-            # check if some threads are not assigned any segment
-            if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
-                self.THREADS = None
-                ERROR( 'Too many threads for the EC compartments to evaluate; try decreasing the number', prefix='\n' )
-        else :
-            self.THREADS['ECt'] = None
-
-        if self.DICTIONARY['nV'] > 0 :
-            self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
-            N = np.floor( self.DICTIONARY['nV']/n )
-            for i in xrange(1,n) :
-                self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
-            self.THREADS['ISOt'][n] = self.DICTIONARY['nV']
-
-            # check if some threads are not assigned any segment
-            if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
-                self.THREADS = None
-                ERROR( 'Too many threads for the ISO compartments to evaluate; try decreasing the number', prefix='\n' )
-        else :
-            self.THREADS['ISOt'] = None
-        if verbose:
-            print( '[ OK ]' )
-
-            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
     def reverse_dictionary(self, Backup_mit_dictionary):
 
