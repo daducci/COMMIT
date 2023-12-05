@@ -6,6 +6,7 @@ cimport numpy as np
 from libc.stdlib cimport malloc, free
 import nibabel
 from dicelib.clustering import run_clustering
+from dicelib.ui import _in_notebook
 
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
@@ -25,9 +26,9 @@ cdef extern from "trk2dictionary_c.cpp":
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars,
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
         float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-        float* _ptrMASK, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+        float* _ptrMASK, float* _ptrISO, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int* nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
-        float* ptrTractsAffine, short* prtHashTable, int threads_count
+        float* ptrTractsAffine, short* prtHashTable, int threads_count, int verbose
     ) nogil
 
 def _get_header( niiFILE ):
@@ -52,7 +53,7 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
     return tdi
 
 
-cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None,
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_ISO=None,
             do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=[0.0], blur_gauss_extent=0.0,
@@ -81,6 +82,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Path to a binary mask for restricting the analysis to specific areas.
         Segments outside this mask are discarded. If not specified (default),
         the mask is created from all voxels intersected by the tracts.
+
+    filename_ISO : string
+        Path to a binary mask for WIP models.
 
     do_intersect : boolean
         If True then streamline segments that intersect voxel boundaries are splitted (default).
@@ -191,8 +195,41 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     print( f'\t- Min streamline len    = {min_fiber_len:.2f} mm' )
     print( f'\t- Max streamline len    = {max_fiber_len:.2f} mm' )
 
-    hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
-    nb_streamlines = int(hdr['count'])
+    # check blur params
+    cdef :
+        double [:] blurRho
+        double [:] blurAngle
+        double [:] blurWeights
+        bool [:] blurApplyTo
+        int nReplicas
+        float blur_sigma
+        int i = 0
+
+    if (blur_gauss_extent==0 and blur_core_extent==0) or (blur_spacing==0) :
+        nReplicas = 1
+        blurRho = np.array( [0.0], np.double )
+        blurAngle = np.array( [0.0], np.double )
+        blurWeights = np.array( [1], np.double )
+    else:
+        tmp = np.arange(0,blur_core_extent+blur_gauss_extent+1e-6,blur_spacing)
+        tmp = np.concatenate( (tmp,-tmp[1:][::-1]) )
+        x, y = np.meshgrid( tmp, tmp )
+        r = np.sqrt( x*x + y*y )
+        idx = (r <= blur_core_extent+blur_gauss_extent)
+        blurRho = r[idx]
+        blurAngle = np.arctan2(y,x)[idx]
+        nReplicas = blurRho.size
+
+        blurWeights = np.empty( nReplicas, np.double  )
+        if blur_gauss_extent == 0 :
+            blurWeights[:] = 1.0
+        else:
+            blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.log( blur_gauss_min ) )
+            for i in xrange(nReplicas):
+                if blurRho[i] <= blur_core_extent :
+                    blurWeights[i] = 1.0
+                else:
+                    blurWeights[i] = np.exp( -(blurRho[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
 
 
     if min_seg_len < 0 :
@@ -255,7 +292,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             else:
                 ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
 
-        input_tractogram = os.path.basename(filename_tractogram)[:-4]
+        input_tractogram = os.path.basename(filename_tractogram)[:len(os.path.basename(filename_tractogram))-4]
 
         if blur_clust_groupby:
             file_assignments = join( path_temp, f'{input_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt' )
@@ -493,6 +530,24 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Np = 0
         ptrPEAKS = NULL
         ptrPeaksAffine = NULL
+    
+    # ISO map for isotropic compartment
+    cdef float* ptrISO
+    cdef float [:, :, ::1] niiISO_img
+    if filename_ISO is not None :
+        print( '\t- Restricted ISO map' )
+        niiISO = nibabel.load( filename_ISO )
+        niiISO_hdr = _get_header( niiISO )
+        print( f'\t\t- {niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}' )
+        print( f'\t\t- {niiISO_hdr["pixdim"][1]:.4f} x {niiISO_hdr["pixdim"][2]:.4f} x {niiISO_hdr["pixdim"][3]:.4f}' )
+        if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
+            abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
+            WARNING( 'Dataset does not have the same geometry as the tractogram' )
+        niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
+        ptrISO  = &niiISO_img[0,0,0]
+    else :
+        print( '\t- No ISO map specified, using the whole white-matter' )
+        ptrISO = &niiMASK_img[0,0,0]
 
     # write dictionary information info file
     dictionary_info = {}
@@ -538,8 +593,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
         ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
-        ptrMASK, ptrTDI, path_temp, 1 if do_intersect else 0, ptrPeaksAffine,
-        &nReplicas[0], &blurRho[0], &blurAngle[0], &blurWeights[0,0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, n_threads  );
+        ptrMASK, ptrISO, ptrTDI, path_temp, 1 if do_intersect else 0, ptrPeaksAffine,
+        &nReplicas[0], &blurRho[0], &blurAngle[0], &blurWeights[0,0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, n_threads, verbose if not _in_notebook() else 0 );
     if ret == 0 :
         WARNING( 'DICTIONARY not generated' )
         return None
@@ -606,6 +661,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
     cat_function( dict_list, fileout )
 
+
     # save TDI and MASK maps
     if TCK_ref_image is not None:
         TDI_affine = _get_affine( niiREF )
@@ -621,7 +677,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
     niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz )
-    niiTDI_img_save = np.reshape( niiTDI_mem, niiMASK.shape, order='F' )
+    niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
     niiTDI_hdr = _get_header( niiTDI )
@@ -632,6 +688,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
     else :
         niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), TDI_affine )
+
     niiMASK_hdr = _get_header( niiMASK )
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
     nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )

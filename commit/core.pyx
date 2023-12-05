@@ -81,6 +81,7 @@ cdef class Evaluation :
     cdef public x
     cdef public blur_core_extent
     cdef public CONFIG
+    cdef public temp_data
     cdef public confidence_map_img
 
     def __init__( self, study_path='.', subject='.' ) :
@@ -105,6 +106,7 @@ cdef class Evaluation :
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
+        self.temp_data = {}
         self.set_config('version', get_distribution('dmri-commit').version)
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
@@ -119,10 +121,15 @@ cdef class Evaluation :
 
     def set_config( self, key, value ) :
         self.CONFIG[ key ] = value
+        self.temp_data[ key ] = value
 
 
     def get_config( self, key ) :
         return self.CONFIG.get( key )
+
+
+    def get_temp_data( self, key ) :
+        return self.temp_data.get( key )
 
 
     def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
@@ -252,7 +259,7 @@ cdef class Evaluation :
         """
         # Call the specific model constructor
         if hasattr(commit.models, model_name ) :
-            self.model = getattr(commit.models,model_name)()
+            self.model = getattr(commit.models, model_name)()
         else :
             ERROR( 'Model "%s" not recognized' % model_name )
 
@@ -283,7 +290,11 @@ cdef class Evaluation :
         if self.model.id=='VolumeFractions' and ndirs!=1:
             ndirs = 1
             print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
-
+        if 'commitwipmodels' in sys.modules :
+            if self.model.restrictedISO is not None and ndirs!=1:
+                ndirs = 1
+                print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
+ 
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
@@ -513,21 +524,20 @@ cdef class Evaluation :
 
         self.DICTIONARY['ISO'] = {}
 
-        self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
+        self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
+        if self.DICTIONARY['ISO']['v'].size > 0:
+            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
+        else:
+            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['MASK'].sum()
 
-        vx, vy, vz = ( self.DICTIONARY['MASK'] > 0 ).nonzero() # [TODO] find a way to avoid using int64 (not necessary and waste of memory)
-        vx = vx.astype(np.int32)
-        vy = vy.astype(np.int32)
-        vz = vz.astype(np.int32)
-        self.DICTIONARY['ISO']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
-        del vx, vy, vz
+        self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
         # reorder the segments based on the "v" field
         idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
         self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
         del idx
 
-        print( '[ %d voxels ]' % self.DICTIONARY['nV'] )
+        print( '[ %d voxels ]' % self.DICTIONARY['ISO']['nV'] )
 
         # post-processing
         # ---------------
@@ -635,14 +645,24 @@ cdef class Evaluation :
             self.THREADS['EC'] = None
 
         if self.DICTIONARY['nV'] > 0 :
-            self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
-            if buffer_size > 0:
-                for i in xrange(n) :
-                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][:-buffer_size][ self.THREADS['IC'][i] ] )
+            if self.DICTIONARY['ISO']['nV'] > 0 :
+                self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
+                N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+                t = 1
+                tot = 0
+                C = np.bincount( self.DICTIONARY['ISO']['v'] )
+                for c in C :
+                    tot += c
+                    if tot >= N and t <= n :
+                        self.THREADS['ISO'][t] = self.THREADS['ISO'][t-1] + tot
+                        t += 1
+                        tot = 0
+                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
             else:
+                self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
                 for i in xrange(n) :
                     self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-            self.THREADS['ISO'][n] = self.DICTIONARY['nV']
+                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
@@ -712,10 +732,11 @@ cdef class Evaluation :
 
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
-            N = np.floor( self.DICTIONARY['nV']/n )
+            N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+
             for i in xrange(1,n) :
                 self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
-            self.THREADS['ISOt'][n] = self.DICTIONARY['nV']
+            self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
@@ -817,7 +838,7 @@ cdef class Evaluation :
             ERROR( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        y[y < 0] = 0
+        # y[y < 0] = 0
         return y
 
     def fit( self, prop=None, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
@@ -830,7 +851,7 @@ cdef class Evaluation :
         max_iter : integer
             Maximum number of iterations (default : 100)
         verbose : boolean
-            Level of verbosity: 0=no print, 1=print progress (default : True)
+            Level of verbosity: 0=no print, 1=print info at each iteration, 2=print progress bar, 3=print debug info (default : 2)
         x0 : np.array
             Initial guess for the solution of the problem (default : None)
         regularisation : commit.solvers.init_regularisation object
@@ -1907,7 +1928,9 @@ cdef class Evaluation :
         niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-            xv = x[offset:].reshape( (-1,nV) ).sum( axis=0 )
+            offset_iso = offset + self.DICTIONARY['ISO']['nV']
+            tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['nV']) ).sum( axis=0 )
+            xv = np.bincount( self.DICTIONARY['ISO']['v'], weights=tmp, minlength=nV ).astype(np.float32)
             niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '   [ OK ]' )
 
@@ -1927,8 +1950,6 @@ cdef class Evaluation :
         # Configuration and results
         print( '\t* Configuration and results:' )
 
-        print( '\t\t- streamline_weights.txt... ', end='' )
-        sys.stdout.flush()
         xic, _, _ = self.get_coeffs()
         if stat_coeffs != 'all' and xic.size > 0 :
             xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
@@ -1954,7 +1975,7 @@ cdef class Evaluation :
             ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
             unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
             unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
-            temp_weights = unravel_weights[ordered_idx]
+            temp_weights = unravel_weights[ordered_idx] 
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                 unravel_weights[ordered_idx] = temp_weights
@@ -1971,6 +1992,21 @@ cdef class Evaluation :
                     xic = xic[ idx_adapted ]
                 else:
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+
+        
+        self.temp_data['DICTIONARY'] = self.DICTIONARY
+        self.temp_data['niiIC_img'] = niiIC_img
+        self.temp_data['niiEC_img'] = niiEC_img
+        self.temp_data['niiISO_img'] = niiISO_img
+        self.temp_data['streamline_weights'] = xic
+        self.temp_data['RESULTS_path'] = RESULTS_path
+
+        if hasattr(self.model, '_postprocess'):
+            self.model._postprocess(self.temp_data, verbose=self.CONFIG['optimization']['verbose'])
+        else:
+            print( '\t\t- streamline_weights.txt... ', end='' )
+            sys.stdout.flush()
+
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
