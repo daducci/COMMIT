@@ -729,6 +729,7 @@ cdef class Evaluation :
             config.nISO       = self.KERNELS['iso'].shape[0]
             config.build_dir  = build_dir
 
+            sys.dont_write_bytecode = True
             pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
             if 'commit.operator.operator' in sys.modules :
