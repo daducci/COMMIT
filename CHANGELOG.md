@@ -1,6 +1,14 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.0.2`<br>_2023-12-06_
+### 🐛Fixed
+- Merged PR [#127](https://github.com/daducci/COMMIT/pull/127): [FIX] Operator is not recompiled when some parameters are changed
+- Merged PR [#129](https://github.com/daducci/COMMIT/pull/129): [FIX] Fista update
+
+---
+---
+
 ## `v2.0.1`<br>_2023-10-31_
 ### 🛠️Changed
 - Bump dependencies
