@@ -18,7 +18,7 @@ import nibabel
 import pickle
 import commit.models
 import commit.solvers
-from commit.bundle_o_graphy cimport adapt_streamline, trk2dict_update
+from commit.bundle_o_graphy cimport adapt_streamline, trk2dict_update, adapt_streamline_informed
 from commit.bundle_o_graphy import smooth_fib, smooth_final
 import amico.scheme
 import amico.lut
@@ -981,7 +981,7 @@ cdef class Evaluation :
     def run_adaptation( self, test_prop=None, tol_fun=None, tol_x=None, max_iter=None, verbose=None, x0=None, regularisation=None, confidence_array=None ) :
 
         # fix the seed for reproducibility
-        print(self.DICTIONARY['dictionary_info']["seed"])
+        # print(self.DICTIONARY['dictionary_info']["seed"])
         np.random.seed( self.DICTIONARY['dictionary_info']["seed"] )
         cdef:
             double [:] blurWeights
@@ -1085,7 +1085,6 @@ cdef class Evaluation :
         ptrHashTable = &htable[0]
 
         wm_filename = self.DICTIONARY['dictionary_info']['filename_mask']
-        gm_filename = self.DICTIONARY['dictionary_info']['atlas']
 
         # Priors values empirically set
         priors          = {}
@@ -1110,13 +1109,13 @@ cdef class Evaluation :
         SA_schedule = commit.bundle_o_graphy.compute_temp_schedule(pmt)
 
 
-        if self.DICTIONARY['dictionary_info']['atlas']:
+        if self.DICTIONARY['dictionary_info']['blur_clust_groupby']:
             print("Retrieve connections")
-            connections_dict = commit.bundle_o_graphy.compute_assignments(self.DICTIONARY['dictionary_info'], len(input_set_streamlines.streamlines), self.DICTIONARY['dictionary_info']['nthreads'] )
+            connections_dict = commit.bundle_o_graphy.compute_assignments(self.DICTIONARY['dictionary_info'], len(input_set_streamlines.streamlines), self.DICTIONARY['dictionary_info']['n_threads'] )
             # connections_dict = commit.bundle_o_graphy.assignments_to_dict( self.DICTIONARY['dictionary_info']['assignments'])
             print(f"total number of connections: {len(connections_dict)}")
             support_dict = {}
-            sigma_arr = self.DICTIONARY['dictionary_info']['blur_core_extent']
+            sigma_arr = np.repeat(self.DICTIONARY['dictionary_info']['blur_core_extent'], len(input_set_streamlines.streamlines))
         else:
             connections_dict = None
 
@@ -1209,11 +1208,17 @@ cdef class Evaluation :
         it = 0
         it_time = 0
         while True:
-            if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] * 0.9 and accept_prop:
+            if it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1'] * 0.9 and accept_prop or it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']:
                 break
-            elif it > self.DICTIONARY['dictionary_info']['adapt_params']['MAX_ITER_1']:
-                break
-            print(f"iteration: {it}, prop:{PROP}, iteration time= {it_time}")
+            
+            if it % 50 == 0:
+                # save first tdi
+                niiTDI_img = np.ascontiguousarray( np.asanyarray( niiTDI_img ).astype(np.float32) )
+                niiTDI = nibabel.Nifti1Image(niiTDI_img, niiWM.affine)
+                nibabel.save(niiTDI, pjoin(self.get_config('TRACKING_path'),f'tdi_{it}.nii.gz'))
+                
+
+            # print(f"iteration: {it}, prop:{PROP}, iteration time= {it_time}")
             t0 = time.time()
             pt_Buff_seg_IC = self.DICTIONARY['IC']['fiber'].size - buff_size
             pt_Buff_seg_EC = self.DICTIONARY['EC']['v'].size - buff_size
@@ -1241,15 +1246,19 @@ cdef class Evaluation :
             Blur_sigma = None
 
             if 0 <= PROP <= 33:
-                pick_conn = np.random.choice(list(connections_dict.keys()))
+                pick_conn = np.random.choice(np.arange(len(list(connections_dict.keys()))))
+                pick_conn = list(connections_dict.keys())[pick_conn]
+                # pick_conn = np.random.choice(list(connections_dict.keys()))
                 pick_fib = np.random.choice( connections_dict[pick_conn] )
                 # pick_fib = 20
                 Backup_fib = copy.deepcopy(input_set_splines[pick_fib])
                 # for i in tempts:
-                goodMove = adapt_streamline(input_set_splines[pick_fib], to_RASMM, abc_to_RASMM, to_VOXMM, abc_to_VOXMM, tempts, move_all, m_variance, niiWM_img)
-                if not goodMove:
-                    print("not moved")
-                    input_set_splines[pick_fib] = Backup_fib
+                # goodMove = adapt_streamline(input_set_splines[pick_fib], to_RASMM, abc_to_RASMM, to_VOXMM, abc_to_VOXMM, tempts, move_all, m_variance, niiWM_img)
+                adapt_streamline_informed(input_set_splines[pick_fib], to_RASMM, abc_to_RASMM, to_VOXMM, abc_to_VOXMM, m_variance, niiWM_img, niiTDI_img)
+
+                # if not goodMove:
+                #     print("not moved")
+                #     input_set_splines[pick_fib] = Backup_fib
                 lengths =  [len(input_set_splines[pick_fib])]
                 n_count = 1
                 # sigma = sigma_arr[pick_fib]
@@ -1309,7 +1318,7 @@ cdef class Evaluation :
                 upd_idx = [i for g in upd_idx for i in g]
 
                 diff_seg = len(upd_idx)
-                print(f"time for proposal: {time.time()-t_prop}")
+                # print(f"time for proposal: {time.time()-t_prop}")
 
                 t_dict = time.time()
                 trk2dict_update(self.DICTIONARY["lut"], index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
@@ -1319,7 +1328,7 @@ cdef class Evaluation :
                                 pDict_TRK_kept, pDict_TRK_norm, pDict_IC_f, pDict_IC_v, pDict_IC_o, pDict_IC_len,
                                 pDict_TRK_len, pDict_Tot_segm_len, pDict_EC_v, pDict_EC_o, num_vox)
                 
-                print(f"time to run trk2dict: {time.time()-t_dict}")
+                # print(f"time to run trk2dict: {time.time()-t_dict}")
 
                 # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
 
@@ -1347,7 +1356,7 @@ cdef class Evaluation :
 
                 # self.DICTIONARY['IC']['nF'] = np.count_nonzero(self.DICTIONARY['TRK']['kept'])
                 buff_size += len(upd_idx)
-                print(f"time for proposal: {time.time()-t_prop}")
+                # print(f"time for proposal: {time.time()-t_prop}")
                 # print(f"buffer_size: {buff_size}, num of fibs removed: {len(index_list)}")
                 # print(f"nF: {self.DICTIONARY['IC']['nF']}")
                 # print(f"TRK kept size: {self.DICTIONARY['TRK']['kept'].size}, non zeros:{np.count_nonzero(self.DICTIONARY['TRK']['kept'])}")
@@ -1379,7 +1388,7 @@ cdef class Evaluation :
                 upd_idx = [i for g in upd_idx for i in g]
 
                 diff_seg = len(upd_idx)
-                print(f"time for proposal: {time.time()-t_prop}")
+                # print(f"time for proposal: {time.time()-t_prop}")
 
                 t_dict = time.time()
                 trk2dict_update(self.DICTIONARY["lut"], index_list, diff_seg, fib_list, len_ptr_out, ptr_buff_size, sigma,
@@ -1389,26 +1398,26 @@ cdef class Evaluation :
                                 pDict_TRK_kept, pDict_TRK_norm, pDict_IC_f, pDict_IC_v, pDict_IC_o, pDict_IC_len,
                                 pDict_TRK_len, pDict_Tot_segm_len, pDict_EC_v, pDict_EC_o, num_vox)
 
-                print(f"time to run trk2dict: {time.time()-t_dict}")
+                # print(f"time to run trk2dict: {time.time()-t_dict}")
 
             t_update = time.time()
             self.update_dictionary(upd_idx, num_vox, buffer_size=buff_size)
-            print(f"time for dictionary update: {time.time()-t_update}")
+            # print(f"time for dictionary update: {time.time()-t_update}")
             
             t_thread = time.time()
             self.set_threads(buffer_size=buff_size, n=self.THREADS['n'], verbose=False)
-            print(f"time for thread update: {time.time()-t_thread}")
+            # print(f"time for thread update: {time.time()-t_thread}")
 
             # print(f"size matrix A before: {self.A.shape}")
             self.build_operator(verbose=False)
             
             t_solve = time.time()
             self.x, _ = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=regularisation, confidence_array=confidence_array)
-            print(f"time for solve: {time.time()-t_solve}")
+            # print(f"time for solve: {time.time()-t_solve}")
 
             t_error = time.time()
             fit_error = self.get_fit_error(y_mea, nV) * lambda_RMSE
-            print(f"time for error: {time.time()-t_error}")
+            # print(f"time for error: {time.time()-t_error}")
             prior_bund_norm = len(connections_dict)/lambda_bund
             prior_fibs_norm = sum(map(len, connections_dict.values()))/lambda_fib
 
@@ -1418,7 +1427,7 @@ cdef class Evaluation :
 
             t_cost = time.time()
             accept_prop = self.compute_cost(SA_schedule, it, cost, PROP, priors, mean_sigma=mean_sigma, b_variance=b_variance, blur_sigma=Blur_sigma, removed_connections=len(support_dict), num_connections=len(connections_dict))
-            print(f"time for cost: {time.time()-t_cost}")
+            # print(f"time for cost: {time.time()-t_cost}")
             # print(f"PROP: {PROP}, cost {cost}, num_bundles: {len(connections_dict)}, accepted? {accept_prop}")
 
             if accept_prop:
@@ -1429,11 +1438,11 @@ cdef class Evaluation :
                 Track_Delta_E.append(Track_Delta_E[it])
                 t_reverse = time.time()
                 self.reverse_dictionary( Backup_mit_dictionary )
-                print(f"time for reverse dictionary: {time.time()-t_reverse}")
+                # print(f"time for reverse dictionary: {time.time()-t_reverse}")
                 buff_size = Backup_buffer
                 connections_dict = backup_connections_dict
                 support_dict = backup_support_dict
-                if PROP < -1:
+                if 0 <= PROP <= 33:
                     input_set_splines[pick_fib] = Backup_fib
 
             if len(support_dict) == 0:
@@ -1469,6 +1478,11 @@ cdef class Evaluation :
         # create tractogram object and save
         save_conf = nibabel.streamlines.tractogram.Tractogram(fib_save,  affine_to_rasmm=np.eye(4))
         nibabel.streamlines.save(save_conf, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_conf.tck'))
+
+        # save tdi
+        niiTDI_img = np.ascontiguousarray( np.asanyarray( niiTDI_img ).astype(np.float32) )
+        niiTDI = nibabel.Nifti1Image(niiTDI_img, niiWM.affine)
+        nibabel.save(niiTDI, pjoin(self.DICTIONARY["dictionary_info"]['path_out'], 'optimized_tdi.nii.gz'))
 
         return buff_size, fib_idx_save
 

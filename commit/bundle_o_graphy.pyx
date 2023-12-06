@@ -195,18 +195,21 @@ cdef bool adapt_streamline( float [:,:] streamline, float [:,::1] to_RASMM, floa
     return goodMove
 
 
-cpdef compute_gradient(int vox_x, int vox_y, int vox_z, float [:, :, ::1] niiWM_img):
+
+cpdef compute_gradient(int vox_x, int vox_y, int vox_z, float [:, :, ::1] niiWM_img, float [:,:, ::1] tdi_img):
     cdef int i = 0
-    cdef int[:] vox_max = np.array([0,0,0])
+    cdef int[:] vox_max = np.array([0,0,0]).astype(np.int32)
     cdef int [:,:] neighbors = np.array([[-1,-1,-1],[-1,-1,0],[-1,-1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,1,-1],[-1,1,0],[-1,1,1],
                                         [0,-1,-1],[0,-1,0],[0,-1,1],[0,0,-1],[0,0,1],[0,1,-1],[0,1,0],[0,1,1],
-                                        [1,-1,-1],[1,-1,0],[1,-1,1],[1,0,-1],[1,0,0],[1,0,1],[1,1,-1],[1,1,0],[1,1,1]])
+                                        [1,-1,-1],[1,-1,0],[1,-1,1],[1,0,-1],[1,0,0],[1,0,1],[1,1,-1],[1,1,0],[1,1,1]]).astype(np.int32)
 
     for i in range(26):
         vox_max[0] = vox_x + neighbors[i,0]
         vox_max[1] = vox_y + neighbors[i,1]
         vox_max[2] = vox_z + neighbors[i,2]
-        if niiWM_img[vox_max[0], vox_max[1], vox_max[2]] < niiWM_img[vox_x, vox_y, vox_z]:
+        if niiWM_img[vox_max[0], vox_max[1], vox_max[2]] < 1:
+            continue
+        if tdi_img[vox_max[0], vox_max[1], vox_max[2]] < tdi_img[vox_x, vox_y, vox_z]:
             vox_x = vox_max[0]
             vox_y = vox_max[1]
             vox_z = vox_max[2]
@@ -215,9 +218,9 @@ cpdef compute_gradient(int vox_x, int vox_y, int vox_z, float [:, :, ::1] niiWM_
 
 
 
-cpdef adapt_streamline_informed( float [:,:] streamline, float [:,::1] to_RASMM, float [:] abc_to_RASMM,
+cdef adapt_streamline_informed( float [:,:] streamline, float [:,::1] to_RASMM, float [:] abc_to_RASMM,
                             float [:,::1] to_VOXMM, float [:] abc_to_VOXMM, double m_variance,
-                            float [:, :, ::1] niiWM_img, float [:] pt_start, float [:] pt_end):
+                            float [:, :, ::1] niiWM_img, float [:,:,::1] tdi_img):
 
     cdef:
         int n = streamline.shape[0]
@@ -225,24 +228,22 @@ cpdef adapt_streamline_informed( float [:,:] streamline, float [:,::1] to_RASMM,
         double [:] random_displ
         float [:] temp_pt = np.zeros(3, dtype='f4', order='C')
 
-
     for j in xrange(n):
         temp_pt[:] = apply_affine(streamline[j,:], to_VOXMM, abc_to_VOXMM, temp_pt)
         vox_x = <int>  cround(temp_pt[0])
         vox_y = <int>  cround(temp_pt[1])
         vox_z = <int>  cround(temp_pt[2])
 
-        vox_x_max, vox_y_max, vox_z_max = compute_gradient(vox_x, vox_y, vox_z, niiWM_img)
+
+        vox_x_max, vox_y_max, vox_z_max = compute_gradient(vox_x, vox_y, vox_z, niiWM_img, tdi_img)
 
         # compute gaussian random displacement centered in vox_x_max, vox_y_max, vox_z_max
         random_displ = np.array(gaussian(3, m_variance))
-        print(f"random displ: {random_displ}")
         temp_pt[0] = vox_x_max + random_displ[0]
         temp_pt[1] = vox_y_max + random_displ[1]
         temp_pt[2] = vox_z_max + random_displ[2]
 
         streamline[j] = apply_affine(temp_pt, to_RASMM, abc_to_RASMM, temp_pt)
-
 
 
 
@@ -396,13 +397,6 @@ def compute_assignments(dictionary, num_streamlines, MAX_THREAD, conn_threshold=
     # os.system( f'dice_tractogram_cluster.py {input_tractogram_filename} --save_assignments {input_tractogram_filename}_fibers_assignment.txt --atlas {gm_filename} --reference {gm_filename}' )
 
     file_assignments = os.path.join(dictionary['path_out'], f"{dictionary['filename_tractogram']}_clustered_thr_{float(dictionary['blur_clust_thr'][0])}_assignments.txt")
-    # os.system(f"dice_tractogram_cluster.py {dictionary['filename_tractogram']} --reference {dictionary['atlas']} "+
-    #     f"--clust_threshold {dictionary['blur_clust_thr'][0]} --atlas {dictionary['atlas']} "+
-    #     f"--n_threads {dictionary['nthreads']} --save_assignments {file_assignments} -f -v")
-
-    # os.system(f"dice_tractogram_assing.py {dictionary['filename_tractogram']} {dictionary['atlas']} {dictionary['atlas']} " +
-    #     f"--conn_threshold {dictionary['blur_clust_thr'][0]} --save_assignments {file_assignments} -f -v")
-
 
     chunk_size = int(num_streamlines / MAX_THREAD)
     chunk_groups = [
@@ -423,7 +417,7 @@ def compute_assignments(dictionary, num_streamlines, MAX_THREAD, conn_threshold=
                                     i,
                                     start_chunk=int(chunk_groups[i][0]),
                                     end_chunk=int(chunk_groups[i][len(chunk_groups[i]) - 1] + 1),
-                                    gm_map_file=dictionary['atlas'],
+                                    gm_map_file=dictionary['blur_clust_groupby'],
                                     threshold=conn_threshold) for i in range(len(chunk_groups))]
             chunks_asgn = [f.result() for f in future]
             chunks_asgn = [c for f in chunks_asgn for c in f]

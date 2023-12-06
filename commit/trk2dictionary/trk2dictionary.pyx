@@ -492,6 +492,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     dictionary_info['path_out'] = path_out
     dictionary_info['filename_peaks'] = filename_peaks
     dictionary_info['filename_mask'] = filename_mask
+    dictionary_info['blur_clust_groupby'] = blur_clust_groupby
+    dictionary_info['blur_clust_thr'] = blur_clust_thr
     dictionary_info['do_intersect'] = do_intersect
     dictionary_info['fiber_shift'] = fiber_shift
     dictionary_info['min_seg_len'] = min_seg_len

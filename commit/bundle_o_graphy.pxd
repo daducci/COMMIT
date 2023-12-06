@@ -5,6 +5,10 @@ from libcpp cimport bool
 
 cdef bool adapt_streamline(float [:,:] streamline, float [:,::1] to_RASMM, float [:] abc_to_RASMM, float [:,::1] to_VOXMM, float [:] abc_to_VOXMM,
                             int tempts, int pt_adapt, double m_variance, float [:, :, ::1] niiWM_img )
+
+cdef adapt_streamline_informed( float [:,:] streamline, float [:,::1] to_RASMM, float [:] abc_to_RASMM, float [:,::1] to_VOXMM, float [:] abc_to_VOXMM,
+                                double m_variance, float [:, :, ::1] niiWM_img, float [:,:,::1] tdi_img)
+
 cdef double random_gaussian(double mov_var)
 cdef void assign_random_gaussian_pt(double[:] out, int assign_ix, double mov_var)
 cdef gaussian(int n, double mov_var)
