@@ -187,13 +187,13 @@ def regularisation2omegaprox(regularisation):
     # Extracellular Compartment
     startEC = regularisation.get('startEC')
     sizeEC  = regularisation.get('sizeEC')
-    if regularisation['regIC'] is None:
+    if regularisation['regEC'] is None:
         omegaEC = lambda x: 0.0
         if regularisation.get('nnEC')==True:
             proxEC = lambda x, _: non_negativity(x,startEC,sizeEC)
         else:
             proxEC = lambda x, _: x
-    elif regularisation['regIC'] == 'sparsity':
+    elif regularisation['regEC'] == 'sparsity':
         omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)],1)
         if regularisation.get('nnEC'):
             proxEC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC),startEC,sizeEC)

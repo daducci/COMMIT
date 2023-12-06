@@ -66,7 +66,7 @@ cpdef projection_onto_l2_ball(double [::1] x, double lam, int compartment_start,
     return np.asarray( x )
 
 
-cpdef omega_group_sparsity(double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam, double n) :
+cpdef omega_group_sparsity(double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam) :
     """
     References:
         [1] Jenatton et al. - `Proximal Methods for Hierarchical Sparse Coding`
