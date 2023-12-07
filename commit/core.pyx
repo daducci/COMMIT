@@ -732,9 +732,9 @@ cdef class Evaluation :
             sys.dont_write_bytecode = True
             pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
-            if 'commit.operator.operator' in sys.modules :
-                del sys.modules['commit.operator.operator']
-            import commit.operator.operator
+        if 'commit.operator.operator' in sys.modules :
+            del sys.modules['commit.operator.operator']
+        import commit.operator.operator
 
         self.A = commit.operator.operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 

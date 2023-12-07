@@ -88,6 +88,7 @@ cpdef omega_group_sparsity(double [::1] x, int [::1] group_idx, int [::1] group_
     return lam*omega
 
 
+
 cpdef prox_group_sparsity( double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam) :
     """
     References:
@@ -122,3 +123,29 @@ cpdef prox_group_sparsity( double [::1] x, int [::1] group_idx, int [::1] group_
                     x[ group_idx[i] ] *= wl
             j += N
     return np.asarray( x )
+
+
+
+cpdef omega_sparse_group_sparsity(double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam1, double lam2) :
+    cdef:
+        int nG = group_size.size, N
+        int k, i, j = 0
+        double gNorm, x_i
+        double omega1 = 0.0
+        double omega2 = 0.0
+
+
+    if lam1 != 0 or lam2 != 0:
+        omega1 = np.sum(np.abs(x))  # l1 penalty
+        for k in xrange(nG):
+            N = group_size[k]
+            gNorm = 0.0
+            for i in xrange(j,j+N) :
+                x_i = x[group_idx[i]]
+                gNorm += x_i*x_i
+            omega2 += group_weight[k] * sqrt( gNorm )  # group l2 penalty
+            j += N
+    return lam1*omega1 + lam2*omega2
+
+
+    

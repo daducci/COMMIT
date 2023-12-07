@@ -11,8 +11,8 @@ import sys
 import warnings
 eps = np.finfo(float).eps
 
-list_regularizers = [None, 'sparsity', 'group_sparsity']
-from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding
+list_regularizers = [None, 'sparsity', 'group_sparsity', 'sparse_group_sparsity']
+from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding, omega_sparse_group_sparsity
 # removed, for now, projection_onto_l2_ball
 
 
@@ -21,7 +21,7 @@ def init_regularisation(
     regularizers = (None, None, None),
     is_nonnegative = (True, True, True),
     structureIC = None, weightsIC = None,
-    lambdas = (0.0, 0.0, 0.0)
+    lambdas = (0.0, 0.0, 0.0, 0.0)
 ):
     """
     Initialise the data structure that defines Omega in:
@@ -95,6 +95,7 @@ def init_regularisation(
     regularisation['lambdaIC']  = float( lambdas[0] )
     regularisation['lambdaEC']  = float( lambdas[1] )
     regularisation['lambdaISO'] = float( lambdas[2] )
+    regularisation['lambda_group_IC'] = float( lambdas[3] )
 
     regularisation['nnIC']  = is_nonnegative[0]
     regularisation['nnEC']  = is_nonnegative[1]
@@ -131,6 +132,7 @@ def init_regularisation(
 
 def regularisation2omegaprox(regularisation):
     lambdaIC  = regularisation.get('lambdaIC')
+    lambda_group_IC = regularisation.get('lambda_group_IC')
     lambdaEC  = regularisation.get('lambdaEC')
     lambdaISO = regularisation.get('lambdaISO')
     if lambdaIC<0.0 or lambdaEC<0.0 or lambdaISO<0.0:
@@ -146,6 +148,7 @@ def regularisation2omegaprox(regularisation):
     # Intracellular Compartment
     startIC = regularisation.get('startIC')
     sizeIC  = regularisation.get('sizeIC')
+
     if regularisation['regIC'] is None:
         omegaIC = lambda x: 0.0
         if regularisation.get('nnIC')==True:
@@ -183,7 +186,31 @@ def regularisation2omegaprox(regularisation):
             proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC),startIC,sizeIC)
         else:
             proxIC = lambda x, scaling: prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC)
+    
+    elif regularisation['regIC'] == 'sparse_group_sparsity':
+        structureIC = regularisation.get('structureIC')
+        groupWeightIC = regularisation.get('weightsIC')
+        if not len(structureIC) == len(groupWeightIC):
+            raise ValueError('Number of groups and weights do not match')
+        
+        # convert to new data structure (needed for faster access)
+        N = np.sum([g.size for g in structureIC])
+        groupIdxIC  = np.zeros( (N,), dtype=np.int32 )
+        groupSizeIC = np.zeros( (structureIC.size,), dtype=np.int32 )
+        pos = 0
+        for i, g in enumerate(structureIC) :
+            groupSizeIC[i] = g.size
+            groupIdxIC[pos:(pos+g.size)] = g[:]
+            pos += g.size
 
+        omegaIC = lambda x: omega_sparse_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, lambda_group_IC)
+
+        if regularisation.get('nnIC'): # TODO: ??
+            proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC), startIC,sizeIC)
+        else:
+            proxIC = lambda x, scaling: prox_group_sparsity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
+
+        
     # Extracellular Compartment
     startEC = regularisation.get('startEC')
     sizeEC  = regularisation.get('sizeEC')
