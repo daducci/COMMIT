@@ -1,7 +1,6 @@
 import numpy as np
 from math import sqrt
 import sys
-import warnings
 eps = np.finfo(float).eps
 
 list_regularizers = [None, 'sparsity', 'group_sparsity']
@@ -11,9 +10,10 @@ from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sp
 def init_regularisation(
     commit_evaluation,
     regularizers = (None, None, None),
+    lambdas = (0.0, 0.0, 0.0),
     is_nonnegative = (True, True, True),
-    structureIC = None, weightsIC = None,
-    lambdas = (0.0, 0.0, 0.0)
+    structureIC = None,
+    weightsIC = None
 ):
     """
     Initialise the data structure that defines Omega in:
@@ -170,7 +170,6 @@ def regularisation2omegaprox(regularisation):
             pos += g.size
 
         omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC )
-        #TODO: verify if COMMIT2 results are better than before
         if regularisation.get('nnIC'):
             proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC),startIC,sizeIC)
         else:
