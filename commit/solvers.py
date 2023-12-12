@@ -1,9 +1,3 @@
-"""
-Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
-
-This structure is based on the previous work of Rafael Carrillo and was
-supported by the LTS5 laboratory at EPFL, Lausanne.
-"""
 from __future__ import print_function
 import numpy as np
 from math import sqrt
@@ -12,8 +6,7 @@ import warnings
 eps = np.finfo(float).eps
 
 list_regularizers = [None, 'sparsity', 'group_sparsity']
-from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding
-# removed, for now, projection_onto_l2_ball
+from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding # removed, for now, projection_onto_l2_ball
 
 
 def init_regularisation(
