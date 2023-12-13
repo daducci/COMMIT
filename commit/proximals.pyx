@@ -45,6 +45,27 @@ cpdef soft_thresholding(double [::1] x, double lam, int compartment_start, int c
     return np.asarray( x )
 
 
+cpdef w_soft_thresholding(double [::1] x, double [::1] w, double lam, int compartment_start, int compartment_size) :
+    """
+    Proximal of weighted L1 norm
+    """
+    # NB: this preserves non-negativity
+    cdef:
+        int i
+    for i in xrange(compartment_start, compartment_start+compartment_size):
+        # if x[i] <= lam:
+        #     x[i] = 0.0
+        # else:
+        #     x[i] = x[i] - lam
+        if w[i]*x[i] > lam:
+            x[i] = w[i]*x[i] - lam
+        elif w[i]*x[i] < -lam:
+            x[i] = w[i]*x[i] + lam
+        else:
+            x[i] = 0.0
+    return np.asarray( x )
+
+
 cpdef projection_onto_l2_ball(double [::1] x, double lam, int compartment_start, int compartment_size) :
     """
     Proximal of L2 norm

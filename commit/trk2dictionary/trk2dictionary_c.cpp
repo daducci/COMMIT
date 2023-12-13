@@ -475,6 +475,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                 }
 
                 for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
+                    // std::cout << "FiberNorm: " << itNorm->second << std::endl;
                     fiberNorm += pow(itNorm->second,2);
                 fiberNorm = sqrt(fiberNorm);
                 FiberNorm.clear();

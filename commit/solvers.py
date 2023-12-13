@@ -11,17 +11,18 @@ import sys
 import warnings
 eps = np.finfo(float).eps
 
-list_regularizers = [None, 'sparsity', 'group_sparsity', 'sparse_group_sparsity']
-from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding, omega_sparse_group_sparsity
+list_regularizers = [None, 'sparsity', 'weighted_sparsity', 'group_sparsity', 'sparse_group_sparsity']
+from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding, w_soft_thresholding, omega_sparse_group_sparsity
 # removed, for now, projection_onto_l2_ball
 
 
 def init_regularisation(
     commit_evaluation,
-    regularizers = (None, None, None),
-    is_nonnegative = (True, True, True),
-    structureIC = None, weightsIC = None,
-    lambdas = (0.0, 0.0, 0.0, 0.0)
+    regularizers=(None, None, None),
+    is_nonnegative=(True, True, True),
+    structureIC=None, weightsIC=None,
+    weightsIC_group=None,
+    lambdas=(0.0, 0.0, 0.0, 0.0)
 ):
     """
     Initialise the data structure that defines Omega in:
@@ -37,7 +38,7 @@ def init_regularisation(
             regularizers[0] corresponds to the Intracellular compartment
             regularizers[1] corresponds to the Extracellular compartment
             regularizers[2] corresponds to the Isotropic compartment
-        Each regularizers[k] must be one of: {None, 'sparsity', 'group_sparsity'}:
+        Each regularizers[k] must be one of: {None, 'sparsity', weighted_sparsity, 'group_sparsity'}:
             'sparsity' penalises with the 1-norm of the coefficients
                 corresponding to the compartment.
             'group_sparsity' penalises according to the following formulation (see [1]):
@@ -51,7 +52,7 @@ def init_regularisation(
         The lambdas correspond to the ones described in the mathematical
         formulation of the regularisation term
         $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
-        Default = (0.0, 0.0, 0.0).
+        Default = (0.0, 0.0, 0.0, 0.0).
 
     is_nonnegative - tuple :
         impose a non negativity constraint for each compartment:
@@ -74,6 +75,9 @@ def init_regularisation(
                 of two other non-overlapping groups.
 
     weightsIC - np.array(np.float64) :
+        this defines the weights associated to each element of structure IC.
+
+    weightsIC_group - np.array(np.float64) :
         this defines the weights associated to each group of structure IC.
 
     References:
@@ -109,7 +113,7 @@ def init_regularisation(
         idx_in_kept[dictionary_TRK_kept==1] = list(range(commit_evaluation.DICTIONARY['IC']['nF']))
 
         newStructureIC = []
-        newWeightsIC = []
+        newweightsIC_group = []
         for count, group in enumerate(structureIC):
             group = idx_in_kept[group]
             idx_to_delete = np.where(group==-1)[0]
@@ -117,15 +121,15 @@ def init_regularisation(
                 group = np.delete(group,idx_to_delete)
                 if(group.size>0):
                     newStructureIC.append(group)
-                    newWeightsIC.append(weightsIC[count])
+                    newweightsIC_group.append(weightsIC_group[count])
             else:
                 newStructureIC.append(group)
-                newWeightsIC.append(weightsIC[count])
+                newweightsIC_group.append(weightsIC_group[count])
 
         structureIC = np.array(newStructureIC, dtype=np.object_)
-        weightsIC = np.array(newWeightsIC)
+        weightsIC_group = np.array(newweightsIC_group)
     regularisation['structureIC'] = structureIC
-    regularisation['weightsIC']   = weightsIC
+    regularisation['weightsIC']   = weightsIC_group
 
     return regularisation
 
@@ -161,12 +165,22 @@ def regularisation2omegaprox(regularisation):
             proxIC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
         else:
             proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
+
+    elif regularisation['regIC'] == 'weighted_sparsity':
+        w = regularisation.get('weightsIC')
+        omegaIC = lambda x: lambdaIC * np.linalg.norm(w[startIC:sizeIC]*x[startIC:sizeIC],1)
+        if regularisation.get('nnIC'):
+            proxIC = lambda x, scaling: non_negativity(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
+        else:
+            proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
+
     # elif regularisation['regIC'] == 'smoothness':
     #     omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
     #     proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
+
     elif regularisation['regIC'] == 'group_sparsity':
         structureIC = regularisation.get('structureIC')
-        groupWeightIC = regularisation.get('weightsIC')
+        groupWeightIC = regularisation.get('weightsIC_group')
         if not len(structureIC) == len(groupWeightIC):
             raise ValueError('Number of groups and weights do not match')
 
@@ -180,19 +194,19 @@ def regularisation2omegaprox(regularisation):
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
 
-        omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC )
+        omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambda_group_IC )
         #TODO: verify if COMMIT2 results are better than before
         if regularisation.get('nnIC'):
-            proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC),startIC,sizeIC)
+            proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC),startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambdaIC)
+            proxIC = lambda x, scaling: prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
     
     elif regularisation['regIC'] == 'sparse_group_sparsity':
         structureIC = regularisation.get('structureIC')
-        groupWeightIC = regularisation.get('weightsIC')
+        groupWeightIC = regularisation.get('weightsIC_group')
         if not len(structureIC) == len(groupWeightIC):
             raise ValueError('Number of groups and weights do not match')
-        
+
         # convert to new data structure (needed for faster access)
         N = np.sum([g.size for g in structureIC])
         groupIdxIC  = np.zeros( (N,), dtype=np.int32 )
