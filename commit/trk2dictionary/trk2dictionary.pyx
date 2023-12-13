@@ -1,6 +1,5 @@
 #!python
 # cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
-from __future__ import print_function
 import numpy as np
 cimport numpy as np
 from libc.stdlib cimport malloc, free
@@ -258,17 +257,17 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     print( f'\t- Output written to "{path_out}"' )
     if not exists( path_out ):
         makedirs( path_out )
-    
+
     path_temp = join(path_out, 'temp')
     print( f'\t- Temporary files written to "{path_temp}"' )
-    
+
     if exists(path_temp):
         shutil.rmtree(path_temp, ignore_errors=True)
     makedirs(path_temp, exist_ok=True)
 
     if n_threads == 0 or n_threads > 255 :
         ERROR( 'Number of n_threads must be between 1 and 255' )
-        
+
     if n_threads == -1 :
         # Set to the number of CPUs in the system
         try :
@@ -307,7 +306,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             np.save( path_streamline_idx, temp_idx )
             idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
                             clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
-                            temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose) 
+                            temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose)
         else:
             idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, clust_thr=blur_clust_thr[0],
                             force=True, verbose=verbose)
@@ -330,7 +329,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         ERROR( 'Invalid input file: only .trk and .tck are supported' )
 
     hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
-        
+
 
     if extension == ".trk":
         print ( f'\t\t- geometry taken from "{filename_tractogram}"' )
@@ -465,7 +464,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if blur_clust_thr[0]> 0:
         idx_centroids = np.array(idx_centroids, dtype=np.uint32)
         dictionary_info['n_count'] = input_n_count
-        dictionary_info['tractogram_centr_idx'] = idx_centroids 
+        dictionary_info['tractogram_centr_idx'] = idx_centroids
     dictionary_info['TCK_ref_image'] = TCK_ref_image
     dictionary_info['path_out'] = path_out
     dictionary_info['filename_peaks'] = filename_peaks

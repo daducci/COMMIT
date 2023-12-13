@@ -1,14 +1,6 @@
-"""
-Author: Matteo Frigo - lts5 @ EPFL and Dep. of CS @ Univ. of Verona
-
-This structure is based on the previous work of Rafael Carrillo and was
-supported by the LTS5 laboratory at EPFL, Lausanne.
-"""
-from __future__ import print_function
 import numpy as np
 from math import sqrt
 import sys
-import warnings
 eps = np.finfo(float).eps
 
 list_regularizers = [None, 'sparsity', 'weighted_sparsity', 'group_sparsity', 'sparse_group_sparsity']
@@ -18,11 +10,11 @@ from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sp
 
 def init_regularisation(
     commit_evaluation,
-    regularizers=(None, None, None),
-    is_nonnegative=(True, True, True),
-    structureIC=None, weightsIC=None,
-    weightsIC_group=None,
-    lambdas=(0.0, 0.0, 0.0, 0.0)
+    regularizers = (None, None, None),
+    lambdas = (0.0, 0.0, 0.0),
+    is_nonnegative = (True, True, True),
+    structureIC = None,
+    weightsIC = None
 ):
     """
     Initialise the data structure that defines Omega in:
