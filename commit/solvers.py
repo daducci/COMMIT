@@ -11,10 +11,11 @@ from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sp
 def init_regularisation(
     commit_evaluation,
     regularizers = (None, None, None),
-    lambdas = (0.0, 0.0, 0.0),
+    lambdas = (0.0, 0.0, 0.0, 0.0),
     is_nonnegative = (True, True, True),
     structureIC = None,
-    weightsIC = None
+    weightsIC = None,
+    weightsIC_group = None
 ):
     """
     Initialise the data structure that defines Omega in:
