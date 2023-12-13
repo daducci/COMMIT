@@ -81,7 +81,7 @@ cpdef projection_onto_l2_ball(double [::1] x, double lam, int compartment_start,
     return np.asarray( x )
 
 
-cpdef omega_group_sparsity(double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam) :
+cpdef omega_group_lasso(double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam) :
     """
     References:
         [1] Jenatton et al. - `Proximal Methods for Hierarchical Sparse Coding`
@@ -104,14 +104,17 @@ cpdef omega_group_sparsity(double [::1] x, int [::1] group_idx, int [::1] group_
 
 
 
-cpdef prox_group_sparsity( double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam) :
+cpdef prox_group_lasso( double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam) :
     """
     References:
         [1] Jenatton et al. - `Proximal Methods for Hierarchical Sparse Coding`
     """
     cdef:
-        int nG = group_size.size, N
-        int k, i, j = 0
+        int nG = group_size.size
+        int N = 0
+        int k = 0
+        int i = 0
+        int j = 0
         double wl, gNorm, x_i
 
     k = x.size
@@ -141,14 +144,16 @@ cpdef prox_group_sparsity( double [::1] x, int [::1] group_idx, int [::1] group_
 
 
 
-cpdef omega_sparse_group_sparsity(double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam1, double lam2) :
+cpdef omega_sparse_group_lasso(double [::1] x, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam1, double lam2) :
     cdef:
-        int nG = group_size.size, N
-        int k, i, j = 0
+        int nG = group_size.size
+        int N = 0
+        int k = 0
+        int i = 0
+        int j = 0
         double gNorm, x_i
         double omega1 = 0.0
         double omega2 = 0.0
-
 
     if lam1 != 0 or lam2 != 0:
         omega1 = np.sum(np.abs(x))  # l1 penalty
@@ -160,6 +165,33 @@ cpdef omega_sparse_group_sparsity(double [::1] x, int [::1] group_idx, int [::1]
                 gNorm += x_i*x_i
             omega2 += group_weight[k] * sqrt( gNorm )  # group l2 penalty
             j += N
+    return lam1*omega1 + lam2*omega2
+
+
+cpdef omega_w_sparse_group_lasso(double [::1] x, double [::1] w, int [::1] group_idx, int [::1] group_size, double [::1] group_weight, double lam1, double lam2) :
+    cdef:
+        int nG = group_size.size
+        int N = 0
+        int k = 0
+        int i = 0
+        int j = 0
+        int ii = 0
+        double gNorm, x_i
+        double omega1 = 0.0
+        double omega2 = 0.0
+
+    if lam1 != 0 or lam2 != 0:
+        for ii in xrange(x.shape[0]):
+            omega1 += np.abs(w[ii]*x[ii]) # l1 penalty
+        for k in xrange(nG):
+            N = group_size[k]
+            gNorm = 0.0
+            for i in xrange(j,j+N) :
+                x_i = x[group_idx[i]]
+                gNorm += x_i*x_i
+            omega2 += group_weight[k] * sqrt( gNorm )  # group l2 penalty
+            j += N
+    
     return lam1*omega1 + lam2*omega2
 
 

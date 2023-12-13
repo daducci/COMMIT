@@ -3,8 +3,8 @@ from math import sqrt
 import sys
 eps = np.finfo(float).eps
 
-list_regularizers = [None, 'sparsity', 'weighted_sparsity', 'group_sparsity', 'sparse_group_sparsity']
-from commit.proximals import non_negativity, omega_group_sparsity, prox_group_sparsity, soft_thresholding, w_soft_thresholding, omega_sparse_group_sparsity
+list_regularizers = [None, 'lasso', 'weighted_lasso', 'group_lasso', 'sparse_group_lasso', 'weighted_sparse_group_lasso']
+from commit.proximals import non_negativity, omega_group_lasso, prox_group_lasso, soft_thresholding, w_soft_thresholding, omega_sparse_group_lasso, omega_w_sparse_group_lasso
 # removed, for now, projection_onto_l2_ball
 
 
@@ -31,10 +31,10 @@ def init_regularisation(
             regularizers[0] corresponds to the Intracellular compartment
             regularizers[1] corresponds to the Extracellular compartment
             regularizers[2] corresponds to the Isotropic compartment
-        Each regularizers[k] must be one of: {None, 'sparsity', weighted_sparsity, 'group_sparsity'}:
-            'sparsity' penalises with the 1-norm of the coefficients
+        Each regularizers[k] must be one of: {None, 'lasso', weighted_lasso, 'group_lasso'}:
+            'lasso' penalises with the 1-norm of the coefficients
                 corresponding to the compartment.
-            'group_sparsity' penalises according to the following formulation (see [1]):
+            'group_lasso' penalises according to the following formulation (see [1]):
                 $\Omega(x) = \lambda \sum_{g\in G} w_g |x_g|
                 Considers both the non-overlapping and the hierarchical formulations.
                 NB: this option is allowed only in the IC compartment.
@@ -56,7 +56,7 @@ def init_regularisation(
 
     structureIC - np.array(list(list), dtype=np.object_) :
         group structure for the IC compartment.
-            This field is necessary only if regterm[0]='group_sparsity'.
+            This field is necessary only if regterm[0]='group_lasso'.
             Example:
                 structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
 
@@ -99,16 +99,16 @@ def init_regularisation(
     regularisation['nnISO'] = is_nonnegative[2]
 
 
-    # Check if weights need to be updated in case of 'weighted_sparsity'
-    if 0 in commit_evaluation.DICTIONARY['TRK']['kept'] and regularisation['regIC'] == 'weighted_sparsity':
+    # Check if weights need to be updated in case of 'weighted_lasso' or 'weighted_sparse_group_lasso'
+    if 0 in commit_evaluation.DICTIONARY['TRK']['kept'] and (regularisation['regIC'] == 'weighted_lasso' or regularisation['regIC'] == 'weighted_sparse_group_lasso'):
         if weightsIC is None:
             raise ValueError('Weights for the IC compartment not provided')
         if weightsIC.size != commit_evaluation.DICTIONARY['IC']['nF']:
             raise ValueError('Number of weights for the IC compartment does not match the number of IC elements')
-    regularisation['weightsIC'] = np.array(weightsIC)
+    regularisation['weightsIC'] = np.array(weightsIC).astype(np.float64)
 
 
-    # Check if group indices need to be updated in case of 'group_sparsity'
+    # Check if group indices need to be updated in case of 'group_lasso'
     if (structureIC is not None) and (0 in commit_evaluation.DICTIONARY['TRK']['kept']) :
         dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
 
@@ -162,14 +162,14 @@ def regularisation2omegaprox(regularisation):
             proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
         else:
             proxIC = lambda x, _: x
-    elif regularisation['regIC'] == 'sparsity':
+    elif regularisation['regIC'] == 'lasso':
         omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC],1)
         if regularisation.get('nnIC'):
             proxIC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
         else:
             proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
 
-    elif regularisation['regIC'] == 'weighted_sparsity':
+    elif regularisation['regIC'] == 'weighted_lasso':
         w = regularisation.get('weightsIC')
         omegaIC = lambda x: lambdaIC * np.linalg.norm(w[startIC:sizeIC]*x[startIC:sizeIC],1)
         if regularisation.get('nnIC'):
@@ -181,7 +181,7 @@ def regularisation2omegaprox(regularisation):
     #     omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
     #     proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
 
-    elif regularisation['regIC'] == 'group_sparsity':
+    elif regularisation['regIC'] == 'group_lasso':
         structureIC = regularisation.get('structureIC')
         groupWeightIC = regularisation.get('weightsIC_group')
         if not len(structureIC) == len(groupWeightIC):
@@ -197,14 +197,14 @@ def regularisation2omegaprox(regularisation):
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
 
-        omegaIC = lambda x: omega_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambda_group_IC )
+        omegaIC = lambda x: omega_group_lasso( x, groupIdxIC, groupSizeIC, groupWeightIC, lambda_group_IC )
         #TODO: verify if COMMIT2 results are better than before
         if regularisation.get('nnIC'):
-            proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC),startIC,sizeIC)
+            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC),startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: prox_group_sparsity(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
+            proxIC = lambda x, scaling: prox_group_lasso(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
     
-    elif regularisation['regIC'] == 'sparse_group_sparsity':
+    elif regularisation['regIC'] == 'sparse_group_lasso':
         structureIC = regularisation.get('structureIC')
         groupWeightIC = regularisation.get('weightsIC_group')
         if not len(structureIC) == len(groupWeightIC):
@@ -220,12 +220,36 @@ def regularisation2omegaprox(regularisation):
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
 
-        omegaIC = lambda x: omega_sparse_group_sparsity( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, lambda_group_IC)
+        omegaIC = lambda x: omega_sparse_group_lasso( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, lambda_group_IC)
 
-        if regularisation.get('nnIC'): # TODO: ??
-            proxIC = lambda x, scaling: non_negativity(prox_group_sparsity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC), startIC,sizeIC)
+        if regularisation.get('nnIC'):
+            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC), startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: prox_group_sparsity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
+            proxIC = lambda x, scaling: prox_group_lasso(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
+
+    elif regularisation['regIC'] == 'weighted_sparse_group_lasso':
+        structureIC = regularisation.get('structureIC')
+        groupWeightIC = regularisation.get('weightsIC_group')
+        if not len(structureIC) == len(groupWeightIC):
+            raise ValueError('Number of groups and weights do not match')
+
+        # convert to new data structure (needed for faster access)
+        N = np.sum([g.size for g in structureIC])
+        groupIdxIC  = np.zeros( (N,), dtype=np.int32 )
+        groupSizeIC = np.zeros( (structureIC.size,), dtype=np.int32 )
+        pos = 0
+        for i, g in enumerate(structureIC) :
+            groupSizeIC[i] = g.size
+            groupIdxIC[pos:(pos+g.size)] = g[:]
+            pos += g.size
+
+        w = regularisation.get('weightsIC')
+        omegaIC = lambda x: omega_w_sparse_group_lasso( x, w, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, lambda_group_IC)
+
+        if regularisation.get('nnIC'):
+            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC), startIC,sizeIC)
+        else:
+            proxIC = lambda x, scaling: prox_group_lasso(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
 
         
     # Extracellular Compartment
@@ -237,7 +261,7 @@ def regularisation2omegaprox(regularisation):
             proxEC = lambda x, _: non_negativity(x,startEC,sizeEC)
         else:
             proxEC = lambda x, _: x
-    elif regularisation['regEC'] == 'sparsity':
+    elif regularisation['regEC'] == 'lasso':
         omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)],1)
         if regularisation.get('nnEC'):
             proxEC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC),startEC,sizeEC)
@@ -256,7 +280,7 @@ def regularisation2omegaprox(regularisation):
             proxISO = lambda x, _: non_negativity(x,startISO,sizeISO)
         else:
             proxISO  = lambda x, _: x
-    elif regularisation['regISO'] == 'sparsity':
+    elif regularisation['regISO'] == 'lasso':
         omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)],1)
         if regularisation.get('nnISO'):
             proxISO  = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO),startISO,sizeISO)
@@ -349,7 +373,6 @@ def fista( y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_ite
     else:
         L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     step_size = 1.9 / L
-
     # Main loop
     if verbose :
         print()
@@ -367,7 +390,6 @@ def fista( y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_ite
         # Non-smooth step
         prox( x, step_size )
         reg_term_x = omega( x )
-
         # Check stepsize
         tmp = x-xhat
         q = qfval + np.real( np.dot(tmp,grad) ) + 0.5/step_size * np.linalg.norm(tmp)**2 + reg_term_x
