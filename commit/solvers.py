@@ -105,7 +105,7 @@ def init_regularisation(
             raise ValueError('Weights for the IC compartment not provided')
         if weightsIC.size != commit_evaluation.DICTIONARY['IC']['nF']:
             raise ValueError('Number of weights for the IC compartment does not match the number of IC elements')
-        regularisation['weightsIC'] = np.array(weightsIC)
+    regularisation['weightsIC'] = np.array(weightsIC)
 
 
     # Check if group indices need to be updated in case of 'group_sparsity'

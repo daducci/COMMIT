@@ -51,10 +51,10 @@ cpdef w_soft_thresholding(double [::1] x, double [::1] w, double lam, int compar
         #     x[i] = 0.0
         # else:
         #     x[i] = x[i] - lam
-        if w[i]*x[i] > lam:
-            x[i] = w[i]*x[i] - lam
-        elif w[i]*x[i] < -lam:
-            x[i] = w[i]*x[i] + lam
+        if x[i] > w[i]*lam:
+            x[i] = x[i] - w[i]*lam
+        elif x[i] < -w[i]*lam:
+            x[i] = x[i] + w[i]*lam
         else:
             x[i] = 0.0
     return np.asarray( x )
