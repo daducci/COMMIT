@@ -98,6 +98,16 @@ def init_regularisation(
     regularisation['nnEC']  = is_nonnegative[1]
     regularisation['nnISO'] = is_nonnegative[2]
 
+
+    # Check if weights need to be updated in case of 'weighted_sparsity'
+    if 0 in commit_evaluation.DICTIONARY['TRK']['kept'] and regularisation['regIC'] == 'weighted_sparsity':
+        if weightsIC is None:
+            raise ValueError('Weights for the IC compartment not provided')
+        if weightsIC.size != commit_evaluation.DICTIONARY['IC']['nF']:
+            raise ValueError('Number of weights for the IC compartment does not match the number of IC elements')
+        regularisation['weightsIC'] = np.array(weightsIC)
+
+
     # Check if group indices need to be updated in case of 'group_sparsity'
     if (structureIC is not None) and (0 in commit_evaluation.DICTIONARY['TRK']['kept']) :
         dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
@@ -122,7 +132,7 @@ def init_regularisation(
         structureIC = np.array(newStructureIC, dtype=np.object_)
         weightsIC_group = np.array(newweightsIC_group)
     regularisation['structureIC'] = structureIC
-    regularisation['weightsIC']   = weightsIC_group
+    regularisation['weightsIC_group']   = weightsIC_group
 
     return regularisation
 
