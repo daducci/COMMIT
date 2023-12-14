@@ -2,7 +2,6 @@
 #cython: language_level=3, boundscheck=False, wraparound=False, profile=False
 cimport cython
 import numpy as np
-cimport numpy as np
 from libc.math cimport sqrt
 
 

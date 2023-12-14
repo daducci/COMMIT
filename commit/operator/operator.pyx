@@ -3,7 +3,6 @@
 
 import cython
 import numpy as np
-cimport numpy as np
 
 # Interfaces to actual C code performing the multiplications
 cdef extern void COMMIT_A(

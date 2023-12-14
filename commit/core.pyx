@@ -2,7 +2,6 @@
 #cython: language_level=3, boundscheck=False, wraparound=False, nonecheck=False, cdivision=True, initializedcheck=False, binding=False
 cimport cython
 import numpy as np
-cimport numpy as np
 
 import time
 import glob

@@ -1,7 +1,6 @@
 #!python
 # cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
 import numpy as np
-cimport numpy as np
 from libc.stdlib cimport malloc, free
 import nibabel
 from dicelib.clustering import run_clustering
@@ -44,8 +43,8 @@ cpdef cat_function( infilename, outfilename ):
                 shutil.copyfileobj( inFile, outfile )
                 remove( fname )
 
-cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz ):
-    cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
+cpdef compute_tdi( unsigned int[::1] v, float[::1] l, int nx, int ny, int nz ):
+    cdef float [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
     cdef int i
     for i in xrange(v.size):
         tdi[ v[i] ] += l[i]
@@ -574,7 +573,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
     l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
-    cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
+    cdef float [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
     niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz )
     niiTDI_img_save = np.reshape( niiTDI_mem, niiMASK.shape, order='F' )
 
