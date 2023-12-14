@@ -1,7 +1,6 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, profile=False
 
-import cython
 import numpy as np
 
 # Interfaces to actual C code performing the multiplications
