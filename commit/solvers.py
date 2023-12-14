@@ -3,7 +3,7 @@ from math import sqrt
 import sys
 eps = np.finfo(float).eps
 
-list_regularizers = [None, 'lasso', 'weighted_lasso', 'group_lasso', 'sparse_group_lasso', 'weighted_sparse_group_lasso']
+list_regularizers = [None, 'lasso', 'weighted_lasso', 'group_lasso', 'sparse_group_lasso']
 from commit.proximals import non_negativity, omega_group_lasso, prox_group_lasso, soft_thresholding, w_soft_thresholding, omega_sparse_group_lasso, omega_w_sparse_group_lasso
 # removed, for now, projection_onto_l2_ball
 
@@ -11,13 +11,15 @@ from commit.proximals import non_negativity, omega_group_lasso, prox_group_lasso
 def init_regularisation(
     commit_evaluation,
     regularizers = (None, None, None),
-    lambdas = (0.0, 0.0, 0.0, 0.0),
+    lambdas = (0, 0, 0),
     is_nonnegative = (True, True, True),
-    structureIC = None,
-    weightsIC = None,
-    weightsIC_group = None
+    params = (None, None, None)
+    # structureIC = None,
+    # weightsIC = None,
+    # weightsIC_group = None
 ):
     """
+    
     Initialise the data structure that defines Omega in:
         argmin_x 0.5*||Ax-y||_2^2 + Omega(x)
 
@@ -92,69 +94,112 @@ def init_regularisation(
     regularisation['lambdaIC']  = float( lambdas[0] )
     regularisation['lambdaEC']  = float( lambdas[1] )
     regularisation['lambdaISO'] = float( lambdas[2] )
-    regularisation['lambda_group_IC'] = float( lambdas[3] )
 
     regularisation['nnIC']  = is_nonnegative[0]
     regularisation['nnEC']  = is_nonnegative[1]
     regularisation['nnISO'] = is_nonnegative[2]
 
+    # unpack parameters inside params as three separate dictionaries
+    dictIC_params, dictEC_params, dictISO_params = params
+    if regularisation['regIC'] == 'lasso':
+        if lambdas[0] is None:
+            raise ValueError('Missing regularisation parameter for the IC compartment')
 
-    # Check if weights need to be updated in case of 'weighted_lasso' or 'weighted_sparse_group_lasso'
-    if 0 in commit_evaluation.DICTIONARY['TRK']['kept'] and (regularisation['regIC'] == 'weighted_lasso' or regularisation['regIC'] == 'weighted_sparse_group_lasso'):
-        if weightsIC is None:
-            raise ValueError('Weights for the IC compartment not provided')
-        if weightsIC.size != commit_evaluation.DICTIONARY['IC']['nF']:
-            raise ValueError('Number of weights for the IC compartment does not match the number of IC elements')
-    regularisation['weightsIC'] = np.array(weightsIC).astype(np.float64)
+    elif regularisation['regEC'] == 'lasso':
+        if lambdas[1] is None:
+            raise ValueError('Missing regularisation parameter for the EC compartment')
 
+    elif regularisation['regISO'] == 'lasso':
+        if lambdas[2] is None:
+            raise ValueError('Missing regularisation parameter for the ISO compartment')
 
-    # Check if group indices need to be updated in case of 'group_lasso'
-    if (structureIC is not None) and (0 in commit_evaluation.DICTIONARY['TRK']['kept']) :
+    elif regularisation['regIC'] == 'weighted_lasso':
+        if lambdas[0] is None:
+            raise ValueError('Missing regularisation parameter for the IC compartment')
+        if dictIC_params["weights"] is None:
+            raise ValueError('Missing weights for the IC compartment')
+        if lambdas[1] is not None:
+            raise ValueError('Not yet implemented')
+        if lambdas[2] is not None:
+            raise ValueError('Not yet implemented')
+
+    elif regularisation['regIC'] == 'smoothness':
+        if lambdas[0] is None:
+            raise ValueError('Missing regularisation parameter for the IC compartment')
+        if lambdas[1] is not None:
+            raise ValueError('Not yet implemented')
+        if lambdas[2] is not None:
+            raise ValueError('Not yet implemented')
+
+    elif regularisation['regIC'] == 'group_lasso':
+        if lambdas[0] is None:
+            raise ValueError('Group structure for the IC compartment not provided')
+        if lambdas[1] is not None:
+            raise ValueError('Not yet implemented')
+        if lambdas[2] is not None:
+            raise ValueError('Not yet implemented')
+        if dictIC_params["group_idx"] is None:
+            raise ValueError('Group structure for the IC compartment not provided')
+        if dictIC_params["group_weights"] is None:
+            raise ValueError('Group weights for the IC compartment not provided')
+
+    elif regularisation['regIC'] == 'sparse_group_lasso':
+        if len(lambdas[0]) != 2:
+            raise ValueError('Group structure for the IC compartment not provided')
+        if lambdas[1] is not None:
+            raise ValueError('Not yet implemented')
+        if lambdas[2] is not None:
+            raise ValueError('Not yet implemented')
+        if dictIC_params["group_idx"] is None:
+            raise ValueError('Group structure for the IC compartment not provided')
+        if dictIC_params["group_weights"] is None:
+            raise ValueError('Group weights for the IC compartment not provided')
+
+    # Check if group indices need to be updated in case of 'group_lasso' or 'sparse_group_lasso'
+    if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso'  and (0 in commit_evaluation.DICTIONARY['TRK']['kept']) :
         dictionary_TRK_kept = commit_evaluation.DICTIONARY['TRK']['kept']
-
+        weightsIC_group = dictIC_params["group_weights"]
         idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
         idx_in_kept[dictionary_TRK_kept==1] = list(range(commit_evaluation.DICTIONARY['IC']['nF']))
 
-        newStructureIC = []
+        newICgroup_idx = []
         newweightsIC_group = []
-        for count, group in enumerate(structureIC):
+        ICgroup_idx = dictIC_params["group_idx"]
+        for count, group in enumerate(ICgroup_idx):
             group = idx_in_kept[group]
             idx_to_delete = np.where(group==-1)[0]
             if idx_to_delete.size>0:
                 group = np.delete(group,idx_to_delete)
                 if(group.size>0):
-                    newStructureIC.append(group)
+                    newICgroup_idx.append(group)
                     newweightsIC_group.append(weightsIC_group[count])
             else:
-                newStructureIC.append(group)
+                newICgroup_idx.append(group)
                 newweightsIC_group.append(weightsIC_group[count])
 
-        structureIC = np.array(newStructureIC, dtype=np.object_)
-        weightsIC_group = np.array(newweightsIC_group)
-    regularisation['structureIC'] = structureIC
-    regularisation['weightsIC_group']   = weightsIC_group
+        dictIC_params["group_idx"] = np.array(newICgroup_idx, dtype=np.object_)
+        dictIC_params['group_weights'] = np.array(newweightsIC_group)
 
-    return regularisation
+    # lambdaIC  = regularisation.get('lambdaIC')
+    # lambda_group_IC = regularisation.get('lambda_group_IC')
+    # lambdaEC  = regularisation.get('lambdaEC')
+    # lambdaISO = regularisation.get('lambdaISO')
+    # if lambdaIC<0.0 or lambdaEC<0.0 or lambdaISO<0.0:
+    #     raise ValueError('Negative regularisation strengths are not allowed')
 
+    # if not regularisation['regIC'] in list_regularizers:
+    #     raise ValueError('Regularizer for the IC compartment not implemented')
+    # if not regularisation['regEC'] in list_regularizers:
+    #     raise ValueError('Regularizer for the EC compartment not implemented')
+    # if not regularisation['regISO'] in list_regularizers:
+    #     raise ValueError('Regularizer for the ISO compartment not implemented')
 
-def regularisation2omegaprox(regularisation):
-    lambdaIC  = regularisation.get('lambdaIC')
-    lambda_group_IC = regularisation.get('lambda_group_IC')
-    lambdaEC  = regularisation.get('lambdaEC')
-    lambdaISO = regularisation.get('lambdaISO')
-    if lambdaIC<0.0 or lambdaEC<0.0 or lambdaISO<0.0:
-        raise ValueError('Negative regularisation strengths are not allowed')
-
-    if not regularisation['regIC'] in list_regularizers:
-        raise ValueError('Regularizer for the IC compartment not implemented')
-    if not regularisation['regEC'] in list_regularizers:
-        raise ValueError('Regularizer for the EC compartment not implemented')
-    if not regularisation['regISO'] in list_regularizers:
-        raise ValueError('Regularizer for the ISO compartment not implemented')
-
-    # Intracellular Compartment
+    ############################
+    # INTRACELLULAR COMPARTMENT#
+    ############################
+    
     startIC = regularisation.get('startIC')
-    sizeIC  = regularisation.get('sizeIC')
+    sizeIC = regularisation.get('sizeIC')
 
     if regularisation['regIC'] is None:
         omegaIC = lambda x: 0.0
@@ -162,7 +207,9 @@ def regularisation2omegaprox(regularisation):
             proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
         else:
             proxIC = lambda x, _: x
+
     elif regularisation['regIC'] == 'lasso':
+        lambdaIC = regularisation['lambdaIC']
         omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC],1)
         if regularisation.get('nnIC'):
             proxIC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
@@ -170,7 +217,8 @@ def regularisation2omegaprox(regularisation):
             proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
 
     elif regularisation['regIC'] == 'weighted_lasso':
-        w = regularisation.get('weightsIC')
+        lambdaIC = regularisation['lambdaIC']
+        w = dictIC_params["weightsIC"]
         omegaIC = lambda x: lambdaIC * np.linalg.norm(w[startIC:sizeIC]*x[startIC:sizeIC],1)
         if regularisation.get('nnIC'):
             proxIC = lambda x, scaling: non_negativity(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
@@ -178,128 +226,149 @@ def regularisation2omegaprox(regularisation):
             proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
 
     # elif regularisation['regIC'] == 'smoothness':
+    #     lambdaIC = regularisation.get('lambdaIC')
     #     omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC])
     #     proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
 
     elif regularisation['regIC'] == 'group_lasso':
-        structureIC = regularisation.get('structureIC')
-        groupWeightIC = regularisation.get('weightsIC_group')
-        if not len(structureIC) == len(groupWeightIC):
+        if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
             raise ValueError('Number of groups and weights do not match')
+        
+        lambda_group_IC = regularisation['lambdaIC']
 
         # convert to new data structure (needed for faster access)
-        N = np.sum([g.size for g in structureIC])
+        N = np.sum([g.size for g in dictIC_params["group_idx"]])
         groupIdxIC  = np.zeros( (N,), dtype=np.int32 )
-        groupSizeIC = np.zeros( (structureIC.size,), dtype=np.int32 )
+        groupSizeIC = np.zeros( (dictIC_params["group_idx"].size,), dtype=np.int32 )
         pos = 0
-        for i, g in enumerate(structureIC) :
+        for i, g in enumerate(dictIC_params["group_idx"]) :
             groupSizeIC[i] = g.size
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
 
-        omegaIC = lambda x: omega_group_lasso( x, groupIdxIC, groupSizeIC, groupWeightIC, lambda_group_IC )
+        omegaIC = lambda x: omega_group_lasso( x, groupIdxIC, groupSizeIC, dictIC_params['group_weights'], lambda_group_IC )
         #TODO: verify if COMMIT2 results are better than before
         if regularisation.get('nnIC'):
-            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC),startIC,sizeIC)
+            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC),startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: prox_group_lasso(x,groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
+            proxIC = lambda x, scaling: prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
     
     elif regularisation['regIC'] == 'sparse_group_lasso':
-        structureIC = regularisation.get('structureIC')
-        groupWeightIC = regularisation.get('weightsIC_group')
-        if not len(structureIC) == len(groupWeightIC):
+        if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
             raise ValueError('Number of groups and weights do not match')
 
+        lambdaIC = regularisation['lambdaIC'][0]
+        lambda_group_IC = regularisation['lambdaIC'][1]
+
         # convert to new data structure (needed for faster access)
-        N = np.sum([g.size for g in structureIC])
+        N = np.sum([g.size for g in dictIC_params["group_idx"]])
         groupIdxIC  = np.zeros( (N,), dtype=np.int32 )
-        groupSizeIC = np.zeros( (structureIC.size,), dtype=np.int32 )
+        groupSizeIC = np.zeros( (dictIC_params["group_idx"].size,), dtype=np.int32 )
         pos = 0
-        for i, g in enumerate(structureIC) :
+        for i, g in enumerate(dictIC_params["group_idx"]) :
             groupSizeIC[i] = g.size
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
 
-        omegaIC = lambda x: omega_sparse_group_lasso( x, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, lambda_group_IC)
+        omegaIC = lambda x: omega_sparse_group_lasso( x, groupIdxIC, groupSizeIC, dictIC_params['group_weights'], lambdaIC, lambda_group_IC)
 
         if regularisation.get('nnIC'):
-            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC), startIC,sizeIC)
+            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC), startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: prox_group_lasso(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
+            proxIC = lambda x, scaling: prox_group_lasso(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
 
     elif regularisation['regIC'] == 'weighted_sparse_group_lasso':
-        structureIC = regularisation.get('structureIC')
-        groupWeightIC = regularisation.get('weightsIC_group')
-        if not len(structureIC) == len(groupWeightIC):
+        if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
             raise ValueError('Number of groups and weights do not match')
 
+        lambdaIC = regularisation['lambdaIC'][0]
+        lambda_group_IC = regularisation['lambdaIC'][1]
         # convert to new data structure (needed for faster access)
-        N = np.sum([g.size for g in structureIC])
+        N = np.sum([g.size for g in dictIC_params["group_idx"]])
         groupIdxIC  = np.zeros( (N,), dtype=np.int32 )
-        groupSizeIC = np.zeros( (structureIC.size,), dtype=np.int32 )
+        groupSizeIC = np.zeros( (dictIC_params["group_idx"].size,), dtype=np.int32 )
         pos = 0
-        for i, g in enumerate(structureIC) :
+        for i, g in enumerate(dictIC_params["group_idx"]) :
             groupSizeIC[i] = g.size
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
 
-        w = regularisation.get('weightsIC')
-        omegaIC = lambda x: omega_w_sparse_group_lasso( x, w, groupIdxIC, groupSizeIC, groupWeightIC, lambdaIC, lambda_group_IC)
+        w = dictIC_params["weightsIC"]
+        omegaIC = lambda x: omega_w_sparse_group_lasso( x, w, groupIdxIC, groupSizeIC, dictIC_params['group_weights'], lambdaIC, lambda_group_IC)
 
         if regularisation.get('nnIC'):
-            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC), startIC,sizeIC)
+            proxIC = lambda x, scaling: non_negativity(prox_group_lasso(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC), startIC,sizeIC)
         else:
-            proxIC = lambda x, scaling: prox_group_lasso(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,groupWeightIC,scaling*lambda_group_IC)
+            proxIC = lambda x, scaling: prox_group_lasso(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
 
-        
-    # Extracellular Compartment
+    ###########################
+    # EXTRCELLULAR COMPARTMENT#
+    ###########################
+
     startEC = regularisation.get('startEC')
     sizeEC  = regularisation.get('sizeEC')
+
     if regularisation['regEC'] is None:
         omegaEC = lambda x: 0.0
         if regularisation.get('nnEC')==True:
             proxEC = lambda x, _: non_negativity(x,startEC,sizeEC)
         else:
             proxEC = lambda x, _: x
+
     elif regularisation['regEC'] == 'lasso':
+        lambdaEC = regularisation.get('lambdaEC')
         omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)],1)
         if regularisation.get('nnEC'):
             proxEC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC),startEC,sizeEC)
         else:
             proxEC = lambda x, scaling: soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC)
+
     # elif regularisation['regIC'] == 'smoothness':
+    #     lambdaEC = regularisation.get('lambdaEC')
     #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
 
-    # Isotropic Compartment
+    ########################
+    # ISOTROPIC COMPARTMENT#
+    ########################
+
     startISO = regularisation.get('startISO')
     sizeISO  = regularisation.get('sizeISO')
+
     if regularisation['regISO'] is None:
         omegaISO = lambda x: 0.0
         if regularisation.get('nnISO')==True:
             proxISO = lambda x, _: non_negativity(x,startISO,sizeISO)
         else:
             proxISO  = lambda x, _: x
+
     elif regularisation['regISO'] == 'lasso':
+        lambdaISO = regularisation.get('lambdaISO')
         omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)],1)
         if regularisation.get('nnISO'):
             proxISO  = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO),startISO,sizeISO)
         else:
             proxISO  = lambda x, scaling: soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO)
-    # elif regularisation['regISO'] == 'l2':
+
+    # elif regularisation['regISO'] == 'group_lasso':
+    #     lambdaISO = regularisation.get('lambdaISO')
     #     omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)])
     #     proxISO  = lambda x: projection_onto_l2_ball(x, lambdaISO, startISO, sizeISO)
 
     omega = lambda x: omegaIC(x) + omegaEC(x) + omegaISO(x)
     prox = lambda x, scaling: proxIC(proxEC(proxISO(x,scaling),scaling),scaling)
-    return omega, prox
+
+    regularisation["omega"] = omega
+    regularisation["prox"] = prox
+
+    return regularisation
 
 
-def evaluate_model(y, A, x, regularisation = None):
+def evaluate_model(y, A, x, regularisation=None):
     if regularisation is None:
         omega = lambda x: 0.0
     else:
-        omega, _ = regularisation2omegaprox(regularisation)
+        omega, _ = init_regularisation(regularisation)
 
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
@@ -319,7 +388,8 @@ def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0=No
         omega = lambda x: 0.0
         prox  = lambda x, _: x
     else:
-        omega, prox = regularisation2omegaprox(regularisation)
+        regularisation["omega"], regularisation["prox"] = init_regularisation(regularisation)
+        
 
     if x0 is None:
         x0 = np.zeros(A.shape[1])
@@ -327,7 +397,7 @@ def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0=No
     if confidence_array is not None:
         confidence_array = np.sqrt(confidence_array)
 
-    return fista( y, A, At, omega, prox, confidence_array, tol_fun, tol_x, max_iter, verbose, x0)
+    return fista( y, A, At, regularisation["omega"], regularisation["prox"], confidence_array, tol_fun, tol_x, max_iter, verbose, x0)
 
 
 def fista( y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=False, x0=None) :
