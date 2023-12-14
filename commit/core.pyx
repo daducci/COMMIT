@@ -446,9 +446,9 @@ cdef class Evaluation :
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
         cdef :
-            np.float32_t [:] sl = self.DICTIONARY['IC']['len']
-            np.float32_t [:] tl = self.DICTIONARY['TRK']['norm']
-            np.uint32_t  [:] f  = self.DICTIONARY['IC']['fiber']
+            float [:] sl = self.DICTIONARY['IC']['len']
+            float [:] tl = self.DICTIONARY['TRK']['norm']
+            unsigned int [:] f = self.DICTIONARY['IC']['fiber']
             int s
         if self.get_config('doNormalizeKernels') :
             for s in xrange(self.DICTIONARY['IC']['n']) :
