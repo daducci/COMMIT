@@ -41,7 +41,7 @@ cpdef cat_function( infilename, outfilename ):
         for fname in infilename:
             with open( fname, 'rb' ) as inFile:
                 shutil.copyfileobj( inFile, outfile )
-                remove( fname )
+            remove( fname )
 
 cpdef compute_tdi( unsigned int[::1] v, float[::1] l, int nx, int ny, int nz ):
     cdef float [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )

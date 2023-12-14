@@ -174,7 +174,7 @@ int trk2dictionary(
     // Open tractogram file and compute the offset for each thread
     // -----------------------------------------------------------------
     unsigned long long int current;
-    unsigned long long int OffsetArr[threads_count];
+    unsigned long long int *OffsetArr = new unsigned long long int[threads_count];
     int f = 0;
     float Buff[3];
     int N;
@@ -272,8 +272,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
     // Variables definition
     string    filename;
     string    OUTPUT_path(path_out);
-    std::size_t pos = OUTPUT_path.find("/temp");
-    OUTPUT_path = OUTPUT_path.substr (0,pos);
+    OUTPUT_path = OUTPUT_path.substr (0,OUTPUT_path.size()-5);
 
     unsigned short o;
     unsigned int v;
@@ -290,7 +289,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         segKey         ec_seg;
         int            ix, iy, iz, id, atLeastOne;
         float          peakMax;
-        float          norms[ Np ];
+        float          *norms = new float[Np];
         float          *ptr;
         int            ox, oy;
         int            skip = 0;

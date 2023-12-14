@@ -1,5 +1,6 @@
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
+import sys
 import os
 
 # name of the package
@@ -8,19 +9,29 @@ package_name = 'commit'
 def get_extensions():
     # Cython extension to create the sparse data structure from a tractogram
     # for the computation of matrix-vector multiplications
+    libraries = []
+    extra_compile_args = []
+    language = 'c++'
+    if sys.platform.startswith('darwin') or sys.platform.startswith('linux'):
+        libraries = ['stdc++']
+        extra_compile_args.extend(['-w', '-std=c++14'])
+    if sys.platform.startswith('win32'):
+        extra_compile_args.append('/std:c++14')
+    
     trk2dictionary = Extension(name=f'{package_name}.trk2dictionary',
-                     sources=[f'{package_name}/trk2dictionary/trk2dictionary.pyx'],
-                     libraries=['stdc++'],
-                     extra_compile_args=['-w', '-std=c++11'],
-                     language='c++')
+                    sources=[f'{package_name}/trk2dictionary/trk2dictionary.pyx'],
+                    libraries=libraries,
+                    extra_compile_args=extra_compile_args,
+                    language=language)
     core = Extension(name=f'{package_name}.core',
-                     sources=[f'{package_name}/core.pyx'],
-                     extra_compile_args=['-w'],
-                     language='c++')
+                    sources=[f'{package_name}/core.pyx'],
+                    extra_compile_args=extra_compile_args,
+                    language=language)
     proximals = Extension(name=f'{package_name}.proximals',
-                     sources=[f'{package_name}/proximals.pyx'],
-                     extra_compile_args=['-w'],
-                     language='c++')
+                    sources=[f'{package_name}/proximals.pyx'],
+                    extra_compile_args=extra_compile_args,
+                    language=language)
+        
     return [trk2dictionary, core, proximals]
 
 class CustomBuildExtCommand(build_ext):

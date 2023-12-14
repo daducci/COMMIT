@@ -542,7 +542,7 @@ cdef class Evaluation :
         self.THREADS['n'] = n
 
         cdef :
-            long [:] C
+            long long [:] C
             long t, tot, i1, i2, N, c
             int i
 
@@ -694,6 +694,10 @@ cdef class Evaluation :
 
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
+        import os
+        dll_path = 'C:/Users/clori/Desktop/pthreads-w32-2-9-1-release/dll/x64'
+        if os.path.isdir(dll_path):
+            os.add_dll_directory(dll_path)
 
         compilation_is_needed = False
 
