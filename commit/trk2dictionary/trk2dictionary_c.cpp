@@ -5,7 +5,7 @@
 #include <vector>
 #include "Vector.h"
 #include "ProgressBar.h"
-#include <numpy/arrayobject.h>
+// #include <numpy/arrayobject.h>
 #include <math.h>
 #include <iostream>
 #include <thread>
