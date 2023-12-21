@@ -3,7 +3,7 @@ from math import sqrt
 import sys
 eps = np.finfo(float).eps
 
-list_regularizers = [None, 'lasso', 'weighted_lasso', 'group_lasso', 'sparse_group_lasso']
+list_regularizers = [None, 'lasso', 'group_lasso', 'sparse_group_lasso']
 from commit.proximals import non_negativity, omega_group_lasso, prox_group_lasso, soft_thresholding, w_soft_thresholding, omega_sparse_group_lasso, omega_w_sparse_group_lasso
 # removed, for now, projection_onto_l2_ball
 
@@ -19,6 +19,11 @@ def init_regularisation(regularisation_params):
     ############################
     # INTRACELLULAR COMPARTMENT#
     ############################
+
+    # check if regularisations are in the list
+    if regularisation_params['regIC'] not in list_regularizers or regularisation_params['regEC'] not in list_regularizers or regularisation_params['regISO'] not in list_regularizers:
+        raise ValueError('Regularisation not in the list')
+    
 
     startIC = regularisation_params.get('startIC')
     sizeIC = regularisation_params.get('sizeIC')
