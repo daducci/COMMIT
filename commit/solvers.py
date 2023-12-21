@@ -39,13 +39,14 @@ def init_regularisation(regularisation_params):
     elif regularisation_params['regIC'] == 'lasso':
         lambdaIC = regularisation_params['lambdaIC']
         # check if weights are provided
-        if "weightsIC" in dictIC_params.keys():
-            w = dictIC_params["weightsIC"]
-            omegaIC = lambda x: lambdaIC * np.linalg.norm(w[startIC:sizeIC]*x[startIC:sizeIC],1)
-            if regularisation_params.get('nnIC'):
-                proxIC = lambda x, scaling: non_negativity(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
-            else:
-                proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
+        if dictIC_params.get('weightsIC') is not None:
+            if "weightsIC" in dictIC_params.keys():
+                w = dictIC_params["weightsIC"]
+                omegaIC = lambda x: lambdaIC * np.linalg.norm(w[startIC:sizeIC]*x[startIC:sizeIC],1)
+                if regularisation_params.get('nnIC'):
+                    proxIC = lambda x, scaling: non_negativity(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
+                else:
+                    proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
         else:
             omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC],1)
             if regularisation_params.get('nnIC'):
