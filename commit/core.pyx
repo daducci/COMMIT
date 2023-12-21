@@ -67,6 +67,7 @@ cdef class Evaluation :
     cdef public DICTIONARY
     cdef public THREADS
     cdef public A
+    cdef public regularisation_params
     cdef public x
     cdef public CONFIG
     cdef public confidence_map_img
@@ -81,15 +82,16 @@ cdef class Evaluation :
         subject : string
             The path (relative to previous folder) to the subject folder (default : '.')
         """
-        self.niiDWI             = None # set by "load_data" method
-        self.scheme             = None # set by "load_data" method
-        self.model              = None # set by "set_model" method
-        self.KERNELS            = None # set by "load_kernels" method
-        self.DICTIONARY         = None # set by "load_dictionary" method
-        self.THREADS            = None # set by "set_threads" method
-        self.A                  = None # set by "build_operator" method
-        self.x                  = None # set by "fit" method
-        self.confidence_map_img = None # set by "fit" method
+        self.niiDWI                 = None # set by "load_data" method
+        self.scheme                 = None # set by "load_data" method
+        self.model                  = None # set by "set_model" method
+        self.KERNELS                = None # set by "load_kernels" method
+        self.DICTIONARY             = None # set by "load_dictionary" method
+        self.THREADS                = None # set by "set_threads" method
+        self.A                      = None # set by "build_operator" method
+        self.regularisation_params  = None # set by "set_regularisation" method
+        self.x                      = None # set by "fit" method
+        self.confidence_map_img     = None # set by "fit" method
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
@@ -754,8 +756,193 @@ cdef class Evaluation :
         y[y < 0] = 0
         return y
 
+    def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
+        """
+        Set the regularisation parameters for the optimisation problem.
+         Input
+        -----
+        regularisers - tuple :
+            sets the penalty term to be used for each compartment:
+                regularisers[0] corresponds to the Intracellular compartment
+                regularisers[1] corresponds to the Extracellular compartment
+                regularisers[2] corresponds to the Isotropic compartment
+            Each regularisers[k] must be one of: {None, 'lasso', weighted_lasso, 'group_lasso'}:
+                'lasso' penalises with the 1-norm of the coefficients
+                    corresponding to the compartment.
+                'group_lasso' penalises according to the following formulation (see [1]):
+                    $\Omega(x) = \lambda \sum_{g\in G} w_g |x_g|
+                    Considers both the non-overlapping and the hierarchical formulations.
+                    NB: this option is allowed only in the IC compartment.
+            Default = (None, None, None).
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
+        lambdas - tuple :
+            regularisation parameter for each compartment.
+            The lambdas correspond to the ones described in the mathematical
+            formulation of the regularisation term
+            $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
+            Default = (0.0, 0.0, 0.0, 0.0).
+
+        is_nonnegative - tuple :
+            impose a non negativity constraint for each compartment:
+                is_nonnegative[0] corresponds to the Intracellular compartment
+                is_nonnegative[1] corresponds to the Extracellular compartment
+                is_nonnegative[2] corresponds to the Isotropic compartment
+            Default = (True, True, True).
+
+        structureIC - np.array(list(list), dtype=np.object_) :
+            group structure for the IC compartment.
+                This field is necessary only if regterm[0]='group_lasso'.
+                Example:
+                    structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
+
+                    that is equivalent to
+                                [0,1,2,3,4,5]        [6]
+                                /       \
+                            [0,2,5]       [1,3,4]
+                    which has two non overlapping groups, one of which is the union
+                    of two other non-overlapping groups.
+
+        weightsIC - np.array(np.float64) :
+            this defines the weights associated to each element of structure IC.
+
+        weightsIC_group - np.array(np.float64) :
+            this defines the weights associated to each group of structure IC.
+
+        """
+
+        regularisation = {}
+
+        regularisation['startIC']  = 0
+        regularisation['sizeIC']   = int( self.DICTIONARY['IC']['nF'] * self.KERNELS['wmr'].shape[0])
+        regularisation['startEC']  = int( regularisation['sizeIC'] )
+        regularisation['sizeEC']   = int( self.DICTIONARY['EC']['nE'] * self.KERNELS['wmh'].shape[0])
+        regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
+        regularisation['sizeISO']  = int( self.DICTIONARY['nV'] * self.KERNELS['iso'].shape[0])
+
+        regularisation['regIC']  = regularisers[0]
+        regularisation['regEC']  = regularisers[1]
+        regularisation['regISO'] = regularisers[2]
+
+        regularisation['nnIC']  = is_nonnegative[0]
+        regularisation['nnEC']  = is_nonnegative[1]
+        regularisation['nnISO'] = is_nonnegative[2]
+
+        regularisation['paramsIC']  = params[0]
+        regularisation['paramsEC']  = params[1]
+        regularisation['paramsISO'] = params[2]
+
+        regularisation['dictIC_params']  = params[0]
+        regularisation['dictEC_params']  = params[1]
+        regularisation['dictISO_params'] = params[2]
+
+
+        # unpack parameters inside params as three separate dictionaries
+        dictIC_params, dictEC_params, dictISO_params = params
+
+        if regularisation['regIC'] == 'lasso':
+            if lambdas[0] is None:
+                raise ValueError('Missing regularisation parameter for the IC compartment')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+        elif regularisation['regEC'] == 'lasso':
+            if lambdas[1] is None:
+                raise ValueError('Missing regularisation parameter for the EC compartment')
+            else:
+                regularisation['lambdaEC'] = lambdas[1]
+        elif regularisation['regISO'] == 'lasso':
+            if lambdas[2] is None:
+                raise ValueError('Missing regularisation parameter for the ISO compartment')
+            else:
+                regularisation['lambdaISO'] = lambdas[2]
+
+        elif regularisation['regIC'] == 'weighted_lasso':
+            if lambdas[0] is None:
+                raise ValueError('Missing regularisation parameter for the IC compartment')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+            if dictIC_params["weights"] is None:
+                raise ValueError('Missing weights for the IC compartment')
+        elif regularisation['regEC'] == 'weighted_lasso':
+                raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'weighted_lasso':
+                raise ValueError('Not yet implemented')
+
+        elif regularisation['regIC'] == 'smoothness':
+            if lambdas[0] is None:
+                raise ValueError('Missing regularisation parameter for the IC compartment')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+        elif regularisation['regEC'] == 'smoothness':
+                raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'smoothness':
+                raise ValueError('Not yet implemented')
+
+        elif regularisation['regIC'] == 'group_lasso':
+            if lambdas[0] is None:
+                raise ValueError('Group structure for the IC compartment not provided')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+            if lambdas[1] is not None:
+                raise ValueError('Not yet implemented')
+            if lambdas[2] is not None:
+                raise ValueError('Not yet implemented')
+            if dictIC_params["group_idx"] is None:
+                raise ValueError('Group structure for the IC compartment not provided')
+            if dictIC_params["group_weights"] is None:
+                raise ValueError('Group weights for the IC compartment not provided')
+        elif regularisation['regEC'] == 'group_lasso':
+            raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'group_lasso':
+            raise ValueError('Not yet implemented')
+
+        elif regularisation['regIC'] == 'sparse_group_lasso':
+            if len(lambdas[0]) != 2:
+                raise ValueError('Group structure for the IC compartment not provided')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+            if lambdas[1] is not None:
+                raise ValueError('Not yet implemented')
+            if lambdas[2] is not None:
+                raise ValueError('Not yet implemented')
+            if dictIC_params["group_idx"] is None:
+                raise ValueError('Group structure for the IC compartment not provided')
+            if dictIC_params["group_weights"] is None:
+                raise ValueError('Group weights for the IC compartment not provided')
+        elif regularisation['regEC'] == 'sparse_group_lasso':
+            raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'sparse_group_lasso':
+            raise ValueError('Not yet implemented')
+        
+
+        # Check if group indices need to be updated in case of 'group_lasso' or 'sparse_group_lasso'
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso'  and (0 in self.DICTIONARY['TRK']['kept']) :
+            dictionary_TRK_kept = self.DICTIONARY['TRK']['kept']
+            weightsIC_group = dictIC_params["group_weights"]
+            idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
+            idx_in_kept[dictionary_TRK_kept==1] = list(range(self.DICTIONARY['IC']['nF']))
+
+            newICgroup_idx = []
+            newweightsIC_group = []
+            ICgroup_idx = dictIC_params["group_idx"]
+            for count, group in enumerate(ICgroup_idx):
+                group = idx_in_kept[group]
+                idx_to_delete = np.where(group==-1)[0]
+                if idx_to_delete.size>0:
+                    group = np.delete(group,idx_to_delete)
+                    if(group.size>0):
+                        newICgroup_idx.append(group)
+                        newweightsIC_group.append(weightsIC_group[count])
+                else:
+                    newICgroup_idx.append(group)
+                    newweightsIC_group.append(weightsIC_group[count])
+
+            dictIC_params["group_idx"] = np.array(newICgroup_idx, dtype=np.object_)
+            dictIC_params['group_weights'] = np.array(newweightsIC_group)
+
+        self.regularisation_params = commit.solvers.init_regularisation(regularisation)
+
+
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, confidence_map_filename=None, confidence_map_rescale=False ) :
         """Fit the model to the data.
 
         Parameters
@@ -768,11 +955,6 @@ cdef class Evaluation :
             Level of verbosity: 0=no print, 1=print progress (default : True)
         x0 : np.array
             Initial guess for the solution of the problem (default : None)
-        regularisation : commit.solvers.init_regularisation object
-            Python dictionary that describes the wanted regularisation term.
-            Check the documentation of commit.solvers.init_regularisation to see
-            how to properly define the wanted mathematical formulation
-            (default : None)
         confidence_map_filename : string
             Path to the NIFTI file containing a confidence map on the data,
             relative to the subject folder. The file can be 3D or 4D in
@@ -864,21 +1046,20 @@ cdef class Evaluation :
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
                 ERROR( 'x0 dimension does not match the number of columns of the dictionary' )
-        if regularisation is None :
-            regularisation = commit.solvers.init_regularisation(self)
+
 
         self.CONFIG['optimization']                   = {}
         self.CONFIG['optimization']['tol_fun']        = tol_fun
         self.CONFIG['optimization']['tol_x']          = tol_x
         self.CONFIG['optimization']['max_iter']       = max_iter
         self.CONFIG['optimization']['verbose']        = verbose
-        self.CONFIG['optimization']['regularisation'] = regularisation
+        self.CONFIG['optimization']['regularisation'] = self.regularisation_params
 
         # run solver
         t = time.time()
         LOG( '\n-> Fit model:' )
 
-        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, init_regularisation = regularisation, confidence_array = confidence_array)
+        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
@@ -1142,6 +1323,13 @@ cdef class Evaluation :
         #   item 2: np.array renormalisation of coeffs in item 1
         print( '\t\t- results.pickle... ', end='' )
         sys.stdout.flush()
+
+        if self.CONFIG['optimization']['regularisation'] is not None:
+            if 'omega' in self.CONFIG['optimization']['regularisation']:
+                self.CONFIG['optimization']['regularisation'].pop('omega')
+            if 'prox' in self.CONFIG['optimization']['regularisation']:
+                self.CONFIG['optimization']['regularisation'].pop('prox')
+
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
             pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
         print( '        [ OK ]' )
