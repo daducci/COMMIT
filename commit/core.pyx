@@ -835,7 +835,6 @@ cdef class Evaluation :
         regularisation['dictEC_params']  = params[1]
         regularisation['dictISO_params'] = params[2]
 
-
         # unpack parameters inside params as three separate dictionaries
         dictIC_params, dictEC_params, dictISO_params = params
 
@@ -900,7 +899,6 @@ cdef class Evaluation :
             raise ValueError('Not yet implemented')
         elif regularisation['regISO'] == 'sparse_group_lasso':
             raise ValueError('Not yet implemented')
-        
 
         # Check if group indices need to be updated in case of 'group_lasso' or 'sparse_group_lasso'
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso'  and (0 in self.DICTIONARY['TRK']['kept']) :
@@ -1034,6 +1032,9 @@ cdef class Evaluation :
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
                 ERROR( 'x0 dimension does not match the number of columns of the dictionary' )
+
+        if self.regularisation_params is None:
+            self.set_regularisation()
 
 
         self.CONFIG['optimization']                   = {}
