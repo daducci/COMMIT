@@ -855,18 +855,6 @@ cdef class Evaluation :
             else:
                 regularisation['lambdaISO'] = lambdas[2]
 
-        elif regularisation['regIC'] == 'weighted_lasso':
-            if lambdas[0] is None:
-                raise ValueError('Missing regularisation parameter for the IC compartment')
-            else:
-                regularisation['lambdaIC'] = lambdas[0]
-            if dictIC_params["weights"] is None:
-                raise ValueError('Missing weights for the IC compartment')
-        elif regularisation['regEC'] == 'weighted_lasso':
-                raise ValueError('Not yet implemented')
-        elif regularisation['regISO'] == 'weighted_lasso':
-                raise ValueError('Not yet implemented')
-
         elif regularisation['regIC'] == 'smoothness':
             if lambdas[0] is None:
                 raise ValueError('Missing regularisation parameter for the IC compartment')

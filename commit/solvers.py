@@ -23,7 +23,6 @@ def init_regularisation(regularisation_params):
     # check if regularisations are in the list
     if regularisation_params['regIC'] not in list_regularizers or regularisation_params['regEC'] not in list_regularizers or regularisation_params['regISO'] not in list_regularizers:
         raise ValueError('Regularisation not in the list')
-    
 
     startIC = regularisation_params.get('startIC')
     sizeIC = regularisation_params.get('sizeIC')
@@ -39,7 +38,7 @@ def init_regularisation(regularisation_params):
     elif regularisation_params['regIC'] == 'lasso':
         lambdaIC = regularisation_params['lambdaIC']
         # check if weights are provided
-        if dictIC_params.get('weightsIC') is not None:
+        if dictIC_params is not None:
             if "weightsIC" in dictIC_params.keys():
                 w = dictIC_params["weightsIC"]
                 omegaIC = lambda x: lambdaIC * np.linalg.norm(w[startIC:sizeIC]*x[startIC:sizeIC],1)
@@ -82,7 +81,7 @@ def init_regularisation(regularisation_params):
             proxIC = lambda x, scaling: non_negativity(prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC),startIC,sizeIC)
         else:
             proxIC = lambda x, scaling: prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
-    
+  
     elif regularisation_params['regIC'] == 'sparse_group_lasso':
         if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
             raise ValueError('Number of groups and weights do not match')
