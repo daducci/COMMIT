@@ -45,13 +45,13 @@ def init_regularisation(regularisation_params):
                 if regularisation_params.get('nnIC'):
                     proxIC = lambda x, scaling: non_negativity(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
                 else:
-                    proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
+                    proxIC = lambda x, scaling: w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC)
         else:
             omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC],1)
             if regularisation_params.get('nnIC'):
                 proxIC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
             else:
-                proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
+                proxIC = lambda x, scaling: soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC)
 
 
     # elif regularisation_params['regIC'] == 'smoothness':
