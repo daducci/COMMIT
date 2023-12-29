@@ -23,9 +23,9 @@ ProgressBar* PROGRESS = new ProgressBar();
 class segKey
 {
     public:
-    unsigned short x, y, z;
-    unsigned short o;
-    segKey(){}
+    unsigned short x=0, y=0, z=0;
+    unsigned short o=0;
+    segKey() {}
 
     void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned short _o)
     {
@@ -395,6 +395,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     // Variables definition
     float           fiber[3][MAX_FIB_LEN] = {0} ;
     float           fiberNorm;   // normalization
+    float           pos;
     unsigned int    N, v, tempTotFibers, temp_totICSegments;
     unsigned short  o;
     unsigned char   kept;
@@ -422,6 +423,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     filename = OUTPUT_path+"/dictionary_IC_v_" + std::to_string(idx) + ".dict";        FILE* pDict_IC_v       = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_o_" + std::to_string(idx) + ".dict";        FILE* pDict_IC_o       = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_len_" + std::to_string(idx) + ".dict";      FILE* pDict_IC_len     = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_IC_pos_" + std::to_string(idx) + ".dict";      FILE* pDict_IC_pos     = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_len_" + std::to_string(idx) + ".dict";     FILE* pDict_TRK_len    = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_lenTot_" + std::to_string(idx) + ".dict";  FILE* pDict_TRK_lenTot = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_TRK_kept_" + std::to_string(idx) + ".dict";    FILE* pDict_TRK_kept   = fopen(filename.c_str(),"wb");
@@ -456,18 +458,21 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
         {
             if ( FiberLen > minFiberLen && FiberLen < maxFiberLen )
             {
+                pos = 0.0;
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 {
                     // NB: plese note inverted ordering for 'v'
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
-                    o = it->first.o;       
+                    o = it->first.o;
+                    pos += (it->second/FiberLenTot);
 
                     fwrite( &sumFibers,      4, 1, pDict_IC_f );
                     fwrite( &v,              4, 1, pDict_IC_v );
                     fwrite( &o,              2, 1, pDict_IC_o );
-                    fwrite( &(it->second),   4, 1, pDict_IC_len );       
-                    
+                    fwrite( &(it->second),   4, 1, pDict_IC_len );
+                    fwrite( &pos,            4, 1, pDict_IC_pos );
+
                     ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
 
                     inVoxKey.set( it->first.x, it->first.y, it->first.z );
@@ -513,6 +518,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     fclose( pDict_IC_v );
     fclose( pDict_IC_o );
     fclose( pDict_IC_len );
+    fclose( pDict_IC_pos );
     fclose( pDict_TRK_len );
     fclose( pDict_TRK_lenTot );
     fclose( pDict_TRK_kept );

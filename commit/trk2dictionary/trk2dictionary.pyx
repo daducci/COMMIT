@@ -555,6 +555,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
     cat_function( dict_list, fileout )
 
+    fileout = path_out + '/dictionary_IC_pos.dict'
+    dict_list = []
+    for j in range(n_threads):
+        dict_list += [ path_temp + f'/dictionary_IC_pos_{j}.dict' ]
+    cat_function( dict_list, fileout )
+
     fileout = path_out + '/dictionary_IC_len.dict'
     dict_list = []
     for j in range(n_threads):
