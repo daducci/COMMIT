@@ -74,7 +74,7 @@ void* COMMIT_A__block( void *ptr )
                 Yptr    = Y + (*t_v);
                 YptrEnd = Yptr + nICs;
                 w       = (double)(*t_l);
-                SFP0ptr = icSFB0 + (*t_p)
+                SFP0ptr = icSFB0 + (int)(*t_p)
                 #if nICs>=2
                 SFP1ptr = icSFB1 + nSf;
                 #endif
@@ -207,7 +207,7 @@ void* COMMIT_At__block( void *ptr )
                 YptrEnd = Yptr + nICs;
 
                 Y_tmp = *Yptr;
-                SFP0ptr   = icSFB0 + (*t_p) 
+                SFP0ptr   = icSFB0 + (int)(*t_p) 
                 x0 = (*SFP0ptr++) * Y_tmp;
                 #if nIC>=2
                 SFP1ptr   = icSFB1 + nSf;
