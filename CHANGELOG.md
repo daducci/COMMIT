@@ -1,7 +1,11 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.0.2`<br>_2023-12-06_
+## `v2.1.0`<br>_2024-01-10_
+### ✨Added
+- Work In Progress (WIP) models
+- Different regularizers
+
 ### 🐛Fixed
 - Merged PR [#127](https://github.com/daducci/COMMIT/pull/127): [FIX] Operator is not recompiled when some parameters are changed
 - Merged PR [#129](https://github.com/daducci/COMMIT/pull/129): [FIX] Fista update
