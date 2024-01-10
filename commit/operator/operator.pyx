@@ -111,8 +111,8 @@ cdef class LinearOperator :
         cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
         self.LUT_IC  = &wmrSFP[0,0,0]
 
-        cdef float [:, :, ::1] wmcSFP = KERNELS['wmc']
-        self.LUT_IC_modulation = &wmcSFP[0,0,0]
+        cdef float [:, ::1] wmcSFP = KERNELS['wmc']
+        self.LUT_IC_modulation = &wmcSFP[0,0]
 
         cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
         self.LUT_EC  = &wmhSFP[0,0,0]
