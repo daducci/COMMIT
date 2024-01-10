@@ -18,7 +18,7 @@ uint32_t    *ICthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ISOthreadsT;
 uint32_t    *ICf, *ICv, *ISOv;
-float       *ICl, *ICp, *ICs
+float       *ICl, *ICp;
 
 
 // ====================================================
@@ -30,7 +30,7 @@ void* COMMIT_A__block( void *ptr )
     double   x0;
     double   *xPtr;
     uint32_t *t_v, *t_vEnd, *t_f;
-    float    *t_l, t_p, t_s;
+    float    *t_l, t_p;
 
     // intra-cellular compartments
     #if nICs>=1
@@ -72,7 +72,7 @@ void* COMMIT_A__block( void *ptr )
             {
                 //  Y[*t_v] += (double)(*t_l) * x0;
                 Yptr    = Y + (*t_v);
-                YptrEnd = Yptr + nSf * nICs;
+                YptrEnd = Yptr + nICs;
                 w       = (double)(*t_l);
                 SFP0ptr = icSFB0 + (*t_p)
                 #if nICs>=2
@@ -186,7 +186,7 @@ void* COMMIT_At__block( void *ptr )
     int      id = (long)ptr;
     double   *xPtr;
     uint32_t *t_v, *t_vEnd, *t_f;
-    float    *t_l;
+    float    *t_l, t_p;
     uint8_t  *t_t;
 
     #if ( nICs > 1)
@@ -195,6 +195,7 @@ void* COMMIT_At__block( void *ptr )
         t_vEnd = ICv + ICthreadsT[id+1];
         t_l    = ICl + ICthreadsT[id];
         t_f    = ICf + ICthreadsT[id];
+        t_p    = ICp + ICthreadsT[id];
         t_t    = ICthreadsT + ICthreadsT[id];
 
         while( t_v != t_vEnd )
@@ -202,23 +203,22 @@ void* COMMIT_At__block( void *ptr )
             // in this case, I need to walk throug because the segments are ordered in "voxel order"
             if ( *t_t == id )
             {
-                Yptr    = Y    + nSf * (*t_v);
-                YptrEnd = Yptr + nSf;
-                offset  = nSf * (*t_v);
+                Yptr    = Y    + (*t_v);
+                YptrEnd = Yptr + nICs;
 
                 Y_tmp = *Yptr;
-                SFP0ptr   = wmrSFP0 + offset;
+                SFP0ptr   = icSFB0 + (*t_p) 
                 x0 = (*SFP0ptr++) * Y_tmp;
                 #if nIC>=2
-                SFP1ptr   = wmrSFP1 + offset;
+                SFP1ptr   = icSFB1 + nSf;
                 x1 = (*SFP1ptr++) * Y_tmp;
                 #endif
                 #if nIC>=3
-                SFP2ptr   = wmrSFP2 + offset;
+                SFP2ptr   = icSFB2 + nSf;
                 x2 = (*SFP2ptr++) * Y_tmp;
                 #endif
                 #if nIC>=4
-                SFP3ptr   = wmrSFP3 + offset;
+                SFP3ptr   = icSFB3 + nSf;
                 x3 = (*SFP3ptr++) * Y_tmp;
                 #endif
 
@@ -252,8 +252,8 @@ void* COMMIT_At__block( void *ptr )
 
             t_f++;
             t_v++;
-            t_o++;
             t_l++;
+            t_p++;
             t_t++;
         }
     #endif
@@ -300,11 +300,11 @@ void COMMIT_At(
     #if nICs>=1
     icSFB0 = _ICmod;
     #if nICs>=2
-    icSFB1 = icSFB0 + nICs*nSf;
+    icSFB1 = icSFB0 + nSf;
     #if nICs>=3
-    icSFB2 = icSFB1 + nICs*nSf;
+    icSFB2 = icSFB1 + nSf;
     #if nICs>=4
-    icSFB3 = icSFB2 + nICs*nSf;
+    icSFB3 = icSFB2 + nSf;
     #endif
     #endif
     #endif
