@@ -21,6 +21,7 @@ def get_extensions():
                      sources=[f'{package_name}/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
+                 
     return [trk2dictionary, core, proximals]
 
 class CustomBuildExtCommand(build_ext):
