@@ -11,7 +11,10 @@ from amico.util import ERROR
 
 try:
     sys.path.append(environ["WIP_MODEL"])
-    extension = Extension(name='commitwipmodels', language='c++', sources=[os.environ['WIP_MODEL'] + '/commitwipmodels.pyx'])
+    extension = Extension(name='commitwipmodels',
+                          language='c++',
+                          sources=[os.environ['WIP_MODEL'] + '/commitwipmodels.pyx'],
+                          extra_compile_args=['-w'])
     build_extension = _get_build_extension()
     build_extension.extensions = cythonize([extension],
                                         include_path=[],
@@ -23,9 +26,11 @@ try:
     from commitwipmodels import *
 
 except ValueError:
-    # check if .so file exists
-    if os.path.isfile(os.environ['WIP_MODEL'] + '/commitwipmodels.cpython-38-x86_64-linux-gnu.so'):
-        from commitwipmodels import *
+    # check if .so exists
+    path_files = os.listdir(environ["WIP_MODEL"])
+    for f in path_files:
+        if f.startswith('commitwipmodels') and f.endswith('.so'):
+            from commitwipmodels import *
     else:
         print("ValueError: 'COMMIT_WIP_MODEL' not found in environ")
         pass
