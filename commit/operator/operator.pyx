@@ -69,6 +69,9 @@ cdef class LinearOperator :
 
         self.nF         = DICTIONARY['IC']['nF']    # number of FIBERS
         self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
+
+        self.nC         = KERNELS['wmc'].shape[0]   # number of Cosine coefficients
+
         self.nE         = DICTIONARY['EC']['nE']    # number of EC segments
         self.nT         = KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
         self.nV         = DICTIONARY['nV']          # number of VOXELS
@@ -107,6 +110,10 @@ cdef class LinearOperator :
         # get C pointers to arrays in KERNELS
         cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
         self.LUT_IC  = &wmrSFP[0,0,0]
+
+        cdef float [:, :, ::1] wmcSFP = KERNELS['wmc']
+        self.LUT_IC_modulation = &wmcSFP[0,0,0]
+
         cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
         self.LUT_EC  = &wmhSFP[0,0,0]
         cdef float [:, ::1] isoSFP = KERNELS['iso']
@@ -174,7 +181,7 @@ cdef class LinearOperator :
                     self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
-                    self.LUT_IC, self.LUT_EC, self.LUT_ISO,
+                    self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
                     self.ICthreads, self.ECthreads, self.ISOthreads
                 )
         else :
@@ -184,7 +191,7 @@ cdef class LinearOperator :
                     self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
-                    self.LUT_IC, self.LUT_EC, self.LUT_ISO,
+                    self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
                     self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
                 )
 

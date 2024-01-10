@@ -47,21 +47,156 @@ void* COMMIT_A__block( void *ptr )
         t_v++;
         t_l++;
     }
+    #if nIC>=1
+        // DCT basis functions 
+        t_v    = ICv + ICthreads[id];
+        t_vEnd = ICv + ICthreads[id+1];
+        t_l    = ICl + ICthreads[id];
+        t_f    = ICf + ICthreads[id];
 
-#if nISO>=1
-    // isotropic compartments
-    t_v    = ISOv + ISOthreads[id];
-    t_vEnd = ISOv + ISOthreads[id+1];
-    xPtr   = x + nF + ISOthreads[id];
+        while( t_v != t_vEnd )
+        {
+            x_Ptr0 = x + *t_f;
+            x0 = *x_Ptr0;
+            #if nIC>=2
+            x_Ptr1 = x_Ptr0 + nF;
+            x1 = *x_Ptr1;
+            #endif
+            #if nIC>=3
+            x_Ptr2 = x_Ptr1 + nF;
+            x2 = *x_Ptr2;
+            #endif
+            #if nIC>=4
+            x_Ptr3 = x_Ptr2 + nF;
+            x3 = *x_Ptr3;
+            #endif
+            #if nIC>=5
+            x_Ptr4 = x_Ptr3 + nF;
+            x4 = *x_Ptr4;
+            #endif
+            #if nIC>=6
+            x_Ptr5 = x_Ptr4 + nF;
+            x5 = *x_Ptr5;
+            #endif
+            #if nIC>=7
+            x_Ptr6 = x_Ptr5 + nF;
+            x6 = *x_Ptr6;
+            #endif
+            #if nIC>=8
+            x_Ptr7 = x_Ptr6 + nF;
+            x7 = *x_Ptr7;
+            #endif
+            #if nIC>=9
+            x_Ptr8 = x_Ptr7 + nF;
+            x8 = *x_Ptr8;
+            #endif
+            #if nIC>=10
+            x_Ptr9 = x_Ptr8 + nF;
+            x9 = *x_Ptr9;
+            #endif
+            #if nIC>=11
+            x_Ptr10 = x_Ptr9 + nF;
+            x10 = *x_Ptr10;
+            #endif
+            #if nIC>=12
+            x_Ptr11 = x_Ptr10 + nF;
+            x11 = *x_Ptr11;
+            #endif
+            #if nIC>=13
+            x_Ptr12 = x_Ptr11 + nF;
+            x12 = *x_Ptr12;
+            #endif
+            #if nIC>=14
+            x_Ptr13 = x_Ptr12 + nF;
+            x13 = *x_Ptr13;
+            #endif
+            #if nIC>=15
+            x_Ptr14 = x_Ptr13 + nF;
+            x14 = *x_Ptr14;
+            #endif
+            #if nIC>=16
+            x_Ptr15 = x_Ptr14 + nF;
+            x15 = *x_Ptr15;
+            #endif
+            #if nIC>=17
+            x_Ptr16 = x_Ptr15 + nF;
+            x16 = *x_Ptr16;
+            #endif
+            #if nIC>=18
+            x_Ptr17 = x_Ptr16 + nF;
+            x17 = *x_Ptr17;
+            #endif
+            #if nIC>=19
+            x_Ptr18 = x_Ptr17 + nF;
+            x18 = *x_Ptr18;
+            #endif
+            #if nIC>=20
+            x_Ptr19 = x_Ptr18 + nF;
+            x19 = *x_Ptr19;
+            #endif
 
-    while( t_v != t_vEnd )
-    {
-        x0 = *xPtr++;
-        if ( x0 != 0 )
-            Y[*t_v] += x0;
-        t_v++;
-    }
-#endif
+            if ( x0 != 0
+            #if nIC>=2
+                || x1 != 0
+            #endif
+            #if nIC>=3
+                || x2 != 0
+            #endif
+            #if nIC>=4
+                || x3 != 0
+            #endif
+            )
+            {
+                //  Y[*t_v] += (double)(*t_l) * x0;
+                Yptr    = Y    + nS * (*t_v);
+                YptrEnd = Yptr + nS;
+                w       = (double)(*t_l);
+                offset  = nS * (*t_o);
+                SFP0ptr = wmrSFP0 + offset;
+                #if nIC>=2
+                SFP1ptr = wmrSFP1 + offset;
+                #endif
+                #if nIC>=3
+                SFP2ptr = wmrSFP2 + offset;
+                #endif
+                #if nIC>=4
+                SFP3ptr = wmrSFP3 + offset;
+                #endif
+                
+                while( Yptr != YptrEnd )
+                    (*Yptr++) += w * (
+                            x0 * (*SFP0ptr++)
+                            #if nIC>=2
+                            + x1 * (*SFP1ptr++)
+                            #endif
+                            #if nIC>=3
+                            + x2 * (*SFP2ptr++)
+                            #endif
+                            #if nIC>=4
+                            + x3 * (*SFP3ptr++)
+                            #endif
+                    );
+            }
+
+            t_f++;
+            t_v++;
+            t_l++;
+        }
+    #endif
+    #if nISO>=1
+        // isotropic compartments
+        t_v    = ISOv + ISOthreads[id];
+        t_vEnd = ISOv + ISOthreads[id+1];
+        xPtr   = x + nF + ISOthreads[id];
+
+        while( t_v != t_vEnd )
+        {
+            x0 = *xPtr++;
+            if ( x0 != 0 )
+                Y[*t_v] += x0;
+            t_v++;
+        }
+    #endif
 
     pthread_exit( 0 );
 }
@@ -76,7 +211,7 @@ void COMMIT_A(
     uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
-    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
     uint32_t* _ICthreads, uint32_t* _ECthreads, uint32_t* _ISOthreads
 )
 {
@@ -103,7 +238,6 @@ void COMMIT_A(
         pthread_join( threads[t], NULL );
     return;
 }
-
 
 
 /* ===================================================== */
@@ -158,7 +292,7 @@ void COMMIT_At(
     uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
-    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
     uint8_t* _ICthreadsT, uint32_t* _ECthreadsT, uint32_t* _ISOthreadsT
 )
 {

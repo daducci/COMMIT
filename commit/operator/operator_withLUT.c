@@ -51,7 +51,7 @@ void* COMMIT_A__block( void *ptr )
 
     while( t_v != t_vEnd )
     {
-        x_Ptr0 = x + *t_f;
+        x_Ptr0 = ~ + *t_f;
         x0 = *x_Ptr0;
         #if nIC>=2
         x_Ptr1 = x_Ptr0 + nF;

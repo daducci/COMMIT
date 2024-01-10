@@ -69,6 +69,7 @@ thread_local vector< Vector<double> >        P;
 Vector<int>     dim;
 Vector<float>   pixdim;
 float*          ptrMASK;
+float*          ptrISO;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
 float           minSegLen, minFiberLen, maxFiberLen;
@@ -80,8 +81,10 @@ vector<unsigned int>    totFibers;
 unsigned int            totECVoxels = 0;
 unsigned int            totECSegments = 0;
 
+
 // progressbar verbosity
 int verbosity = 0;
+
 
 // --- Functions Definitions ----
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
@@ -99,6 +102,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     double** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int idx);
 
+int ISOcompartments(double** ptrTDI, char* path_out, int idx);
+
 
 
 // ===========================================
@@ -109,10 +114,10 @@ int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
     float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    float* _ptrMASK, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
+    float* _ptrMASK, float* _ptrISO, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
     float* ptrToVOXMM, short* ptrHashTable, int threads_count, int verbose
-)
+    )
 {
 
     // Set the global variables
@@ -123,6 +128,7 @@ int trk2dictionary(
     fiberShiftYmm = fiber_shiftY * pixdim.y;
     fiberShiftZmm = fiber_shiftZ * pixdim.z;
     ptrMASK       = _ptrMASK;
+    ptrISO        = _ptrISO;
     doIntersect   = c > 0;
     minSegLen     = min_seg_len;
     minFiberLen   = min_fiber_len;
@@ -131,6 +137,7 @@ int trk2dictionary(
     totFibers.resize( threads_count, 0 );
     totECVoxels   = 0;
     totECSegments = 0;
+    verbosity     = verbose;
     verbosity     = verbose;
 
 
@@ -237,6 +244,11 @@ int trk2dictionary(
         PROGRESS->reset((unsigned int) n_count);
         PROGRESS->setPrefix("     ");
     }
+    if (verbosity > 0)
+    {
+        PROGRESS->reset((unsigned int) n_count);
+        PROGRESS->setPrefix("     ");
+    }
     // ---- Original ------
     for( int i = 0; i<threads_count; i++ ){
         threads.push_back( thread( ICSegments, str_filename, isTRK, n_count, nReplicas, n_scalars, n_properties, ptrToVOXMM,
@@ -251,15 +263,32 @@ int trk2dictionary(
 
     if (verbosity > 0)
         PROGRESS->close();
+    if (verbosity > 0)
+        PROGRESS->close();
+    
 
     printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
     totFibers.clear();
     threads.clear();
+
+    // ==========================================
+    //          Parallel EC compartments
+    // ==========================================
+
     printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
 
     int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
 
     printf("     [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
+
+    /*=========================*/
+    /*     Restricted ISO compartments     */
+    /*=========================*/
+    printf( "\n   \033[0;32m* Exporting ISO compartments:\033[0m\n" );
+
+    int totISO = ISOcompartments(ptrTDI, path_out, threads_count);
+
+    printf("     [ %d voxels ]\n", totISO );
 
     return 1;
 
@@ -378,6 +407,47 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
 
     return 1;
 
+}
+
+
+
+int ISOcompartments(double** ptrTDI, char* path_out, int threads){
+    // Variables definition
+    string    filename;
+    string    OUTPUT_path(path_out);
+    std::size_t pos = OUTPUT_path.find("/temp");
+    OUTPUT_path = OUTPUT_path.substr (0,pos);
+    unsigned int totISOVoxels = 0, v=0;
+
+    filename = OUTPUT_path+"/dictionary_ISO_v.dict";        FILE* pDict_ISO_v   = fopen( filename.c_str(),   "wb" );
+
+    int            ix, iy, iz, id, atLeastOne;
+    int            skip = 0;
+
+    for(iz=0; iz<dim.z ;iz++){
+        for(iy=0; iy<dim.y ;iy++)
+        for(ix=0; ix<dim.x ;ix++){
+            if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+            if ( ptrMASK && ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+            // check if in mask previously computed from IC segments
+            for(int i =0; i<threads; i++){
+                if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ){
+                    skip += 1;
+                }
+            }
+            if(skip==threads){
+                skip = 0;
+                continue;
+            }
+            skip = 0;
+            v = ix + dim.x * ( iy + dim.y * iz );
+            fwrite( &v, 4, 1, pDict_ISO_v );    
+            totISOVoxels++; 
+        }
+    }
+    fclose( pDict_ISO_v );
+
+    return totISOVoxels;
 }
 
 
