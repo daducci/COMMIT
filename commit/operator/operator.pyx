@@ -14,7 +14,7 @@ cdef extern void COMMIT_A(
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
     unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads,
-    unsigned int nThreads
+    unsigned int nIC, unsigned int nThreads
 ) nogil
 
 cdef extern void COMMIT_At(
@@ -25,7 +25,7 @@ cdef extern void COMMIT_At(
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
     unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT,
-    unsigned int nThreads
+    unsigned int nIC, unsigned int nThreads
 ) nogil
 
 
@@ -169,6 +169,7 @@ cdef class LinearOperator :
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
 
         cdef unsigned int nthreads = self.THREADS['n']
+        cdef unsigned int nIC = self.KERNELS['wmr'].shape[0]
 
         # Call the cython function to read the memory pointers
         if not self.adjoint :
@@ -180,7 +181,7 @@ cdef class LinearOperator :
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
                     self.ICthreads, self.ECthreads, self.ISOthreads,
-                    nthreads
+                    nIC, nthreads
                 )
         else :
             # INVERSE PRODUCT A'*y
@@ -191,7 +192,7 @@ cdef class LinearOperator :
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
                     self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
-                    nthreads
+                    nIC, nthreads
                 )
 
         return v_out

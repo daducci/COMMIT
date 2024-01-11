@@ -10,8 +10,6 @@ from commit.operator import config
 
 
 def make_ext(modname, pyxfilename):
-    if (config.nIC is None or config.nIC < 0 or config.nIC > 20):
-        raise RuntimeError('config.nIC must be in the range [0..20]')
     if (config.nEC is None or config.nEC < 0 or config.nEC > 20):
         raise RuntimeError('config.nEC must be in the range [0..20]')
     if (config.nISO is None or config.nISO < 0 or config.nISO > 20):
@@ -44,7 +42,6 @@ def make_ext(modname, pyxfilename):
                     include_dirs=include_dirs,
                     libraries=libraries,
                     library_dirs=library_dirs,
-                    define_macros=[('nIC', config.nIC),
-                                    ('nEC', config.nEC),
+                    define_macros=[('nEC', config.nEC),
                                     ('nISO', config.nISO)],
                     extra_compile_args=extra_compile_args)
