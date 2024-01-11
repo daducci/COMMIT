@@ -2,13 +2,7 @@
 #include <stdint.h> // uint32_t etc
 
 // number of THREADS
-#ifdef nTHREADS
-    #if (nTHREADS<1 || nTHREADS>255)
-    #error "nTHREADS" must be in the range 1..255
-    #endif
-#else
-    #error "nTHREADS" parameter must be passed to the compiler as "-DnTHREADS=<value>"
-#endif
+#define NTHREADS 255
 
 
 /* global variables */
@@ -966,7 +960,8 @@ void COMMIT_A(
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    uint32_t* _ICthreads, uint32_t* _ECthreads, uint32_t* _ISOthreads
+    uint32_t* _ICthreads, uint32_t* _ECthreads, uint32_t* _ISOthreads,
+    uint32_t nThreads
 )
 {
     nF = _nF;
@@ -1173,11 +1168,11 @@ void COMMIT_A(
     ISOthreads = _ISOthreads;
 
     // Run SEPARATE THREADS to perform the multiplication
-    pthread_t threads[nTHREADS];
+    pthread_t threads[NTHREADS];
     int t;
-    for(t=0; t<nTHREADS ; t++)
+    for(t=0; t<nThreads ; t++)
         pthread_create( &threads[t], NULL, COMMIT_A__block, (void *) (long int)t );
-    for(t=0; t<nTHREADS ; t++)
+    for(t=0; t<nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
 }
@@ -2030,7 +2025,8 @@ void COMMIT_At(
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    uint8_t* _ICthreadsT, uint32_t* _ECthreadsT, uint32_t* _ISOthreadsT
+    uint8_t* _ICthreadsT, uint32_t* _ECthreadsT, uint32_t* _ISOthreadsT,
+    uint32_t nThreads
 )
 {
     nF = _nF;
@@ -2237,11 +2233,11 @@ void COMMIT_At(
     ISOthreadsT = _ISOthreadsT;
 
     // Run SEPARATE THREADS to perform the multiplication
-    pthread_t threads[nTHREADS];
+    pthread_t threads[NTHREADS];
     int t;
-    for(t=0; t<nTHREADS ; t++)
+    for(t=0; t<nThreads ; t++)
         pthread_create( &threads[t], NULL, COMMIT_At__block, (void *) (long int)t );
-    for(t=0; t<nTHREADS ; t++)
+    for(t=0; t<nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
 }

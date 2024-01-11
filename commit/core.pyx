@@ -704,8 +704,8 @@ cdef class Evaluation :
 
         compilation_is_needed = False
 
-        if config.nTHREADS is None or config.nTHREADS != self.THREADS['n']:
-            compilation_is_needed = True
+        # if config.nTHREADS is None or config.nTHREADS != self.THREADS['n']:
+        #     compilation_is_needed = True
         if config.nIC is None or config.nIC != self.KERNELS['wmr'].shape[0]:
             compilation_is_needed = True
         if config.model is None or config.model != self.model.id:
@@ -722,12 +722,12 @@ cdef class Evaluation :
             if build_dir is not None:
                 if isdir(build_dir) and not len(listdir(build_dir)) == 0:
                     ERROR( '\nbuild_dir is not empty, unsafe build option.' )
-                elif config.nTHREADS is not None:
-                    ERROR( '\nThe parameter build_dir has changed, unsafe build option.' )
+                # elif config.nTHREADS is not None:
+                #     ERROR( '\nThe parameter build_dir has changed, unsafe build option.' )
                 else:
                     WARNING( '\nUsing build_dir, always quit your python console between COMMIT Evaluation.' )
 
-            config.nTHREADS   = self.THREADS['n']
+            # config.nTHREADS   = self.THREADS['n']
             config.model      = self.model.id
             config.nIC        = self.KERNELS['wmr'].shape[0]
             config.nEC        = self.KERNELS['wmh'].shape[0]

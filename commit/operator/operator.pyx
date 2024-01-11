@@ -13,7 +13,8 @@ cdef extern void COMMIT_A(
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads
+    unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads,
+    unsigned int nThreads
 ) nogil
 
 cdef extern void COMMIT_At(
@@ -23,7 +24,8 @@ cdef extern void COMMIT_At(
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
+    unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT,
+    unsigned int nThreads
 ) nogil
 
 
@@ -166,6 +168,8 @@ cdef class LinearOperator :
         # Create output array
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
 
+        cdef unsigned int nthreads = self.THREADS['n']
+
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
@@ -175,7 +179,8 @@ cdef class LinearOperator :
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                    self.ICthreads, self.ECthreads, self.ISOthreads
+                    self.ICthreads, self.ECthreads, self.ISOthreads,
+                    nthreads
                 )
         else :
             # INVERSE PRODUCT A'*y
@@ -185,7 +190,8 @@ cdef class LinearOperator :
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                    self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
+                    self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
+                    nthreads
                 )
 
         return v_out
