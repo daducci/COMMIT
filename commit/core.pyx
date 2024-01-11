@@ -710,8 +710,8 @@ cdef class Evaluation :
         #     compilation_is_needed = True
         if config.model is None or config.model != self.model.id:
             compilation_is_needed = True
-        if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
-            compilation_is_needed = True
+        # if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
+        #     compilation_is_needed = True
         if config.nISO is None or config.nISO != self.KERNELS['iso'].shape[0]:
             compilation_is_needed = True
         if config.build_dir != build_dir:
@@ -730,7 +730,7 @@ cdef class Evaluation :
             # config.nTHREADS   = self.THREADS['n']
             config.model      = self.model.id
             # config.nIC        = self.KERNELS['wmr'].shape[0]
-            config.nEC        = self.KERNELS['wmh'].shape[0]
+            # config.nEC        = self.KERNELS['wmh'].shape[0]
             config.nISO       = self.KERNELS['iso'].shape[0]
             config.build_dir  = build_dir
 
