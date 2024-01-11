@@ -10,6 +10,7 @@ import glob
 import sys
 from os import makedirs, remove, getcwd, listdir
 from os.path import exists, join as pjoin, isfile, isdir
+import os
 import nibabel
 import pickle
 import commit.models
@@ -18,6 +19,7 @@ import amico.scheme
 import amico.lut
 import pyximport
 from pkg_resources import get_distribution
+import importlib
 
 from amico.util import LOG, NOTE, WARNING, ERROR
 
@@ -696,7 +698,7 @@ cdef class Evaluation :
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
         import os
-        dll_path = 'C:/Users/clori/Desktop/pthreads-w32-2-9-1-release/dll/x64'
+        dll_path = 'C:/Users/clori/Desktop/COMMIT_example_dataset/pthreads-w32-2-9-1-release/dll/x64'
         if os.path.isdir(dll_path):
             os.add_dll_directory(dll_path)
 

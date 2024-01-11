@@ -35,9 +35,9 @@ def make_ext(modname, pyxfilename):
     library_dirs = []
     extra_compile_args = []
     if sys.platform.startswith('win32'):
-        include_dirs.append('C:/Users/clori/Desktop/pthreads-w32-2-9-1-release/include')
+        include_dirs.append('C:/Users/clori/Desktop/COMMIT_example_dataset/pthreads-w32-2-9-1-release/include')
         libraries.append('pthreadVC2')
-        library_dirs.append('C:/Users/clori/Desktop/pthreads-w32-2-9-1-release/lib/x64')
+        library_dirs.append('C:/Users/clori/Desktop/COMMIT_example_dataset/pthreads-w32-2-9-1-release/lib/x64')
         extra_compile_args.extend(['/std:c++14', '/fp:fast', '/DHAVE_STRUCT_TIMESPEC'])
     if sys.platform.startswith('darwin') or sys.platform.startswith('linux'):
         extra_compile_args.extend(['-w', '-O3', '-Ofast'])
