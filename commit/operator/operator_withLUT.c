@@ -931,6 +931,256 @@ void* COMMIT_A__block( void *ptr )
         t_v = ECv + ECthreads[id];
         t_vEnd = ECv + ECthreads[id+1];
         t_o = ECo + ECthreads[id];
+        x_Ptr0 = x + nIC_*nF + ECthreads[id];
+        switch (nEC_)
+        {
+            case 2:
+                x_Ptr1 = x_Ptr0 + nE;
+                break;
+
+            case 3:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                break;
+
+            case 4:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                break;
+
+            case 5:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                break;
+
+            case 6:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                break;
+
+            case 7:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                break;
+
+            case 8:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                break;
+
+            case 9:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                break;
+
+            case 10:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                break;
+
+            case 11:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                break;
+
+            case 12:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                break;
+
+            case 13:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                x_Ptr12 = x_Ptr11 + nE;
+                break;
+
+            case 14:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                x_Ptr12 = x_Ptr11 + nE;
+                x_Ptr13 = x_Ptr12 + nE;
+                break;
+
+            case 15:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                x_Ptr12 = x_Ptr11 + nE;
+                x_Ptr13 = x_Ptr12 + nE;
+                x_Ptr14 = x_Ptr13 + nE;
+                break;
+
+            case 16:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                x_Ptr12 = x_Ptr11 + nE;
+                x_Ptr13 = x_Ptr12 + nE;
+                x_Ptr14 = x_Ptr13 + nE;
+                x_Ptr15 = x_Ptr14 + nE;
+                break;
+
+            case 17:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                x_Ptr12 = x_Ptr11 + nE;
+                x_Ptr13 = x_Ptr12 + nE;
+                x_Ptr14 = x_Ptr13 + nE;
+                x_Ptr15 = x_Ptr14 + nE;
+                x_Ptr16 = x_Ptr15 + nE;
+                break;
+
+            case 18:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                x_Ptr12 = x_Ptr11 + nE;
+                x_Ptr13 = x_Ptr12 + nE;
+                x_Ptr14 = x_Ptr13 + nE;
+                x_Ptr15 = x_Ptr14 + nE;
+                x_Ptr16 = x_Ptr15 + nE;
+                x_Ptr17 = x_Ptr16 + nE;
+                break;
+
+            case 19:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                x_Ptr12 = x_Ptr11 + nE;
+                x_Ptr13 = x_Ptr12 + nE;
+                x_Ptr14 = x_Ptr13 + nE;
+                x_Ptr15 = x_Ptr14 + nE;
+                x_Ptr16 = x_Ptr15 + nE;
+                x_Ptr17 = x_Ptr16 + nE;
+                x_Ptr18 = x_Ptr17 + nE;
+                break;
+
+            case 20:
+                x_Ptr1 = x_Ptr0 + nE;
+                x_Ptr2 = x_Ptr1 + nE;
+                x_Ptr3 = x_Ptr2 + nE;
+                x_Ptr4 = x_Ptr3 + nE;
+                x_Ptr5 = x_Ptr4 + nE;
+                x_Ptr6 = x_Ptr5 + nE;
+                x_Ptr7 = x_Ptr6 + nE;
+                x_Ptr8 = x_Ptr7 + nE;
+                x_Ptr9 = x_Ptr8 + nE;
+                x_Ptr10 = x_Ptr9 + nE;
+                x_Ptr11 = x_Ptr10 + nE;
+                x_Ptr12 = x_Ptr11 + nE;
+                x_Ptr13 = x_Ptr12 + nE;
+                x_Ptr14 = x_Ptr13 + nE;
+                x_Ptr15 = x_Ptr14 + nE;
+                x_Ptr16 = x_Ptr15 + nE;
+                x_Ptr17 = x_Ptr16 + nE;
+                x_Ptr18 = x_Ptr17 + nE;
+                x_Ptr19 = x_Ptr18 + nE;
+                break;
+        }
 
         while (t_v != t_vEnd)
         {
