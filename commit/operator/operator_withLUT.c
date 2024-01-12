@@ -17,7 +17,7 @@ float       *ICl;
 float       *wmrSFP0, *wmrSFP1, *wmrSFP2, *wmrSFP3, *wmrSFP4, *wmrSFP5, *wmrSFP6, *wmrSFP7, *wmrSFP8, *wmrSFP9, *wmrSFP10, *wmrSFP11, *wmrSFP12, *wmrSFP13, *wmrSFP14, *wmrSFP15, *wmrSFP16, *wmrSFP17, *wmrSFP18, *wmrSFP19;
 float       *wmhSFP0, *wmhSFP1, *wmhSFP2, *wmhSFP3, *wmhSFP4, *wmhSFP5, *wmhSFP6, *wmhSFP7, *wmhSFP8, *wmhSFP9, *wmhSFP10, *wmhSFP11, *wmhSFP12, *wmhSFP13, *wmhSFP14, *wmhSFP15, *wmhSFP16, *wmhSFP17, *wmhSFP18, *wmhSFP19;
 float       *isoSFP0, *isoSFP1, *isoSFP2, *isoSFP3, *isoSFP4, *isoSFP5, *isoSFP6, *isoSFP7, *isoSFP8, *isoSFP9, *isoSFP10, *isoSFP11, *isoSFP12, *isoSFP13, *isoSFP14, *isoSFP15, *isoSFP16, *isoSFP17, *isoSFP18, *isoSFP19;
-uint32_t nIC_, nEC_;
+uint32_t nIC_, nEC_, nISO_;
 
 
 
@@ -1187,7 +1187,6 @@ void* COMMIT_A__block( void *ptr )
             switch (nEC_)
             {
                 case 1:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
                     if (x0 != 0)
                     {
@@ -1201,9 +1200,7 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 2:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
                     if (x0 != 0 || x1 != 0)
                     {
@@ -1218,11 +1215,8 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 3:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
@@ -1238,13 +1232,9 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 4:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
@@ -1261,15 +1251,10 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 5:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
@@ -1287,17 +1272,11 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 6:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
@@ -1316,19 +1295,12 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 7:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
@@ -1348,21 +1320,13 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 8:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
@@ -1383,23 +1347,14 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 9:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
@@ -1421,25 +1376,15 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 10:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
@@ -1462,27 +1407,16 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 11:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
                     {
@@ -1506,29 +1440,17 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 12:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
                     {
@@ -1553,31 +1475,18 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 13:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
-                    x_Ptr12 = x_Ptr11 + nE;
                     x12 = *x_Ptr12++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
                     {
@@ -1603,33 +1512,19 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 14:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
-                    x_Ptr12 = x_Ptr11 + nE;
                     x12 = *x_Ptr12++;
-                    x_Ptr13 = x_Ptr12 + nE;
                     x13 = *x_Ptr13++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
                     {
@@ -1642,35 +1537,20 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 15:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
-                    x_Ptr12 = x_Ptr11 + nE;
                     x12 = *x_Ptr12++;
-                    x_Ptr13 = x_Ptr12 + nE;
                     x13 = *x_Ptr13++;
-                    x_Ptr14 = x_Ptr13 + nE;
                     x14 = *x_Ptr14++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
                     {
@@ -1684,37 +1564,21 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 16:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
-                    x_Ptr12 = x_Ptr11 + nE;
                     x12 = *x_Ptr12++;
-                    x_Ptr13 = x_Ptr12 + nE;
                     x13 = *x_Ptr13++;
-                    x_Ptr14 = x_Ptr13 + nE;
                     x14 = *x_Ptr14++;
-                    x_Ptr15 = x_Ptr14 + nE;
                     x15 = *x_Ptr15++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
                     {
@@ -1728,39 +1592,22 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 17:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
-                    x_Ptr12 = x_Ptr11 + nE;
                     x12 = *x_Ptr12++;
-                    x_Ptr13 = x_Ptr12 + nE;
                     x13 = *x_Ptr13++;
-                    x_Ptr14 = x_Ptr13 + nE;
                     x14 = *x_Ptr14++;
-                    x_Ptr15 = x_Ptr14 + nE;
                     x15 = *x_Ptr15++;
-                    x_Ptr16 = x_Ptr15 + nE;
                     x16 = *x_Ptr16++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
                     {
@@ -1774,41 +1621,23 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 18:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
-                    x_Ptr12 = x_Ptr11 + nE;
                     x12 = *x_Ptr12++;
-                    x_Ptr13 = x_Ptr12 + nE;
                     x13 = *x_Ptr13++;
-                    x_Ptr14 = x_Ptr13 + nE;
                     x14 = *x_Ptr14++;
-                    x_Ptr15 = x_Ptr14 + nE;
                     x15 = *x_Ptr15++;
-                    x_Ptr16 = x_Ptr15 + nE;
                     x16 = *x_Ptr16++;
-                    x_Ptr17 = x_Ptr16 + nE;
                     x17 = *x_Ptr17++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
                     {
@@ -1822,43 +1651,24 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 19:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
-                    x_Ptr12 = x_Ptr11 + nE;
                     x12 = *x_Ptr12++;
-                    x_Ptr13 = x_Ptr12 + nE;
                     x13 = *x_Ptr13++;
-                    x_Ptr14 = x_Ptr13 + nE;
                     x14 = *x_Ptr14++;
-                    x_Ptr15 = x_Ptr14 + nE;
                     x15 = *x_Ptr15++;
-                    x_Ptr16 = x_Ptr15 + nE;
                     x16 = *x_Ptr16++;
-                    x_Ptr17 = x_Ptr16 + nE;
                     x17 = *x_Ptr17++;
-                    x_Ptr18 = x_Ptr17 + nE;
                     x18 = *x_Ptr18++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
                     {
@@ -1872,45 +1682,25 @@ void* COMMIT_A__block( void *ptr )
                     break;
 
                 case 20:
-                    x_Ptr0 = x + nIC_*nF + ECthreads[id];
                     x0 = *x_Ptr0++;
-                    x_Ptr1 = x_Ptr0 + nE;
                     x1 = *x_Ptr1++;
-                    x_Ptr2 = x_Ptr1 + nE;
                     x2 = *x_Ptr2++;
-                    x_Ptr3 = x_Ptr2 + nE;
                     x3 = *x_Ptr3++;
-                    x_Ptr4 = x_Ptr3 + nE;
                     x4 = *x_Ptr4++;
-                    x_Ptr5 = x_Ptr4 + nE;
                     x5 = *x_Ptr5++;
-                    x_Ptr6 = x_Ptr5 + nE;
                     x6 = *x_Ptr6++;
-                    x_Ptr7 = x_Ptr6 + nE;
                     x7 = *x_Ptr7++;
-                    x_Ptr8 = x_Ptr7 + nE;
                     x8 = *x_Ptr8++;
-                    x_Ptr9 = x_Ptr8 + nE;
                     x9 = *x_Ptr9++;
-                    x_Ptr10 = x_Ptr9 + nE;
                     x10 = *x_Ptr10++;
-                    x_Ptr11 = x_Ptr10 + nE;
                     x11 = *x_Ptr11++;
-                    x_Ptr12 = x_Ptr11 + nE;
                     x12 = *x_Ptr12++;
-                    x_Ptr13 = x_Ptr12 + nE;
                     x13 = *x_Ptr13++;
-                    x_Ptr14 = x_Ptr13 + nE;
                     x14 = *x_Ptr14++;
-                    x_Ptr15 = x_Ptr14 + nE;
                     x15 = *x_Ptr15++;
-                    x_Ptr16 = x_Ptr15 + nE;
                     x16 = *x_Ptr16++;
-                    x_Ptr17 = x_Ptr16 + nE;
                     x17 = *x_Ptr17++;
-                    x_Ptr18 = x_Ptr17 + nE;
                     x18 = *x_Ptr18++;
-                    x_Ptr19 = x_Ptr18 + nE;
                     x19 = *x_Ptr19++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
@@ -1928,318 +1718,888 @@ void* COMMIT_A__block( void *ptr )
         }
     }
 
-#if nISO>=1
     // isotropic compartments
-    t_v    = ISOv + ISOthreads[id];
-    t_vEnd = ISOv + ISOthreads[id+1];
-
-    x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreads[id];
-    #if nISO>=2
-    x_Ptr1 = x_Ptr0 + nV;
-    #endif
-    #if nISO>=3
-    x_Ptr2 = x_Ptr1 + nV;
-    #endif
-    #if nISO>=4
-    x_Ptr3 = x_Ptr2 + nV;
-    #endif
-    #if nISO>=5
-    x_Ptr4 = x_Ptr3 + nV;
-    #endif
-    #if nISO>=6
-    x_Ptr5 = x_Ptr4 + nV;
-    #endif
-    #if nISO>=7
-    x_Ptr6 = x_Ptr5 + nV;
-    #endif
-    #if nISO>=8
-    x_Ptr7 = x_Ptr6 + nV;
-    #endif
-    #if nISO>=9
-    x_Ptr8 = x_Ptr7 + nV;
-    #endif
-    #if nISO>=10
-    x_Ptr9 = x_Ptr8 + nV;
-    #endif
-    #if nISO>=11
-    x_Ptr10 = x_Ptr9 + nV;
-    #endif
-    #if nISO>=12
-    x_Ptr11 = x_Ptr10 + nV;
-    #endif
-    #if nISO>=13
-    x_Ptr12 = x_Ptr11 + nV;
-    #endif
-    #if nISO>=14
-    x_Ptr13 = x_Ptr12 + nV;
-    #endif
-    #if nISO>=15
-    x_Ptr14 = x_Ptr13 + nV;
-    #endif
-    #if nISO>=16
-    x_Ptr15 = x_Ptr14 + nV;
-    #endif
-    #if nISO>=17
-    x_Ptr16 = x_Ptr15 + nV;
-    #endif
-    #if nISO>=18
-    x_Ptr17 = x_Ptr16 + nV;
-    #endif
-    #if nISO>=19
-    x_Ptr18 = x_Ptr17 + nV;
-    #endif
-    #if nISO>=20
-    x_Ptr19 = x_Ptr18 + nV;
-    #endif
-
-    while( t_v != t_vEnd )
+    if (nISO_ >= 1)
     {
-        x0 = *x_Ptr0++;
-        #if nISO>=2
-        x1 = *x_Ptr1++;
-        #endif
-        #if nISO>=3
-        x2 = *x_Ptr2++;
-        #endif
-        #if nISO>=4
-        x3 = *x_Ptr3++;
-        #endif
-        #if nISO>=5
-        x4 = *x_Ptr4++;
-        #endif
-        #if nISO>=6
-        x5 = *x_Ptr5++;
-        #endif
-        #if nISO>=7
-        x6 = *x_Ptr6++;
-        #endif
-        #if nISO>=8
-        x7 = *x_Ptr7++;
-        #endif
-        #if nISO>=9
-        x8 = *x_Ptr8++;
-        #endif
-        #if nISO>=10
-        x9 = *x_Ptr9++;
-        #endif
-        #if nISO>=11
-        x10 = *x_Ptr10++;
-        #endif
-        #if nISO>=12
-        x11 = *x_Ptr11++;
-        #endif
-        #if nISO>=13
-        x12 = *x_Ptr12++;
-        #endif
-        #if nISO>=14
-        x13 = *x_Ptr13++;
-        #endif
-        #if nISO>=15
-        x14 = *x_Ptr14++;
-        #endif
-        #if nISO>=16
-        x15 = *x_Ptr15++;
-        #endif
-        #if nISO>=17
-        x16 = *x_Ptr16++;
-        #endif
-        #if nISO>=18
-        x17 = *x_Ptr17++;
-        #endif
-        #if nISO>=19
-        x18 = *x_Ptr18++;
-        #endif
-        #if nISO>=20
-        x19 = *x_Ptr19++;
-        #endif
-
-        if (
-               x0 != 0
-            #if nISO>=2
-            || x1 != 0
-            #endif
-            #if nISO>=3
-            || x2 != 0
-            #endif
-            #if nISO>=4
-            || x3 != 0
-            #endif
-            #if nISO>=5
-            || x4 != 0
-            #endif
-            #if nISO>=6
-            || x5 != 0
-            #endif
-            #if nISO>=7
-            || x6 != 0
-            #endif
-            #if nISO>=8
-            || x7 != 0
-            #endif
-            #if nISO>=9
-            || x8 != 0
-            #endif
-            #if nISO>=10
-            || x9 != 0
-            #endif
-            #if nISO>=11
-            || x10 != 0
-            #endif
-            #if nISO>=12
-            || x11 != 0
-            #endif
-            #if nISO>=13
-            || x12 != 0
-            #endif
-            #if nISO>=14
-            || x13 != 0
-            #endif
-            #if nISO>=15
-            || x14 != 0
-            #endif
-            #if nISO>=16
-            || x15 != 0
-            #endif
-            #if nISO>=17
-            || x16 != 0
-            #endif
-            #if nISO>=18
-            || x17 != 0
-            #endif
-            #if nISO>=19
-            || x18 != 0
-            #endif
-            #if nISO>=20
-            || x19 != 0
-            #endif
-          )
+        t_v = ISOv + ISOthreads[id];
+        t_vEnd = ISOv + ISOthreads[id+1];
+        x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreads[id];
+        switch (nISO_)
         {
-            Yptr    = Y    + nS * (*t_v);
-            YptrEnd = Yptr + nS;
-            SFP0ptr = isoSFP0;
-            #if nISO>=2
-            SFP1ptr = isoSFP1;
-            #endif
-            #if nISO>=3
-            SFP2ptr = isoSFP2;
-            #endif
-            #if nISO>=4
-            SFP3ptr = isoSFP3;
-            #endif
-            #if nISO>=5
-            SFP4ptr = isoSFP4;
-            #endif
-            #if nISO>=6
-            SFP5ptr = isoSFP5;
-            #endif
-            #if nISO>=7
-            SFP6ptr = isoSFP6;
-            #endif
-            #if nISO>=8
-            SFP7ptr = isoSFP7;
-            #endif
-            #if nISO>=9
-            SFP8ptr = isoSFP8;
-            #endif
-            #if nISO>=10
-            SFP9ptr = isoSFP9;
-            #endif
-            #if nISO>=11
-            SFP10ptr = isoSFP10;
-            #endif
-            #if nISO>=12
-            SFP11ptr = isoSFP11;
-            #endif
-            #if nISO>=13
-            SFP12ptr = isoSFP12;
-            #endif
-            #if nISO>=14
-            SFP13ptr = isoSFP13;
-            #endif
-            #if nISO>=15
-            SFP14ptr = isoSFP14;
-            #endif
-            #if nISO>=16
-            SFP15ptr = isoSFP15;
-            #endif
-            #if nISO>=17
-            SFP16ptr = isoSFP16;
-            #endif
-            #if nISO>=18
-            SFP17ptr = isoSFP17;
-            #endif
-            #if nISO>=19
-            SFP18ptr = isoSFP18;
-            #endif
-            #if nISO>=20
-            SFP19ptr = isoSFP19;
-            #endif
+            case 2:
+                x_Ptr1 = x_Ptr0 + nV;
+                break;
 
-            while( Yptr != YptrEnd )
-                (*Yptr++) += (
-                      x0 * (*SFP0ptr++)
-                    #if nISO>=2
-                    + x1 * (*SFP1ptr++)
-                    #endif
-                    #if nISO>=3
-                    + x2 * (*SFP2ptr++)
-                    #endif
-                    #if nISO>=4
-                    + x3 * (*SFP3ptr++)
-                    #endif
-                    #if nISO>=5
-                    + x4 * (*SFP4ptr++)
-                    #endif
-                    #if nISO>=6
-                    + x5 * (*SFP5ptr++)
-                    #endif
-                    #if nISO>=7
-                    + x6 * (*SFP6ptr++)
-                    #endif
-                    #if nISO>=8
-                    + x7 * (*SFP7ptr++)
-                    #endif
-                    #if nISO>=9
-                    + x8 * (*SFP8ptr++)
-                    #endif
-                    #if nISO>=10
-                    + x9 * (*SFP9ptr++)
-                    #endif
-                    #if nISO>=11
-                    + x10 * (*SFP10ptr++)
-                    #endif
-                    #if nISO>=12
-                    + x11 * (*SFP11ptr++)
-                    #endif
-                    #if nISO>=13
-                    + x12 * (*SFP12ptr++)
-                    #endif
-                    #if nISO>=14
-                    + x13 * (*SFP13ptr++)
-                    #endif
-                    #if nISO>=15
-                    + x14 * (*SFP14ptr++)
-                    #endif
-                    #if nISO>=16
-                    + x15 * (*SFP15ptr++)
-                    #endif
-                    #if nISO>=17
-                    + x16 * (*SFP16ptr++)
-                    #endif
-                    #if nISO>=18
-                    + x17 * (*SFP17ptr++)
-                    #endif
-                    #if nISO>=19
-                    + x18 * (*SFP18ptr++)
-                    #endif
-                    #if nISO>=20
-                    + x19 * (*SFP19ptr++)
-                    #endif
-                );
+            case 3:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                break;
+
+            case 4:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                break;
+
+            case 5:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                break;
+
+            case 6:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                break;
+
+            case 7:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                break;
+
+            case 8:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                break;
+
+            case 9:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                break;
+
+            case 10:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                break;
+
+            case 11:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                break;
+
+            case 12:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                break;
+
+            case 13:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                break;
+
+            case 14:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                break;
+
+            case 15:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                break;
+
+            case 16:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                break;
+
+            case 17:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                x_Ptr16 = x_Ptr15 + nV;
+                break;
+
+            case 18:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                x_Ptr16 = x_Ptr15 + nV;
+                x_Ptr17 = x_Ptr16 + nV;
+                break;
+
+            case 19:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                x_Ptr16 = x_Ptr15 + nV;
+                x_Ptr17 = x_Ptr16 + nV;
+                x_Ptr18 = x_Ptr17 + nV;
+                break;
+
+            case 20:
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                x_Ptr16 = x_Ptr15 + nV;
+                x_Ptr17 = x_Ptr16 + nV;
+                x_Ptr18 = x_Ptr17 + nV;
+                x_Ptr19 = x_Ptr18 + nV;
+                break;
         }
-        t_v++;
+        while (t_v != t_vEnd)
+        {
+            switch (nISO_)
+            {
+                case 1:
+                    x0 = *x_Ptr0++;
+                    if (x0 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++));
+                    }
+                    break;
+
+                case 2:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    if (x0 != 0 || x1 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++));
+                    }
+                    break;
+
+                case 3:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++));
+                    }
+                    break;
+
+                case 4:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++));
+                    }
+                    break;
+
+                case 5:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++));
+                    }
+                    break;
+
+                case 6:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++));
+                    }
+                    break;
+
+                case 7:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++));
+                    }
+                    break;
+
+                case 8:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++));
+                    }
+                    break;
+
+                case 9:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++));
+                    }
+                    break;
+
+                case 10:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++));
+                    }
+                    break;
+
+                case 11:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++));
+                    }
+                    break;
+
+                case 12:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++));
+                    }
+                    break;
+
+                case 13:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++));
+                    }
+                    break;
+
+                case 14:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++));
+                    }
+                    break;
+
+                case 15:
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
+                    {
+                        Yptr = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++));
+                    }
+                    break;
+
+                case 16:
+                    x0  = *x_Ptr0++;
+                    x1  = *x_Ptr1++;
+                    x2  = *x_Ptr2++;
+                    x3  = *x_Ptr3++;
+                    x4  = *x_Ptr4++;
+                    x5  = *x_Ptr5++;
+                    x6  = *x_Ptr6++;
+                    x7  = *x_Ptr7++;
+                    x8  = *x_Ptr8++;
+                    x9  = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
+                    {
+                        Yptr    = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr  = isoSFP0;
+                        SFP1ptr  = isoSFP1;
+                        SFP2ptr  = isoSFP2;
+                        SFP3ptr  = isoSFP3;
+                        SFP4ptr  = isoSFP4;
+                        SFP5ptr  = isoSFP5;
+                        SFP6ptr  = isoSFP6;
+                        SFP7ptr  = isoSFP7;
+                        SFP8ptr  = isoSFP8;
+                        SFP9ptr  = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++));
+                    }
+                    break;
+
+                case 17:
+                    x0  = *x_Ptr0++;
+                    x1  = *x_Ptr1++;
+                    x2  = *x_Ptr2++;
+                    x3  = *x_Ptr3++;
+                    x4  = *x_Ptr4++;
+                    x5  = *x_Ptr5++;
+                    x6  = *x_Ptr6++;
+                    x7  = *x_Ptr7++;
+                    x8  = *x_Ptr8++;
+                    x9  = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
+                    {
+                        Yptr    = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr  = isoSFP0;
+                        SFP1ptr  = isoSFP1;
+                        SFP2ptr  = isoSFP2;
+                        SFP3ptr  = isoSFP3;
+                        SFP4ptr  = isoSFP4;
+                        SFP5ptr  = isoSFP5;
+                        SFP6ptr  = isoSFP6;
+                        SFP7ptr  = isoSFP7;
+                        SFP8ptr  = isoSFP8;
+                        SFP9ptr  = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        SFP16ptr = isoSFP16;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++));
+                    }
+                    break;
+
+                case 18:
+                    x0  = *x_Ptr0++;
+                    x1  = *x_Ptr1++;
+                    x2  = *x_Ptr2++;
+                    x3  = *x_Ptr3++;
+                    x4  = *x_Ptr4++;
+                    x5  = *x_Ptr5++;
+                    x6  = *x_Ptr6++;
+                    x7  = *x_Ptr7++;
+                    x8  = *x_Ptr8++;
+                    x9  = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    x17 = *x_Ptr17++;
+                    if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
+                    {
+                        Yptr    = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr  = isoSFP0;
+                        SFP1ptr  = isoSFP1;
+                        SFP2ptr  = isoSFP2;
+                        SFP3ptr  = isoSFP3;
+                        SFP4ptr  = isoSFP4;
+                        SFP5ptr  = isoSFP5;
+                        SFP6ptr  = isoSFP6;
+                        SFP7ptr  = isoSFP7;
+                        SFP8ptr  = isoSFP8;
+                        SFP9ptr  = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        SFP16ptr = isoSFP16;
+                        SFP17ptr = isoSFP17;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++));
+                    }
+                    break;
+
+                case 19:
+                    x0  = *x_Ptr0++;
+                    x1  = *x_Ptr1++;
+                    x2  = *x_Ptr2++;
+                    x3  = *x_Ptr3++;
+                    x4  = *x_Ptr4++;
+                    x5  = *x_Ptr5++;
+                    x6  = *x_Ptr6++;
+                    x7  = *x_Ptr7++;
+                    x8  = *x_Ptr8++;
+                    x9  = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    x17 = *x_Ptr17++;
+                    x18 = *x_Ptr18++;
+                    if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
+                    {
+                        Yptr    = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr  = isoSFP0;
+                        SFP1ptr  = isoSFP1;
+                        SFP2ptr  = isoSFP2;
+                        SFP3ptr  = isoSFP3;
+                        SFP4ptr  = isoSFP4;
+                        SFP5ptr  = isoSFP5;
+                        SFP6ptr  = isoSFP6;
+                        SFP7ptr  = isoSFP7;
+                        SFP8ptr  = isoSFP8;
+                        SFP9ptr  = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        SFP16ptr = isoSFP16;
+                        SFP17ptr = isoSFP17;
+                        SFP18ptr = isoSFP18;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++));
+                    }
+                    break;
+
+                case 20:
+                    x0  = *x_Ptr0++;
+                    x1  = *x_Ptr1++;
+                    x2  = *x_Ptr2++;
+                    x3  = *x_Ptr3++;
+                    x4  = *x_Ptr4++;
+                    x5  = *x_Ptr5++;
+                    x6  = *x_Ptr6++;
+                    x7  = *x_Ptr7++;
+                    x8  = *x_Ptr8++;
+                    x9  = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    x17 = *x_Ptr17++;
+                    x18 = *x_Ptr18++;
+                    x19 = *x_Ptr19++;
+                    if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
+                    {
+                        Yptr    = Y + nS * (*t_v);
+                        YptrEnd = Yptr + nS;
+                        SFP0ptr  = isoSFP0;
+                        SFP1ptr  = isoSFP1;
+                        SFP2ptr  = isoSFP2;
+                        SFP3ptr  = isoSFP3;
+                        SFP4ptr  = isoSFP4;
+                        SFP5ptr  = isoSFP5;
+                        SFP6ptr  = isoSFP6;
+                        SFP7ptr  = isoSFP7;
+                        SFP8ptr  = isoSFP8;
+                        SFP9ptr  = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        SFP16ptr = isoSFP16;
+                        SFP17ptr = isoSFP17;
+                        SFP18ptr = isoSFP18;
+                        SFP19ptr = isoSFP19;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++) + x19 * (*SFP19ptr++));
+                    }
+                    break;
+            }
+            t_v++;
+        }
     }
-#endif
 
     pthread_exit( 0 );
 }
@@ -2256,7 +2616,7 @@ void COMMIT_A(
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
     uint32_t* _ICthreads, uint32_t* _ECthreads, uint32_t* _ISOthreads,
-    uint32_t nIC, uint32_t nEC, uint32_t nThreads
+    uint32_t nIC, uint32_t nEC, uint32_t nISO, uint32_t nThreads
 )
 {
     nF = _nF;
@@ -2279,6 +2639,7 @@ void COMMIT_A(
 
     nIC_ = nIC;
     nEC_ = nEC;
+    nISO_ = nISO;
 
     switch (nIC_)
     {
@@ -2826,66 +3187,278 @@ void COMMIT_A(
             break;
     }
 
-    #if nISO>=1
-    isoSFP0 = _isoSFP;
-    #if nISO>=2
-    isoSFP1 = isoSFP0 + _nS;
-    #if nISO>=3
-    isoSFP2 = isoSFP1 + _nS;
-    #if nISO>=4
-    isoSFP3 = isoSFP2 + _nS;
-    #if nISO>=5
-    isoSFP4 = isoSFP3 + _nS;
-    #if nISO>=6
-    isoSFP5 = isoSFP4 + _nS;
-    #if nISO>=7
-    isoSFP6 = isoSFP5 + _nS;
-    #if nISO>=8
-    isoSFP7 = isoSFP6 + _nS;
-    #if nISO>=9
-    isoSFP8 = isoSFP7 + _nS;
-    #if nISO>=10
-    isoSFP9 = isoSFP8 + _nS;
-    #if nISO>=11
-    isoSFP10 = isoSFP9 + _nS;
-    #if nISO>=12
-    isoSFP11 = isoSFP10 + _nS;
-    #if nISO>=13
-    isoSFP12 = isoSFP11 + _nS;
-    #if nISO>=14
-    isoSFP13 = isoSFP12 + _nS;
-    #if nISO>=15
-    isoSFP14 = isoSFP13 + _nS;
-    #if nISO>=16
-    isoSFP15 = isoSFP14 + _nS;
-    #if nISO>=17
-    isoSFP16 = isoSFP15 + _nS;
-    #if nISO>=18
-    isoSFP17 = isoSFP16 + _nS;
-    #if nISO>=19
-    isoSFP18 = isoSFP17 + _nS;
-    #if nISO>=20
-    isoSFP19 = isoSFP18 + _nS;
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
+    switch (nISO_)
+    {
+        case 1:
+            isoSFP0 = _isoSFP;
+            break;
+        
+        case 2:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            break;
+
+        case 3:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            break;
+
+        case 4:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            break;
+
+        case 5:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            break;
+
+        case 6:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            isoSFP5 = isoSFP4 + _ndirs*_nS;
+            break;
+
+        case 7:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            isoSFP5 = isoSFP4 + _ndirs*_nS;
+            isoSFP6 = isoSFP5 + _ndirs*_nS;
+            break;
+
+        case 8:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            isoSFP5 = isoSFP4 + _ndirs*_nS;
+            isoSFP6 = isoSFP5 + _ndirs*_nS;
+            isoSFP7 = isoSFP6 + _ndirs*_nS;
+            break;
+
+        case 9:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            isoSFP5 = isoSFP4 + _ndirs*_nS;
+            isoSFP6 = isoSFP5 + _ndirs*_nS;
+            isoSFP7 = isoSFP6 + _ndirs*_nS;
+            isoSFP8 = isoSFP7 + _ndirs*_nS;
+            break;
+
+        case 10:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            break;
+
+        case 11:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            break;
+
+        case 12:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            break;
+
+        case 13:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            break;
+
+        case 14:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            break;
+
+        case 15:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            break;
+
+        case 16:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            break;
+
+        case 17:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            isoSFP16 = isoSFP15 + _ndirs*_nS;
+            break;
+
+        case 18:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            isoSFP16 = isoSFP15 + _ndirs*_nS;
+            isoSFP17 = isoSFP16 + _ndirs*_nS;
+            break;
+
+        case 19:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0  + _ndirs*_nS;
+            isoSFP2  = isoSFP1  + _ndirs*_nS;
+            isoSFP3  = isoSFP2  + _ndirs*_nS;
+            isoSFP4  = isoSFP3  + _ndirs*_nS;
+            isoSFP5  = isoSFP4  + _ndirs*_nS;
+            isoSFP6  = isoSFP5  + _ndirs*_nS;
+            isoSFP7  = isoSFP6  + _ndirs*_nS;
+            isoSFP8  = isoSFP7  + _ndirs*_nS;
+            isoSFP9  = isoSFP8  + _ndirs*_nS;
+            isoSFP10 = isoSFP9  + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            isoSFP16 = isoSFP15 + _ndirs*_nS;
+            isoSFP17 = isoSFP16 + _ndirs*_nS;
+            isoSFP18 = isoSFP17 + _ndirs*_nS;
+            break;
+
+        case 20:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0  + _ndirs*_nS;
+            isoSFP2  = isoSFP1  + _ndirs*_nS;
+            isoSFP3  = isoSFP2  + _ndirs*_nS;
+            isoSFP4  = isoSFP3  + _ndirs*_nS;
+            isoSFP5  = isoSFP4  + _ndirs*_nS;
+            isoSFP6  = isoSFP5  + _ndirs*_nS;
+            isoSFP7  = isoSFP6  + _ndirs*_nS;
+            isoSFP8  = isoSFP7  + _ndirs*_nS;
+            isoSFP9  = isoSFP8  + _ndirs*_nS;
+            isoSFP10 = isoSFP9  + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            isoSFP16 = isoSFP15 + _ndirs*_nS;
+            isoSFP17 = isoSFP16 + _ndirs*_nS;
+            isoSFP18 = isoSFP17 + _ndirs*_nS;
+            isoSFP19 = isoSFP18 + _ndirs*_nS;
+            break;
+    }
 
     ICthreads  = _ICthreads;
     ECthreads  = _ECthreads;
@@ -5200,317 +5773,1324 @@ void* COMMIT_At__block( void *ptr )
         }
     }
 
-#if nISO>=1
     // isotropic compartments
-    t_v    = ISOv + ISOthreadsT[id];
-    t_vEnd = ISOv + ISOthreadsT[id+1];
-
-    x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
-    #if nISO>=2
-    x_Ptr1 = x_Ptr0 + nV;
-    #endif
-    #if nISO>=3
-    x_Ptr2 = x_Ptr1 + nV;
-    #endif
-    #if nISO>=4
-    x_Ptr3 = x_Ptr2 + nV;
-    #endif
-    #if nISO>=5
-    x_Ptr4 = x_Ptr3 + nV;
-    #endif
-    #if nISO>=6
-    x_Ptr5 = x_Ptr4 + nV;
-    #endif
-    #if nISO>=7
-    x_Ptr6 = x_Ptr5 + nV;
-    #endif
-    #if nISO>=8
-    x_Ptr7 = x_Ptr6 + nV;
-    #endif
-    #if nISO>=9
-    x_Ptr8 = x_Ptr7 + nV;
-    #endif
-    #if nISO>=10
-    x_Ptr9 = x_Ptr8 + nV;
-    #endif
-    #if nISO>=11
-    x_Ptr10 = x_Ptr9 + nV;
-    #endif
-    #if nISO>=12
-    x_Ptr11 = x_Ptr10 + nV;
-    #endif
-    #if nISO>=13
-    x_Ptr12 = x_Ptr11 + nV;
-    #endif
-    #if nISO>=14
-    x_Ptr13 = x_Ptr12 + nV;
-    #endif
-    #if nISO>=15
-    x_Ptr14 = x_Ptr13 + nV;
-    #endif
-    #if nISO>=16
-    x_Ptr15 = x_Ptr14 + nV;
-    #endif
-    #if nISO>=17
-    x_Ptr16 = x_Ptr15 + nV;
-    #endif
-    #if nISO>=18
-    x_Ptr17 = x_Ptr16 + nV;
-    #endif
-    #if nISO>=19
-    x_Ptr18 = x_Ptr17 + nV;
-    #endif
-    #if nISO>=20
-    x_Ptr19 = x_Ptr18 + nV;
-    #endif
-
-    while( t_v != t_vEnd )
+    if (nISO_ >= 1)
     {
-        Yptr    = Y    + nS * (*t_v++);
-        YptrEnd = Yptr + nS;
-
-        SFP0ptr = isoSFP0;
-        #if nISO>=2
-        SFP1ptr = isoSFP1;
-        #endif
-        #if nISO>=3
-        SFP2ptr = isoSFP2;
-        #endif
-        #if nISO>=4
-        SFP3ptr = isoSFP3;
-        #endif
-        #if nISO>=5
-        SFP4ptr = isoSFP4;
-        #endif
-        #if nISO>=6
-        SFP5ptr = isoSFP5;
-        #endif
-        #if nISO>=7
-        SFP6ptr = isoSFP6;
-        #endif
-        #if nISO>=8
-        SFP7ptr = isoSFP7;
-        #endif
-        #if nISO>=9
-        SFP8ptr = isoSFP8;
-        #endif
-        #if nISO>=10
-        SFP9ptr = isoSFP9;
-        #endif
-        #if nISO>=11
-        SFP10ptr = isoSFP10;
-        #endif
-        #if nISO>=12
-        SFP11ptr = isoSFP11;
-        #endif
-        #if nISO>=13
-        SFP12ptr = isoSFP12;
-        #endif
-        #if nISO>=14
-        SFP13ptr = isoSFP13;
-        #endif
-        #if nISO>=15
-        SFP14ptr = isoSFP14;
-        #endif
-        #if nISO>=16
-        SFP15ptr = isoSFP15;
-        #endif
-        #if nISO>=17
-        SFP16ptr = isoSFP16;
-        #endif
-        #if nISO>=18
-        SFP17ptr = isoSFP17;
-        #endif
-        #if nISO>=19
-        SFP18ptr = isoSFP18;
-        #endif
-        #if nISO>=20
-        SFP19ptr = isoSFP19;
-        #endif
-
-        Y_tmp = *Yptr;
-        x0 = (*SFP0ptr++) * Y_tmp;
-        #if nISO>=2
-        x1 = (*SFP1ptr++) * Y_tmp;
-        #endif
-        #if nISO>=3
-        x2 = (*SFP2ptr++) * Y_tmp;
-        #endif
-        #if nISO>=4
-        x3 = (*SFP3ptr++) * Y_tmp;
-        #endif
-        #if nISO>=5
-        x4 = (*SFP4ptr++) * Y_tmp;
-        #endif
-        #if nISO>=6
-        x5 = (*SFP5ptr++) * Y_tmp;
-        #endif
-        #if nISO>=7
-        x6 = (*SFP6ptr++) * Y_tmp;
-        #endif
-        #if nISO>=8
-        x7 = (*SFP7ptr++) * Y_tmp;
-        #endif
-        #if nISO>=9
-        x8 = (*SFP8ptr++) * Y_tmp;
-        #endif
-        #if nISO>=10
-        x9 = (*SFP9ptr++) * Y_tmp;
-        #endif
-        #if nISO>=11
-        x10 = (*SFP10ptr++) * Y_tmp;
-        #endif
-        #if nISO>=12
-        x11 = (*SFP11ptr++) * Y_tmp;
-        #endif
-        #if nISO>=13
-        x12 = (*SFP12ptr++) * Y_tmp;
-        #endif
-        #if nISO>=14
-        x13 = (*SFP13ptr++) * Y_tmp;
-        #endif
-        #if nISO>=15
-        x14 = (*SFP14ptr++) * Y_tmp;
-        #endif
-        #if nISO>=16
-        x15 = (*SFP15ptr++) * Y_tmp;
-        #endif
-        #if nISO>=17
-        x16 = (*SFP16ptr++) * Y_tmp;
-        #endif
-        #if nISO>=18
-        x17 = (*SFP17ptr++) * Y_tmp;
-        #endif
-        #if nISO>=19
-        x18 = (*SFP18ptr++) * Y_tmp;
-        #endif
-        #if nISO>=20
-        x19 = (*SFP19ptr++) * Y_tmp;
-        #endif
-
-        while( ++Yptr != YptrEnd )
+        t_v = ISOv + ISOthreadsT[id];
+        t_vEnd = ISOv + ISOthreadsT[id+1];
+        switch (nISO_)
         {
-            Y_tmp = *Yptr;
-            x0  += (*SFP0ptr++) * Y_tmp;
-            #if nISO>=2
-            x1  += (*SFP1ptr++) * Y_tmp;
-            #endif
-            #if nISO>=3
-            x2  += (*SFP2ptr++) * Y_tmp;
-            #endif
-            #if nISO>=4
-            x3  += (*SFP3ptr++) * Y_tmp;
-            #endif
-            #if nISO>=5
-            x4  += (*SFP4ptr++) * Y_tmp;
-            #endif
-            #if nISO>=6
-            x5  += (*SFP5ptr++) * Y_tmp;
-            #endif
-            #if nISO>=7
-            x6  += (*SFP6ptr++) * Y_tmp;
-            #endif
-            #if nISO>=8
-            x7  += (*SFP7ptr++) * Y_tmp;
-            #endif
-            #if nISO>=9
-            x8  += (*SFP8ptr++) * Y_tmp;
-            #endif
-            #if nISO>=10
-            x9  += (*SFP9ptr++) * Y_tmp;
-            #endif
-            #if nISO>=11
-            x10  += (*SFP10ptr++) * Y_tmp;
-            #endif
-            #if nISO>=12
-            x11  += (*SFP11ptr++) * Y_tmp;
-            #endif
-            #if nISO>=13
-            x12  += (*SFP12ptr++) * Y_tmp;
-            #endif
-            #if nISO>=14
-            x13  += (*SFP13ptr++) * Y_tmp;
-            #endif
-            #if nISO>=15
-            x14  += (*SFP14ptr++) * Y_tmp;
-            #endif
-            #if nISO>=16
-            x15  += (*SFP15ptr++) * Y_tmp;
-            #endif
-            #if nISO>=17
-            x16  += (*SFP16ptr++) * Y_tmp;
-            #endif
-            #if nISO>=18
-            x17  += (*SFP17ptr++) * Y_tmp;
-            #endif
-            #if nISO>=19
-            x18  += (*SFP18ptr++) * Y_tmp;
-            #endif
-            #if nISO>=20
-            x19  += (*SFP19ptr++) * Y_tmp;
-            #endif
-        }
+            case 1:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    while ( ++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                }
+                break;
 
-        (*x_Ptr0++) += x0;
-        #if nISO>=2
-        (*x_Ptr1++) += x1;
-        #endif
-        #if nISO>=3
-        (*x_Ptr2++) += x2;
-        #endif
-        #if nISO>=4
-        (*x_Ptr3++) += x3;
-        #endif
-        #if nISO>=5
-        (*x_Ptr4++) += x4;
-        #endif
-        #if nISO>=6
-        (*x_Ptr5++) += x5;
-        #endif
-        #if nISO>=7
-        (*x_Ptr6++) += x6;
-        #endif
-        #if nISO>=8
-        (*x_Ptr7++) += x7;
-        #endif
-        #if nISO>=9
-        (*x_Ptr8++) += x8;
-        #endif
-        #if nISO>=10
-        (*x_Ptr9++) += x9;
-        #endif
-        #if nISO>=11
-        (*x_Ptr10++) += x10;
-        #endif
-        #if nISO>=12
-        (*x_Ptr11++) += x11;
-        #endif
-        #if nISO>=13
-        (*x_Ptr12++) += x12;
-        #endif
-        #if nISO>=14
-        (*x_Ptr13++) += x13;
-        #endif
-        #if nISO>=15
-        (*x_Ptr14++) += x14;
-        #endif
-        #if nISO>=16
-        (*x_Ptr15++) += x15;
-        #endif
-        #if nISO>=17
-        (*x_Ptr16++) += x16;
-        #endif
-        #if nISO>=18
-        (*x_Ptr17++) += x17;
-        #endif
-        #if nISO>=19
-        (*x_Ptr18++) += x18;
-        #endif
-        #if nISO>=20
-        (*x_Ptr19++) += x19;
-        #endif
+            case 2:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                }
+                break;
+
+            case 3:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                }
+                break;
+
+            case 4:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                }
+                break;
+
+            case 5:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                }
+                break;
+
+            case 6:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                }
+                break;
+
+            case 7:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                }
+                break;
+
+            case 8:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                }
+                break;
+
+            case 9:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                }
+                break;
+
+            case 10:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                }
+                break;
+
+            case 11:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                }
+                break;
+
+            case 12:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                }
+                break;
+
+            case 13:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    SFP12ptr = isoSFP12;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    x12 = (*SFP12ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                        x12 += (*SFP12ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                    (*x_Ptr12++) += x12;
+                }
+                break;
+
+            case 14:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    SFP12ptr = isoSFP12;
+                    SFP13ptr = isoSFP13;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    x12 = (*SFP12ptr++) * Y_tmp;
+                    x13 = (*SFP13ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                        x12 += (*SFP12ptr++) * Y_tmp;
+                        x13 += (*SFP13ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                    (*x_Ptr12++) += x12;
+                    (*x_Ptr13++) += x13;
+                }
+                break;
+
+            case 15:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    SFP12ptr = isoSFP12;
+                    SFP13ptr = isoSFP13;
+                    SFP14ptr = isoSFP14;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    x12 = (*SFP12ptr++) * Y_tmp;
+                    x13 = (*SFP13ptr++) * Y_tmp;
+                    x14 = (*SFP14ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                        x12 += (*SFP12ptr++) * Y_tmp;
+                        x13 += (*SFP13ptr++) * Y_tmp;
+                        x14 += (*SFP14ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                    (*x_Ptr12++) += x12;
+                    (*x_Ptr13++) += x13;
+                    (*x_Ptr14++) += x14;
+                }
+                break;
+
+            case 16:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    SFP12ptr = isoSFP12;
+                    SFP13ptr = isoSFP13;
+                    SFP14ptr = isoSFP14;
+                    SFP15ptr = isoSFP15;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    x12 = (*SFP12ptr++) * Y_tmp;
+                    x13 = (*SFP13ptr++) * Y_tmp;
+                    x14 = (*SFP14ptr++) * Y_tmp;
+                    x15 = (*SFP15ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                        x12 += (*SFP12ptr++) * Y_tmp;
+                        x13 += (*SFP13ptr++) * Y_tmp;
+                        x14 += (*SFP14ptr++) * Y_tmp;
+                        x15 += (*SFP15ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                    (*x_Ptr12++) += x12;
+                    (*x_Ptr13++) += x13;
+                    (*x_Ptr14++) += x14;
+                    (*x_Ptr15++) += x15;
+                }
+                break;
+
+            case 17:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                x_Ptr16 = x_Ptr15 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    SFP12ptr = isoSFP12;
+                    SFP13ptr = isoSFP13;
+                    SFP14ptr = isoSFP14;
+                    SFP15ptr = isoSFP15;
+                    SFP16ptr = isoSFP16;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    x12 = (*SFP12ptr++) * Y_tmp;
+                    x13 = (*SFP13ptr++) * Y_tmp;
+                    x14 = (*SFP14ptr++) * Y_tmp;
+                    x15 = (*SFP15ptr++) * Y_tmp;
+                    x16 = (*SFP16ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                        x12 += (*SFP12ptr++) * Y_tmp;
+                        x13 += (*SFP13ptr++) * Y_tmp;
+                        x14 += (*SFP14ptr++) * Y_tmp;
+                        x15 += (*SFP15ptr++) * Y_tmp;
+                        x16 += (*SFP16ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                    (*x_Ptr12++) += x12;
+                    (*x_Ptr13++) += x13;
+                    (*x_Ptr14++) += x14;
+                    (*x_Ptr15++) += x15;
+                    (*x_Ptr16++) += x16;
+                }
+                break;
+
+            case 18:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                x_Ptr16 = x_Ptr15 + nV;
+                x_Ptr17 = x_Ptr16 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    SFP12ptr = isoSFP12;
+                    SFP13ptr = isoSFP13;
+                    SFP14ptr = isoSFP14;
+                    SFP15ptr = isoSFP15;
+                    SFP16ptr = isoSFP16;
+                    SFP17ptr = isoSFP17;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    x12 = (*SFP12ptr++) * Y_tmp;
+                    x13 = (*SFP13ptr++) * Y_tmp;
+                    x14 = (*SFP14ptr++) * Y_tmp;
+                    x15 = (*SFP15ptr++) * Y_tmp;
+                    x16 = (*SFP16ptr++) * Y_tmp;
+                    x17 = (*SFP17ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                        x12 += (*SFP12ptr++) * Y_tmp;
+                        x13 += (*SFP13ptr++) * Y_tmp;
+                        x14 += (*SFP14ptr++) * Y_tmp;
+                        x15 += (*SFP15ptr++) * Y_tmp;
+                        x16 += (*SFP16ptr++) * Y_tmp;
+                        x17 += (*SFP17ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                    (*x_Ptr12++) += x12;
+                    (*x_Ptr13++) += x13;
+                    (*x_Ptr14++) += x14;
+                    (*x_Ptr15++) += x15;
+                    (*x_Ptr16++) += x16;
+                    (*x_Ptr17++) += x17;
+                }
+                break;
+
+            case 19:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                x_Ptr16 = x_Ptr15 + nV;
+                x_Ptr17 = x_Ptr16 + nV;
+                x_Ptr18 = x_Ptr17 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    SFP12ptr = isoSFP12;
+                    SFP13ptr = isoSFP13;
+                    SFP14ptr = isoSFP14;
+                    SFP15ptr = isoSFP15;
+                    SFP16ptr = isoSFP16;
+                    SFP17ptr = isoSFP17;
+                    SFP18ptr = isoSFP18;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    x12 = (*SFP12ptr++) * Y_tmp;
+                    x13 = (*SFP13ptr++) * Y_tmp;
+                    x14 = (*SFP14ptr++) * Y_tmp;
+                    x15 = (*SFP15ptr++) * Y_tmp;
+                    x16 = (*SFP16ptr++) * Y_tmp;
+                    x17 = (*SFP17ptr++) * Y_tmp;
+                    x18 = (*SFP18ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                        x12 += (*SFP12ptr++) * Y_tmp;
+                        x13 += (*SFP13ptr++) * Y_tmp;
+                        x14 += (*SFP14ptr++) * Y_tmp;
+                        x15 += (*SFP15ptr++) * Y_tmp;
+                        x16 += (*SFP16ptr++) * Y_tmp;
+                        x17 += (*SFP17ptr++) * Y_tmp;
+                        x18 += (*SFP18ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                    (*x_Ptr12++) += x12;
+                    (*x_Ptr13++) += x13;
+                    (*x_Ptr14++) += x14;
+                    (*x_Ptr15++) += x15;
+                    (*x_Ptr16++) += x16;
+                    (*x_Ptr17++) += x17;
+                    (*x_Ptr18++) += x18;
+                }
+                break;
+
+            case 20:
+                x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
+                x_Ptr1 = x_Ptr0 + nV;
+                x_Ptr2 = x_Ptr1 + nV;
+                x_Ptr3 = x_Ptr2 + nV;
+                x_Ptr4 = x_Ptr3 + nV;
+                x_Ptr5 = x_Ptr4 + nV;
+                x_Ptr6 = x_Ptr5 + nV;
+                x_Ptr7 = x_Ptr6 + nV;
+                x_Ptr8 = x_Ptr7 + nV;
+                x_Ptr9 = x_Ptr8 + nV;
+                x_Ptr10 = x_Ptr9 + nV;
+                x_Ptr11 = x_Ptr10 + nV;
+                x_Ptr12 = x_Ptr11 + nV;
+                x_Ptr13 = x_Ptr12 + nV;
+                x_Ptr14 = x_Ptr13 + nV;
+                x_Ptr15 = x_Ptr14 + nV;
+                x_Ptr16 = x_Ptr15 + nV;
+                x_Ptr17 = x_Ptr16 + nV;
+                x_Ptr18 = x_Ptr17 + nV;
+                x_Ptr19 = x_Ptr18 + nV;
+                while (t_v != t_vEnd)
+                {
+                    Yptr = Y + nS * (*t_v++);
+                    YptrEnd = Yptr + nS;
+                    SFP0ptr = isoSFP0;
+                    SFP1ptr = isoSFP1;
+                    SFP2ptr = isoSFP2;
+                    SFP3ptr = isoSFP3;
+                    SFP4ptr = isoSFP4;
+                    SFP5ptr = isoSFP5;
+                    SFP6ptr = isoSFP6;
+                    SFP7ptr = isoSFP7;
+                    SFP8ptr = isoSFP8;
+                    SFP9ptr = isoSFP9;
+                    SFP10ptr = isoSFP10;
+                    SFP11ptr = isoSFP11;
+                    SFP12ptr = isoSFP12;
+                    SFP13ptr = isoSFP13;
+                    SFP14ptr = isoSFP14;
+                    SFP15ptr = isoSFP15;
+                    SFP16ptr = isoSFP16;
+                    SFP17ptr = isoSFP17;
+                    SFP18ptr = isoSFP18;
+                    SFP19ptr = isoSFP19;
+                    Y_tmp = *Yptr;
+                    x0 = (*SFP0ptr++) * Y_tmp;
+                    x1 = (*SFP1ptr++) * Y_tmp;
+                    x2 = (*SFP2ptr++) * Y_tmp;
+                    x3 = (*SFP3ptr++) * Y_tmp;
+                    x4 = (*SFP4ptr++) * Y_tmp;
+                    x5 = (*SFP5ptr++) * Y_tmp;
+                    x6 = (*SFP6ptr++) * Y_tmp;
+                    x7 = (*SFP7ptr++) * Y_tmp;
+                    x8 = (*SFP8ptr++) * Y_tmp;
+                    x9 = (*SFP9ptr++) * Y_tmp;
+                    x10 = (*SFP10ptr++) * Y_tmp;
+                    x11 = (*SFP11ptr++) * Y_tmp;
+                    x12 = (*SFP12ptr++) * Y_tmp;
+                    x13 = (*SFP13ptr++) * Y_tmp;
+                    x14 = (*SFP14ptr++) * Y_tmp;
+                    x15 = (*SFP15ptr++) * Y_tmp;
+                    x16 = (*SFP16ptr++) * Y_tmp;
+                    x17 = (*SFP17ptr++) * Y_tmp;
+                    x18 = (*SFP18ptr++) * Y_tmp;
+                    x19 = (*SFP19ptr++) * Y_tmp;
+                    while (++Yptr != YptrEnd)
+                    {
+                        Y_tmp = *Yptr;
+                        x0 += (*SFP0ptr++) * Y_tmp;
+                        x1 += (*SFP1ptr++) * Y_tmp;
+                        x2 += (*SFP2ptr++) * Y_tmp;
+                        x3 += (*SFP3ptr++) * Y_tmp;
+                        x4 += (*SFP4ptr++) * Y_tmp;
+                        x5 += (*SFP5ptr++) * Y_tmp;
+                        x6 += (*SFP6ptr++) * Y_tmp;
+                        x7 += (*SFP7ptr++) * Y_tmp;
+                        x8 += (*SFP8ptr++) * Y_tmp;
+                        x9 += (*SFP9ptr++) * Y_tmp;
+                        x10 += (*SFP10ptr++) * Y_tmp;
+                        x11 += (*SFP11ptr++) * Y_tmp;
+                        x12 += (*SFP12ptr++) * Y_tmp;
+                        x13 += (*SFP13ptr++) * Y_tmp;
+                        x14 += (*SFP14ptr++) * Y_tmp;
+                        x15 += (*SFP15ptr++) * Y_tmp;
+                        x16 += (*SFP16ptr++) * Y_tmp;
+                        x17 += (*SFP17ptr++) * Y_tmp;
+                        x18 += (*SFP18ptr++) * Y_tmp;
+                        x19 += (*SFP19ptr++) * Y_tmp;
+                    }
+                    (*x_Ptr0++) += x0;
+                    (*x_Ptr1++) += x1;
+                    (*x_Ptr2++) += x2;
+                    (*x_Ptr3++) += x3;
+                    (*x_Ptr4++) += x4;
+                    (*x_Ptr5++) += x5;
+                    (*x_Ptr6++) += x6;
+                    (*x_Ptr7++) += x7;
+                    (*x_Ptr8++) += x8;
+                    (*x_Ptr9++) += x9;
+                    (*x_Ptr10++) += x10;
+                    (*x_Ptr11++) += x11;
+                    (*x_Ptr12++) += x12;
+                    (*x_Ptr13++) += x13;
+                    (*x_Ptr14++) += x14;
+                    (*x_Ptr15++) += x15;
+                    (*x_Ptr16++) += x16;
+                    (*x_Ptr17++) += x17;
+                    (*x_Ptr18++) += x18;
+                    (*x_Ptr19++) += x19;
+                }
+                break;
+        }
     }
-#endif
 
     pthread_exit( 0 );
 }
@@ -5527,7 +7107,7 @@ void COMMIT_At(
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
     uint8_t* _ICthreadsT, uint32_t* _ECthreadsT, uint32_t* _ISOthreadsT,
-    uint32_t nIC, uint32_t nEC, uint32_t nThreads
+    uint32_t nIC, uint32_t nEC, uint32_t nISO, uint32_t nThreads
 )
 {
     nF = _nF;
@@ -5550,6 +7130,7 @@ void COMMIT_At(
 
     nIC_ = nIC;
     nEC_ = nEC;
+    nISO_ = nISO;
 
     switch (nIC_)
     {
@@ -6097,66 +7678,278 @@ void COMMIT_At(
             break;
     }
 
-    #if nISO>=1
-    isoSFP0 = _isoSFP;
-    #if nISO>=2
-    isoSFP1 = isoSFP0 + _nS;
-    #if nISO>=3
-    isoSFP2 = isoSFP1 + _nS;
-    #if nISO>=4
-    isoSFP3 = isoSFP2 + _nS;
-    #if nISO>=5
-    isoSFP4 = isoSFP3 + _nS;
-    #if nISO>=6
-    isoSFP5 = isoSFP4 + _nS;
-    #if nISO>=7
-    isoSFP6 = isoSFP5 + _nS;
-    #if nISO>=8
-    isoSFP7 = isoSFP6 + _nS;
-    #if nISO>=9
-    isoSFP8 = isoSFP7 + _nS;
-    #if nISO>=10
-    isoSFP9 = isoSFP8 + _nS;
-    #if nISO>=11
-    isoSFP10 = isoSFP9 + _nS;
-    #if nISO>=12
-    isoSFP11 = isoSFP10 + _nS;
-    #if nISO>=13
-    isoSFP12 = isoSFP11 + _nS;
-    #if nISO>=14
-    isoSFP13 = isoSFP12 + _nS;
-    #if nISO>=15
-    isoSFP14 = isoSFP13 + _nS;
-    #if nISO>=16
-    isoSFP15 = isoSFP14 + _nS;
-    #if nISO>=17
-    isoSFP16 = isoSFP15 + _nS;
-    #if nISO>=18
-    isoSFP17 = isoSFP16 + _nS;
-    #if nISO>=19
-    isoSFP18 = isoSFP17 + _nS;
-    #if nISO>=20
-    isoSFP19 = isoSFP18 + _nS;
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
-    #endif
+    switch (nISO_)
+    {
+        case 1:
+            isoSFP0 = _isoSFP;
+            break;
+        
+        case 2:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            break;
+
+        case 3:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            break;
+
+        case 4:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            break;
+
+        case 5:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            break;
+
+        case 6:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            isoSFP5 = isoSFP4 + _ndirs*_nS;
+            break;
+
+        case 7:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            isoSFP5 = isoSFP4 + _ndirs*_nS;
+            isoSFP6 = isoSFP5 + _ndirs*_nS;
+            break;
+
+        case 8:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            isoSFP5 = isoSFP4 + _ndirs*_nS;
+            isoSFP6 = isoSFP5 + _ndirs*_nS;
+            isoSFP7 = isoSFP6 + _ndirs*_nS;
+            break;
+
+        case 9:
+            isoSFP0 = _isoSFP;
+            isoSFP1 = isoSFP0 + _ndirs*_nS;
+            isoSFP2 = isoSFP1 + _ndirs*_nS;
+            isoSFP3 = isoSFP2 + _ndirs*_nS;
+            isoSFP4 = isoSFP3 + _ndirs*_nS;
+            isoSFP5 = isoSFP4 + _ndirs*_nS;
+            isoSFP6 = isoSFP5 + _ndirs*_nS;
+            isoSFP7 = isoSFP6 + _ndirs*_nS;
+            isoSFP8 = isoSFP7 + _ndirs*_nS;
+            break;
+
+        case 10:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            break;
+
+        case 11:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            break;
+
+        case 12:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            break;
+
+        case 13:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            break;
+
+        case 14:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            break;
+
+        case 15:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            break;
+
+        case 16:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            break;
+
+        case 17:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            isoSFP16 = isoSFP15 + _ndirs*_nS;
+            break;
+
+        case 18:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0 + _ndirs*_nS;
+            isoSFP2  = isoSFP1 + _ndirs*_nS;
+            isoSFP3  = isoSFP2 + _ndirs*_nS;
+            isoSFP4  = isoSFP3 + _ndirs*_nS;
+            isoSFP5  = isoSFP4 + _ndirs*_nS;
+            isoSFP6  = isoSFP5 + _ndirs*_nS;
+            isoSFP7  = isoSFP6 + _ndirs*_nS;
+            isoSFP8  = isoSFP7 + _ndirs*_nS;
+            isoSFP9  = isoSFP8 + _ndirs*_nS;
+            isoSFP10 = isoSFP9 + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            isoSFP16 = isoSFP15 + _ndirs*_nS;
+            isoSFP17 = isoSFP16 + _ndirs*_nS;
+            break;
+
+        case 19:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0  + _ndirs*_nS;
+            isoSFP2  = isoSFP1  + _ndirs*_nS;
+            isoSFP3  = isoSFP2  + _ndirs*_nS;
+            isoSFP4  = isoSFP3  + _ndirs*_nS;
+            isoSFP5  = isoSFP4  + _ndirs*_nS;
+            isoSFP6  = isoSFP5  + _ndirs*_nS;
+            isoSFP7  = isoSFP6  + _ndirs*_nS;
+            isoSFP8  = isoSFP7  + _ndirs*_nS;
+            isoSFP9  = isoSFP8  + _ndirs*_nS;
+            isoSFP10 = isoSFP9  + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            isoSFP16 = isoSFP15 + _ndirs*_nS;
+            isoSFP17 = isoSFP16 + _ndirs*_nS;
+            isoSFP18 = isoSFP17 + _ndirs*_nS;
+            break;
+
+        case 20:
+            isoSFP0  = _isoSFP;
+            isoSFP1  = isoSFP0  + _ndirs*_nS;
+            isoSFP2  = isoSFP1  + _ndirs*_nS;
+            isoSFP3  = isoSFP2  + _ndirs*_nS;
+            isoSFP4  = isoSFP3  + _ndirs*_nS;
+            isoSFP5  = isoSFP4  + _ndirs*_nS;
+            isoSFP6  = isoSFP5  + _ndirs*_nS;
+            isoSFP7  = isoSFP6  + _ndirs*_nS;
+            isoSFP8  = isoSFP7  + _ndirs*_nS;
+            isoSFP9  = isoSFP8  + _ndirs*_nS;
+            isoSFP10 = isoSFP9  + _ndirs*_nS;
+            isoSFP11 = isoSFP10 + _ndirs*_nS;
+            isoSFP12 = isoSFP11 + _ndirs*_nS;
+            isoSFP13 = isoSFP12 + _ndirs*_nS;
+            isoSFP14 = isoSFP13 + _ndirs*_nS;
+            isoSFP15 = isoSFP14 + _ndirs*_nS;
+            isoSFP16 = isoSFP15 + _ndirs*_nS;
+            isoSFP17 = isoSFP16 + _ndirs*_nS;
+            isoSFP18 = isoSFP17 + _ndirs*_nS;
+            isoSFP19 = isoSFP18 + _ndirs*_nS;
+            break;
+    }
 
     ICthreadsT  = _ICthreadsT;
     ECthreadsT  = _ECthreadsT;

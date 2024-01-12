@@ -712,8 +712,8 @@ cdef class Evaluation :
             compilation_is_needed = True
         # if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
         #     compilation_is_needed = True
-        if config.nISO is None or config.nISO != self.KERNELS['iso'].shape[0]:
-            compilation_is_needed = True
+        # if config.nISO is None or config.nISO != self.KERNELS['iso'].shape[0]:
+        #     compilation_is_needed = True
         if config.build_dir != build_dir:
             compilation_is_needed = True
 
@@ -731,7 +731,7 @@ cdef class Evaluation :
             config.model      = self.model.id
             # config.nIC        = self.KERNELS['wmr'].shape[0]
             # config.nEC        = self.KERNELS['wmh'].shape[0]
-            config.nISO       = self.KERNELS['iso'].shape[0]
+            # config.nISO       = self.KERNELS['iso'].shape[0]
             config.build_dir  = build_dir
 
             pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )

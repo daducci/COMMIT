@@ -10,8 +10,6 @@ from commit.operator import config
 
 
 def make_ext(modname, pyxfilename):
-    if (config.nISO is None or config.nISO < 0 or config.nISO > 20):
-        raise RuntimeError('config.nISO must be in the range [0..20]')
 
     # Force recompilation
     if config.model == "VolumeFractions":
@@ -40,5 +38,5 @@ def make_ext(modname, pyxfilename):
                     include_dirs=include_dirs,
                     libraries=libraries,
                     library_dirs=library_dirs,
-                    define_macros=[('nISO', config.nISO)],
+                    define_macros=[],
                     extra_compile_args=extra_compile_args)
