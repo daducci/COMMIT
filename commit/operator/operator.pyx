@@ -12,7 +12,7 @@ cdef extern void COMMIT_A(
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
-    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
     unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads
 ) nogil
 
@@ -22,7 +22,7 @@ cdef extern void COMMIT_At(
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
-    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
     unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
 ) nogil
 
@@ -33,7 +33,7 @@ cdef class LinearOperator :
     with the COMMIT linear operator A. The multiplications are done using C code
     that uses information from the DICTIONARY, KERNELS and THREADS data structures.
     """
-    cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
+    cdef int nS, nF, nR, nC, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
 
     cdef DICTIONARY
@@ -49,6 +49,7 @@ cdef class LinearOperator :
     cdef unsigned int*   ISOv
 
     cdef float* LUT_IC
+    cdef float* LUT_IC_modulation
     cdef float* LUT_EC
     cdef float* LUT_ISO
 
@@ -114,6 +115,11 @@ cdef class LinearOperator :
         cdef float [:, ::1] wmcSFP = KERNELS['wmc']
         self.LUT_IC_modulation = &wmcSFP[0,0]
 
+        # print("self.LUT_IC_modulation.shape = ", KERNELS['wmc'].shape)
+        # for i in range(0, KERNELS['wmc'].shape[0]) :
+        #     for j in range(0, KERNELS['wmc'].shape[1]) :
+        #         print("self.LUT_IC_modulation[{},{}] = {}".format(i,j,KERNELS['wmc'][i,j]))
+
         cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
         self.LUT_EC  = &wmhSFP[0,0,0]
         cdef float [:, ::1] isoSFP = KERNELS['iso']
@@ -171,11 +177,12 @@ cdef class LinearOperator :
             raise RuntimeError( "A.dot(): dimensions do not match" )
 
         # Create output array
+        print("A.dot(): creating output array")
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
-
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
+            print("running A.dot()")
             with nogil :
                 COMMIT_A(
                     self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
@@ -186,6 +193,7 @@ cdef class LinearOperator :
                 )
         else :
             # INVERSE PRODUCT A'*y
+            print("running A.T.dot()")
             with nogil :
                 COMMIT_At(
                     self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,

@@ -85,8 +85,6 @@ class VolumeFractions(BaseModel):
         else:
             nS = self.scheme.nS
             merge_idx = np.arange(nS)
-        if signal_mod > 1:
-
 
         KERNELS = {}
         KERNELS['model'] = self.id
@@ -123,23 +121,33 @@ class ModulatedVolumeFractions(BaseModel):
         ERROR('Not implemented')
 
     def generate(self, out_path, aux, idx_in, idx_out, ndirs):
-        return
+       return
+    
+    def DCT_profile(self, nSp, num_samples):
+        t = np.linspace(0, 1, num_samples)
+        profiles = np.arange(nSp)
 
-    def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs, signal_mod=1):
+        # Compute cosine functions
+        cosine_functions = np.zeros((len(profiles), num_samples), dtype=np.float32)
+        for i, frequency in enumerate(profiles):
+            cosine_functions[i,:] = np.cos(2 * np.pi * frequency * t)
+        return cosine_functions
+
+
+    def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs, nprofiles, nsamples):
         if doMergeB0:
             nS = 1 + self.scheme.dwi_count
             merge_idx = np.hstack((self.scheme.b0_idx[0], self.scheme.dwi_idx))
         else:
             nS = self.scheme.nS
             merge_idx = np.arange(nS)
-        if signal_mod > 1:
-            KERNELS = {}
-            KERNELS['model'] = self.id
-            KERNELS['wmr'] = np.ones((1, ndirs, nS), dtype=np.float32)
-            KERNELS["wmc"] = np.ones((1, ndirs, nS), dtype=np.float32)
-            KERNELS['wmh'] = np.ones((0, ndirs, nS), dtype=np.float32)
-            KERNELS['iso'] = np.ones((0, nS), dtype=np.float32)
-            return KERNELS
+        KERNELS = {}
+        KERNELS['model'] = self.id
+        KERNELS['wmr'] = np.ones((1, ndirs, nS), dtype=np.float32)
+        KERNELS["wmc"] = self.DCT_profile(nprofiles, nsamples)
+        KERNELS['wmh'] = np.ones((0, ndirs, nS), dtype=np.float32)
+        KERNELS['iso'] = np.ones((0, nS), dtype=np.float32)
+        return KERNELS
 
     def fit(self, evaluation):
         ERROR('Not implemented')

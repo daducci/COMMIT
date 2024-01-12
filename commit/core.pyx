@@ -122,7 +122,7 @@ cdef class Evaluation :
         return self.temp_data.get( key )
 
 
-    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
+    def load_data( self, dwi_filename, scheme_filename=None, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
@@ -256,7 +256,7 @@ cdef class Evaluation :
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
 
-    def generate_kernels( self, regenerate=False, lmax=12, ndirs=500 ) :
+    def generate_kernels( self, regenerate=False, lmax=12, ndirs=500):
         """Generate the high-resolution response functions for each compartment.
         Dispatch to the proper function, depending on the model.
 
@@ -314,7 +314,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def load_kernels( self ) :
+    def load_kernels( self, nprof=1, nsamples=100 ) :
         """Load rotated kernels and project to the specific gradient scheme of this subject.
         Dispatch to the proper function, depending on the model.
         """
@@ -334,7 +334,11 @@ cdef class Evaluation :
             print( '\t* Merging multiple b0 volume(s)...' )
         else :
             print( '\t* Keeping all b0 volume(s)...' )
-        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
+        
+        if self.model.id == "ModulatedVolumeFractions":
+            self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
+        else:
+            self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
@@ -342,6 +346,7 @@ cdef class Evaluation :
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
+        self.KERNELS['wmc'] = np.ascontiguousarray( self.KERNELS['wmc'] )
         self.KERNELS['wmh'] = np.ascontiguousarray( self.KERNELS['wmh'] )
         self.KERNELS['iso'] = np.ascontiguousarray( self.KERNELS['iso'] )
 
@@ -729,6 +734,8 @@ cdef class Evaluation :
             compilation_is_needed = True
         if config.nIC is None or config.nIC != self.KERNELS['wmr'].shape[0]:
             compilation_is_needed = True
+        if config.nICs is None or config.nICs != self.KERNELS['wmc'].shape[0]:
+            compilation_is_needed = True
         if config.model is None or config.model != self.model.id:
             compilation_is_needed = True
         if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
@@ -751,6 +758,7 @@ cdef class Evaluation :
             config.nTHREADS   = self.THREADS['n']
             config.model      = self.model.id
             config.nIC        = self.KERNELS['wmr'].shape[0]
+            config.nICs       = self.KERNELS['wmc'].shape[0]
             config.nEC        = self.KERNELS['wmh'].shape[0]
             config.nISO       = self.KERNELS['iso'].shape[0]
             config.build_dir  = build_dir
@@ -780,6 +788,7 @@ cdef class Evaluation :
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
         # y[y < 0] = 0
         return y
+
 
     def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
         """

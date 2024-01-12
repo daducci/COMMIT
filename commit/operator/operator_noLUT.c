@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <stdint.h> // uint32_t etc
+#include <stdio.h>  // printf
 
 // number of THREADS
 #ifdef nTHREADS
@@ -138,6 +139,7 @@ void COMMIT_A(
     uint32_t* _ICthreads, uint32_t* _ECthreads, uint32_t* _ISOthreads
 )
 {
+    
     nF = _nF;
     n  = _n;
     nSf = _nSf;
@@ -150,7 +152,7 @@ void COMMIT_A(
     ICl  = _ICl;
     ICp  = _ICp;
     ISOv = _ISOv;
-
+    
     #if nICs>=1
     icSFB0 = _ICmod;
     #if nICs>=2
