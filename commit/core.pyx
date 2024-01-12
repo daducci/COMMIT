@@ -696,52 +696,54 @@ cdef class Evaluation :
         LOG( '\n-> Building linear operator A:' )
 
         # need to pass these parameters at runtime for compiling the C code
-        from commit.operator import config
+        # from commit.operator import config
         import os
         dll_path = 'C:/Users/clori/Desktop/COMMIT_example_dataset/pthreads-w32-2-9-1-release/dll/x64'
         if os.path.isdir(dll_path):
             os.add_dll_directory(dll_path)
 
-        compilation_is_needed = False
+        from commit.operator import operator
+
+        # compilation_is_needed = False
 
         # if config.nTHREADS is None or config.nTHREADS != self.THREADS['n']:
         #     compilation_is_needed = True
         # if config.nIC is None or config.nIC != self.KERNELS['wmr'].shape[0]:
         #     compilation_is_needed = True
-        if config.model is None or config.model != self.model.id:
-            compilation_is_needed = True
+        # if config.model is None or config.model != self.model.id:
+        #     compilation_is_needed = True
         # if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
         #     compilation_is_needed = True
         # if config.nISO is None or config.nISO != self.KERNELS['iso'].shape[0]:
         #     compilation_is_needed = True
-        if config.build_dir != build_dir:
-            compilation_is_needed = True
+        # if config.build_dir != build_dir:
+        #     compilation_is_needed = True
 
-        if compilation_is_needed or not 'commit.operator.operator' in sys.modules :
+        # if compilation_is_needed or not 'commit.operator.operator' in sys.modules :
 
-            if build_dir is not None:
-                if isdir(build_dir) and not len(listdir(build_dir)) == 0:
-                    ERROR( '\nbuild_dir is not empty, unsafe build option.' )
+        #     if build_dir is not None:
+        #         if isdir(build_dir) and not len(listdir(build_dir)) == 0:
+        #             ERROR( '\nbuild_dir is not empty, unsafe build option.' )
                 # elif config.nTHREADS is not None:
                 #     ERROR( '\nThe parameter build_dir has changed, unsafe build option.' )
-                else:
-                    WARNING( '\nUsing build_dir, always quit your python console between COMMIT Evaluation.' )
+                # else:
+                #     WARNING( '\nUsing build_dir, always quit your python console between COMMIT Evaluation.' )
 
             # config.nTHREADS   = self.THREADS['n']
-            config.model      = self.model.id
+            # config.model      = self.model.id
             # config.nIC        = self.KERNELS['wmr'].shape[0]
             # config.nEC        = self.KERNELS['wmh'].shape[0]
             # config.nISO       = self.KERNELS['iso'].shape[0]
-            config.build_dir  = build_dir
+            # config.build_dir  = build_dir
 
-            pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
+            # pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
-            if not 'commit.operator.operator' in sys.modules :
-                import commit.operator.operator
-            else :
-                reload( sys.modules['commit.operator.operator'] )
+            # if not 'commit.operator.operator' in sys.modules :
+            #     import commit.operator.operator
+            # else :
+            #     reload( sys.modules['commit.operator.operator'] )
 
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 

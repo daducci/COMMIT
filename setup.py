@@ -31,8 +31,15 @@ def get_extensions():
                     sources=[f'{package_name}/proximals.pyx'],
                     extra_compile_args=extra_compile_args,
                     language=language)
+    operator = Extension(name=f'{package_name}.operator.operator',
+                    sources=[f'{package_name}/operator/operator.pyx', f'{package_name}/operator/operator_withLUT.c'],
+                    include_dirs=['C:/Users/clori/Desktop/COMMIT_example_dataset/pthreads-w32-2-9-1-release/include'],
+                    libraries=['pthreadVC2'],
+                    library_dirs=['C:/Users/clori/Desktop/COMMIT_example_dataset/pthreads-w32-2-9-1-release/lib/x64'],
+                    extra_compile_args=['/std:c++14', '/fp:fast', '/DHAVE_STRUCT_TIMESPEC'],
+                    language='c')
         
-    return [trk2dictionary, core, proximals]
+    return [trk2dictionary, core, proximals, operator]
 
 class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """
