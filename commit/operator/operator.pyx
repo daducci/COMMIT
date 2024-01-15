@@ -7,7 +7,7 @@ cimport numpy as np
 
 # Interfaces to actual C code performing the multiplications
 cdef extern void COMMIT_A(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_v_in, double *_v_out,
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
@@ -17,7 +17,7 @@ cdef extern void COMMIT_A(
 ) nogil
 
 cdef extern void COMMIT_At(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_v_in, double *_v_out,
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
@@ -33,7 +33,7 @@ cdef class LinearOperator :
     with the COMMIT linear operator A. The multiplications are done using C code
     that uses information from the DICTIONARY, KERNELS and THREADS data structures.
     """
-    cdef int nS, nF, nR, nC, nE, nT, nV, nI, n, ndirs
+    cdef int nS, nF, nR, nC, nE, nT, nV, nI, n, ndirs, nSf
     cdef public int adjoint, n1, n2
 
     cdef DICTIONARY
@@ -73,6 +73,7 @@ cdef class LinearOperator :
         self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
 
         self.nC         = KERNELS['wmc'].shape[0]   # number of Cosine coefficients
+        self.nSf        = KERNELS['wmc'].shape[1]   # number of SAMPLES for Cosine coefficients
 
         self.nE         = DICTIONARY['EC']['nE']    # number of EC segments
         self.nT         = KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
@@ -138,6 +139,11 @@ cdef class LinearOperator :
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
 
+        # print ICthreads
+        
+        print( "ICthreads[%d] = %d" % ( 0, ICthreads[0] ) )
+        print( "ICthreads[%d] = %d" % ( 1, ICthreads[1] ) )
+
 
     @property
     def T( self ) :
@@ -183,18 +189,19 @@ cdef class LinearOperator :
             print("running A.dot()")
             with nogil :
                 COMMIT_A(
-                    self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
+                    self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ICp, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
                     self.ICthreads, self.ECthreads, self.ISOthreads
                 )
+
         else :
             # INVERSE PRODUCT A'*y
             print("running A.T.dot()")
             with nogil :
                 COMMIT_At(
-                    self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
+                    self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ICp, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,

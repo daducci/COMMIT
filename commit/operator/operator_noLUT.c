@@ -38,21 +38,13 @@ void* COMMIT_A__block( void *ptr )
     // intra-cellular compartments
     #if nICs>=1
         // DCT basis functions 
-        printf("A\n");
-        printf("id = %d\n", id);
-        printf("ICthreads[id] = %d\n", ICthreads[id]);
-        printf("B\n");
         t_v    = ICv + ICthreads[id];
-        printf("B\n");
         t_vEnd = ICv + ICthreads[id+1];
-        printf("C\n");
         t_l    = ICl + ICthreads[id];
-        printf("D\n");
         t_f    = ICf + ICthreads[id];
-        printf("E\n");
         t_p    = ICp + ICthreads[id];
-        printf("F\n");
 
+        printf("t_v = %d, t_vEnd = %d, t_l = %f, t_f = %d, t_p = %f\n", *t_v, *t_vEnd, *t_l, *t_f, *t_p);
         
 
         while( t_v != t_vEnd )
@@ -207,12 +199,12 @@ void* COMMIT_At__block( void *ptr )
 
     #if ( nICs > 1)
     // intra-cellular compartments
-        t_v    = ICv + ICthreadsT[id];
-        t_vEnd = ICv + ICthreadsT[id+1];
-        t_l    = ICl + ICthreadsT[id];
-        t_f    = ICf + ICthreadsT[id];
-        t_p    = ICp + ICthreadsT[id];
-        t_t    = ICthreadsT + ICthreadsT[id];
+        t_v    = ICv;
+        t_vEnd = ICv + n;
+        t_l    = ICl;
+        t_f    = ICf;
+        t_p    = ICp;
+        t_t    = ICthreadsT;
 
         while( t_v != t_vEnd )
         {
