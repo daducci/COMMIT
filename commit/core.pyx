@@ -451,8 +451,10 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
         self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
         self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
+        self.DICTIONARY['IC']['p']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_pos.dict'), dtype=np.float32 )
         self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
         self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
+        
 
         # reorder the segments based on the "v" field
         idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )

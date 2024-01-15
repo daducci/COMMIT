@@ -35,21 +35,26 @@ void* COMMIT_A__block( void *ptr )
     float    *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
     uint32_t *t_v, *t_vEnd, *t_f;
     float    *t_l, *t_p;
-    printf("computing block %d\n", id);
-
     // intra-cellular compartments
     #if nICs>=1
-        printf("nICs = %d\n", nICs);
         // DCT basis functions 
+        printf("A\n");
+        printf("id = %d\n", id);
+        printf("ICthreads[id] = %d\n", ICthreads[id]);
+        printf("B\n");
         t_v    = ICv + ICthreads[id];
+        printf("B\n");
         t_vEnd = ICv + ICthreads[id+1];
+        printf("C\n");
         t_l    = ICl + ICthreads[id];
+        printf("D\n");
         t_f    = ICf + ICthreads[id];
+        printf("E\n");
         t_p    = ICp + ICthreads[id];
+        printf("F\n");
 
-        // print value of t_v and t_vEnd
-        printf("t_v = %d\n", *t_v);
-        printf("t_vEnd = %d\n", *t_vEnd);
+        
+
         while( t_v != t_vEnd )
         {
             x_Ptr0 = x + *t_f;
@@ -289,7 +294,7 @@ void* COMMIT_At__block( void *ptr )
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl, float *_ICp,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, float *_ICp,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,

@@ -9,7 +9,7 @@ cimport numpy as np
 cdef extern void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
@@ -19,7 +19,7 @@ cdef extern void COMMIT_A(
 cdef extern void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
@@ -42,6 +42,7 @@ cdef class LinearOperator :
 
     cdef unsigned int*   ICf
     cdef float*          ICl
+    cdef float*          ICp
     cdef unsigned int*   ICv
     cdef unsigned short* ICo
     cdef unsigned int*   ECv
@@ -97,6 +98,8 @@ cdef class LinearOperator :
         self.ICf = &ICf[0]
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
+        cdef float [::1]          ICp  = DICTIONARY['IC']['p']
+        self.ICp = &ICp[0]
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
         self.ICv = &ICv[0]
         cdef unsigned short [::1] ICo  = DICTIONARY['IC']['o']
@@ -114,11 +117,6 @@ cdef class LinearOperator :
 
         cdef float [:, ::1] wmcSFP = KERNELS['wmc']
         self.LUT_IC_modulation = &wmcSFP[0,0]
-
-        # print("self.LUT_IC_modulation.shape = ", KERNELS['wmc'].shape)
-        # for i in range(0, KERNELS['wmc'].shape[0]) :
-        #     for j in range(0, KERNELS['wmc'].shape[1]) :
-        #         print("self.LUT_IC_modulation[{},{}] = {}".format(i,j,KERNELS['wmc'][i,j]))
 
         cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
         self.LUT_EC  = &wmhSFP[0,0,0]
@@ -187,7 +185,7 @@ cdef class LinearOperator :
                 COMMIT_A(
                     self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                     &v_in[0], &v_out[0],
-                    self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
+                    self.ICf, self.ICv, self.ICo, self.ICl, self.ICp, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
                     self.ICthreads, self.ECthreads, self.ISOthreads
                 )
@@ -198,7 +196,7 @@ cdef class LinearOperator :
                 COMMIT_At(
                     self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                     &v_in[0], &v_out[0],
-                    self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
+                    self.ICf, self.ICv, self.ICo, self.ICl, self.ICp, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
                     self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
                 )
