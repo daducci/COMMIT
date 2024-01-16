@@ -9,7 +9,7 @@ cimport numpy as np
 cdef extern void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, unsigned int *_ICp,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
@@ -19,7 +19,7 @@ cdef extern void COMMIT_A(
 cdef extern void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, unsigned int *_ICp,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
@@ -42,7 +42,7 @@ cdef class LinearOperator :
 
     cdef unsigned int*   ICf
     cdef float*          ICl
-    cdef unsigned int*   ICp
+    cdef float*          ICp
     cdef unsigned int*   ICv
     cdef unsigned short* ICo
     cdef unsigned int*   ECv
@@ -99,7 +99,7 @@ cdef class LinearOperator :
         self.ICf = &ICf[0]
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
-        cdef unsigned int [::1]   ICp  = DICTIONARY['IC']['p']
+        cdef float [::1]          ICp  = DICTIONARY['IC']['p']
         self.ICp = &ICp[0]
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
         self.ICv = &ICv[0]

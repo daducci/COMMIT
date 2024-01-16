@@ -18,8 +18,8 @@ double      *x, *Y;
 uint32_t    *ICthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ISOthreadsT;
-uint32_t    *ICf, *ICv, *ISOv, *ICp;
-float       *ICl;
+uint32_t    *ICf, *ICv, *ISOv;
+float       *ICl, *ICp;
 float       *icSFB0, *icSFB1, *icSFB2, *icSFB3;
 
 
@@ -33,8 +33,9 @@ void* COMMIT_A__block( void *ptr )
     double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3;
     double   *Yptr, *YptrEnd;
     float    *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
-    uint32_t *t_v, *t_vEnd, *t_f, *t_p;
-    float    *t_l;
+    uint32_t *t_v, *t_vEnd, *t_f;
+    float    *t_l, *t_p;
+    int      offset;
     // intra-cellular compartments
     #if nICs>=1
         // DCT basis functions 
@@ -48,7 +49,6 @@ void* COMMIT_A__block( void *ptr )
         {
             x_Ptr0 = x + *t_f;
             x0 = *x_Ptr0;
-            printf("x0 = %f\n", x0);
             #if nICs>=2
             x_Ptr1 = x_Ptr0 + nF;
             x1 = *x_Ptr1;
@@ -73,11 +73,11 @@ void* COMMIT_A__block( void *ptr )
             #endif
             )
             {
-                printf("here");
                 Yptr    = Y + (*t_v);
                 YptrEnd = Yptr + nICs;
                 w       = (double)(*t_l);
-                SFP0ptr = icSFB0 + *t_p;
+                offset  = (*t_p);
+                SFP0ptr = icSFB0 + offset;
                 #if nICs>=2
                 SFP1ptr = icSFB1 + nSf;
                 #endif
@@ -90,15 +90,15 @@ void* COMMIT_A__block( void *ptr )
                 
                 while( Yptr != YptrEnd )
                     (*Yptr++) += w * (
-                            x0 * (*SFP0ptr++)
+                            x0 * (*SFP0ptr)
                             #if nICs>=2
-                            + x1 * (*SFP1ptr++)
+                            + x1 * (*SFP1ptr)
                             #endif
                             #if nICs>=3
-                            + x2 * (*SFP2ptr++)
+                            + x2 * (*SFP2ptr)
                             #endif
                             #if nICs>=4
-                            + x3 * (*SFP3ptr++)
+                            + x3 * (*SFP3ptr)
                             #endif
                     );
             }
@@ -134,7 +134,7 @@ void* COMMIT_A__block( void *ptr )
 void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl, uint32_t *_ICp,
+    uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl, float *_ICp,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
@@ -189,12 +189,15 @@ void* COMMIT_At__block( void *ptr )
 {
     int      id = (long)ptr;
     double   x0, x1, x2, x3, w, Y_tmp;
+    float    *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
     double   *Yptr, *YptrEnd;
-    uint32_t *t_v, *t_vEnd, *t_f, t_p;
-    float    *t_l;
+    uint32_t *t_v, *t_vEnd, *t_f;
+    float    *t_l, *t_p;
     uint8_t  *t_t;
+    int      offset;
+    double   *xPtr;
 
-    #if ( nICs > 1)
+    #if ( nICs >= 1)
     // intra-cellular compartments
         t_v    = ICv;
         t_vEnd = ICv + n;
@@ -202,49 +205,52 @@ void* COMMIT_At__block( void *ptr )
         t_f    = ICf;
         t_p    = ICp;
         t_t    = ICthreadsT;
-        printf("t_v = %d, t_vEnd = %d, t_l = %d, t_f = %d, t_p = %d\n", t_v, t_vEnd, t_l, t_f, t_p);
+        printf("t_l = %d, t_f = %d, t_p = %d\n",t_l, t_f, t_p);
 
         while( t_v != t_vEnd )
         {
             // in this case, I need to walk throug because the segments are ordered in "voxel order"
             if ( *t_t == id )
             {
-                Yptr    = Y    + (*t_v);
+                Yptr    = Y + nICs * (*t_v);
                 YptrEnd = Yptr + nICs;
 
                 Y_tmp = *Yptr;
-                SFP0ptr   = icSFB0 + *t_p;
-                x0 = (*SFP0ptr++) * Y_tmp;
+                offset = (*t_p);
+                SFP0ptr   = icSFB0 + offset;
+                x0 = (*SFP0ptr) * Y_tmp;
+                printf("Y_tmp = %f, x0 = %f\n", Y_tmp, x0);
                 #if nIC>=2
                 SFP1ptr   = icSFB1 + nSf;
-                x1 = (*SFP1ptr++) * Y_tmp;
+                x1 = (*SFP1ptr) * Y_tmp;
                 #endif
                 #if nIC>=3
                 SFP2ptr   = icSFB2 + nSf;
-                x2 = (*SFP2ptr++) * Y_tmp;
+                x2 = (*SFP2ptr) * Y_tmp;
                 #endif
                 #if nIC>=4
                 SFP3ptr   = icSFB3 + nSf;
-                x3 = (*SFP3ptr++) * Y_tmp;
+                x3 = (*SFP3ptr) * Y_tmp;
                 #endif
 
                 while( ++Yptr != YptrEnd )
                 {
                     Y_tmp = *Yptr;
-                    x0 += (*SFP0ptr++) * Y_tmp;
+                    x0 += (*SFP0ptr) * Y_tmp;
                     #if nIC>=2
-                    x1 += (*SFP1ptr++) * Y_tmp;
+                    x1 += (*SFP1ptr) * Y_tmp;
                     #endif
                     #if nIC>=3
-                    x2 += (*SFP2ptr++) * Y_tmp;
+                    x2 += (*SFP2ptr) * Y_tmp;
                     #endif
                     #if nIC>=4
-                    x3 += (*SFP3ptr++) * Y_tmp;
+                    x3 += (*SFP3ptr) * Y_tmp;
                     #endif
                 }
 
                 w = (double)(*t_l);
                 x[*t_f]      += w * x0;
+                printf("w = %f, x0 = %f\n", w, x0 );
                 #if nIC>=2
                 x[*t_f+nF]   += w * x1;
                 #endif
@@ -284,7 +290,7 @@ void* COMMIT_At__block( void *ptr )
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, uint32_t *_ICp,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, float *_ICp,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
@@ -316,8 +322,10 @@ void COMMIT_At(
     #endif
     #endif
 
+
     ICthreadsT  = _ICthreadsT;
     ISOthreadsT = _ISOthreadsT;
+    printf("ICthreadsT = %d, ISOthreadsT = %d\n", ICthreadsT, ISOthreadsT);
 
     // Run SEPARATE THREADS to perform the multiplication
     pthread_t threads[nTHREADS];
