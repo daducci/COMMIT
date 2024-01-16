@@ -9,7 +9,7 @@ cimport numpy as np
 cdef extern void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, unsigned int *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
@@ -19,7 +19,7 @@ cdef extern void COMMIT_A(
 cdef extern void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, unsigned int *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
@@ -42,7 +42,7 @@ cdef class LinearOperator :
 
     cdef unsigned int*   ICf
     cdef float*          ICl
-    cdef float*          ICp
+    cdef unsigned int*   ICp
     cdef unsigned int*   ICv
     cdef unsigned short* ICo
     cdef unsigned int*   ECv
@@ -72,14 +72,14 @@ cdef class LinearOperator :
         self.nF         = DICTIONARY['IC']['nF']    # number of FIBERS
         self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
 
-        self.nC         = KERNELS['wmc'].shape[0]   # number of Cosine coefficients
+        self.nC         = KERNELS['wmc'].shape[0]   # number of DCT profiles
         self.nSf        = KERNELS['wmc'].shape[1]   # number of SAMPLES for Cosine coefficients
 
         self.nE         = DICTIONARY['EC']['nE']    # number of EC segments
         self.nT         = KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
         self.nV         = DICTIONARY['nV']          # number of VOXELS
         self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
-        self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
+        self.n          = DICTIONARY['IC']['n']     # number of IC segments
         self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
 
         if KERNELS['wmr'].size > 0 :
@@ -92,14 +92,14 @@ cdef class LinearOperator :
         self.adjoint    = 0                         # direct of inverse product
 
         self.n1 = self.nV*self.nS
-        self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
+        self.n2 = self.nR*self.nF*self.nC + self.nT*self.nE + self.nI*self.nV
 
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
-        cdef float [::1]          ICp  = DICTIONARY['IC']['p']
+        cdef unsigned int [::1]   ICp  = DICTIONARY['IC']['p']
         self.ICp = &ICp[0]
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
         self.ICv = &ICv[0]
@@ -139,11 +139,6 @@ cdef class LinearOperator :
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
 
-        # print ICthreads
-        
-        print( "ICthreads[%d] = %d" % ( 0, ICthreads[0] ) )
-        print( "ICthreads[%d] = %d" % ( 1, ICthreads[1] ) )
-
 
     @property
     def T( self ) :
@@ -181,12 +176,10 @@ cdef class LinearOperator :
             raise RuntimeError( "A.dot(): dimensions do not match" )
 
         # Create output array
-        print("A.dot(): creating output array")
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
-            print("running A.dot()")
             with nogil :
                 COMMIT_A(
                     self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
@@ -198,7 +191,6 @@ cdef class LinearOperator :
 
         else :
             # INVERSE PRODUCT A'*y
-            print("running A.T.dot()")
             with nogil :
                 COMMIT_At(
                     self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,

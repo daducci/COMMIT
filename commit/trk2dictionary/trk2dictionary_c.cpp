@@ -465,7 +465,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     // Variables definition
     float           fiber[3][MAX_FIB_LEN] = {0} ;
     float           fiberNorm;   // normalization
-    float           pos;
+    unsigned int    pos;
+    float           float_pos;
     unsigned int    N, v, tempTotFibers, temp_totICSegments;
     unsigned short  o;
     unsigned char   kept;
@@ -528,14 +529,15 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
         {
             if ( FiberLen > minFiberLen && FiberLen < maxFiberLen )
             {
-                pos = 0.0;
+                float_pos = 0.0;
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 {
                     // NB: plese note inverted ordering for 'v'
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;
-                    pos += (it->second/FiberLenTot);
+                    float_pos += (it->second/FiberLenTot);
+                    pos = roundf(float_pos*100.0);
 
                     fwrite( &sumFibers,      4, 1, pDict_IC_f );
                     fwrite( &v,              4, 1, pDict_IC_v );

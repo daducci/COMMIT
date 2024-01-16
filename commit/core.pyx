@@ -339,7 +339,8 @@ cdef class Evaluation :
             self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
         else:
             self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
-        nIC  = self.KERNELS['wmr'].shape[0]
+        nIC  = self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
+        nIC  = self.KERNELS['wmc'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
         print( '\t  [ OK ]' )
@@ -451,7 +452,7 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
         self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
         self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
-        self.DICTIONARY['IC']['p']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_pos.dict'), dtype=np.float32 )
+        self.DICTIONARY['IC']['p']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_pos.dict'), dtype=np.uint32 )
         self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
         self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
         
@@ -849,7 +850,7 @@ cdef class Evaluation :
         regularisation = {}
 
         regularisation['startIC']  = 0
-        regularisation['sizeIC']   = int( self.DICTIONARY['IC']['nF'] * self.KERNELS['wmr'].shape[0])
+        regularisation['sizeIC']   = int( self.DICTIONARY['IC']['nF'] * self.KERNELS['wmr'].shape[0]) * self.KERNELS['wmc'].shape[0]
         regularisation['startEC']  = int( regularisation['sizeIC'] )
         regularisation['sizeEC']   = int( self.DICTIONARY['EC']['nE'] * self.KERNELS['wmh'].shape[0])
         regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
@@ -1121,9 +1122,9 @@ cdef class Evaluation :
         else :
             x = self.x
 
-        offset1 = nF * self.KERNELS['wmr'].shape[0]
+        offset1 = nF * self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
-        kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0] )
+        kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] )
         xic = np.zeros( kept.size )
         xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
@@ -1169,7 +1170,7 @@ cdef class Evaluation :
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
-            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x

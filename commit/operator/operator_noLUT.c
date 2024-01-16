@@ -18,8 +18,8 @@ double      *x, *Y;
 uint32_t    *ICthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ISOthreadsT;
-uint32_t    *ICf, *ICv, *ISOv;
-float       *ICl, *ICp;
+uint32_t    *ICf, *ICv, *ISOv, *ICp;
+float       *ICl;
 float       *icSFB0, *icSFB1, *icSFB2, *icSFB3;
 
 
@@ -33,8 +33,8 @@ void* COMMIT_A__block( void *ptr )
     double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3;
     double   *Yptr, *YptrEnd;
     float    *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr;
-    uint32_t *t_v, *t_vEnd, *t_f;
-    float    *t_l, *t_p;
+    uint32_t *t_v, *t_vEnd, *t_f, *t_p;
+    float    *t_l;
     // intra-cellular compartments
     #if nICs>=1
         // DCT basis functions 
@@ -42,15 +42,13 @@ void* COMMIT_A__block( void *ptr )
         t_vEnd = ICv + ICthreads[id+1];
         t_l    = ICl + ICthreads[id];
         t_f    = ICf + ICthreads[id];
-        t_p    = ICp + ICthreads[id];
-
-        printf("t_v = %d, t_vEnd = %d, t_l = %f, t_f = %d, t_p = %f\n", *t_v, *t_vEnd, *t_l, *t_f, *t_p);
-        
+        t_p    = ICp + ICthreads[id];      
 
         while( t_v != t_vEnd )
         {
             x_Ptr0 = x + *t_f;
             x0 = *x_Ptr0;
+            printf("x0 = %f\n", x0);
             #if nICs>=2
             x_Ptr1 = x_Ptr0 + nF;
             x1 = *x_Ptr1;
@@ -63,7 +61,6 @@ void* COMMIT_A__block( void *ptr )
             x_Ptr3 = x_Ptr2 + nF;
             x3 = *x_Ptr3;
             #endif
-
             if ( x0 != 0
             #if nICs>=2
                 || x1 != 0
@@ -76,11 +73,11 @@ void* COMMIT_A__block( void *ptr )
             #endif
             )
             {
+                printf("here");
                 Yptr    = Y + (*t_v);
                 YptrEnd = Yptr + nICs;
                 w       = (double)(*t_l);
-                SFP0ptr = icSFB0 + (int)(*t_p);
-                printf("t_p = %d\n", *t_p   );
+                SFP0ptr = icSFB0 + *t_p;
                 #if nICs>=2
                 SFP1ptr = icSFB1 + nSf;
                 #endif
@@ -137,7 +134,7 @@ void* COMMIT_A__block( void *ptr )
 void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl, float *_ICp,
+    uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl, uint32_t *_ICp,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
@@ -193,8 +190,8 @@ void* COMMIT_At__block( void *ptr )
     int      id = (long)ptr;
     double   x0, x1, x2, x3, w, Y_tmp;
     double   *Yptr, *YptrEnd;
-    uint32_t *t_v, *t_vEnd, *t_f;
-    float    *t_l, t_p;
+    uint32_t *t_v, *t_vEnd, *t_f, t_p;
+    float    *t_l;
     uint8_t  *t_t;
 
     #if ( nICs > 1)
@@ -205,6 +202,7 @@ void* COMMIT_At__block( void *ptr )
         t_f    = ICf;
         t_p    = ICp;
         t_t    = ICthreadsT;
+        printf("t_v = %d, t_vEnd = %d, t_l = %d, t_f = %d, t_p = %d\n", t_v, t_vEnd, t_l, t_f, t_p);
 
         while( t_v != t_vEnd )
         {
@@ -215,7 +213,7 @@ void* COMMIT_At__block( void *ptr )
                 YptrEnd = Yptr + nICs;
 
                 Y_tmp = *Yptr;
-                SFP0ptr   = icSFB0 + (int)(*t_p) 
+                SFP0ptr   = icSFB0 + *t_p;
                 x0 = (*SFP0ptr++) * Y_tmp;
                 #if nIC>=2
                 SFP1ptr   = icSFB1 + nSf;
@@ -269,8 +267,8 @@ void* COMMIT_At__block( void *ptr )
         // isotropic compartments
         t_v    = ISOv + ISOthreadsT[id];
         t_vEnd = ISOv + ISOthreadsT[id+1];
+        xPtr   = x + nF + ISOthreadsT[id];
 
-        x_Ptr0 = x + nIC*nF + nEC*nE + ISOthreadsT[id];
         while( t_v != t_vEnd )
             (*xPtr++) += Y[*t_v++];
     #endif
@@ -286,7 +284,7 @@ void* COMMIT_At__block( void *ptr )
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, float *_ICp,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, uint32_t *_ICp,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
