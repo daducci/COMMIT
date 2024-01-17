@@ -463,6 +463,7 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
         self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+        self.DICTIONARY['IC']['p']     = self.DICTIONARY['IC']['p'][ idx ]
         del idx
 
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length

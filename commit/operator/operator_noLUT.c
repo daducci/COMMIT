@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdint.h> // uint32_t etc
 #include <stdio.h>  // printf
+#include <inttypes.h>
 
 // number of THREADS
 #ifdef nTHREADS
@@ -77,7 +78,7 @@ void* COMMIT_A__block( void *ptr )
                 YptrEnd = Yptr + nICs;
                 w       = (double)(*t_l);
                 offset  = (*t_p);
-                SFP0ptr = icSFB0 + offset;
+                SFP0ptr = icSFB0;
                 #if nICs>=2
                 SFP1ptr = icSFB1 + nSf;
                 #endif
@@ -205,21 +206,21 @@ void* COMMIT_At__block( void *ptr )
         t_f    = ICf;
         t_p    = ICp;
         t_t    = ICthreadsT;
-        printf("t_l = %d, t_f = %d, t_p = %d\n",t_l, t_f, t_p);
+        
 
         while( t_v != t_vEnd )
         {
             // in this case, I need to walk throug because the segments are ordered in "voxel order"
             if ( *t_t == id )
             {
-                Yptr    = Y + nICs * (*t_v);
+                Yptr    = Y + (*t_v);
                 YptrEnd = Yptr + nICs;
 
                 Y_tmp = *Yptr;
                 offset = (*t_p);
-                SFP0ptr   = icSFB0 + offset;
+                SFP0ptr   = icSFB0;
                 x0 = (*SFP0ptr) * Y_tmp;
-                printf("Y_tmp = %f, x0 = %f\n", Y_tmp, x0);
+                printf("SFP0ptr = %f, Y_tmp = %f\n", *SFP0ptr, Y_tmp );
                 #if nIC>=2
                 SFP1ptr   = icSFB1 + nSf;
                 x1 = (*SFP1ptr) * Y_tmp;
@@ -237,6 +238,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     Y_tmp = *Yptr;
                     x0 += (*SFP0ptr) * Y_tmp;
+                    printf("SFP0ptr = %f, Y_tmp = %f\n", *SFP0ptr, Y_tmp );
                     #if nIC>=2
                     x1 += (*SFP1ptr) * Y_tmp;
                     #endif
@@ -246,6 +248,7 @@ void* COMMIT_At__block( void *ptr )
                     #if nIC>=4
                     x3 += (*SFP3ptr) * Y_tmp;
                     #endif
+                    // Yptr++;
                 }
 
                 w = (double)(*t_l);
@@ -290,7 +293,7 @@ void* COMMIT_At__block( void *ptr )
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, float *_ICp,
+    uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl, float *_ICp,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
@@ -325,7 +328,7 @@ void COMMIT_At(
 
     ICthreadsT  = _ICthreadsT;
     ISOthreadsT = _ISOthreadsT;
-    printf("ICthreadsT = %d, ISOthreadsT = %d\n", ICthreadsT, ISOthreadsT);
+    // printf("ICthreadsT = %d, ISOthreadsT = %d\n", ICthreadsT, ISOthreadsT);
 
     // Run SEPARATE THREADS to perform the multiplication
     pthread_t threads[nTHREADS];

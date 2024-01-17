@@ -465,7 +465,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     // Variables definition
     float           fiber[3][MAX_FIB_LEN] = {0} ;
     float           fiberNorm;   // normalization
-    unsigned int    pos;
+    float           pos;
     float           float_pos;
     unsigned int    N, v, tempTotFibers, temp_totICSegments;
     unsigned short  o;
@@ -537,7 +537,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;
                     float_pos += (it->second/FiberLenTot);
-                    pos = roundf(float_pos*100.0);
+                    pos = round(float_pos*100.0);
 
                     fwrite( &sumFibers,      4, 1, pDict_IC_f );
                     fwrite( &v,              4, 1, pDict_IC_v );

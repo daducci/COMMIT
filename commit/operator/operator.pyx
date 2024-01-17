@@ -97,20 +97,33 @@ cdef class LinearOperator :
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
+
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
+
         cdef float [::1]          ICp  = DICTIONARY['IC']['p']
         self.ICp = &ICp[0]
+
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
         self.ICv = &ICv[0]
+
         cdef unsigned short [::1] ICo  = DICTIONARY['IC']['o']
         self.ICo = &ICo[0]
+
         cdef unsigned int [::1]   ECv  = DICTIONARY['EC']['v']
         self.ECv = &ECv[0]
+
         cdef unsigned short [::1] ECo  = DICTIONARY['EC']['o']
         self.ECo = &ECo[0]
+
         cdef unsigned int [::1]   ISOv = DICTIONARY['ISO']['v']
         self.ISOv = &ISOv[0]
+
+        print(f"DICTIONARY['IC']['fiber']= {DICTIONARY['IC']['fiber']}")
+        print(f"DICTIONARY['IC']['len']= {DICTIONARY['IC']['len']}")
+        print(f"DICTIONARY['IC']['v']= {DICTIONARY['IC']['v']}")
+        print(f"DICTIONARY['ISO']['v']= {DICTIONARY['ISO']['v']}")
+        print(f"\nDICTIONARY['IC']['p']= {DICTIONARY['IC']['p']}\n")
 
         # get C pointers to arrays in KERNELS
         cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
@@ -138,6 +151,7 @@ cdef class LinearOperator :
         self.ECthreadsT  = &ECthreadsT[0]
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
+
 
 
     @property
