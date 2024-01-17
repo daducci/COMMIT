@@ -49,15 +49,15 @@ void* COMMIT_A__block( void *ptr )
         {
             x_Ptr0 = x + *t_f;
             x0 = *x_Ptr0;
+            Yptr = Y + nS * (*t_v);
+            YptrEnd = Yptr + nS;
+            w = (double)(*t_l);
+            offset = nS * (*t_o);
             switch (nIC_)
             {
                 case 1:
                     if (x0 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * x0 * (*SFP0ptr++);
@@ -69,10 +69,6 @@ void* COMMIT_A__block( void *ptr )
                     x1 = *x_Ptr1;
                     if (x0 != 0 || x1 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         while (Yptr != YptrEnd)
@@ -87,10 +83,6 @@ void* COMMIT_A__block( void *ptr )
                     x2 = *x_Ptr2;
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -108,10 +100,6 @@ void* COMMIT_A__block( void *ptr )
                     x3 = *x_Ptr3;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -132,10 +120,6 @@ void* COMMIT_A__block( void *ptr )
                     x4 = *x_Ptr4;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -159,10 +143,6 @@ void* COMMIT_A__block( void *ptr )
                     x5 = *x_Ptr5;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -189,10 +169,6 @@ void* COMMIT_A__block( void *ptr )
                     x6 = *x_Ptr6;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -222,10 +198,6 @@ void* COMMIT_A__block( void *ptr )
                     x7 = *x_Ptr7;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -258,10 +230,6 @@ void* COMMIT_A__block( void *ptr )
                     x8 = *x_Ptr8;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double)(*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -297,10 +265,6 @@ void* COMMIT_A__block( void *ptr )
                     x9 = *x_Ptr9;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -339,10 +303,6 @@ void* COMMIT_A__block( void *ptr )
                     x10 = *x_Ptr10;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -384,10 +344,6 @@ void* COMMIT_A__block( void *ptr )
                     x11 = *x_Ptr11;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -432,10 +388,6 @@ void* COMMIT_A__block( void *ptr )
                     x12 = *x_Ptr12;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -483,10 +435,6 @@ void* COMMIT_A__block( void *ptr )
                     x13 = *x_Ptr13;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -537,10 +485,6 @@ void* COMMIT_A__block( void *ptr )
                     x14 = *x_Ptr14;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -594,10 +538,6 @@ void* COMMIT_A__block( void *ptr )
                     x15 = *x_Ptr15;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -654,10 +594,6 @@ void* COMMIT_A__block( void *ptr )
                     x16 = *x_Ptr16;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -717,10 +653,6 @@ void* COMMIT_A__block( void *ptr )
                     x17 = *x_Ptr17;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -783,10 +715,6 @@ void* COMMIT_A__block( void *ptr )
                     x18 = *x_Ptr18;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -852,10 +780,6 @@ void* COMMIT_A__block( void *ptr )
                     x19 = *x_Ptr19;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        w = (double) (*t_l);
-                        offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -894,6 +818,7 @@ void* COMMIT_A__block( void *ptr )
         t_v = ECv + ECthreads[id];
         t_vEnd = ECv + ECthreads[id+1];
         t_o = ECo + ECthreads[id];
+
         x_Ptr0 = x + nIC_*nF + ECthreads[id];
         switch (nEC_)
         {
@@ -1147,15 +1072,15 @@ void* COMMIT_A__block( void *ptr )
 
         while (t_v != t_vEnd)
         {
+            Yptr = Y + nS * (*t_v);
+            YptrEnd = Yptr + nS;
+            offset = nS * (*t_o);
             switch (nEC_)
             {
                 case 1:
                     x0 = *x_Ptr0++;
                     if (x0 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*SFP0ptr++));
@@ -1167,9 +1092,6 @@ void* COMMIT_A__block( void *ptr )
                     x1 = *x_Ptr1++;
                     if (x0 != 0 || x1 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         while (Yptr != YptrEnd)
@@ -1183,9 +1105,6 @@ void* COMMIT_A__block( void *ptr )
                     x2 = *x_Ptr2++;
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1201,9 +1120,6 @@ void* COMMIT_A__block( void *ptr )
                     x3 = *x_Ptr3++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1221,9 +1137,6 @@ void* COMMIT_A__block( void *ptr )
                     x4 = *x_Ptr4++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1243,9 +1156,6 @@ void* COMMIT_A__block( void *ptr )
                     x5 = *x_Ptr5++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1267,9 +1177,6 @@ void* COMMIT_A__block( void *ptr )
                     x6 = *x_Ptr6++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1293,9 +1200,6 @@ void* COMMIT_A__block( void *ptr )
                     x7 = *x_Ptr7++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1321,9 +1225,6 @@ void* COMMIT_A__block( void *ptr )
                     x8 = *x_Ptr8++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1351,9 +1252,6 @@ void* COMMIT_A__block( void *ptr )
                     x9 = *x_Ptr9++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1383,9 +1281,6 @@ void* COMMIT_A__block( void *ptr )
                     x10 = *x_Ptr10++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1417,9 +1312,6 @@ void* COMMIT_A__block( void *ptr )
                     x11 = *x_Ptr11++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1453,9 +1345,6 @@ void* COMMIT_A__block( void *ptr )
                     x12 = *x_Ptr12++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1491,9 +1380,6 @@ void* COMMIT_A__block( void *ptr )
                     x13 = *x_Ptr13++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1531,9 +1417,6 @@ void* COMMIT_A__block( void *ptr )
                     x14 = *x_Ptr14++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1573,9 +1456,6 @@ void* COMMIT_A__block( void *ptr )
                     x15 = *x_Ptr15++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1617,9 +1497,6 @@ void* COMMIT_A__block( void *ptr )
                     x16 = *x_Ptr16++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1663,9 +1540,6 @@ void* COMMIT_A__block( void *ptr )
                     x17 = *x_Ptr17++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1711,9 +1585,6 @@ void* COMMIT_A__block( void *ptr )
                     x18 = *x_Ptr18++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1761,9 +1632,6 @@ void* COMMIT_A__block( void *ptr )
                     x19 = *x_Ptr19++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1799,6 +1667,7 @@ void* COMMIT_A__block( void *ptr )
     {
         t_v = ISOv + ISOthreads[id];
         t_vEnd = ISOv + ISOthreads[id+1];
+
         x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreads[id];
         switch (nISO_)
         {
@@ -2049,16 +1918,17 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr19 = x_Ptr18 + nV;
                 break;
         }
+        
         while (t_v != t_vEnd)
         {
+            Yptr = Y + nS * (*t_v);
+            YptrEnd = Yptr + nS;
             switch (nISO_)
             {
                 case 1:
                     x0 = *x_Ptr0++;
                     if (x0 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*SFP0ptr++));
@@ -2070,8 +1940,6 @@ void* COMMIT_A__block( void *ptr )
                     x1 = *x_Ptr1++;
                     if (x0 != 0 || x1 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         while (Yptr != YptrEnd)
@@ -2085,8 +1953,6 @@ void* COMMIT_A__block( void *ptr )
                     x2 = *x_Ptr2++;
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2102,8 +1968,6 @@ void* COMMIT_A__block( void *ptr )
                     x3 = *x_Ptr3++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2121,8 +1985,6 @@ void* COMMIT_A__block( void *ptr )
                     x4 = *x_Ptr4++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2142,8 +2004,6 @@ void* COMMIT_A__block( void *ptr )
                     x5 = *x_Ptr5++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2165,8 +2025,6 @@ void* COMMIT_A__block( void *ptr )
                     x6 = *x_Ptr6++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2190,8 +2048,6 @@ void* COMMIT_A__block( void *ptr )
                     x7 = *x_Ptr7++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2217,8 +2073,6 @@ void* COMMIT_A__block( void *ptr )
                     x8 = *x_Ptr8++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2246,8 +2100,6 @@ void* COMMIT_A__block( void *ptr )
                     x9 = *x_Ptr9++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2277,8 +2129,6 @@ void* COMMIT_A__block( void *ptr )
                     x10 = *x_Ptr10++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2310,8 +2160,6 @@ void* COMMIT_A__block( void *ptr )
                     x11 = *x_Ptr11++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2345,8 +2193,6 @@ void* COMMIT_A__block( void *ptr )
                     x12 = *x_Ptr12++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2382,8 +2228,6 @@ void* COMMIT_A__block( void *ptr )
                     x13 = *x_Ptr13++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2421,8 +2265,6 @@ void* COMMIT_A__block( void *ptr )
                     x14 = *x_Ptr14++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
                     {
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr = isoSFP0;
                         SFP1ptr = isoSFP1;
                         SFP2ptr = isoSFP2;
@@ -2462,8 +2304,6 @@ void* COMMIT_A__block( void *ptr )
                     x15 = *x_Ptr15++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
                     {
-                        Yptr    = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr  = isoSFP0;
                         SFP1ptr  = isoSFP1;
                         SFP2ptr  = isoSFP2;
@@ -2505,8 +2345,6 @@ void* COMMIT_A__block( void *ptr )
                     x16 = *x_Ptr16++;
                     if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
                     {
-                        Yptr    = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr  = isoSFP0;
                         SFP1ptr  = isoSFP1;
                         SFP2ptr  = isoSFP2;
@@ -2550,8 +2388,6 @@ void* COMMIT_A__block( void *ptr )
                     x17 = *x_Ptr17++;
                     if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
                     {
-                        Yptr    = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr  = isoSFP0;
                         SFP1ptr  = isoSFP1;
                         SFP2ptr  = isoSFP2;
@@ -2597,8 +2433,6 @@ void* COMMIT_A__block( void *ptr )
                     x18 = *x_Ptr18++;
                     if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
                     {
-                        Yptr    = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr  = isoSFP0;
                         SFP1ptr  = isoSFP1;
                         SFP2ptr  = isoSFP2;
@@ -2646,8 +2480,6 @@ void* COMMIT_A__block( void *ptr )
                     x19 = *x_Ptr19++;
                     if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
-                        Yptr    = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
                         SFP0ptr  = isoSFP0;
                         SFP1ptr  = isoSFP1;
                         SFP2ptr  = isoSFP2;
