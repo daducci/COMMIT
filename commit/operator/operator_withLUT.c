@@ -1494,6 +1494,20 @@ void* COMMIT_A__block( void *ptr )
                         Yptr = Y + nS * (*t_v);
                         YptrEnd = Yptr + nS;
                         offset = nS * (*t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++));
                     }
@@ -1520,7 +1534,21 @@ void* COMMIT_A__block( void *ptr )
                         Yptr = Y + nS * (*t_v);
                         YptrEnd = Yptr + nS;
                         offset = nS * (*t_o);
-
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++));
                     }
@@ -1548,7 +1576,22 @@ void* COMMIT_A__block( void *ptr )
                         Yptr = Y + nS * (*t_v);
                         YptrEnd = Yptr + nS;
                         offset = nS * (*t_o);
-
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++));
                     }
@@ -1577,7 +1620,23 @@ void* COMMIT_A__block( void *ptr )
                         Yptr = Y + nS * (*t_v);
                         YptrEnd = Yptr + nS;
                         offset = nS * (*t_o);
-
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
+                        SFP16ptr = wmhSFP16 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++) + x16 * (*wmhSFP16++));
                     }
@@ -1607,7 +1666,24 @@ void* COMMIT_A__block( void *ptr )
                         Yptr = Y + nS * (*t_v);
                         YptrEnd = Yptr + nS;
                         offset = nS * (*t_o);
-
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
+                        SFP16ptr = wmhSFP16 + offset;
+                        SFP17ptr = wmhSFP17 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++) + x16 * (*wmhSFP16++) + x17 * (*wmhSFP17++));
                     }
@@ -1638,7 +1714,25 @@ void* COMMIT_A__block( void *ptr )
                         Yptr = Y + nS * (*t_v);
                         YptrEnd = Yptr + nS;
                         offset = nS * (*t_o);
-
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
+                        SFP16ptr = wmhSFP16 + offset;
+                        SFP17ptr = wmhSFP17 + offset;
+                        SFP18ptr = wmhSFP18 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++) + x16 * (*wmhSFP16++) + x17 * (*wmhSFP17++) + x18 * (*wmhSFP18++));
                     }
@@ -1670,7 +1764,26 @@ void* COMMIT_A__block( void *ptr )
                         Yptr = Y + nS * (*t_v);
                         YptrEnd = Yptr + nS;
                         offset = nS * (*t_o);
-
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
+                        SFP16ptr = wmhSFP16 + offset;
+                        SFP17ptr = wmhSFP17 + offset;
+                        SFP18ptr = wmhSFP18 + offset;
+                        SFP19ptr = wmhSFP19 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++) + x16 * (*wmhSFP16++) + x17 * (*wmhSFP17++) + x18 * (*wmhSFP18++) + x19 * (*wmhSFP19++));
                     }
