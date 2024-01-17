@@ -3409,17 +3409,18 @@ void* COMMIT_At__block( void *ptr )
         t_l = ICl;
         t_f = ICf;
         t_t = ICthreadsT;
+
         while(t_v != t_vEnd)
         {
             if (*t_t == id)
             {
+                Yptr = Y + nS * (*t_v);
+                YptrEnd = Yptr + nS;
+                offset = nS * (*t_o);
+                Y_tmp = *Yptr;
                 switch (nIC_)
                 {
                     case 1:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
@@ -3432,10 +3433,6 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 2:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         SFP1ptr = wmrSFP1 + offset;
@@ -3452,10 +3449,6 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 3:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         SFP1ptr = wmrSFP1 + offset;
@@ -3476,10 +3469,6 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 4:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         SFP1ptr = wmrSFP1 + offset;
@@ -3504,10 +3493,6 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 5:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         SFP1ptr = wmrSFP1 + offset;
@@ -3536,10 +3521,6 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 6:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         SFP1ptr = wmrSFP1 + offset;
@@ -3572,10 +3553,6 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 7:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         SFP1ptr = wmrSFP1 + offset;
@@ -3612,10 +3589,6 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 8:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         SFP1ptr = wmrSFP1 + offset;
@@ -3656,19 +3629,24 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 9:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -3695,21 +3673,26 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 10:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -3738,22 +3721,28 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 11:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -3784,23 +3773,30 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 12:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -3833,24 +3829,32 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 13:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
-                        x12 = (*wmrSFP12++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
+                        SFP12ptr = wmrSFP12 + offset;
+                        x12 = (*SFP12ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -3885,25 +3889,34 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 14:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
-                        x12 = (*wmrSFP12++) * Y_tmp;
-                        x13 = (*wmrSFP13++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
+                        SFP12ptr = wmrSFP12 + offset;
+                        x12 = (*SFP12ptr++) * Y_tmp;
+                        SFP13ptr = wmrSFP13 + offset;
+                        x13 = (*SFP13ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -3940,26 +3953,36 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 15:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
-                        x12 = (*wmrSFP12++) * Y_tmp;
-                        x13 = (*wmrSFP13++) * Y_tmp;
-                        x14 = (*wmrSFP14++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
+                        SFP12ptr = wmrSFP12 + offset;
+                        x12 = (*SFP12ptr++) * Y_tmp;
+                        SFP13ptr = wmrSFP13 + offset;
+                        x13 = (*SFP13ptr++) * Y_tmp;
+                        SFP14ptr = wmrSFP14 + offset;
+                        x14 = (*SFP14ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -3998,27 +4021,38 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 16:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
-                        x12 = (*wmrSFP12++) * Y_tmp;
-                        x13 = (*wmrSFP13++) * Y_tmp;
-                        x14 = (*wmrSFP14++) * Y_tmp;
-                        x15 = (*wmrSFP15++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
+                        SFP12ptr = wmrSFP12 + offset;
+                        x12 = (*SFP12ptr++) * Y_tmp;
+                        SFP13ptr = wmrSFP13 + offset;
+                        x13 = (*SFP13ptr++) * Y_tmp;
+                        SFP14ptr = wmrSFP14 + offset;
+                        x14 = (*SFP14ptr++) * Y_tmp;
+                        SFP15ptr = wmrSFP15 + offset;
+                        x15 = (*SFP15ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -4059,28 +4093,40 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 17:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
-                        x12 = (*wmrSFP12++) * Y_tmp;
-                        x13 = (*wmrSFP13++) * Y_tmp;
-                        x14 = (*wmrSFP14++) * Y_tmp;
-                        x15 = (*wmrSFP15++) * Y_tmp;
-                        x16 = (*wmrSFP16++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
+                        SFP12ptr = wmrSFP12 + offset;
+                        x12 = (*SFP12ptr++) * Y_tmp;
+                        SFP13ptr = wmrSFP13 + offset;
+                        x13 = (*SFP13ptr++) * Y_tmp;
+                        SFP14ptr = wmrSFP14 + offset;
+                        x14 = (*SFP14ptr++) * Y_tmp;
+                        SFP15ptr = wmrSFP15 + offset;
+                        x15 = (*SFP15ptr++) * Y_tmp;
+                        SFP16ptr = wmrSFP16 + offset;
+                        x16 = (*SFP16ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -4123,29 +4169,42 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 18:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0 = (*wmrSFP0++) * Y_tmp;
-                        x1 = (*wmrSFP1++) * Y_tmp;
-                        x2 = (*wmrSFP2++) * Y_tmp;
-                        x3 = (*wmrSFP3++) * Y_tmp;
-                        x4 = (*wmrSFP4++) * Y_tmp;
-                        x5 = (*wmrSFP5++) * Y_tmp;
-                        x6 = (*wmrSFP6++) * Y_tmp;
-                        x7 = (*wmrSFP7++) * Y_tmp;
-                        x8 = (*wmrSFP8++) * Y_tmp;
-                        x9 = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
-                        x12 = (*wmrSFP12++) * Y_tmp;
-                        x13 = (*wmrSFP13++) * Y_tmp;
-                        x14 = (*wmrSFP14++) * Y_tmp;
-                        x15 = (*wmrSFP15++) * Y_tmp;
-                        x16 = (*wmrSFP16++) * Y_tmp;
-                        x17 = (*wmrSFP17++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
+                        SFP12ptr = wmrSFP12 + offset;
+                        x12 = (*SFP12ptr++) * Y_tmp;
+                        SFP13ptr = wmrSFP13 + offset;
+                        x13 = (*SFP13ptr++) * Y_tmp;
+                        SFP14ptr = wmrSFP14 + offset;
+                        x14 = (*SFP14ptr++) * Y_tmp;
+                        SFP15ptr = wmrSFP15 + offset;
+                        x15 = (*SFP15ptr++) * Y_tmp;
+                        SFP16ptr = wmrSFP16 + offset;
+                        x16 = (*SFP16ptr++) * Y_tmp;
+                        SFP17ptr = wmrSFP17 + offset;
+                        x17 = (*SFP17ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -4190,30 +4249,44 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 19:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0  = (*wmrSFP0++) * Y_tmp;
-                        x1  = (*wmrSFP1++) * Y_tmp;
-                        x2  = (*wmrSFP2++) * Y_tmp;
-                        x3  = (*wmrSFP3++) * Y_tmp;
-                        x4  = (*wmrSFP4++) * Y_tmp;
-                        x5  = (*wmrSFP5++) * Y_tmp;
-                        x6  = (*wmrSFP6++) * Y_tmp;
-                        x7  = (*wmrSFP7++) * Y_tmp;
-                        x8  = (*wmrSFP8++) * Y_tmp;
-                        x9  = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
-                        x12 = (*wmrSFP12++) * Y_tmp;
-                        x13 = (*wmrSFP13++) * Y_tmp;
-                        x14 = (*wmrSFP14++) * Y_tmp;
-                        x15 = (*wmrSFP15++) * Y_tmp;
-                        x16 = (*wmrSFP16++) * Y_tmp;
-                        x17 = (*wmrSFP17++) * Y_tmp;
-                        x18 = (*wmrSFP18++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
+                        SFP12ptr = wmrSFP12 + offset;
+                        x12 = (*SFP12ptr++) * Y_tmp;
+                        SFP13ptr = wmrSFP13 + offset;
+                        x13 = (*SFP13ptr++) * Y_tmp;
+                        SFP14ptr = wmrSFP14 + offset;
+                        x14 = (*SFP14ptr++) * Y_tmp;
+                        SFP15ptr = wmrSFP15 + offset;
+                        x15 = (*SFP15ptr++) * Y_tmp;
+                        SFP16ptr = wmrSFP16 + offset;
+                        x16 = (*SFP16ptr++) * Y_tmp;
+                        SFP17ptr = wmrSFP17 + offset;
+                        x17 = (*SFP17ptr++) * Y_tmp;
+                        SFP18ptr = wmrSFP18 + offset;
+                        x18 = (*SFP18ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
@@ -4260,31 +4333,46 @@ void* COMMIT_At__block( void *ptr )
                         break;
 
                     case 20:
-                        Yptr = Y + nS * (*t_v);
-                        YptrEnd = Yptr + nS;
-                        offset = nS * (*t_o);
-
-                        Y_tmp = *Yptr;
-                        x0  = (*wmrSFP0++) * Y_tmp;
-                        x1  = (*wmrSFP1++) * Y_tmp;
-                        x2  = (*wmrSFP2++) * Y_tmp;
-                        x3  = (*wmrSFP3++) * Y_tmp;
-                        x4  = (*wmrSFP4++) * Y_tmp;
-                        x5  = (*wmrSFP5++) * Y_tmp;
-                        x6  = (*wmrSFP6++) * Y_tmp;
-                        x7  = (*wmrSFP7++) * Y_tmp;
-                        x8  = (*wmrSFP8++) * Y_tmp;
-                        x9  = (*wmrSFP9++) * Y_tmp;
-                        x10 = (*wmrSFP10++) * Y_tmp;
-                        x11 = (*wmrSFP11++) * Y_tmp;
-                        x12 = (*wmrSFP12++) * Y_tmp;
-                        x13 = (*wmrSFP13++) * Y_tmp;
-                        x14 = (*wmrSFP14++) * Y_tmp;
-                        x15 = (*wmrSFP15++) * Y_tmp;
-                        x16 = (*wmrSFP16++) * Y_tmp;
-                        x17 = (*wmrSFP17++) * Y_tmp;
-                        x18 = (*wmrSFP18++) * Y_tmp;
-                        x19 = (*wmrSFP19++) * Y_tmp;
+                        SFP0ptr = wmrSFP0 + offset;
+                        x0 = (*SFP0ptr++) * Y_tmp;
+                        SFP1ptr = wmrSFP1 + offset;
+                        x1 = (*SFP1ptr++) * Y_tmp;
+                        SFP2ptr = wmrSFP2 + offset;
+                        x2 = (*SFP2ptr++) * Y_tmp;
+                        SFP3ptr = wmrSFP3 + offset;
+                        x3 = (*SFP3ptr++) * Y_tmp;
+                        SFP4ptr = wmrSFP4 + offset;
+                        x4 = (*SFP4ptr++) * Y_tmp;
+                        SFP5ptr = wmrSFP5 + offset;
+                        x5 = (*SFP5ptr++) * Y_tmp;
+                        SFP6ptr = wmrSFP6 + offset;
+                        x6 = (*SFP6ptr++) * Y_tmp;
+                        SFP7ptr = wmrSFP7 + offset;
+                        x7 = (*SFP7ptr++) * Y_tmp;
+                        SFP8ptr = wmrSFP8 + offset;
+                        x8 = (*SFP8ptr++) * Y_tmp;
+                        SFP9ptr = wmrSFP9 + offset;
+                        x9 = (*SFP9ptr++) * Y_tmp;
+                        SFP10ptr = wmrSFP10 + offset;
+                        x10 = (*SFP10ptr++) * Y_tmp;
+                        SFP11ptr = wmrSFP11 + offset;
+                        x11 = (*SFP11ptr++) * Y_tmp;
+                        SFP12ptr = wmrSFP12 + offset;
+                        x12 = (*SFP12ptr++) * Y_tmp;
+                        SFP13ptr = wmrSFP13 + offset;
+                        x13 = (*SFP13ptr++) * Y_tmp;
+                        SFP14ptr = wmrSFP14 + offset;
+                        x14 = (*SFP14ptr++) * Y_tmp;
+                        SFP15ptr = wmrSFP15 + offset;
+                        x15 = (*SFP15ptr++) * Y_tmp;
+                        SFP16ptr = wmrSFP16 + offset;
+                        x16 = (*SFP16ptr++) * Y_tmp;
+                        SFP17ptr = wmrSFP17 + offset;
+                        x17 = (*SFP17ptr++) * Y_tmp;
+                        SFP18ptr = wmrSFP18 + offset;
+                        x18 = (*SFP18ptr++) * Y_tmp;
+                        SFP19ptr = wmrSFP19 + offset;
+                        x19 = (*SFP19ptr++) * Y_tmp;
                         while(++Yptr != YptrEnd)
                         {
                             Y_tmp = *Yptr;
