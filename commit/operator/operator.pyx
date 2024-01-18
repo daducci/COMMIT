@@ -119,12 +119,6 @@ cdef class LinearOperator :
         cdef unsigned int [::1]   ISOv = DICTIONARY['ISO']['v']
         self.ISOv = &ISOv[0]
 
-        print(f"DICTIONARY['IC']['fiber']= {DICTIONARY['IC']['fiber']}")
-        print(f"DICTIONARY['IC']['len']= {DICTIONARY['IC']['len']}")
-        print(f"DICTIONARY['IC']['v']= {DICTIONARY['IC']['v']}")
-        print(f"DICTIONARY['ISO']['v']= {DICTIONARY['ISO']['v']}")
-        print(f"\nDICTIONARY['IC']['p']= {DICTIONARY['IC']['p']}\n")
-
         # get C pointers to arrays in KERNELS
         cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
         self.LUT_IC  = &wmrSFP[0,0,0]

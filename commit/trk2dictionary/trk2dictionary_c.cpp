@@ -466,7 +466,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     float           fiber[3][MAX_FIB_LEN] = {0} ;
     float           fiberNorm;   // normalization
     float           pos;
-    float           float_pos;
+    float           float_pos; // TODO uint8
     unsigned int    N, v, tempTotFibers, temp_totICSegments;
     unsigned short  o;
     unsigned char   kept;

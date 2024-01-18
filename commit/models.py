@@ -107,8 +107,10 @@ class ModulatedVolumeFractions(BaseModel):
         self.name = 'Modulated volume fractions'
         self.maps_name = []
         self.maps_descr = []
+        # TODO add parameters here
 
     def set(self):
+        # TODO set number of profiles here
         return
 
     def get_params(self):
@@ -122,7 +124,7 @@ class ModulatedVolumeFractions(BaseModel):
 
     def generate(self, out_path, aux, idx_in, idx_out, ndirs):
        return
-    
+
     def DCT_profile(self, nSp, num_samples):
         t = np.linspace(0, 1, num_samples)
         profiles = np.arange(nSp)
@@ -133,6 +135,18 @@ class ModulatedVolumeFractions(BaseModel):
             cosine_functions[i,:] = np.cos(2 * np.pi * frequency * t)
         return cosine_functions
 
+    def compute_dct_base(self, k, num_samples):
+        k = np.arange(k)
+        # Compute cosine functions
+        dct_functions = np.zeros((len(k), num_samples), dtype=np.float32)
+        for i, k in enumerate(k):
+            for n in range(num_samples):
+                dct_functions[i, n] = np.cos(np.pi * k * (n + 0.5) / num_samples)
+                if k == 0:
+                    dct_functions[i, n] *= np.sqrt(0.25 / num_samples)
+                else:
+                    dct_functions[i, n] *= np.sqrt(0.5 / num_samples)
+        return dct_functions
 
     def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs, nprofiles, nsamples):
         if doMergeB0:
@@ -144,9 +158,11 @@ class ModulatedVolumeFractions(BaseModel):
         KERNELS = {}
         KERNELS['model'] = self.id
         KERNELS['wmr'] = np.ones((1, ndirs, nS), dtype=np.float32)
-        KERNELS["wmc"] = self.DCT_profile(nprofiles, nsamples)
+        KERNELS["wmc"] = self.compute_dct_base(nprofiles, nsamples)
         KERNELS['wmh'] = np.ones((0, ndirs, nS), dtype=np.float32)
         KERNELS['iso'] = np.ones((0, nS), dtype=np.float32)
+        print(f"KERNELS['wmc'].shape: {KERNELS['wmc'].shape}")
+        print(f"KERNELS['wmc']= {KERNELS['wmc']}")
         return KERNELS
 
     def fit(self, evaluation):

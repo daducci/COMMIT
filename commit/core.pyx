@@ -339,8 +339,7 @@ cdef class Evaluation :
             self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
         else:
             self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
-        nIC  = self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
-        nIC  = self.KERNELS['wmc'].shape[0]
+        nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
         print( '\t  [ OK ]' )
@@ -365,7 +364,7 @@ cdef class Evaluation :
 
         # Normalize atoms
         if self.get_config('doNormalizeKernels') :
-            print( '\t* Normalizing... ', end='' )
+            print( '\t* Normalizing...', end='' )
 
             self.KERNELS['wmr_norm'] = np.zeros( nIC )
             for i in xrange(nIC) :
@@ -1130,6 +1129,8 @@ cdef class Evaluation :
         xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
         xiso = x[offset2:]
+        print( f'\t* Number of DCT profiles: {self.KERNELS["wmr"].shape[0]}' )
+        print( f'\t* Number of xic coefficients: {xic.size}' )
 
         return xic, xec, xiso
 
@@ -1304,6 +1305,7 @@ cdef class Evaluation :
         xic, _, _ = self.get_coeffs()
         if stat_coeffs != 'all' and xic.size > 0 :
             xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
+
             if stat_coeffs == 'sum' :
                 xic = np.sum( xic, axis=0 )
             elif stat_coeffs == 'mean' :

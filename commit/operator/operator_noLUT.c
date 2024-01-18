@@ -80,30 +80,32 @@ void* COMMIT_A__block( void *ptr )
                 offset  = (*t_p);
                 SFP0ptr = icSFB0;
                 #if nICs>=2
-                SFP1ptr = icSFB1 + nSf;
+                SFP1ptr = icSFB1 + offset;
+                printf("SFP1ptr = %f\n", *SFP1ptr);
                 #endif
                 #if nICs>=3
-                SFP2ptr = icSFB2 + nSf;
+                SFP2ptr = icSFB2 + offset;
                 #endif
                 #if nICs>=4
-                SFP3ptr = icSFB3 + nSf;
+                SFP3ptr = icSFB3 + offset;
                 #endif
                 
-                while( Yptr != YptrEnd )
-                    (*Yptr++) += w * (
-                            x0 * (*SFP0ptr)
-                            #if nICs>=2
-                            + x1 * (*SFP1ptr)
-                            #endif
-                            #if nICs>=3
-                            + x2 * (*SFP2ptr)
-                            #endif
-                            #if nICs>=4
-                            + x3 * (*SFP3ptr)
-                            #endif
+                // while( Yptr != YptrEnd )
+                (*Yptr++) = w * (
+                        x0 * (*SFP0ptr)
+                        #if nICs>=2
+                        + x1 * (*SFP1ptr)
+                        #endif
+                        #if nICs>=3
+                        + x2 * (*SFP2ptr)
+                        #endif
+                        #if nICs>=4
+                        + x3 * (*SFP3ptr)
+                        #endif
                     );
-            }
 
+            }
+            // printf("x0 = %f, x1 = %f\n", x0, x1 );
             t_f++;
             t_v++;
             t_l++;
@@ -159,11 +161,11 @@ void COMMIT_A(
     #if nICs>=1
     icSFB0 = _ICmod;
     #if nICs>=2
-    icSFB1 = icSFB0 + nSf;
+    icSFB1 = icSFB0 + nSf-1;
     #if nICs>=3
-    icSFB2 = icSFB1 + nSf;
+    icSFB2 = icSFB1 + nSf-1;
     #if nICs>=4
-    icSFB3 = icSFB2 + nSf;
+    icSFB3 = icSFB2 + nSf-1;
     #endif
     #endif
     #endif
@@ -215,52 +217,50 @@ void* COMMIT_At__block( void *ptr )
             {
                 Yptr    = Y + (*t_v);
                 YptrEnd = Yptr + nICs;
-
                 Y_tmp = *Yptr;
+
                 offset = (*t_p);
                 SFP0ptr   = icSFB0;
                 x0 = (*SFP0ptr) * Y_tmp;
-                printf("SFP0ptr = %f, Y_tmp = %f\n", *SFP0ptr, Y_tmp );
-                #if nIC>=2
-                SFP1ptr   = icSFB1 + nSf;
+                #if nICs>=2
+                SFP1ptr   = icSFB1 + offset;
                 x1 = (*SFP1ptr) * Y_tmp;
                 #endif
-                #if nIC>=3
-                SFP2ptr   = icSFB2 + nSf;
+                #if nICs>=3
+                SFP2ptr   = icSFB2 + offset;
                 x2 = (*SFP2ptr) * Y_tmp;
                 #endif
-                #if nIC>=4
-                SFP3ptr   = icSFB3 + nSf;
+                #if nICs>=4
+                SFP3ptr   = icSFB3 + offset;
                 x3 = (*SFP3ptr) * Y_tmp;
                 #endif
 
-                while( ++Yptr != YptrEnd )
-                {
-                    Y_tmp = *Yptr;
-                    x0 += (*SFP0ptr) * Y_tmp;
-                    printf("SFP0ptr = %f, Y_tmp = %f\n", *SFP0ptr, Y_tmp );
-                    #if nIC>=2
-                    x1 += (*SFP1ptr) * Y_tmp;
-                    #endif
-                    #if nIC>=3
-                    x2 += (*SFP2ptr) * Y_tmp;
-                    #endif
-                    #if nIC>=4
-                    x3 += (*SFP3ptr) * Y_tmp;
-                    #endif
-                    // Yptr++;
-                }
+                // while( ++Yptr != YptrEnd )
+                // {
+                //     Y_tmp = *Yptr;
+                x0 = (*SFP0ptr) * Y_tmp;
+                #if nICs>=2
+                x1 = (*SFP1ptr) * Y_tmp;
+                #endif
+                #if nICs>=3
+                x2 = (*SFP2ptr) * Y_tmp;
+                #endif
+                #if nICs>=4
+                x3 = (*SFP3ptr) * Y_tmp;
+                #endif
+                //     Yptr++;
+                // }
 
                 w = (double)(*t_l);
                 x[*t_f]      += w * x0;
-                printf("w = %f, x0 = %f\n", w, x0 );
-                #if nIC>=2
+                #if nICs>=2
                 x[*t_f+nF]   += w * x1;
                 #endif
-                #if nIC>=3
+                #if nICs>=3
                 x[*t_f+2*nF] += w * x2;
+                printf("w= %f, x0= %f, x1= %f, x3= %f\n", w, x0, x1,x2 );
                 #endif
-                #if nIC>=4
+                #if nICs>=4
                 x[*t_f+3*nF] += w * x3;
                 #endif
             }
