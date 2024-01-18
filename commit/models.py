@@ -161,8 +161,6 @@ class ModulatedVolumeFractions(BaseModel):
         KERNELS["wmc"] = self.compute_dct_base(nprofiles, nsamples)
         KERNELS['wmh'] = np.ones((0, ndirs, nS), dtype=np.float32)
         KERNELS['iso'] = np.ones((0, nS), dtype=np.float32)
-        print(f"KERNELS['wmc'].shape: {KERNELS['wmc'].shape}")
-        print(f"KERNELS['wmc']= {KERNELS['wmc']}")
         return KERNELS
 
     def fit(self, evaluation):

@@ -81,7 +81,6 @@ void* COMMIT_A__block( void *ptr )
                 SFP0ptr = icSFB0;
                 #if nICs>=2
                 SFP1ptr = icSFB1 + offset;
-                printf("SFP1ptr = %f\n", *SFP1ptr);
                 #endif
                 #if nICs>=3
                 SFP2ptr = icSFB2 + offset;
@@ -258,7 +257,6 @@ void* COMMIT_At__block( void *ptr )
                 #endif
                 #if nICs>=3
                 x[*t_f+2*nF] += w * x2;
-                printf("w= %f, x0= %f, x1= %f, x3= %f\n", w, x0, x1,x2 );
                 #endif
                 #if nICs>=4
                 x[*t_f+3*nF] += w * x3;
