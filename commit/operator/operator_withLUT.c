@@ -19,6 +19,73 @@ float       *wmhSFP0, *wmhSFP1, *wmhSFP2, *wmhSFP3, *wmhSFP4, *wmhSFP5, *wmhSFP6
 float       *isoSFP0, *isoSFP1, *isoSFP2, *isoSFP3, *isoSFP4, *isoSFP5, *isoSFP6, *isoSFP7, *isoSFP8, *isoSFP9, *isoSFP10, *isoSFP11, *isoSFP12, *isoSFP13, *isoSFP14, *isoSFP15, *isoSFP16, *isoSFP17, *isoSFP18, *isoSFP19;
 uint32_t    nIC_, nEC_, nISO_;
 
+void initIC(uint32_t **t_v, uint32_t **t_vEnd, uint16_t **t_o, float **t_l, uint32_t **t_f, int id)
+{
+    *t_v = ICv + ICthreads[id];
+    *t_vEnd = ICv + ICthreads[id+1];
+    *t_o = ICo + ICthreads[id];
+    *t_l = ICl + ICthreads[id];
+    *t_f = ICf + ICthreads[id];
+}
+
+void initEC(uint32_t **t_v, uint32_t **t_vEnd, uint16_t **t_o, int id)
+{
+    *t_v = ECv + ECthreads[id];
+    *t_vEnd = ECv + ECthreads[id+1];
+    *t_o = ECo + ECthreads[id];
+}
+
+void initISO(uint32_t **t_v, uint32_t **t_vEnd, int id)
+{
+    *t_v = ISOv + ISOthreads[id];
+    *t_vEnd = ISOv + ISOthreads[id+1];
+}
+
+void updateIC_loop(uint32_t **t_f, uint32_t **t_v, uint16_t **t_o, float **t_l)
+{
+    (*t_f)++;
+    (*t_v)++;
+    (*t_o)++;
+    (*t_l)++;
+}
+
+void updateEC_loop(uint32_t **t_v, uint16_t **t_o)
+{
+    (*t_v)++;
+    (*t_o)++;
+}
+
+void updateISO_loop(uint32_t **t_v)
+{
+    (*t_v)++;
+}
+
+void updateIC_x(double **xPtr, double **xPtrPrec, double *xVal)
+{
+    *xPtr = *xPtrPrec + nF;
+    *xVal = **xPtr;
+}
+
+void updateIC_Y(double **YPtr, uint32_t t_v, double **YPtrEnd, double *w, float t_l, int *offset, uint16_t t_o)
+{
+    *YPtr = Y + nS * t_v;
+    *YPtrEnd = *YPtr + nS;
+    *w = (double)t_l;
+    *offset = nS * t_o;
+}
+
+void updateEC_Y(double **YPtr, uint32_t t_v, double **YPtrEnd, int *offset, uint16_t t_o)
+{
+    *YPtr = Y + nS * t_v;
+    *YPtrEnd = *YPtr + nS;
+    *offset = nS * t_o;
+}
+
+void updateISO_Y(double **YPtr, uint32_t t_v, double **YPtrEnd)
+{
+    *YPtr = Y + nS * t_v;
+    *YPtrEnd = *YPtr + nS;
+}
 
 
 // ====================================================
@@ -37,36 +104,33 @@ void* COMMIT_A__block( void *ptr )
     float    *t_l;
 
     // intra-cellular compartments
-    if (nIC_ >= 1)
+    if (nIC_ > 0)
     {
-        t_v = ICv + ICthreads[id];
-        t_vEnd = ICv + ICthreads[id+1];
-        t_o = ICo + ICthreads[id];
-        t_l = ICl + ICthreads[id];
-        t_f = ICf + ICthreads[id];
-
-        while (t_v != t_vEnd)
+        initIC(&t_v, &t_vEnd, &t_o, &t_l, &t_f, id);
+        switch (nIC_)
         {
-            x_Ptr0 = x + *t_f;
-            x0 = *x_Ptr0;
-            Yptr = Y + nS * (*t_v);
-            YptrEnd = Yptr + nS;
-            w = (double)(*t_l);
-            offset = nS * (*t_o);
-            switch (nIC_)
-            {
-                case 1:
+            case 1:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * x0 * (*SFP0ptr++);
                     }
-                    break;
-
-                case 2:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 2:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -74,13 +138,17 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++));
                     }
-                    break;
-
-                case 3:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 3:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -89,15 +157,18 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++));
                     }
-                    break;
-
-                case 4:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 4:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -107,17 +178,19 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++));
                     }
-                    break;
-
-                case 5:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 5:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -128,19 +201,20 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++));
                     }
-                    break;
-
-                case 6:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 6:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -152,21 +226,21 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++));
                     }
-                    break;
-
-                case 7:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 7:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -179,23 +253,22 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++));
                     }
-                    break;
-
-                case 8:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 8:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -209,25 +282,23 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++));
                     }
-                    break;
-
-                case 9:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 9:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -242,27 +313,24 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++));
                     }
-                    break;
-
-                case 10:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 10:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -278,29 +346,25 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++));
                     }
-                    break;
-
-                case 11:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 11:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -317,31 +381,26 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++));
                     }
-                    break;
-
-                case 12:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 12:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -359,33 +418,27 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++));
                     }
-                    break;
-
-                case 13:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
-                    x_Ptr12 = x_Ptr11 + nF;
-                    x12 = *x_Ptr12;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 13:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -404,35 +457,28 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++));
                     }
-                    break;
-
-                case 14:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
-                    x_Ptr12 = x_Ptr11 + nF;
-                    x12 = *x_Ptr12;
-                    x_Ptr13 = x_Ptr12 + nF;
-                    x13 = *x_Ptr13;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 14:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
+                    updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -452,37 +498,29 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++));
                     }
-                    break;
-
-                case 15:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
-                    x_Ptr12 = x_Ptr11 + nF;
-                    x12 = *x_Ptr12;
-                    x_Ptr13 = x_Ptr12 + nF;
-                    x13 = *x_Ptr13;
-                    x_Ptr14 = x_Ptr13 + nF;
-                    x14 = *x_Ptr14;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 15:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
+                    updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
+                    updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -503,39 +541,30 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++));
                     }
-                    break;
-
-                case 16:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
-                    x_Ptr12 = x_Ptr11 + nF;
-                    x12 = *x_Ptr12;
-                    x_Ptr13 = x_Ptr12 + nF;
-                    x13 = *x_Ptr13;
-                    x_Ptr14 = x_Ptr13 + nF;
-                    x14 = *x_Ptr14;
-                    x_Ptr15 = x_Ptr14 + nF;
-                    x15 = *x_Ptr15;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
+            case 16:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
+                    updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
+                    updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
+                    updateIC_x(&x_Ptr15, &x_Ptr14, &x15);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -557,41 +586,32 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++));
                     }
-                    break;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
 
-                case 17:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
-                    x_Ptr12 = x_Ptr11 + nF;
-                    x12 = *x_Ptr12;
-                    x_Ptr13 = x_Ptr12 + nF;
-                    x13 = *x_Ptr13;
-                    x_Ptr14 = x_Ptr13 + nF;
-                    x14 = *x_Ptr14;
-                    x_Ptr15 = x_Ptr14 + nF;
-                    x15 = *x_Ptr15;
-                    x_Ptr16 = x_Ptr15 + nF;
-                    x16 = *x_Ptr16;
+            case 17:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
+                    updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
+                    updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
+                    updateIC_x(&x_Ptr15, &x_Ptr14, &x15);
+                    updateIC_x(&x_Ptr16, &x_Ptr15, &x16);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -614,43 +634,33 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++));
                     }
-                    break;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
 
-                case 18:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
-                    x_Ptr12 = x_Ptr11 + nF;
-                    x12 = *x_Ptr12;
-                    x_Ptr13 = x_Ptr12 + nF;
-                    x13 = *x_Ptr13;
-                    x_Ptr14 = x_Ptr13 + nF;
-                    x14 = *x_Ptr14;
-                    x_Ptr15 = x_Ptr14 + nF;
-                    x15 = *x_Ptr15;
-                    x_Ptr16 = x_Ptr15 + nF;
-                    x16 = *x_Ptr16;
-                    x_Ptr17 = x_Ptr16 + nF;
-                    x17 = *x_Ptr17;
+            case 18:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
+                    updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
+                    updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
+                    updateIC_x(&x_Ptr15, &x_Ptr14, &x15);
+                    updateIC_x(&x_Ptr16, &x_Ptr15, &x16);
+                    updateIC_x(&x_Ptr17, &x_Ptr16, &x17);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -674,45 +684,34 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++));
                     }
-                    break;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
 
-                case 19:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
-                    x_Ptr12 = x_Ptr11 + nF;
-                    x12 = *x_Ptr12;
-                    x_Ptr13 = x_Ptr12 + nF;
-                    x13 = *x_Ptr13;
-                    x_Ptr14 = x_Ptr13 + nF;
-                    x14 = *x_Ptr14;
-                    x_Ptr15 = x_Ptr14 + nF;
-                    x15 = *x_Ptr15;
-                    x_Ptr16 = x_Ptr15 + nF;
-                    x16 = *x_Ptr16;
-                    x_Ptr17 = x_Ptr16 + nF;
-                    x17 = *x_Ptr17;
-                    x_Ptr18 = x_Ptr17 + nF;
-                    x18 = *x_Ptr18;
+            case 19:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
+                    updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
+                    updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
+                    updateIC_x(&x_Ptr15, &x_Ptr14, &x15);
+                    updateIC_x(&x_Ptr16, &x_Ptr15, &x16);
+                    updateIC_x(&x_Ptr17, &x_Ptr16, &x17);
+                    updateIC_x(&x_Ptr18, &x_Ptr17, &x18);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -737,47 +736,35 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++));
                     }
-                    break;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
 
-                case 20:
-                    x_Ptr1 = x_Ptr0 + nF;
-                    x1 = *x_Ptr1;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    x2 = *x_Ptr2;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    x3 = *x_Ptr3;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    x4 = *x_Ptr4;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    x5 = *x_Ptr5;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    x6 = *x_Ptr6;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    x7 = *x_Ptr7;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    x8 = *x_Ptr8;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    x9 = *x_Ptr9;
-                    x_Ptr10 = x_Ptr9 + nF;
-                    x10 = *x_Ptr10;
-                    x_Ptr11 = x_Ptr10 + nF;
-                    x11 = *x_Ptr11;
-                    x_Ptr12 = x_Ptr11 + nF;
-                    x12 = *x_Ptr12;
-                    x_Ptr13 = x_Ptr12 + nF;
-                    x13 = *x_Ptr13;
-                    x_Ptr14 = x_Ptr13 + nF;
-                    x14 = *x_Ptr14;
-                    x_Ptr15 = x_Ptr14 + nF;
-                    x15 = *x_Ptr15;
-                    x_Ptr16 = x_Ptr15 + nF;
-                    x16 = *x_Ptr16;
-                    x_Ptr17 = x_Ptr16 + nF;
-                    x17 = *x_Ptr17;
-                    x_Ptr18 = x_Ptr17 + nF;
-                    x18 = *x_Ptr18;
-                    x_Ptr19 = x_Ptr18 + nF;
-                    x19 = *x_Ptr19;
+            case 20:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
+                    updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
+                    updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
+                    updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
+                    updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
+                    updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
+                    updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
+                    updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
+                    updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
+                    updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
+                    updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
+                    updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
+                    updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
+                    updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
+                    updateIC_x(&x_Ptr15, &x_Ptr14, &x15);
+                    updateIC_x(&x_Ptr16, &x_Ptr15, &x16);
+                    updateIC_x(&x_Ptr17, &x_Ptr16, &x17);
+                    updateIC_x(&x_Ptr18, &x_Ptr17, &x18);
+                    updateIC_x(&x_Ptr19, &x_Ptr18, &x19);
+                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
                         SFP0ptr = wmrSFP0 + offset;
@@ -803,38 +790,95 @@ void* COMMIT_A__block( void *ptr )
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++) + x19 * (*SFP19ptr++));
                     }
-                    break;
-            }
-            t_f++;
-            t_v++;
-            t_o++;
-            t_l++;
+                    updateIC_loop(&t_f, &t_v, &t_o, &t_l);
+                }
+                break;
         }
     }
 
     // extra-cellular compartments
-    if (nEC_ >= 1)
+    if (nEC_ > 0)
     {
-        t_v = ECv + ECthreads[id];
-        t_vEnd = ECv + ECthreads[id+1];
-        t_o = ECo + ECthreads[id];
-
+        initEC(&t_v, &t_vEnd, &t_o, id);
         x_Ptr0 = x + nIC_*nF + ECthreads[id];
         switch (nEC_)
         {
-            case 2:
-                x_Ptr1 = x_Ptr0 + nE;
+            case 1:
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    if (x0 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
+            case 2:
+                x_Ptr1 = x_Ptr0 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    if (x0 != 0 || x1 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
+                break;
+            
             case 3:
                 x_Ptr1 = x_Ptr0 + nE;
                 x_Ptr2 = x_Ptr1 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 4:
                 x_Ptr1 = x_Ptr0 + nE;
                 x_Ptr2 = x_Ptr1 + nE;
                 x_Ptr3 = x_Ptr2 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 5:
@@ -842,6 +886,26 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr2 = x_Ptr1 + nE;
                 x_Ptr3 = x_Ptr2 + nE;
                 x_Ptr4 = x_Ptr3 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 6:
@@ -850,6 +914,28 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr3 = x_Ptr2 + nE;
                 x_Ptr4 = x_Ptr3 + nE;
                 x_Ptr5 = x_Ptr4 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 7:
@@ -859,6 +945,30 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr4 = x_Ptr3 + nE;
                 x_Ptr5 = x_Ptr4 + nE;
                 x_Ptr6 = x_Ptr5 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 8:
@@ -869,6 +979,32 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr5 = x_Ptr4 + nE;
                 x_Ptr6 = x_Ptr5 + nE;
                 x_Ptr7 = x_Ptr6 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 9:
@@ -880,6 +1016,34 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr6 = x_Ptr5 + nE;
                 x_Ptr7 = x_Ptr6 + nE;
                 x_Ptr8 = x_Ptr7 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 10:
@@ -892,6 +1056,36 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr7 = x_Ptr6 + nE;
                 x_Ptr8 = x_Ptr7 + nE;
                 x_Ptr9 = x_Ptr8 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 11:
@@ -905,6 +1099,38 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr8 = x_Ptr7 + nE;
                 x_Ptr9 = x_Ptr8 + nE;
                 x_Ptr10 = x_Ptr9 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 12:
@@ -919,6 +1145,40 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr9 = x_Ptr8 + nE;
                 x_Ptr10 = x_Ptr9 + nE;
                 x_Ptr11 = x_Ptr10 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 13:
@@ -934,6 +1194,42 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr10 = x_Ptr9 + nE;
                 x_Ptr11 = x_Ptr10 + nE;
                 x_Ptr12 = x_Ptr11 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 14:
@@ -950,6 +1246,44 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr11 = x_Ptr10 + nE;
                 x_Ptr12 = x_Ptr11 + nE;
                 x_Ptr13 = x_Ptr12 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 15:
@@ -967,6 +1301,46 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr12 = x_Ptr11 + nE;
                 x_Ptr13 = x_Ptr12 + nE;
                 x_Ptr14 = x_Ptr13 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 16:
@@ -985,6 +1359,48 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr13 = x_Ptr12 + nE;
                 x_Ptr14 = x_Ptr13 + nE;
                 x_Ptr15 = x_Ptr14 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 17:
@@ -1004,6 +1420,50 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr14 = x_Ptr13 + nE;
                 x_Ptr15 = x_Ptr14 + nE;
                 x_Ptr16 = x_Ptr15 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
+                        SFP16ptr = wmhSFP16 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 18:
@@ -1024,6 +1484,52 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr15 = x_Ptr14 + nE;
                 x_Ptr16 = x_Ptr15 + nE;
                 x_Ptr17 = x_Ptr16 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    x17 = *x_Ptr17++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
+                        SFP16ptr = wmhSFP16 + offset;
+                        SFP17ptr = wmhSFP17 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 19:
@@ -1045,6 +1551,54 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr16 = x_Ptr15 + nE;
                 x_Ptr17 = x_Ptr16 + nE;
                 x_Ptr18 = x_Ptr17 + nE;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    x17 = *x_Ptr17++;
+                    x18 = *x_Ptr18++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
+                    {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
+                        SFP0ptr = wmhSFP0 + offset;
+                        SFP1ptr = wmhSFP1 + offset;
+                        SFP2ptr = wmhSFP2 + offset;
+                        SFP3ptr = wmhSFP3 + offset;
+                        SFP4ptr = wmhSFP4 + offset;
+                        SFP5ptr = wmhSFP5 + offset;
+                        SFP6ptr = wmhSFP6 + offset;
+                        SFP7ptr = wmhSFP7 + offset;
+                        SFP8ptr = wmhSFP8 + offset;
+                        SFP9ptr = wmhSFP9 + offset;
+                        SFP10ptr = wmhSFP10 + offset;
+                        SFP11ptr = wmhSFP11 + offset;
+                        SFP12ptr = wmhSFP12 + offset;
+                        SFP13ptr = wmhSFP13 + offset;
+                        SFP14ptr = wmhSFP14 + offset;
+                        SFP15ptr = wmhSFP15 + offset;
+                        SFP16ptr = wmhSFP16 + offset;
+                        SFP17ptr = wmhSFP17 + offset;
+                        SFP18ptr = wmhSFP18 + offset;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++));
+                    }
+                    updateEC_loop(&t_v, &t_o);
+                }
                 break;
 
             case 20:
@@ -1067,549 +1621,8 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr17 = x_Ptr16 + nE;
                 x_Ptr18 = x_Ptr17 + nE;
                 x_Ptr19 = x_Ptr18 + nE;
-                break;
-        }
-
-        while (t_v != t_vEnd)
-        {
-            Yptr = Y + nS * (*t_v);
-            YptrEnd = Yptr + nS;
-            offset = nS * (*t_o);
-            switch (nEC_)
-            {
-                case 1:
-                    x0 = *x_Ptr0++;
-                    if (x0 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++));
-                    }
-                    break;
-
-                case 2:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    if (x0 != 0 || x1 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++));
-                    }
-                    break;
-
-                case 3:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++));
-                    }
-                    break;
-
-                case 4:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++));
-                    }
-                    break;
-
-                case 5:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++));
-                    }
-                    break;
-
-                case 6:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++));
-                    }
-                    break;
-
-                case 7:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++));
-                    }
-                    break;
-
-                case 8:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++));
-                    }
-                    break;
-
-                case 9:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++));
-                    }
-                    break;
-
-                case 10:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++));
-                    }
-                    break;
-
-                case 11:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++));
-                    }
-                    break;
-
-                case 12:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        SFP11ptr = wmhSFP11 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++));
-                    }
-                    break;
-
-                case 13:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        SFP11ptr = wmhSFP11 + offset;
-                        SFP12ptr = wmhSFP12 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++));
-                    }
-                    break;
-
-                case 14:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        SFP11ptr = wmhSFP11 + offset;
-                        SFP12ptr = wmhSFP12 + offset;
-                        SFP13ptr = wmhSFP13 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++));
-                    }
-                    break;
-
-                case 15:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        SFP11ptr = wmhSFP11 + offset;
-                        SFP12ptr = wmhSFP12 + offset;
-                        SFP13ptr = wmhSFP13 + offset;
-                        SFP14ptr = wmhSFP14 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++));
-                    }
-                    break;
-
-                case 16:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    x15 = *x_Ptr15++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        SFP11ptr = wmhSFP11 + offset;
-                        SFP12ptr = wmhSFP12 + offset;
-                        SFP13ptr = wmhSFP13 + offset;
-                        SFP14ptr = wmhSFP14 + offset;
-                        SFP15ptr = wmhSFP15 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++));
-                    }
-                    break;
-
-                case 17:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    x15 = *x_Ptr15++;
-                    x16 = *x_Ptr16++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        SFP11ptr = wmhSFP11 + offset;
-                        SFP12ptr = wmhSFP12 + offset;
-                        SFP13ptr = wmhSFP13 + offset;
-                        SFP14ptr = wmhSFP14 + offset;
-                        SFP15ptr = wmhSFP15 + offset;
-                        SFP16ptr = wmhSFP16 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++) + x16 * (*wmhSFP16++));
-                    }
-                    break;
-
-                case 18:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    x15 = *x_Ptr15++;
-                    x16 = *x_Ptr16++;
-                    x17 = *x_Ptr17++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        SFP11ptr = wmhSFP11 + offset;
-                        SFP12ptr = wmhSFP12 + offset;
-                        SFP13ptr = wmhSFP13 + offset;
-                        SFP14ptr = wmhSFP14 + offset;
-                        SFP15ptr = wmhSFP15 + offset;
-                        SFP16ptr = wmhSFP16 + offset;
-                        SFP17ptr = wmhSFP17 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++) + x16 * (*wmhSFP16++) + x17 * (*wmhSFP17++));
-                    }
-                    break;
-
-                case 19:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    x15 = *x_Ptr15++;
-                    x16 = *x_Ptr16++;
-                    x17 = *x_Ptr17++;
-                    x18 = *x_Ptr18++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
-                    {
-                        SFP0ptr = wmhSFP0 + offset;
-                        SFP1ptr = wmhSFP1 + offset;
-                        SFP2ptr = wmhSFP2 + offset;
-                        SFP3ptr = wmhSFP3 + offset;
-                        SFP4ptr = wmhSFP4 + offset;
-                        SFP5ptr = wmhSFP5 + offset;
-                        SFP6ptr = wmhSFP6 + offset;
-                        SFP7ptr = wmhSFP7 + offset;
-                        SFP8ptr = wmhSFP8 + offset;
-                        SFP9ptr = wmhSFP9 + offset;
-                        SFP10ptr = wmhSFP10 + offset;
-                        SFP11ptr = wmhSFP11 + offset;
-                        SFP12ptr = wmhSFP12 + offset;
-                        SFP13ptr = wmhSFP13 + offset;
-                        SFP14ptr = wmhSFP14 + offset;
-                        SFP15ptr = wmhSFP15 + offset;
-                        SFP16ptr = wmhSFP16 + offset;
-                        SFP17ptr = wmhSFP17 + offset;
-                        SFP18ptr = wmhSFP18 + offset;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++) + x16 * (*wmhSFP16++) + x17 * (*wmhSFP17++) + x18 * (*wmhSFP18++));
-                    }
-                    break;
-
-                case 20:
+                while (t_v != t_vEnd)
+                {
                     x0 = *x_Ptr0++;
                     x1 = *x_Ptr1++;
                     x2 = *x_Ptr2++;
@@ -1632,6 +1645,7 @@ void* COMMIT_A__block( void *ptr )
                     x19 = *x_Ptr19++;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
+                        updateEC_Y(&Yptr, *t_v, &YptrEnd, &offset, *t_o);
                         SFP0ptr = wmhSFP0 + offset;
                         SFP1ptr = wmhSFP1 + offset;
                         SFP2ptr = wmhSFP2 + offset;
@@ -1653,37 +1667,97 @@ void* COMMIT_A__block( void *ptr )
                         SFP18ptr = wmhSFP18 + offset;
                         SFP19ptr = wmhSFP19 + offset;
                         while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*wmhSFP0++) + x1 * (*wmhSFP1++) + x2 * (*wmhSFP2++) + x3 * (*wmhSFP3++) + x4 * (*wmhSFP4++) + x5 * (*wmhSFP5++) + x6 * (*wmhSFP6++) + x7 * (*wmhSFP7++) + x8 * (*wmhSFP8++) + x9 * (*wmhSFP9++) + x10 * (*wmhSFP10++) + x11 * (*wmhSFP11++) + x12 * (*wmhSFP12++) + x13 * (*wmhSFP13++) + x14 * (*wmhSFP14++) + x15 * (*wmhSFP15++) + x16 * (*wmhSFP16++) + x17 * (*wmhSFP17++) + x18 * (*wmhSFP18++) + x19 * (*wmhSFP19++));
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++) + x19 * (*SFP19ptr++));
                     }
-                    break;
-            }
-            t_v++;
-            t_o++;
+                    updateEC_loop(&t_v, &t_o);
+                }
+                break;
         }
     }
 
     // isotropic compartments
-    if (nISO_ >= 1)
+    if (nISO_ > 0)
     {
-        t_v = ISOv + ISOthreads[id];
-        t_vEnd = ISOv + ISOthreads[id+1];
-
+        initISO(&t_v, &t_vEnd, id);
         x_Ptr0 = x + nIC_*nF + nEC_*nE + ISOthreads[id];
         switch (nISO_)
         {
+            case 1:
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    if (x0 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
+                break;
+            
             case 2:
                 x_Ptr1 = x_Ptr0 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    if (x0 != 0 || x1 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 3:
                 x_Ptr1 = x_Ptr0 + nV;
                 x_Ptr2 = x_Ptr1 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 4:
                 x_Ptr1 = x_Ptr0 + nV;
                 x_Ptr2 = x_Ptr1 + nV;
                 x_Ptr3 = x_Ptr2 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 5:
@@ -1691,6 +1765,26 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr2 = x_Ptr1 + nV;
                 x_Ptr3 = x_Ptr2 + nV;
                 x_Ptr4 = x_Ptr3 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 6:
@@ -1699,6 +1793,28 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr3 = x_Ptr2 + nV;
                 x_Ptr4 = x_Ptr3 + nV;
                 x_Ptr5 = x_Ptr4 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 7:
@@ -1708,6 +1824,30 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr4 = x_Ptr3 + nV;
                 x_Ptr5 = x_Ptr4 + nV;
                 x_Ptr6 = x_Ptr5 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 8:
@@ -1718,6 +1858,32 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr5 = x_Ptr4 + nV;
                 x_Ptr6 = x_Ptr5 + nV;
                 x_Ptr7 = x_Ptr6 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 9:
@@ -1729,6 +1895,34 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr6 = x_Ptr5 + nV;
                 x_Ptr7 = x_Ptr6 + nV;
                 x_Ptr8 = x_Ptr7 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 10:
@@ -1741,6 +1935,36 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr7 = x_Ptr6 + nV;
                 x_Ptr8 = x_Ptr7 + nV;
                 x_Ptr9 = x_Ptr8 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 11:
@@ -1754,6 +1978,38 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr8 = x_Ptr7 + nV;
                 x_Ptr9 = x_Ptr8 + nV;
                 x_Ptr10 = x_Ptr9 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 12:
@@ -1768,6 +2024,40 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr9 = x_Ptr8 + nV;
                 x_Ptr10 = x_Ptr9 + nV;
                 x_Ptr11 = x_Ptr10 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 13:
@@ -1783,6 +2073,42 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr10 = x_Ptr9 + nV;
                 x_Ptr11 = x_Ptr10 + nV;
                 x_Ptr12 = x_Ptr11 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 14:
@@ -1799,6 +2125,44 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr11 = x_Ptr10 + nV;
                 x_Ptr12 = x_Ptr11 + nV;
                 x_Ptr13 = x_Ptr12 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 15:
@@ -1816,6 +2180,46 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr12 = x_Ptr11 + nV;
                 x_Ptr13 = x_Ptr12 + nV;
                 x_Ptr14 = x_Ptr13 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 16:
@@ -1834,6 +2238,48 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr13 = x_Ptr12 + nV;
                 x_Ptr14 = x_Ptr13 + nV;
                 x_Ptr15 = x_Ptr14 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 17:
@@ -1853,6 +2299,50 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr14 = x_Ptr13 + nV;
                 x_Ptr15 = x_Ptr14 + nV;
                 x_Ptr16 = x_Ptr15 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        SFP16ptr = isoSFP16;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 18:
@@ -1873,6 +2363,52 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr15 = x_Ptr14 + nV;
                 x_Ptr16 = x_Ptr15 + nV;
                 x_Ptr17 = x_Ptr16 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    x17 = *x_Ptr17++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        SFP16ptr = isoSFP16;
+                        SFP17ptr = isoSFP17;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 19:
@@ -1894,6 +2430,54 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr16 = x_Ptr15 + nV;
                 x_Ptr17 = x_Ptr16 + nV;
                 x_Ptr18 = x_Ptr17 + nV;
+                while (t_v != t_vEnd)
+                {
+                    x0 = *x_Ptr0++;
+                    x1 = *x_Ptr1++;
+                    x2 = *x_Ptr2++;
+                    x3 = *x_Ptr3++;
+                    x4 = *x_Ptr4++;
+                    x5 = *x_Ptr5++;
+                    x6 = *x_Ptr6++;
+                    x7 = *x_Ptr7++;
+                    x8 = *x_Ptr8++;
+                    x9 = *x_Ptr9++;
+                    x10 = *x_Ptr10++;
+                    x11 = *x_Ptr11++;
+                    x12 = *x_Ptr12++;
+                    x13 = *x_Ptr13++;
+                    x14 = *x_Ptr14++;
+                    x15 = *x_Ptr15++;
+                    x16 = *x_Ptr16++;
+                    x17 = *x_Ptr17++;
+                    x18 = *x_Ptr18++;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
+                    {
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
+                        SFP10ptr = isoSFP10;
+                        SFP11ptr = isoSFP11;
+                        SFP12ptr = isoSFP12;
+                        SFP13ptr = isoSFP13;
+                        SFP14ptr = isoSFP14;
+                        SFP15ptr = isoSFP15;
+                        SFP16ptr = isoSFP16;
+                        SFP17ptr = isoSFP17;
+                        SFP18ptr = isoSFP18;
+                        while (Yptr != YptrEnd)
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++));
+                    }
+                    updateISO_loop(&t_v);
+                }
                 break;
 
             case 20:
@@ -1916,178 +2500,8 @@ void* COMMIT_A__block( void *ptr )
                 x_Ptr17 = x_Ptr16 + nV;
                 x_Ptr18 = x_Ptr17 + nV;
                 x_Ptr19 = x_Ptr18 + nV;
-                break;
-        }
-        
-        while (t_v != t_vEnd)
-        {
-            Yptr = Y + nS * (*t_v);
-            YptrEnd = Yptr + nS;
-            switch (nISO_)
-            {
-                case 1:
-                    x0 = *x_Ptr0++;
-                    if (x0 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++));
-                    }
-                    break;
-
-                case 2:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    if (x0 != 0 || x1 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++));
-                    }
-                    break;
-
-                case 3:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++));
-                    }
-                    break;
-
-                case 4:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++));
-                    }
-                    break;
-
-                case 5:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++));
-                    }
-                    break;
-
-                case 6:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++));
-                    }
-                    break;
-
-                case 7:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++));
-                    }
-                    break;
-
-                case 8:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        SFP7ptr = isoSFP7;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++));
-                    }
-                    break;
-
-                case 9:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        SFP7ptr = isoSFP7;
-                        SFP8ptr = isoSFP8;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++));
-                    }
-                    break;
-
-                case 10:
+                while (t_v != t_vEnd)
+                {
                     x0 = *x_Ptr0++;
                     x1 = *x_Ptr1++;
                     x2 = *x_Ptr2++;
@@ -2098,376 +2512,6 @@ void* COMMIT_A__block( void *ptr )
                     x7 = *x_Ptr7++;
                     x8 = *x_Ptr8++;
                     x9 = *x_Ptr9++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        SFP7ptr = isoSFP7;
-                        SFP8ptr = isoSFP8;
-                        SFP9ptr = isoSFP9;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++));
-                    }
-                    break;
-
-                case 11:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        SFP7ptr = isoSFP7;
-                        SFP8ptr = isoSFP8;
-                        SFP9ptr = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++));
-                    }
-                    break;
-
-                case 12:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        SFP7ptr = isoSFP7;
-                        SFP8ptr = isoSFP8;
-                        SFP9ptr = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        SFP11ptr = isoSFP11;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++));
-                    }
-                    break;
-
-                case 13:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        SFP7ptr = isoSFP7;
-                        SFP8ptr = isoSFP8;
-                        SFP9ptr = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        SFP11ptr = isoSFP11;
-                        SFP12ptr = isoSFP12;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++));
-                    }
-                    break;
-
-                case 14:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        SFP7ptr = isoSFP7;
-                        SFP8ptr = isoSFP8;
-                        SFP9ptr = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        SFP11ptr = isoSFP11;
-                        SFP12ptr = isoSFP12;
-                        SFP13ptr = isoSFP13;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++));
-                    }
-                    break;
-
-                case 15:
-                    x0 = *x_Ptr0++;
-                    x1 = *x_Ptr1++;
-                    x2 = *x_Ptr2++;
-                    x3 = *x_Ptr3++;
-                    x4 = *x_Ptr4++;
-                    x5 = *x_Ptr5++;
-                    x6 = *x_Ptr6++;
-                    x7 = *x_Ptr7++;
-                    x8 = *x_Ptr8++;
-                    x9 = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
-                    {
-                        SFP0ptr = isoSFP0;
-                        SFP1ptr = isoSFP1;
-                        SFP2ptr = isoSFP2;
-                        SFP3ptr = isoSFP3;
-                        SFP4ptr = isoSFP4;
-                        SFP5ptr = isoSFP5;
-                        SFP6ptr = isoSFP6;
-                        SFP7ptr = isoSFP7;
-                        SFP8ptr = isoSFP8;
-                        SFP9ptr = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        SFP11ptr = isoSFP11;
-                        SFP12ptr = isoSFP12;
-                        SFP13ptr = isoSFP13;
-                        SFP14ptr = isoSFP14;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++));
-                    }
-                    break;
-
-                case 16:
-                    x0  = *x_Ptr0++;
-                    x1  = *x_Ptr1++;
-                    x2  = *x_Ptr2++;
-                    x3  = *x_Ptr3++;
-                    x4  = *x_Ptr4++;
-                    x5  = *x_Ptr5++;
-                    x6  = *x_Ptr6++;
-                    x7  = *x_Ptr7++;
-                    x8  = *x_Ptr8++;
-                    x9  = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    x15 = *x_Ptr15++;
-                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
-                    {
-                        SFP0ptr  = isoSFP0;
-                        SFP1ptr  = isoSFP1;
-                        SFP2ptr  = isoSFP2;
-                        SFP3ptr  = isoSFP3;
-                        SFP4ptr  = isoSFP4;
-                        SFP5ptr  = isoSFP5;
-                        SFP6ptr  = isoSFP6;
-                        SFP7ptr  = isoSFP7;
-                        SFP8ptr  = isoSFP8;
-                        SFP9ptr  = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        SFP11ptr = isoSFP11;
-                        SFP12ptr = isoSFP12;
-                        SFP13ptr = isoSFP13;
-                        SFP14ptr = isoSFP14;
-                        SFP15ptr = isoSFP15;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++));
-                    }
-                    break;
-
-                case 17:
-                    x0  = *x_Ptr0++;
-                    x1  = *x_Ptr1++;
-                    x2  = *x_Ptr2++;
-                    x3  = *x_Ptr3++;
-                    x4  = *x_Ptr4++;
-                    x5  = *x_Ptr5++;
-                    x6  = *x_Ptr6++;
-                    x7  = *x_Ptr7++;
-                    x8  = *x_Ptr8++;
-                    x9  = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    x15 = *x_Ptr15++;
-                    x16 = *x_Ptr16++;
-                    if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
-                    {
-                        SFP0ptr  = isoSFP0;
-                        SFP1ptr  = isoSFP1;
-                        SFP2ptr  = isoSFP2;
-                        SFP3ptr  = isoSFP3;
-                        SFP4ptr  = isoSFP4;
-                        SFP5ptr  = isoSFP5;
-                        SFP6ptr  = isoSFP6;
-                        SFP7ptr  = isoSFP7;
-                        SFP8ptr  = isoSFP8;
-                        SFP9ptr  = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        SFP11ptr = isoSFP11;
-                        SFP12ptr = isoSFP12;
-                        SFP13ptr = isoSFP13;
-                        SFP14ptr = isoSFP14;
-                        SFP15ptr = isoSFP15;
-                        SFP16ptr = isoSFP16;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++));
-                    }
-                    break;
-
-                case 18:
-                    x0  = *x_Ptr0++;
-                    x1  = *x_Ptr1++;
-                    x2  = *x_Ptr2++;
-                    x3  = *x_Ptr3++;
-                    x4  = *x_Ptr4++;
-                    x5  = *x_Ptr5++;
-                    x6  = *x_Ptr6++;
-                    x7  = *x_Ptr7++;
-                    x8  = *x_Ptr8++;
-                    x9  = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    x15 = *x_Ptr15++;
-                    x16 = *x_Ptr16++;
-                    x17 = *x_Ptr17++;
-                    if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
-                    {
-                        SFP0ptr  = isoSFP0;
-                        SFP1ptr  = isoSFP1;
-                        SFP2ptr  = isoSFP2;
-                        SFP3ptr  = isoSFP3;
-                        SFP4ptr  = isoSFP4;
-                        SFP5ptr  = isoSFP5;
-                        SFP6ptr  = isoSFP6;
-                        SFP7ptr  = isoSFP7;
-                        SFP8ptr  = isoSFP8;
-                        SFP9ptr  = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        SFP11ptr = isoSFP11;
-                        SFP12ptr = isoSFP12;
-                        SFP13ptr = isoSFP13;
-                        SFP14ptr = isoSFP14;
-                        SFP15ptr = isoSFP15;
-                        SFP16ptr = isoSFP16;
-                        SFP17ptr = isoSFP17;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++));
-                    }
-                    break;
-
-                case 19:
-                    x0  = *x_Ptr0++;
-                    x1  = *x_Ptr1++;
-                    x2  = *x_Ptr2++;
-                    x3  = *x_Ptr3++;
-                    x4  = *x_Ptr4++;
-                    x5  = *x_Ptr5++;
-                    x6  = *x_Ptr6++;
-                    x7  = *x_Ptr7++;
-                    x8  = *x_Ptr8++;
-                    x9  = *x_Ptr9++;
-                    x10 = *x_Ptr10++;
-                    x11 = *x_Ptr11++;
-                    x12 = *x_Ptr12++;
-                    x13 = *x_Ptr13++;
-                    x14 = *x_Ptr14++;
-                    x15 = *x_Ptr15++;
-                    x16 = *x_Ptr16++;
-                    x17 = *x_Ptr17++;
-                    x18 = *x_Ptr18++;
-                    if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
-                    {
-                        SFP0ptr  = isoSFP0;
-                        SFP1ptr  = isoSFP1;
-                        SFP2ptr  = isoSFP2;
-                        SFP3ptr  = isoSFP3;
-                        SFP4ptr  = isoSFP4;
-                        SFP5ptr  = isoSFP5;
-                        SFP6ptr  = isoSFP6;
-                        SFP7ptr  = isoSFP7;
-                        SFP8ptr  = isoSFP8;
-                        SFP9ptr  = isoSFP9;
-                        SFP10ptr = isoSFP10;
-                        SFP11ptr = isoSFP11;
-                        SFP12ptr = isoSFP12;
-                        SFP13ptr = isoSFP13;
-                        SFP14ptr = isoSFP14;
-                        SFP15ptr = isoSFP15;
-                        SFP16ptr = isoSFP16;
-                        SFP17ptr = isoSFP17;
-                        SFP18ptr = isoSFP18;
-                        while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++));
-                    }
-                    break;
-
-                case 20:
-                    x0  = *x_Ptr0++;
-                    x1  = *x_Ptr1++;
-                    x2  = *x_Ptr2++;
-                    x3  = *x_Ptr3++;
-                    x4  = *x_Ptr4++;
-                    x5  = *x_Ptr5++;
-                    x6  = *x_Ptr6++;
-                    x7  = *x_Ptr7++;
-                    x8  = *x_Ptr8++;
-                    x9  = *x_Ptr9++;
                     x10 = *x_Ptr10++;
                     x11 = *x_Ptr11++;
                     x12 = *x_Ptr12++;
@@ -2478,18 +2522,19 @@ void* COMMIT_A__block( void *ptr )
                     x17 = *x_Ptr17++;
                     x18 = *x_Ptr18++;
                     x19 = *x_Ptr19++;
-                    if (x0  != 0 || x1  != 0 || x2  != 0 || x3  != 0 || x4  != 0 || x5  != 0 || x6  != 0 || x7  != 0 || x8  != 0 || x9  != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
-                        SFP0ptr  = isoSFP0;
-                        SFP1ptr  = isoSFP1;
-                        SFP2ptr  = isoSFP2;
-                        SFP3ptr  = isoSFP3;
-                        SFP4ptr  = isoSFP4;
-                        SFP5ptr  = isoSFP5;
-                        SFP6ptr  = isoSFP6;
-                        SFP7ptr  = isoSFP7;
-                        SFP8ptr  = isoSFP8;
-                        SFP9ptr  = isoSFP9;
+                        updateISO_Y(&Yptr, *t_v, &YptrEnd);
+                        SFP0ptr = isoSFP0;
+                        SFP1ptr = isoSFP1;
+                        SFP2ptr = isoSFP2;
+                        SFP3ptr = isoSFP3;
+                        SFP4ptr = isoSFP4;
+                        SFP5ptr = isoSFP5;
+                        SFP6ptr = isoSFP6;
+                        SFP7ptr = isoSFP7;
+                        SFP8ptr = isoSFP8;
+                        SFP9ptr = isoSFP9;
                         SFP10ptr = isoSFP10;
                         SFP11ptr = isoSFP11;
                         SFP12ptr = isoSFP12;
@@ -2501,11 +2546,11 @@ void* COMMIT_A__block( void *ptr )
                         SFP18ptr = isoSFP18;
                         SFP19ptr = isoSFP19;
                         while (Yptr != YptrEnd)
-                            (*Yptr++) += (x0  * (*SFP0ptr++)  + x1  * (*SFP1ptr++)  + x2  * (*SFP2ptr++)  + x3  * (*SFP3ptr++)  + x4  * (*SFP4ptr++)  + x5  * (*SFP5ptr++)  + x6  * (*SFP6ptr++)  + x7  * (*SFP7ptr++)  + x8  * (*SFP8ptr++)  + x9  * (*SFP9ptr++)  + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++) + x19 * (*SFP19ptr++));
+                            (*Yptr++) += (x0 * (*SFP0ptr++) + x1 * (*SFP1ptr++) + x2 * (*SFP2ptr++) + x3 * (*SFP3ptr++) + x4 * (*SFP4ptr++) + x5 * (*SFP5ptr++) + x6 * (*SFP6ptr++) + x7 * (*SFP7ptr++) + x8 * (*SFP8ptr++) + x9 * (*SFP9ptr++) + x10 * (*SFP10ptr++) + x11 * (*SFP11ptr++) + x12 * (*SFP12ptr++) + x13 * (*SFP13ptr++) + x14 * (*SFP14ptr++) + x15 * (*SFP15ptr++) + x16 * (*SFP16ptr++) + x17 * (*SFP17ptr++) + x18 * (*SFP18ptr++) + x19 * (*SFP19ptr++));
                     }
-                    break;
-            }
-            t_v++;
+                    updateISO_loop(&t_v);
+                }
+                break;
         }
     }
 
