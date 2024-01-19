@@ -92,6 +92,12 @@ void updateICt_loop(uint32_t **t_f, uint32_t **t_v, uint16_t **t_o, float **t_l,
     (*t_t)++;
 }
 
+void initIC_x(double **xPtr, uint32_t t_f, double *xVal)
+{
+    *xPtr = x + t_f;
+    *xVal = **xPtr;
+}
+
 void updateIC_x(double **xPtr, double **xPtrPrec, double *xVal)
 {
     *xPtr = *xPtrPrec + nF;
@@ -158,8 +164,7 @@ void* COMMIT_A__block( void *ptr )
             case 1:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     if (x0 != 0)
                     {
                         updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
@@ -173,8 +178,7 @@ void* COMMIT_A__block( void *ptr )
             case 2:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     if (x0 != 0 || x1 != 0)
                     {
@@ -190,8 +194,7 @@ void* COMMIT_A__block( void *ptr )
             case 3:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     if (x0 != 0 || x1 != 0 || x2 != 0)
@@ -209,8 +212,7 @@ void* COMMIT_A__block( void *ptr )
             case 4:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -230,8 +232,7 @@ void* COMMIT_A__block( void *ptr )
             case 5:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -253,8 +254,7 @@ void* COMMIT_A__block( void *ptr )
             case 6:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -278,8 +278,7 @@ void* COMMIT_A__block( void *ptr )
             case 7:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -305,8 +304,7 @@ void* COMMIT_A__block( void *ptr )
             case 8:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -334,8 +332,7 @@ void* COMMIT_A__block( void *ptr )
             case 9:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -365,8 +362,7 @@ void* COMMIT_A__block( void *ptr )
             case 10:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -398,8 +394,7 @@ void* COMMIT_A__block( void *ptr )
             case 11:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -433,8 +428,7 @@ void* COMMIT_A__block( void *ptr )
             case 12:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -470,8 +464,7 @@ void* COMMIT_A__block( void *ptr )
             case 13:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -509,8 +502,7 @@ void* COMMIT_A__block( void *ptr )
             case 14:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -550,8 +542,7 @@ void* COMMIT_A__block( void *ptr )
             case 15:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -593,8 +584,7 @@ void* COMMIT_A__block( void *ptr )
             case 16:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -639,8 +629,7 @@ void* COMMIT_A__block( void *ptr )
             case 17:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -687,8 +676,7 @@ void* COMMIT_A__block( void *ptr )
             case 18:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -737,8 +725,7 @@ void* COMMIT_A__block( void *ptr )
             case 19:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
@@ -789,8 +776,7 @@ void* COMMIT_A__block( void *ptr )
             case 20:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    x0 = *x_Ptr0;
+                    initIC_x(&x_Ptr0, *t_f, &x0);
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
