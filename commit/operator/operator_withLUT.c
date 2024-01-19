@@ -17,7 +17,7 @@ float       *ICl;
 float       *wmrSFP0, *wmrSFP1, *wmrSFP2, *wmrSFP3, *wmrSFP4, *wmrSFP5, *wmrSFP6, *wmrSFP7, *wmrSFP8, *wmrSFP9, *wmrSFP10, *wmrSFP11, *wmrSFP12, *wmrSFP13, *wmrSFP14, *wmrSFP15, *wmrSFP16, *wmrSFP17, *wmrSFP18, *wmrSFP19;
 float       *wmhSFP0, *wmhSFP1, *wmhSFP2, *wmhSFP3, *wmhSFP4, *wmhSFP5, *wmhSFP6, *wmhSFP7, *wmhSFP8, *wmhSFP9, *wmhSFP10, *wmhSFP11, *wmhSFP12, *wmhSFP13, *wmhSFP14, *wmhSFP15, *wmhSFP16, *wmhSFP17, *wmhSFP18, *wmhSFP19;
 float       *isoSFP0, *isoSFP1, *isoSFP2, *isoSFP3, *isoSFP4, *isoSFP5, *isoSFP6, *isoSFP7, *isoSFP8, *isoSFP9, *isoSFP10, *isoSFP11, *isoSFP12, *isoSFP13, *isoSFP14, *isoSFP15, *isoSFP16, *isoSFP17, *isoSFP18, *isoSFP19;
-uint32_t    nIC_, nEC_, nISO_;
+uint32_t    nIC, nEC, nISO;
 
 
 // ====================================================
@@ -36,14 +36,14 @@ void* COMMIT_A__block( void *ptr )
     float    *t_l;
 
     // intra-cellular compartments
-    if (nIC_ > 0)
+    if (nIC > 0)
     {
         t_v = ICv + ICthreads[id];
         t_vEnd = ICv + ICthreads[id+1];
         t_o = ICo + ICthreads[id];
         t_l = ICl + ICthreads[id];
         t_f = ICf + ICthreads[id];
-        switch (nIC_)
+        switch (nIC)
         {
             case 1:
                 while (t_v != t_vEnd)
@@ -1062,13 +1062,13 @@ void* COMMIT_A__block( void *ptr )
     }
 
     // extra-cellular compartments
-    if (nEC_ > 0)
+    if (nEC > 0)
     {
         t_v = ECv + ECthreads[id];
         t_vEnd = ECv + ECthreads[id+1];
         t_o = ECo + ECthreads[id];
-        xPtr0 = x + nIC_*nF + ECthreads[id];
-        switch (nEC_)
+        xPtr0 = x + nIC*nF + ECthreads[id];
+        switch (nEC)
         {
             case 1:
                 while (t_v != t_vEnd)
@@ -2003,12 +2003,12 @@ void* COMMIT_A__block( void *ptr )
     }
 
     // isotropic compartments
-    if (nISO_ > 0)
+    if (nISO > 0)
     {
         t_v = ISOv + ISOthreads[id];
         t_vEnd = ISOv + ISOthreads[id+1];
-        xPtr0 = x + nIC_*nF + nEC_*nE + ISOthreads[id];
-        switch (nISO_)
+        xPtr0 = x + nIC*nF + nEC*nE + ISOthreads[id];
+        switch (nISO)
         {
             case 1:
                 while (t_v != t_vEnd)
@@ -2917,7 +2917,7 @@ void COMMIT_A(
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
     uint32_t* _ICthreads, uint32_t* _ECthreads, uint32_t* _ISOthreads,
-    uint32_t nIC, uint32_t nEC, uint32_t nISO, uint32_t nThreads
+    uint32_t _nIC, uint32_t _nEC, uint32_t _nISO, uint32_t _nThreads
 )
 {
     nF = _nF;
@@ -2938,11 +2938,11 @@ void COMMIT_A(
     ECo  = _ECo;
     ISOv = _ISOv;
 
-    nIC_ = nIC;
-    nEC_ = nEC;
-    nISO_ = nISO;
+    nIC = _nIC;
+    nEC = _nEC;
+    nISO = _nISO;
 
-    switch (nIC_)
+    switch (nIC)
     {
         case 1:
             wmrSFP0 = _wmrSFP;
@@ -3215,7 +3215,7 @@ void COMMIT_A(
             break;
     }
 
-    switch (nEC_)
+    switch (nEC)
     {
         case 1:
             wmhSFP0 = _wmhSFP;
@@ -3488,7 +3488,7 @@ void COMMIT_A(
             break;
     }
 
-    switch (nISO_)
+    switch (nISO)
     {
         case 1:
             isoSFP0 = _isoSFP;
@@ -3768,9 +3768,9 @@ void COMMIT_A(
     // Run SEPARATE THREADS to perform the multiplication
     pthread_t threads[MAX_THREADS];
     int t;
-    for(t=0; t<nThreads ; t++)
+    for(t=0; t<_nThreads ; t++)
         pthread_create( &threads[t], NULL, COMMIT_A__block, (void *) (long int)t );
-    for(t=0; t<nThreads ; t++)
+    for(t=0; t<_nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
 }
@@ -3794,7 +3794,7 @@ void* COMMIT_At__block( void *ptr )
     uint8_t  *t_t;
 
     // intra-cellular compartments
-    if (nIC_ > 0)
+    if (nIC > 0)
     {
         t_v = ICv;
         t_vEnd = ICv + n;
@@ -3802,7 +3802,7 @@ void* COMMIT_At__block( void *ptr )
         t_l = ICl;
         t_f = ICf;
         t_t = ICthreadsT;
-        switch (nIC_)
+        switch (nIC)
         {
             case 1:
                 while (t_v != t_vEnd)
@@ -5107,13 +5107,13 @@ void* COMMIT_At__block( void *ptr )
     }
 
     // extra-cellular compartments
-    if (nEC_ > 0)
+    if (nEC > 0)
     {
         t_v = ECv + ECthreadsT[id];
         t_vEnd = ECv + ECthreadsT[id+1];
         t_o = ECo + ECthreadsT[id];
-        xPtr0 = x + nIC_*nF + ECthreadsT[id];
-        switch (nEC_)
+        xPtr0 = x + nIC*nF + ECthreadsT[id];
+        switch (nEC)
         {
             case 1:
                 while (t_v != t_vEnd)
@@ -6466,12 +6466,12 @@ void* COMMIT_At__block( void *ptr )
     }
 
     // isotropic compartments
-    if (nISO_ > 0)
+    if (nISO > 0)
     {
         t_v = ISOv + ISOthreadsT[id];
         t_vEnd = ISOv + ISOthreadsT[id+1];
-        xPtr0 = x + nIC_*nF + nEC_*nE + ISOthreadsT[id];
-        switch (nISO_)
+        xPtr0 = x + nIC*nF + nEC*nE + ISOthreadsT[id];
+        switch (nISO)
         {
             case 1:
                 while (t_v != t_vEnd)
@@ -7800,7 +7800,7 @@ void COMMIT_At(
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
     uint8_t* _ICthreadsT, uint32_t* _ECthreadsT, uint32_t* _ISOthreadsT,
-    uint32_t nIC, uint32_t nEC, uint32_t nISO, uint32_t nThreads
+    uint32_t _nIC, uint32_t _nEC, uint32_t _nISO, uint32_t _nThreads
 )
 {
     nF = _nF;
@@ -7821,11 +7821,11 @@ void COMMIT_At(
     ECo  = _ECo;
     ISOv = _ISOv;
 
-    nIC_ = nIC;
-    nEC_ = nEC;
-    nISO_ = nISO;
+    nIC = _nIC;
+    nEC = _nEC;
+    nISO = _nISO;
 
-    switch (nIC_)
+    switch (nIC)
     {
         case 1:
             wmrSFP0 = _wmrSFP;
@@ -8098,7 +8098,7 @@ void COMMIT_At(
             break;
     }
 
-    switch (nEC_)
+    switch (nEC)
     {
         case 1:
             wmhSFP0 = _wmhSFP;
@@ -8371,7 +8371,7 @@ void COMMIT_At(
             break;
     }
 
-    switch (nISO_)
+    switch (nISO)
     {
         case 1:
             isoSFP0 = _isoSFP;
@@ -8651,9 +8651,9 @@ void COMMIT_At(
     // Run SEPARATE THREADS to perform the multiplication
     pthread_t threads[MAX_THREADS];
     int t;
-    for(t=0; t<nThreads ; t++)
+    for(t=0; t<_nThreads ; t++)
         pthread_create( &threads[t], NULL, COMMIT_At__block, (void *) (long int)t );
-    for(t=0; t<nThreads ; t++)
+    for(t=0; t<_nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
 }
