@@ -106,17 +106,17 @@ void updateIC_x(double **xPtr, double **xPtrPrec, double *xVal)
 
 void updateIC_Y(double **YPtr, uint32_t t_v, double **YPtrEnd, double *w, float t_l, int *offset, uint16_t t_o)
 {
-    *YPtr = Y + nS * t_v; // check t_v++
+    *YPtr = Y + nS * t_v;
     *YPtrEnd = *YPtr + nS;
     *w = (double)t_l;
-    *offset = nS * t_o; // check t_o++
+    *offset = nS * t_o;
 }
 
 void updateEC_Y(double **YPtr, uint32_t t_v, double **YPtrEnd, int *offset, uint16_t t_o)
 {
-    *YPtr = Y + nS * t_v; // check t_v++
+    *YPtr = Y + nS * t_v;
     *YPtrEnd = *YPtr + nS;
-    *offset = nS * t_o; // check t_o++
+    *offset = nS * t_o;
 }
 
 void updateISO_Y(double **YPtr, uint32_t t_v, double **YPtrEnd)
@@ -125,12 +125,21 @@ void updateISO_Y(double **YPtr, uint32_t t_v, double **YPtrEnd)
     *YPtrEnd = *YPtr + nS;
 }
 
-void updateICt_Y(double **YPtr, uint32_t t_v, double **YPtrEnd, double *YTmp, int *offset, uint16_t t_o)
+void updateICt_Y(double **YPtr, uint32_t t_v, double **YPtrEnd, double *YTmp, double *w, float t_l, int *offset, uint16_t t_o)
 {
-    *YPtr = Y + nS * t_v; // check t_v++
+    *YPtr = Y + nS * t_v;
     *YPtrEnd = *YPtr + nS;
     *YTmp = **YPtr;
-    *offset = nS * t_o; // check t_o++
+    *w = (double)t_l;
+    *offset = nS * t_o;
+}
+
+void updateECt_Y(double **YPtr, uint32_t t_v, double **YPtrEnd, double *YTmp, int *offset, uint16_t t_o)
+{
+    *YPtr = Y + nS * t_v;
+    *YPtrEnd = *YPtr + nS;
+    *YTmp = **YPtr;
+    *offset = nS * t_o;
 }
 
 void updateISOt_Y(double **YPtr, uint32_t t_v, double **YPtrEnd, double *YTmp)
@@ -170,7 +179,7 @@ void* COMMIT_A__block( void *ptr )
                         updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         while (Yptr != YptrEnd)
-                            (*Yptr++) += w * x0 * (*SFP0ptr++);
+                            (*Yptr++) += w * (x0 * (*SFP0ptr++));
                     }
                     updateIC_loop(&t_f, &t_v, &t_o, &t_l);
                 }
@@ -3488,7 +3497,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
                         while (++Yptr != YptrEnd)
@@ -3496,7 +3505,6 @@ void* COMMIT_At__block( void *ptr )
                             Y_tmp = *Yptr;
                             x0 += (*SFP0ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                     }
                     updateICt_loop(&t_f, &t_v, &t_o, &t_l, &t_t);
@@ -3508,7 +3516,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         x0 = (*SFP0ptr++) * Y_tmp;
@@ -3519,7 +3527,6 @@ void* COMMIT_At__block( void *ptr )
                             x0 += (*SFP0ptr++) * Y_tmp;
                             x1 += (*SFP1ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                     }
@@ -3532,7 +3539,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -3546,7 +3553,6 @@ void* COMMIT_At__block( void *ptr )
                             x1 += (*SFP1ptr++) * Y_tmp;
                             x2 += (*SFP2ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3560,7 +3566,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -3577,7 +3583,6 @@ void* COMMIT_At__block( void *ptr )
                             x2 += (*SFP2ptr++) * Y_tmp;
                             x3 += (*SFP3ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3592,7 +3597,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -3612,7 +3617,6 @@ void* COMMIT_At__block( void *ptr )
                             x3 += (*SFP3ptr++) * Y_tmp;
                             x4 += (*SFP4ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3628,7 +3632,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -3651,7 +3655,6 @@ void* COMMIT_At__block( void *ptr )
                             x4 += (*SFP4ptr++) * Y_tmp;
                             x5 += (*SFP5ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3668,7 +3671,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -3694,7 +3697,6 @@ void* COMMIT_At__block( void *ptr )
                             x5 += (*SFP5ptr++) * Y_tmp;
                             x6 += (*SFP6ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3712,7 +3714,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -3741,7 +3743,6 @@ void* COMMIT_At__block( void *ptr )
                             x6 += (*SFP6ptr++) * Y_tmp;
                             x7 += (*SFP7ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3760,7 +3761,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -3792,7 +3793,6 @@ void* COMMIT_At__block( void *ptr )
                             x7 += (*SFP7ptr++) * Y_tmp;
                             x8 += (*SFP8ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3812,7 +3812,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -3847,7 +3847,6 @@ void* COMMIT_At__block( void *ptr )
                             x8 += (*SFP8ptr++) * Y_tmp;
                             x9 += (*SFP9ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3868,7 +3867,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -3906,7 +3905,6 @@ void* COMMIT_At__block( void *ptr )
                             x9 += (*SFP9ptr++) * Y_tmp;
                             x10 += (*SFP10ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3928,7 +3926,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -3969,7 +3967,6 @@ void* COMMIT_At__block( void *ptr )
                             x10 += (*SFP10ptr++) * Y_tmp;
                             x11 += (*SFP11ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -3992,7 +3989,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -4036,7 +4033,6 @@ void* COMMIT_At__block( void *ptr )
                             x11 += (*SFP11ptr++) * Y_tmp;
                             x12 += (*SFP12ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -4060,7 +4056,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -4107,7 +4103,6 @@ void* COMMIT_At__block( void *ptr )
                             x12 += (*SFP12ptr++) * Y_tmp;
                             x13 += (*SFP13ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -4132,7 +4127,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -4182,7 +4177,6 @@ void* COMMIT_At__block( void *ptr )
                             x13 += (*SFP13ptr++) * Y_tmp;
                             x14 += (*SFP14ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -4208,7 +4202,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -4261,7 +4255,6 @@ void* COMMIT_At__block( void *ptr )
                             x14 += (*SFP14ptr++) * Y_tmp;
                             x15 += (*SFP15ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -4288,7 +4281,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -4344,7 +4337,6 @@ void* COMMIT_At__block( void *ptr )
                             x15 += (*SFP15ptr++) * Y_tmp;
                             x16 += (*SFP16ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -4372,7 +4364,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -4431,7 +4423,6 @@ void* COMMIT_At__block( void *ptr )
                             x16 += (*SFP16ptr++) * Y_tmp;
                             x17 += (*SFP17ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -4460,7 +4451,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -4522,7 +4513,6 @@ void* COMMIT_At__block( void *ptr )
                             x17 += (*SFP17ptr++) * Y_tmp;
                             x18 += (*SFP18ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -4552,7 +4542,7 @@ void* COMMIT_At__block( void *ptr )
                 {
                     if (*t_t == id)
                     {
-                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                        updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &w, *t_l, &offset, *t_o);
                         SFP0ptr  = wmrSFP0  + offset;
                         SFP1ptr  = wmrSFP1  + offset;
                         SFP2ptr  = wmrSFP2  + offset;
@@ -4617,7 +4607,6 @@ void* COMMIT_At__block( void *ptr )
                             x18 += (*SFP18ptr++) * Y_tmp;
                             x19 += (*SFP19ptr++) * Y_tmp;
                         }
-                        w = (double)(*t_l);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -4655,7 +4644,7 @@ void* COMMIT_At__block( void *ptr )
             case 1:
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     x0 = (*SFP0ptr++) * Y_tmp;
                     while (++Yptr != YptrEnd)
@@ -4671,7 +4660,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr1 = x_Ptr0 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     x0 = (*SFP0ptr++) * Y_tmp;
@@ -4692,7 +4681,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr2 = x_Ptr1 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -4719,7 +4708,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr3 = x_Ptr2 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -4751,7 +4740,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr4 = x_Ptr3 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -4788,7 +4777,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr5 = x_Ptr4 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -4830,7 +4819,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr6 = x_Ptr5 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -4877,7 +4866,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr7 = x_Ptr6 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -4929,7 +4918,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr8 = x_Ptr7 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -4986,7 +4975,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr9 = x_Ptr8 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5048,7 +5037,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr10 = x_Ptr9 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5115,7 +5104,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr11 = x_Ptr10 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5187,7 +5176,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr12 = x_Ptr11 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5264,7 +5253,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr13 = x_Ptr12 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5346,7 +5335,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr14 = x_Ptr13 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5433,7 +5422,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr15 = x_Ptr14 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5525,7 +5514,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr16 = x_Ptr15 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5622,7 +5611,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr17 = x_Ptr16 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5724,7 +5713,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr18 = x_Ptr17 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
@@ -5831,7 +5820,7 @@ void* COMMIT_At__block( void *ptr )
                 x_Ptr19 = x_Ptr18 + nE;
                 while (t_v != t_vEnd)
                 {
-                    updateICt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
+                    updateECt_Y(&Yptr, *t_v, &YptrEnd, &Y_tmp, &offset, *t_o);
                     SFP0ptr = wmhSFP0 + offset;
                     SFP1ptr = wmhSFP1 + offset;
                     SFP2ptr = wmhSFP2 + offset;
