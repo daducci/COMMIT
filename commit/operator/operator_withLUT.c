@@ -755,7 +755,6 @@ void* COMMIT_A__block( void *ptr )
                     t_l++;
                 }
                 break;
-
             case 17:
                 while (t_v != t_vEnd)
                 {
@@ -826,7 +825,6 @@ void* COMMIT_A__block( void *ptr )
                     t_l++;
                 }
                 break;
-
             case 18:
                 while (t_v != t_vEnd)
                 {
@@ -900,7 +898,6 @@ void* COMMIT_A__block( void *ptr )
                     t_l++;
                 }
                 break;
-
             case 19:
                 while (t_v != t_vEnd)
                 {
@@ -977,7 +974,6 @@ void* COMMIT_A__block( void *ptr )
                     t_l++;
                 }
                 break;
-
             case 20:
                 while (t_v != t_vEnd)
                 {
@@ -1086,7 +1082,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 2:
                 xPtr1 = xPtr0 + nE;
                 while (t_v != t_vEnd)
@@ -1107,7 +1102,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-            
             case 3:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1131,7 +1125,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 4:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1158,7 +1151,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 5:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1188,7 +1180,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 6:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1221,7 +1212,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 7:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1257,7 +1247,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 8:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1296,7 +1285,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 9:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1338,7 +1326,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 10:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1383,7 +1370,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 11:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1431,7 +1417,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 12:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1482,7 +1467,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 13:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1536,7 +1520,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 14:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1593,7 +1576,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 15:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1653,7 +1635,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 16:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1716,7 +1697,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 17:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1782,7 +1762,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 18:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1851,7 +1830,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 19:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -1923,7 +1901,6 @@ void* COMMIT_A__block( void *ptr )
                     t_o++;
                 }
                 break;
-
             case 20:
                 xPtr1 = xPtr0 + nE;
                 xPtr2 = xPtr1 + nE;
@@ -2024,7 +2001,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-            
             case 2:
                 xPtr1 = xPtr0 + nV;
                 while (t_v != t_vEnd)
@@ -2043,7 +2019,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 3:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2065,7 +2040,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 4:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2090,7 +2064,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 5:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2118,7 +2091,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 6:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2149,7 +2121,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 7:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2183,7 +2154,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 8:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2220,7 +2190,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 9:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2260,7 +2229,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 10:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2303,7 +2271,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 11:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2349,7 +2316,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 12:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2398,7 +2364,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 13:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2450,7 +2415,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 14:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2505,7 +2469,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 15:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2563,7 +2526,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 16:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2624,7 +2586,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 17:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2688,7 +2649,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 18:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2755,7 +2715,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 19:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2825,7 +2784,6 @@ void* COMMIT_A__block( void *ptr )
                     t_v++;
                 }
                 break;
-
             case 20:
                 xPtr1 = xPtr0 + nV;
                 xPtr2 = xPtr1 + nV;
@@ -2945,25 +2903,21 @@ void COMMIT_A(
         case 1:
             wmrSFP0 = _wmrSFP;
             break;
-        
         case 2:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
             break;
-
         case 3:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
             wmrSFP2 = wmrSFP1 + _ndirs*_nS;
             break;
-
         case 4:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
             wmrSFP2 = wmrSFP1 + _ndirs*_nS;
             wmrSFP3 = wmrSFP2 + _ndirs*_nS;
             break;
-
         case 5:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -2971,7 +2925,6 @@ void COMMIT_A(
             wmrSFP3 = wmrSFP2 + _ndirs*_nS;
             wmrSFP4 = wmrSFP3 + _ndirs*_nS;
             break;
-
         case 6:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -2980,7 +2933,6 @@ void COMMIT_A(
             wmrSFP4 = wmrSFP3 + _ndirs*_nS;
             wmrSFP5 = wmrSFP4 + _ndirs*_nS;
             break;
-
         case 7:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -2990,7 +2942,6 @@ void COMMIT_A(
             wmrSFP5 = wmrSFP4 + _ndirs*_nS;
             wmrSFP6 = wmrSFP5 + _ndirs*_nS;
             break;
-
         case 8:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -3001,7 +2952,6 @@ void COMMIT_A(
             wmrSFP6 = wmrSFP5 + _ndirs*_nS;
             wmrSFP7 = wmrSFP6 + _ndirs*_nS;
             break;
-
         case 9:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -3013,7 +2963,6 @@ void COMMIT_A(
             wmrSFP7 = wmrSFP6 + _ndirs*_nS;
             wmrSFP8 = wmrSFP7 + _ndirs*_nS;
             break;
-
         case 10:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3026,7 +2975,6 @@ void COMMIT_A(
             wmrSFP8  = wmrSFP7 + _ndirs*_nS;
             wmrSFP9  = wmrSFP8 + _ndirs*_nS;
             break;
-
         case 11:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3040,7 +2988,6 @@ void COMMIT_A(
             wmrSFP9  = wmrSFP8 + _ndirs*_nS;
             wmrSFP10 = wmrSFP9 + _ndirs*_nS;
             break;
-
         case 12:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3055,7 +3002,6 @@ void COMMIT_A(
             wmrSFP10 = wmrSFP9 + _ndirs*_nS;
             wmrSFP11 = wmrSFP10 + _ndirs*_nS;
             break;
-
         case 13:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3071,7 +3017,6 @@ void COMMIT_A(
             wmrSFP11 = wmrSFP10 + _ndirs*_nS;
             wmrSFP12 = wmrSFP11 + _ndirs*_nS;
             break;
-
         case 14:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3088,7 +3033,6 @@ void COMMIT_A(
             wmrSFP12 = wmrSFP11 + _ndirs*_nS;
             wmrSFP13 = wmrSFP12 + _ndirs*_nS;
             break;
-
         case 15:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3106,7 +3050,6 @@ void COMMIT_A(
             wmrSFP13 = wmrSFP12 + _ndirs*_nS;
             wmrSFP14 = wmrSFP13 + _ndirs*_nS;
             break;
-
         case 16:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3125,7 +3068,6 @@ void COMMIT_A(
             wmrSFP14 = wmrSFP13 + _ndirs*_nS;
             wmrSFP15 = wmrSFP14 + _ndirs*_nS;
             break;
-
         case 17:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3145,7 +3087,6 @@ void COMMIT_A(
             wmrSFP15 = wmrSFP14 + _ndirs*_nS;
             wmrSFP16 = wmrSFP15 + _ndirs*_nS;
             break;
-
         case 18:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -3166,7 +3107,6 @@ void COMMIT_A(
             wmrSFP16 = wmrSFP15 + _ndirs*_nS;
             wmrSFP17 = wmrSFP16 + _ndirs*_nS;
             break;
-
         case 19:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0  + _ndirs*_nS;
@@ -3188,7 +3128,6 @@ void COMMIT_A(
             wmrSFP17 = wmrSFP16 + _ndirs*_nS;
             wmrSFP18 = wmrSFP17 + _ndirs*_nS;
             break;
-
         case 20:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0  + _ndirs*_nS;
@@ -3218,25 +3157,21 @@ void COMMIT_A(
         case 1:
             wmhSFP0 = _wmhSFP;
             break;
-        
         case 2:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
             break;
-
         case 3:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
             wmhSFP2 = wmhSFP1 + _ndirs*_nS;
             break;
-
         case 4:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
             wmhSFP2 = wmhSFP1 + _ndirs*_nS;
             wmhSFP3 = wmhSFP2 + _ndirs*_nS;
             break;
-
         case 5:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -3244,7 +3179,6 @@ void COMMIT_A(
             wmhSFP3 = wmhSFP2 + _ndirs*_nS;
             wmhSFP4 = wmhSFP3 + _ndirs*_nS;
             break;
-
         case 6:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -3253,7 +3187,6 @@ void COMMIT_A(
             wmhSFP4 = wmhSFP3 + _ndirs*_nS;
             wmhSFP5 = wmhSFP4 + _ndirs*_nS;
             break;
-
         case 7:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -3263,7 +3196,6 @@ void COMMIT_A(
             wmhSFP5 = wmhSFP4 + _ndirs*_nS;
             wmhSFP6 = wmhSFP5 + _ndirs*_nS;
             break;
-
         case 8:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -3274,7 +3206,6 @@ void COMMIT_A(
             wmhSFP6 = wmhSFP5 + _ndirs*_nS;
             wmhSFP7 = wmhSFP6 + _ndirs*_nS;
             break;
-
         case 9:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -3286,7 +3217,6 @@ void COMMIT_A(
             wmhSFP7 = wmhSFP6 + _ndirs*_nS;
             wmhSFP8 = wmhSFP7 + _ndirs*_nS;
             break;
-
         case 10:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3299,7 +3229,6 @@ void COMMIT_A(
             wmhSFP8  = wmhSFP7 + _ndirs*_nS;
             wmhSFP9  = wmhSFP8 + _ndirs*_nS;
             break;
-
         case 11:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3313,7 +3242,6 @@ void COMMIT_A(
             wmhSFP9  = wmhSFP8 + _ndirs*_nS;
             wmhSFP10 = wmhSFP9 + _ndirs*_nS;
             break;
-
         case 12:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3328,7 +3256,6 @@ void COMMIT_A(
             wmhSFP10 = wmhSFP9 + _ndirs*_nS;
             wmhSFP11 = wmhSFP10 + _ndirs*_nS;
             break;
-
         case 13:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3344,7 +3271,6 @@ void COMMIT_A(
             wmhSFP11 = wmhSFP10 + _ndirs*_nS;
             wmhSFP12 = wmhSFP11 + _ndirs*_nS;
             break;
-
         case 14:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3361,7 +3287,6 @@ void COMMIT_A(
             wmhSFP12 = wmhSFP11 + _ndirs*_nS;
             wmhSFP13 = wmhSFP12 + _ndirs*_nS;
             break;
-
         case 15:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3379,7 +3304,6 @@ void COMMIT_A(
             wmhSFP13 = wmhSFP12 + _ndirs*_nS;
             wmhSFP14 = wmhSFP13 + _ndirs*_nS;
             break;
-
         case 16:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3398,7 +3322,6 @@ void COMMIT_A(
             wmhSFP14 = wmhSFP13 + _ndirs*_nS;
             wmhSFP15 = wmhSFP14 + _ndirs*_nS;
             break;
-
         case 17:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3418,7 +3341,6 @@ void COMMIT_A(
             wmhSFP15 = wmhSFP14 + _ndirs*_nS;
             wmhSFP16 = wmhSFP15 + _ndirs*_nS;
             break;
-
         case 18:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -3439,7 +3361,6 @@ void COMMIT_A(
             wmhSFP16 = wmhSFP15 + _ndirs*_nS;
             wmhSFP17 = wmhSFP16 + _ndirs*_nS;
             break;
-
         case 19:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0  + _ndirs*_nS;
@@ -3461,7 +3382,6 @@ void COMMIT_A(
             wmhSFP17 = wmhSFP16 + _ndirs*_nS;
             wmhSFP18 = wmhSFP17 + _ndirs*_nS;
             break;
-
         case 20:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0  + _ndirs*_nS;
@@ -3491,25 +3411,21 @@ void COMMIT_A(
         case 1:
             isoSFP0 = _isoSFP;
             break;
-        
         case 2:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
             break;
-
         case 3:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
             isoSFP2 = isoSFP1 + _nS;
             break;
-
         case 4:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
             isoSFP2 = isoSFP1 + _nS;
             isoSFP3 = isoSFP2 + _nS;
             break;
-
         case 5:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -3517,7 +3433,6 @@ void COMMIT_A(
             isoSFP3 = isoSFP2 + _nS;
             isoSFP4 = isoSFP3 + _nS;
             break;
-
         case 6:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -3526,7 +3441,6 @@ void COMMIT_A(
             isoSFP4 = isoSFP3 + _nS;
             isoSFP5 = isoSFP4 + _nS;
             break;
-
         case 7:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -3536,7 +3450,6 @@ void COMMIT_A(
             isoSFP5 = isoSFP4 + _nS;
             isoSFP6 = isoSFP5 + _nS;
             break;
-
         case 8:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -3547,7 +3460,6 @@ void COMMIT_A(
             isoSFP6 = isoSFP5 + _nS;
             isoSFP7 = isoSFP6 + _nS;
             break;
-
         case 9:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -3559,7 +3471,6 @@ void COMMIT_A(
             isoSFP7 = isoSFP6 + _nS;
             isoSFP8 = isoSFP7 + _nS;
             break;
-
         case 10:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3572,7 +3483,6 @@ void COMMIT_A(
             isoSFP8  = isoSFP7 + _nS;
             isoSFP9  = isoSFP8 + _nS;
             break;
-
         case 11:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3586,7 +3496,6 @@ void COMMIT_A(
             isoSFP9  = isoSFP8 + _nS;
             isoSFP10 = isoSFP9 + _nS;
             break;
-
         case 12:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3601,7 +3510,6 @@ void COMMIT_A(
             isoSFP10 = isoSFP9 + _nS;
             isoSFP11 = isoSFP10 + _nS;
             break;
-
         case 13:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3617,7 +3525,6 @@ void COMMIT_A(
             isoSFP11 = isoSFP10 + _nS;
             isoSFP12 = isoSFP11 + _nS;
             break;
-
         case 14:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3634,7 +3541,6 @@ void COMMIT_A(
             isoSFP12 = isoSFP11 + _nS;
             isoSFP13 = isoSFP12 + _nS;
             break;
-
         case 15:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3652,7 +3558,6 @@ void COMMIT_A(
             isoSFP13 = isoSFP12 + _nS;
             isoSFP14 = isoSFP13 + _nS;
             break;
-
         case 16:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3671,7 +3576,6 @@ void COMMIT_A(
             isoSFP14 = isoSFP13 + _nS;
             isoSFP15 = isoSFP14 + _nS;
             break;
-
         case 17:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3691,7 +3595,6 @@ void COMMIT_A(
             isoSFP15 = isoSFP14 + _nS;
             isoSFP16 = isoSFP15 + _nS;
             break;
-
         case 18:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -3712,7 +3615,6 @@ void COMMIT_A(
             isoSFP16 = isoSFP15 + _nS;
             isoSFP17 = isoSFP16 + _nS;
             break;
-
         case 19:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0  + _nS;
@@ -3734,7 +3636,6 @@ void COMMIT_A(
             isoSFP17 = isoSFP16 + _nS;
             isoSFP18 = isoSFP17 + _nS;
             break;
-
         case 20:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0  + _nS;
@@ -7826,25 +7727,21 @@ void COMMIT_At(
         case 1:
             wmrSFP0 = _wmrSFP;
             break;
-        
         case 2:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
             break;
-
         case 3:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
             wmrSFP2 = wmrSFP1 + _ndirs*_nS;
             break;
-
         case 4:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
             wmrSFP2 = wmrSFP1 + _ndirs*_nS;
             wmrSFP3 = wmrSFP2 + _ndirs*_nS;
             break;
-
         case 5:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -7852,7 +7749,6 @@ void COMMIT_At(
             wmrSFP3 = wmrSFP2 + _ndirs*_nS;
             wmrSFP4 = wmrSFP3 + _ndirs*_nS;
             break;
-
         case 6:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -7861,7 +7757,6 @@ void COMMIT_At(
             wmrSFP4 = wmrSFP3 + _ndirs*_nS;
             wmrSFP5 = wmrSFP4 + _ndirs*_nS;
             break;
-
         case 7:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -7871,7 +7766,6 @@ void COMMIT_At(
             wmrSFP5 = wmrSFP4 + _ndirs*_nS;
             wmrSFP6 = wmrSFP5 + _ndirs*_nS;
             break;
-
         case 8:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -7882,7 +7776,6 @@ void COMMIT_At(
             wmrSFP6 = wmrSFP5 + _ndirs*_nS;
             wmrSFP7 = wmrSFP6 + _ndirs*_nS;
             break;
-
         case 9:
             wmrSFP0 = _wmrSFP;
             wmrSFP1 = wmrSFP0 + _ndirs*_nS;
@@ -7894,7 +7787,6 @@ void COMMIT_At(
             wmrSFP7 = wmrSFP6 + _ndirs*_nS;
             wmrSFP8 = wmrSFP7 + _ndirs*_nS;
             break;
-
         case 10:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -7907,7 +7799,6 @@ void COMMIT_At(
             wmrSFP8  = wmrSFP7 + _ndirs*_nS;
             wmrSFP9  = wmrSFP8 + _ndirs*_nS;
             break;
-
         case 11:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -7921,7 +7812,6 @@ void COMMIT_At(
             wmrSFP9  = wmrSFP8 + _ndirs*_nS;
             wmrSFP10 = wmrSFP9 + _ndirs*_nS;
             break;
-
         case 12:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -7936,7 +7826,6 @@ void COMMIT_At(
             wmrSFP10 = wmrSFP9 + _ndirs*_nS;
             wmrSFP11 = wmrSFP10 + _ndirs*_nS;
             break;
-
         case 13:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -7952,7 +7841,6 @@ void COMMIT_At(
             wmrSFP11 = wmrSFP10 + _ndirs*_nS;
             wmrSFP12 = wmrSFP11 + _ndirs*_nS;
             break;
-
         case 14:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -7969,7 +7857,6 @@ void COMMIT_At(
             wmrSFP12 = wmrSFP11 + _ndirs*_nS;
             wmrSFP13 = wmrSFP12 + _ndirs*_nS;
             break;
-
         case 15:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -7987,7 +7874,6 @@ void COMMIT_At(
             wmrSFP13 = wmrSFP12 + _ndirs*_nS;
             wmrSFP14 = wmrSFP13 + _ndirs*_nS;
             break;
-
         case 16:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -8006,7 +7892,6 @@ void COMMIT_At(
             wmrSFP14 = wmrSFP13 + _ndirs*_nS;
             wmrSFP15 = wmrSFP14 + _ndirs*_nS;
             break;
-
         case 17:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -8026,7 +7911,6 @@ void COMMIT_At(
             wmrSFP15 = wmrSFP14 + _ndirs*_nS;
             wmrSFP16 = wmrSFP15 + _ndirs*_nS;
             break;
-
         case 18:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0 + _ndirs*_nS;
@@ -8047,7 +7931,6 @@ void COMMIT_At(
             wmrSFP16 = wmrSFP15 + _ndirs*_nS;
             wmrSFP17 = wmrSFP16 + _ndirs*_nS;
             break;
-
         case 19:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0  + _ndirs*_nS;
@@ -8069,7 +7952,6 @@ void COMMIT_At(
             wmrSFP17 = wmrSFP16 + _ndirs*_nS;
             wmrSFP18 = wmrSFP17 + _ndirs*_nS;
             break;
-
         case 20:
             wmrSFP0  = _wmrSFP;
             wmrSFP1  = wmrSFP0  + _ndirs*_nS;
@@ -8099,25 +7981,21 @@ void COMMIT_At(
         case 1:
             wmhSFP0 = _wmhSFP;
             break;
-        
         case 2:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
             break;
-
         case 3:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
             wmhSFP2 = wmhSFP1 + _ndirs*_nS;
             break;
-
         case 4:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
             wmhSFP2 = wmhSFP1 + _ndirs*_nS;
             wmhSFP3 = wmhSFP2 + _ndirs*_nS;
             break;
-
         case 5:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -8125,7 +8003,6 @@ void COMMIT_At(
             wmhSFP3 = wmhSFP2 + _ndirs*_nS;
             wmhSFP4 = wmhSFP3 + _ndirs*_nS;
             break;
-
         case 6:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -8134,7 +8011,6 @@ void COMMIT_At(
             wmhSFP4 = wmhSFP3 + _ndirs*_nS;
             wmhSFP5 = wmhSFP4 + _ndirs*_nS;
             break;
-
         case 7:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -8144,7 +8020,6 @@ void COMMIT_At(
             wmhSFP5 = wmhSFP4 + _ndirs*_nS;
             wmhSFP6 = wmhSFP5 + _ndirs*_nS;
             break;
-
         case 8:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -8155,7 +8030,6 @@ void COMMIT_At(
             wmhSFP6 = wmhSFP5 + _ndirs*_nS;
             wmhSFP7 = wmhSFP6 + _ndirs*_nS;
             break;
-
         case 9:
             wmhSFP0 = _wmhSFP;
             wmhSFP1 = wmhSFP0 + _ndirs*_nS;
@@ -8167,7 +8041,6 @@ void COMMIT_At(
             wmhSFP7 = wmhSFP6 + _ndirs*_nS;
             wmhSFP8 = wmhSFP7 + _ndirs*_nS;
             break;
-
         case 10:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8180,7 +8053,6 @@ void COMMIT_At(
             wmhSFP8  = wmhSFP7 + _ndirs*_nS;
             wmhSFP9  = wmhSFP8 + _ndirs*_nS;
             break;
-
         case 11:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8194,7 +8066,6 @@ void COMMIT_At(
             wmhSFP9  = wmhSFP8 + _ndirs*_nS;
             wmhSFP10 = wmhSFP9 + _ndirs*_nS;
             break;
-
         case 12:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8209,7 +8080,6 @@ void COMMIT_At(
             wmhSFP10 = wmhSFP9 + _ndirs*_nS;
             wmhSFP11 = wmhSFP10 + _ndirs*_nS;
             break;
-
         case 13:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8225,7 +8095,6 @@ void COMMIT_At(
             wmhSFP11 = wmhSFP10 + _ndirs*_nS;
             wmhSFP12 = wmhSFP11 + _ndirs*_nS;
             break;
-
         case 14:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8242,7 +8111,6 @@ void COMMIT_At(
             wmhSFP12 = wmhSFP11 + _ndirs*_nS;
             wmhSFP13 = wmhSFP12 + _ndirs*_nS;
             break;
-
         case 15:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8260,7 +8128,6 @@ void COMMIT_At(
             wmhSFP13 = wmhSFP12 + _ndirs*_nS;
             wmhSFP14 = wmhSFP13 + _ndirs*_nS;
             break;
-
         case 16:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8279,7 +8146,6 @@ void COMMIT_At(
             wmhSFP14 = wmhSFP13 + _ndirs*_nS;
             wmhSFP15 = wmhSFP14 + _ndirs*_nS;
             break;
-
         case 17:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8299,7 +8165,6 @@ void COMMIT_At(
             wmhSFP15 = wmhSFP14 + _ndirs*_nS;
             wmhSFP16 = wmhSFP15 + _ndirs*_nS;
             break;
-
         case 18:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0 + _ndirs*_nS;
@@ -8320,7 +8185,6 @@ void COMMIT_At(
             wmhSFP16 = wmhSFP15 + _ndirs*_nS;
             wmhSFP17 = wmhSFP16 + _ndirs*_nS;
             break;
-
         case 19:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0  + _ndirs*_nS;
@@ -8342,7 +8206,6 @@ void COMMIT_At(
             wmhSFP17 = wmhSFP16 + _ndirs*_nS;
             wmhSFP18 = wmhSFP17 + _ndirs*_nS;
             break;
-
         case 20:
             wmhSFP0  = _wmhSFP;
             wmhSFP1  = wmhSFP0  + _ndirs*_nS;
@@ -8372,25 +8235,21 @@ void COMMIT_At(
         case 1:
             isoSFP0 = _isoSFP;
             break;
-        
         case 2:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
             break;
-
         case 3:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
             isoSFP2 = isoSFP1 + _nS;
             break;
-
         case 4:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
             isoSFP2 = isoSFP1 + _nS;
             isoSFP3 = isoSFP2 + _nS;
             break;
-
         case 5:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -8398,7 +8257,6 @@ void COMMIT_At(
             isoSFP3 = isoSFP2 + _nS;
             isoSFP4 = isoSFP3 + _nS;
             break;
-
         case 6:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -8407,7 +8265,6 @@ void COMMIT_At(
             isoSFP4 = isoSFP3 + _nS;
             isoSFP5 = isoSFP4 + _nS;
             break;
-
         case 7:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -8417,7 +8274,6 @@ void COMMIT_At(
             isoSFP5 = isoSFP4 + _nS;
             isoSFP6 = isoSFP5 + _nS;
             break;
-
         case 8:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -8428,7 +8284,6 @@ void COMMIT_At(
             isoSFP6 = isoSFP5 + _nS;
             isoSFP7 = isoSFP6 + _nS;
             break;
-
         case 9:
             isoSFP0 = _isoSFP;
             isoSFP1 = isoSFP0 + _nS;
@@ -8440,7 +8295,6 @@ void COMMIT_At(
             isoSFP7 = isoSFP6 + _nS;
             isoSFP8 = isoSFP7 + _nS;
             break;
-
         case 10:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8453,7 +8307,6 @@ void COMMIT_At(
             isoSFP8  = isoSFP7 + _nS;
             isoSFP9  = isoSFP8 + _nS;
             break;
-
         case 11:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8467,7 +8320,6 @@ void COMMIT_At(
             isoSFP9  = isoSFP8 + _nS;
             isoSFP10 = isoSFP9 + _nS;
             break;
-
         case 12:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8482,7 +8334,6 @@ void COMMIT_At(
             isoSFP10 = isoSFP9 + _nS;
             isoSFP11 = isoSFP10 + _nS;
             break;
-
         case 13:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8498,7 +8349,6 @@ void COMMIT_At(
             isoSFP11 = isoSFP10 + _nS;
             isoSFP12 = isoSFP11 + _nS;
             break;
-
         case 14:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8515,7 +8365,6 @@ void COMMIT_At(
             isoSFP12 = isoSFP11 + _nS;
             isoSFP13 = isoSFP12 + _nS;
             break;
-
         case 15:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8533,7 +8382,6 @@ void COMMIT_At(
             isoSFP13 = isoSFP12 + _nS;
             isoSFP14 = isoSFP13 + _nS;
             break;
-
         case 16:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8552,7 +8400,6 @@ void COMMIT_At(
             isoSFP14 = isoSFP13 + _nS;
             isoSFP15 = isoSFP14 + _nS;
             break;
-
         case 17:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8572,7 +8419,6 @@ void COMMIT_At(
             isoSFP15 = isoSFP14 + _nS;
             isoSFP16 = isoSFP15 + _nS;
             break;
-
         case 18:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0 + _nS;
@@ -8593,7 +8439,6 @@ void COMMIT_At(
             isoSFP16 = isoSFP15 + _nS;
             isoSFP17 = isoSFP16 + _nS;
             break;
-
         case 19:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0  + _nS;
@@ -8615,7 +8460,6 @@ void COMMIT_At(
             isoSFP17 = isoSFP16 + _nS;
             isoSFP18 = isoSFP17 + _nS;
             break;
-
         case 20:
             isoSFP0  = _isoSFP;
             isoSFP1  = isoSFP0  + _nS;
