@@ -160,9 +160,9 @@ void* COMMIT_A__block( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     x0 = *x_Ptr0;
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         while (Yptr != YptrEnd)
                             (*Yptr++) += w * x0 * (*SFP0ptr++);
@@ -176,9 +176,9 @@ void* COMMIT_A__block( void *ptr )
                     x_Ptr0 = x + *t_f;
                     x0 = *x_Ptr0;
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         while (Yptr != YptrEnd)
@@ -194,9 +194,9 @@ void* COMMIT_A__block( void *ptr )
                     x0 = *x_Ptr0;
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -214,9 +214,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr1, &x_Ptr0, &x1);
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -236,9 +236,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr2, &x_Ptr1, &x2);
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
                     updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -260,9 +260,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr3, &x_Ptr2, &x3);
                     updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
                     updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -286,9 +286,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr4, &x_Ptr3, &x4);
                     updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
                     updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -314,9 +314,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr5, &x_Ptr4, &x5);
                     updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
                     updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -344,9 +344,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr6, &x_Ptr5, &x6);
                     updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
                     updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -376,9 +376,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr7, &x_Ptr6, &x7);
                     updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
                     updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -410,9 +410,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr8, &x_Ptr7, &x8);
                     updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
                     updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -446,9 +446,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr9, &x_Ptr8, &x9);
                     updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
                     updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -484,9 +484,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr10, &x_Ptr9, &x10);
                     updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
                     updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -524,9 +524,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr11, &x_Ptr10, &x11);
                     updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
                     updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -566,9 +566,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr12, &x_Ptr11, &x12);
                     updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
                     updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -610,9 +610,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr13, &x_Ptr12, &x13);
                     updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
                     updateIC_x(&x_Ptr15, &x_Ptr14, &x15);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -657,9 +657,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr14, &x_Ptr13, &x14);
                     updateIC_x(&x_Ptr15, &x_Ptr14, &x15);
                     updateIC_x(&x_Ptr16, &x_Ptr15, &x16);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -706,9 +706,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr15, &x_Ptr14, &x15);
                     updateIC_x(&x_Ptr16, &x_Ptr15, &x16);
                     updateIC_x(&x_Ptr17, &x_Ptr16, &x17);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -757,9 +757,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr16, &x_Ptr15, &x16);
                     updateIC_x(&x_Ptr17, &x_Ptr16, &x17);
                     updateIC_x(&x_Ptr18, &x_Ptr17, &x18);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
@@ -810,9 +810,9 @@ void* COMMIT_A__block( void *ptr )
                     updateIC_x(&x_Ptr17, &x_Ptr16, &x17);
                     updateIC_x(&x_Ptr18, &x_Ptr17, &x18);
                     updateIC_x(&x_Ptr19, &x_Ptr18, &x19);
-                    updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
+                        updateIC_Y(&Yptr, *t_v, &YptrEnd, &w, *t_l, &offset, *t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
