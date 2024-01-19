@@ -1129,8 +1129,6 @@ cdef class Evaluation :
         xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
         xiso = x[offset2:]
-        print( f'\t* Number of DCT profiles: {self.KERNELS["wmr"].shape[0]}' )
-        print( f'\t* Number of xic coefficients: {xic.size}' )
 
         return xic, xec, xiso
 

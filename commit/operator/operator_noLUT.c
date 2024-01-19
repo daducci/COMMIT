@@ -78,7 +78,7 @@ void* COMMIT_A__block( void *ptr )
                 YptrEnd = Yptr + nICs;
                 w       = (double)(*t_l);
                 offset  = (*t_p);
-                SFP0ptr = icSFB0;
+                SFP0ptr = icSFB0; 
                 #if nICs>=2
                 SFP1ptr = icSFB1 + offset;
                 #endif

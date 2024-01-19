@@ -143,9 +143,9 @@ class ModulatedVolumeFractions(BaseModel):
             for n in range(num_samples):
                 dct_functions[i, n] = np.cos(np.pi * k * (n + 0.5) / num_samples)
                 if k == 0:
-                    dct_functions[i, n] *= np.sqrt(0.25 / num_samples)
+                    dct_functions[i, n] *= 2 * np.sqrt(0.25 / num_samples)
                 else:
-                    dct_functions[i, n] *= np.sqrt(0.5 / num_samples)
+                    dct_functions[i, n] *= 2 * np.sqrt(0.5 / num_samples)
         return dct_functions
 
     def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs, nprofiles, nsamples):
