@@ -1,11 +1,10 @@
 #include <pthread.h>
 #include <stdint.h> // uint32_t etc
 
-// number of THREADS
+// max number of threads
 #define MAX_THREADS 255
 
-
-/* global variables */
+// global variables
 int         nF, n, nE, nV, nS, ndirs;
 double      *x, *Y;
 uint32_t    *ICthreads, *ECthreads, *ISOthreads;
@@ -20,9 +19,9 @@ float       *isoSFP0, *isoSFP1, *isoSFP2, *isoSFP3, *isoSFP4, *isoSFP5, *isoSFP6
 uint32_t    nIC, nEC, nISO;
 
 
-// ====================================================
-// Compute a sub-block of the A*x MAtRIX-VECTOR product
-// ====================================================
+/* ====================================================
+   Compute a sub-block of the A*x MATRIX-VECTOR product
+   ==================================================== */
 void* COMMIT_A__block( void *ptr )
 {
     int      id = (long)ptr;
@@ -2905,10 +2904,9 @@ void* COMMIT_A__block( void *ptr )
     pthread_exit( 0 );
 }
 
-
-// =========================
-// Function called by CYTHON
-// =========================
+/* =========================
+   Function called by CYTHON
+   ========================= */
 void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
@@ -3776,10 +3774,9 @@ void COMMIT_A(
 }
 
 
-
-/* ===================================================== */
-/* Compute a sub-block of the A'*y MAtRIX-VECTOR product */
-/* ===================================================== */
+/* =====================================================
+   Compute a sub-block of the A'*y MAtRIX-VECTOR product
+   ===================================================== */
 void* COMMIT_At__block( void *ptr )
 {
     int      id = (long)ptr;
@@ -7788,10 +7785,9 @@ void* COMMIT_At__block( void *ptr )
     pthread_exit( 0 );
 }
 
-
-// =========================
-// Function called by CYTHON
-// =========================
+/* =========================
+   Function called by CYTHON
+   ========================= */
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
