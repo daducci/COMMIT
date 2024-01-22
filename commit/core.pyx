@@ -1,6 +1,5 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, nonecheck=False, cdivision=True, initializedcheck=False, binding=False
-from __future__ import print_function
 cimport cython
 import numpy as np
 cimport numpy as np
@@ -16,6 +15,7 @@ import commit.models
 import commit.solvers
 import amico.scheme
 import amico.lut
+from importlib import reload, invalidate_caches
 import pyximport
 from pkg_resources import get_distribution
 
@@ -67,8 +67,10 @@ cdef class Evaluation :
     cdef public DICTIONARY
     cdef public THREADS
     cdef public A
+    cdef public regularisation_params
     cdef public x
     cdef public CONFIG
+    cdef public temp_data
     cdef public confidence_map_img
 
     def __init__( self, study_path='.', subject='.' ) :
@@ -81,18 +83,20 @@ cdef class Evaluation :
         subject : string
             The path (relative to previous folder) to the subject folder (default : '.')
         """
-        self.niiDWI             = None # set by "load_data" method
-        self.scheme             = None # set by "load_data" method
-        self.model              = None # set by "set_model" method
-        self.KERNELS            = None # set by "load_kernels" method
-        self.DICTIONARY         = None # set by "load_dictionary" method
-        self.THREADS            = None # set by "set_threads" method
-        self.A                  = None # set by "build_operator" method
-        self.x                  = None # set by "fit" method
-        self.confidence_map_img = None # set by "fit" method
+        self.niiDWI                 = None # set by "load_data" method
+        self.scheme                 = None # set by "load_data" method
+        self.model                  = None # set by "set_model" method
+        self.KERNELS                = None # set by "load_kernels" method
+        self.DICTIONARY             = None # set by "load_dictionary" method
+        self.THREADS                = None # set by "set_threads" method
+        self.A                      = None # set by "build_operator" method
+        self.regularisation_params  = None # set by "set_regularisation" method
+        self.x                      = None # set by "fit" method
+        self.confidence_map_img     = None # set by "fit" method
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
+        self.temp_data = {}
         self.set_config('version', get_distribution('dmri-commit').version)
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
@@ -107,13 +111,18 @@ cdef class Evaluation :
 
     def set_config( self, key, value ) :
         self.CONFIG[ key ] = value
+        self.temp_data[ key ] = value
 
 
     def get_config( self, key ) :
         return self.CONFIG.get( key )
 
 
-    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
+    def get_temp_data( self, key ) :
+        return self.temp_data.get( key )
+
+
+    def load_data( self, dwi_filename, scheme_filename=None, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters
@@ -170,7 +179,7 @@ cdef class Evaluation :
             ERROR( 'Scheme does not match with input data' )
         if self.scheme.dwi_count == 0 :
             ERROR( 'There are no DWI volumes in the data' )
-        
+
         # Check for Nan or Inf values in raw data
         if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
             if replace_bad_voxels is not None:
@@ -240,7 +249,7 @@ cdef class Evaluation :
         """
         # Call the specific model constructor
         if hasattr(commit.models, model_name ) :
-            self.model = getattr(commit.models,model_name)()
+            self.model = getattr(commit.models, model_name)()
         else :
             ERROR( 'Model "%s" not recognized' % model_name )
 
@@ -271,7 +280,11 @@ cdef class Evaluation :
         if self.model.id=='VolumeFractions' and ndirs!=1:
             ndirs = 1
             print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
-
+        if 'commitwipmodels' in sys.modules :
+            if self.model.restrictedISO is not None and ndirs!=1:
+                ndirs = 1
+                print( '\t* Forcing "ndirs" to 1 because model is isotropic' )
+ 
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
@@ -482,21 +495,20 @@ cdef class Evaluation :
 
         self.DICTIONARY['ISO'] = {}
 
-        self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
+        self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
+        if self.DICTIONARY['ISO']['v'].size > 0:
+            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
+        else:
+            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['MASK'].sum()
 
-        vx, vy, vz = ( self.DICTIONARY['MASK'] > 0 ).nonzero() # [TODO] find a way to avoid using int64 (not necessary and waste of memory)
-        vx = vx.astype(np.int32)
-        vy = vy.astype(np.int32)
-        vz = vz.astype(np.int32)
-        self.DICTIONARY['ISO']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
-        del vx, vy, vz
+        self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
         # reorder the segments based on the "v" field
         idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
         self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
         del idx
 
-        print( '[ %d voxels ]' % self.DICTIONARY['nV'] )
+        print( '[ %d voxels ]' % self.DICTIONARY['ISO']['nV'] )
 
         # post-processing
         # ---------------
@@ -591,10 +603,24 @@ cdef class Evaluation :
             self.THREADS['EC'] = None
 
         if self.DICTIONARY['nV'] > 0 :
-            self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
-            for i in xrange(n) :
-                self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-            self.THREADS['ISO'][n] = self.DICTIONARY['nV']
+            if self.DICTIONARY['ISO']['nV'] > 0 :
+                self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
+                N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+                t = 1
+                tot = 0
+                C = np.bincount( self.DICTIONARY['ISO']['v'] )
+                for c in C :
+                    tot += c
+                    if tot >= N and t <= n :
+                        self.THREADS['ISO'][t] = self.THREADS['ISO'][t-1] + tot
+                        t += 1
+                        tot = 0
+                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
+            else:
+                self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
+                for i in xrange(n) :
+                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
+                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
@@ -647,10 +673,11 @@ cdef class Evaluation :
 
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
-            N = np.floor( self.DICTIONARY['nV']/n )
+            N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+
             for i in xrange(1,n) :
                 self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
-            self.THREADS['ISOt'][n] = self.DICTIONARY['nV']
+            self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
@@ -728,14 +755,14 @@ cdef class Evaluation :
             config.nISO       = self.KERNELS['iso'].shape[0]
             config.build_dir  = build_dir
 
+            sys.dont_write_bytecode = True
             pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
 
-            if not 'commit.operator.operator' in sys.modules :
-                import commit.operator.operator
-            else :
-                reload( sys.modules['commit.operator.operator'] )
+        if 'commit.operator.operator' in sys.modules :
+            del sys.modules['commit.operator.operator']
+        import commit.operator.operator
 
-        self.A = sys.modules['commit.operator.operator'].LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        self.A = commit.operator.operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
@@ -751,11 +778,182 @@ cdef class Evaluation :
             ERROR( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        y[y < 0] = 0
+        # y[y < 0] = 0
         return y
 
+    def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
+        """
+        Set the regularisation parameters for the optimisation problem.
+         Input
+        -----
+        regularisers - tuple :
+            sets the penalty term to be used for each compartment:
+                regularisers[0] corresponds to the Intracellular compartment
+                regularisers[1] corresponds to the Extracellular compartment
+                regularisers[2] corresponds to the Isotropic compartment
+            Each regularisers[k] must be one of: {None, 'lasso', weighted_lasso, 'group_lasso'}:
+                'lasso' penalises with the 1-norm of the coefficients
+                    corresponding to the compartment.
+                'group_lasso' penalises according to the following formulation (see [1]):
+                    $\Omega(x) = \lambda \sum_{g\in G} w_g |x_g|
+                    Considers both the non-overlapping and the hierarchical formulations.
+                    NB: this option is allowed only in the IC compartment.
+            Default = (None, None, None).
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, regularisation=None, confidence_map_filename=None, confidence_map_rescale=False ) :
+        lambdas - tuple :
+            regularisation parameter for each compartment.
+            The lambdas correspond to the ones described in the mathematical
+            formulation of the regularisation term
+            $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
+            Default = (0.0, 0.0, 0.0, 0.0).
+
+        is_nonnegative - tuple :
+            impose a non negativity constraint for each compartment:
+                is_nonnegative[0] corresponds to the Intracellular compartment
+                is_nonnegative[1] corresponds to the Extracellular compartment
+                is_nonnegative[2] corresponds to the Isotropic compartment
+            Default = (True, True, True).
+
+        structureIC - np.array(list(list), dtype=np.object_) :
+            group structure for the IC compartment.
+                This field is necessary only if regterm[0]='group_lasso'.
+                Example:
+                    structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
+
+                    that is equivalent to
+                                [0,1,2,3,4,5]        [6]
+                                /       \
+                            [0,2,5]       [1,3,4]
+                    which has two non overlapping groups, one of which is the union
+                    of two other non-overlapping groups.
+
+        weightsIC - np.array(np.float64) :
+            this defines the weights associated to each element of structure IC.
+
+        weightsIC_group - np.array(np.float64) :
+            this defines the weights associated to each group of structure IC.
+
+        """
+
+        regularisation = {}
+
+        regularisation['startIC']  = 0
+        regularisation['sizeIC']   = int( self.DICTIONARY['IC']['nF'] * self.KERNELS['wmr'].shape[0])
+        regularisation['startEC']  = int( regularisation['sizeIC'] )
+        regularisation['sizeEC']   = int( self.DICTIONARY['EC']['nE'] * self.KERNELS['wmh'].shape[0])
+        regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
+        regularisation['sizeISO']  = int( self.DICTIONARY['nV'] * self.KERNELS['iso'].shape[0])
+
+        regularisation['regIC']  = regularisers[0]
+        regularisation['regEC']  = regularisers[1]
+        regularisation['regISO'] = regularisers[2]
+
+        regularisation['nnIC']  = is_nonnegative[0]
+        regularisation['nnEC']  = is_nonnegative[1]
+        regularisation['nnISO'] = is_nonnegative[2]
+
+        regularisation['paramsIC']  = params[0]
+        regularisation['paramsEC']  = params[1]
+        regularisation['paramsISO'] = params[2]
+
+        regularisation['dictIC_params']  = params[0]
+        regularisation['dictEC_params']  = params[1]
+        regularisation['dictISO_params'] = params[2]
+
+        # unpack parameters inside params as three separate dictionaries
+        dictIC_params, dictEC_params, dictISO_params = params
+
+        if regularisation['regIC'] == 'lasso':
+            if lambdas[0] is None:
+                raise ValueError('Missing regularisation parameter for the IC compartment')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+        elif regularisation['regEC'] == 'lasso':
+            if lambdas[1] is None:
+                raise ValueError('Missing regularisation parameter for the EC compartment')
+            else:
+                regularisation['lambdaEC'] = lambdas[1]
+        elif regularisation['regISO'] == 'lasso':
+            if lambdas[2] is None:
+                raise ValueError('Missing regularisation parameter for the ISO compartment')
+            else:
+                regularisation['lambdaISO'] = lambdas[2]
+
+        elif regularisation['regIC'] == 'smoothness':
+            if lambdas[0] is None:
+                raise ValueError('Missing regularisation parameter for the IC compartment')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+        elif regularisation['regEC'] == 'smoothness':
+                raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'smoothness':
+                raise ValueError('Not yet implemented')
+
+        elif regularisation['regIC'] == 'group_lasso':
+            if lambdas[0] is None:
+                raise ValueError('Group structure for the IC compartment not provided')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+            if lambdas[1] is not None:
+                raise ValueError('Not yet implemented')
+            if lambdas[2] is not None:
+                raise ValueError('Not yet implemented')
+            if dictIC_params["group_idx"] is None:
+                raise ValueError('Group structure for the IC compartment not provided')
+            if dictIC_params["group_weights"] is None:
+                raise ValueError('Group weights for the IC compartment not provided')
+        elif regularisation['regEC'] == 'group_lasso':
+            raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'group_lasso':
+            raise ValueError('Not yet implemented')
+
+        elif regularisation['regIC'] == 'sparse_group_lasso':
+            if len(lambdas[0]) != 2:
+                raise ValueError('Group structure for the IC compartment not provided')
+            else:
+                regularisation['lambdaIC'] = lambdas[0]
+            if lambdas[1] is not None:
+                raise ValueError('Not yet implemented')
+            if lambdas[2] is not None:
+                raise ValueError('Not yet implemented')
+            if dictIC_params["group_idx"] is None:
+                raise ValueError('Group structure for the IC compartment not provided')
+            if dictIC_params["group_weights"] is None:
+                raise ValueError('Group weights for the IC compartment not provided')
+        elif regularisation['regEC'] == 'sparse_group_lasso':
+            raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'sparse_group_lasso':
+            raise ValueError('Not yet implemented')
+
+        # Check if group indices need to be updated in case of 'group_lasso' or 'sparse_group_lasso'
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso'  and (0 in self.DICTIONARY['TRK']['kept']) :
+            dictionary_TRK_kept = self.DICTIONARY['TRK']['kept']
+            weightsIC_group = dictIC_params["group_weights"]
+            idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
+            idx_in_kept[dictionary_TRK_kept==1] = list(range(self.DICTIONARY['IC']['nF']))
+
+            newICgroup_idx = []
+            newweightsIC_group = []
+            ICgroup_idx = dictIC_params["group_idx"]
+            for count, group in enumerate(ICgroup_idx):
+                group = idx_in_kept[group]
+                idx_to_delete = np.where(group==-1)[0]
+                if idx_to_delete.size>0:
+                    group = np.delete(group,idx_to_delete)
+                    if(group.size>0):
+                        newICgroup_idx.append(group)
+                        newweightsIC_group.append(weightsIC_group[count])
+                else:
+                    newICgroup_idx.append(group)
+                    newweightsIC_group.append(weightsIC_group[count])
+
+            dictIC_params["group_idx"] = np.array(newICgroup_idx, dtype=np.object_)
+            dictIC_params['group_weights'] = np.array(newweightsIC_group)
+
+        self.regularisation_params = commit.solvers.init_regularisation(regularisation)
+
+
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, confidence_map_filename=None, confidence_map_rescale=False ) :
         """Fit the model to the data.
 
         Parameters
@@ -765,14 +963,9 @@ cdef class Evaluation :
         max_iter : integer
             Maximum number of iterations (default : 100)
         verbose : boolean
-            Level of verbosity: 0=no print, 1=print progress (default : True)
+            Level of verbosity: 0=no print, 1=print info at each iteration, 2=print progress bar, 3=print debug info (default : 2)
         x0 : np.array
             Initial guess for the solution of the problem (default : None)
-        regularisation : commit.solvers.init_regularisation object
-            Python dictionary that describes the wanted regularisation term.
-            Check the documentation of commit.solvers.init_regularisation to see
-            how to properly define the wanted mathematical formulation
-            (default : None)
         confidence_map_filename : string
             Path to the NIFTI file containing a confidence map on the data,
             relative to the subject folder. The file can be 3D or 4D in
@@ -864,21 +1057,23 @@ cdef class Evaluation :
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
                 ERROR( 'x0 dimension does not match the number of columns of the dictionary' )
-        if regularisation is None :
-            regularisation = commit.solvers.init_regularisation(self)
+
+        if self.regularisation_params is None:
+            self.set_regularisation()
+
 
         self.CONFIG['optimization']                   = {}
         self.CONFIG['optimization']['tol_fun']        = tol_fun
         self.CONFIG['optimization']['tol_x']          = tol_x
         self.CONFIG['optimization']['max_iter']       = max_iter
         self.CONFIG['optimization']['verbose']        = verbose
-        self.CONFIG['optimization']['regularisation'] = regularisation
+        self.CONFIG['optimization']['regularisation'] = self.regularisation_params
 
         # run solver
         t = time.time()
         LOG( '\n-> Fit model:' )
 
-        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun = tol_fun, tol_x = tol_x, max_iter = max_iter, verbose = verbose, x0 = x0, regularisation = regularisation, confidence_array = confidence_array)
+        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
@@ -1071,7 +1266,9 @@ cdef class Evaluation :
         niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-            xv = x[offset:].reshape( (-1,nV) ).sum( axis=0 )
+            offset_iso = offset + self.DICTIONARY['ISO']['nV']
+            tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['nV']) ).sum( axis=0 )
+            xv = np.bincount( self.DICTIONARY['ISO']['v'], weights=tmp, minlength=nV ).astype(np.float32)
             niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '   [ OK ]' )
 
@@ -1091,8 +1288,6 @@ cdef class Evaluation :
         # Configuration and results
         print( '\t* Configuration and results:' )
 
-        print( '\t\t- streamline_weights.txt... ', end='' )
-        sys.stdout.flush()
         xic, _, _ = self.get_coeffs()
         if stat_coeffs != 'all' and xic.size > 0 :
             xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
@@ -1118,7 +1313,7 @@ cdef class Evaluation :
             ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
             unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
             unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
-            temp_weights = unravel_weights[ordered_idx]
+            temp_weights = unravel_weights[ordered_idx] 
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                 unravel_weights[ordered_idx] = temp_weights
@@ -1127,10 +1322,25 @@ cdef class Evaluation :
                 temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
                 unravel_weights[ordered_idx] = temp_weights
                 xic = unravel_weights
-                
+
         else:
             if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                 xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+
+        
+        self.temp_data['DICTIONARY'] = self.DICTIONARY
+        self.temp_data['niiIC_img'] = niiIC_img
+        self.temp_data['niiEC_img'] = niiEC_img
+        self.temp_data['niiISO_img'] = niiISO_img
+        self.temp_data['streamline_weights'] = xic
+        self.temp_data['RESULTS_path'] = RESULTS_path
+
+        if hasattr(self.model, '_postprocess'):
+            self.model._postprocess(self.temp_data, verbose=self.CONFIG['optimization']['verbose'])
+        else:
+            print( '\t\t- streamline_weights.txt... ', end='' )
+            sys.stdout.flush()
+
 
         np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
         self.set_config('stat_coeffs', stat_coeffs)
@@ -1142,6 +1352,13 @@ cdef class Evaluation :
         #   item 2: np.array renormalisation of coeffs in item 1
         print( '\t\t- results.pickle... ', end='' )
         sys.stdout.flush()
+
+        if self.CONFIG['optimization']['regularisation'] is not None:
+            if 'omega' in self.CONFIG['optimization']['regularisation']:
+                self.CONFIG['optimization']['regularisation'].pop('omega')
+            if 'prox' in self.CONFIG['optimization']['regularisation']:
+                self.CONFIG['optimization']['regularisation'].pop('prox')
+
         with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
             pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
         print( '        [ OK ]' )

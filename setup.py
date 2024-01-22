@@ -21,6 +21,7 @@ def get_extensions():
                      sources=[f'{package_name}/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
+                 
     return [trk2dictionary, core, proximals]
 
 class CustomBuildExtCommand(build_ext):
@@ -68,6 +69,6 @@ setup(
     cmdclass={'build_ext': CustomBuildExtCommand},
     ext_modules=get_extensions(),
     setup_requires=['Cython>=0.29', 'numpy>=1.12', 'wheel'],
-    install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-dicelib==1.0.3', 'dmri-amico>=2.0.1'],
+    install_requires=['setuptools>=46.1', 'Cython>=0.29', 'numpy>=1.12', 'scipy>=1.0', 'dipy>=1.0', 'dmri-dicelib>=1.0.3', 'dmri-amico>=2.0.1'],
     package_data={f'{package_name}.operator': ["*.*"]}
 )

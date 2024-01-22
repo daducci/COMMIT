@@ -169,6 +169,7 @@ cdef class LinearOperator :
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
+
             with nogil :
                 COMMIT_A(
                     self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
