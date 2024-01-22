@@ -32,7 +32,6 @@ except ValueError:
         if f.startswith('commitwipmodels') and f.endswith('.so'):
             from commitwipmodels import *
     else:
-        print("ValueError: 'COMMIT_WIP_MODEL' not found in environ")
         pass
 
 except KeyError:
