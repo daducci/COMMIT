@@ -122,7 +122,7 @@ cdef class Evaluation :
         return self.temp_data.get( key )
 
 
-    def load_data( self, dwi_filename, scheme_filename, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
+    def load_data( self, dwi_filename, scheme_filename=None, b0_thr=0, b0_min_signal=0, replace_bad_voxels=None ) :
         """Load the diffusion signal and its corresponding acquisition scheme.
 
         Parameters

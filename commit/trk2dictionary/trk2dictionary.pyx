@@ -476,8 +476,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
         ptrISO  = &niiISO_img[0,0,0]
     else :
-        print( '\t- No ISO map specified, using the whole white-matter' )
-        ptrISO = &niiMASK_img[0,0,0]
+        print( '\t- No ISO map specified, using tdi' )
+        ptrISO = NULL
 
     # write dictionary information info file
     dictionary_info = {}
