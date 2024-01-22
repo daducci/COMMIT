@@ -1,7 +1,7 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.1.0`<br>_2024-01-10_
+## `v2.1.0`<br>_2024-01-22_
 ### ✨Added
 - Work In Progress (WIP) models
 - Different regularizers
