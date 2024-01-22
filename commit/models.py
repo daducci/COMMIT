@@ -35,10 +35,8 @@ except ValueError:
         pass
 
 except KeyError:
-    print("KeyError: 'COMMIT_WIP_MODEL' not found in environ")
     pass
 except ImportError:
-    print("ImportError: 'commitwipmodels' not found in sys.modules")
     pass
 
 
