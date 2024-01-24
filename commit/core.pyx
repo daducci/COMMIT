@@ -314,7 +314,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def load_kernels( self, nprof=1, nsamples=100 ) :
+    def load_kernels( self, nprof=1, nsamples=256 ) :
         """Load rotated kernels and project to the specific gradient scheme of this subject.
         Dispatch to the proper function, depending on the model.
         """

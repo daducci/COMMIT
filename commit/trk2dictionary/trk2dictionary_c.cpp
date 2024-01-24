@@ -465,7 +465,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     // Variables definition
     float           fiber[3][MAX_FIB_LEN] = {0} ;
     float           fiberNorm;   // normalization
-    float           pos;
+    unsigned int    pos;
     float           float_pos; // TODO uint8
     unsigned int    N, v, tempTotFibers, temp_totICSegments;
     unsigned short  o;
@@ -485,7 +485,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
 
     // Creo e apro i files per i risultati
-    filename = OUTPUT_path+"/dictionary_TRK_norm_" + std::to_string(idx) + ".dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_norm_" + std::to_string(idx) + ".dict";    FILE* pDict_TRK_norm   = fopen(filename.c_str(),"wb");
     if ( !pDict_TRK_norm )
     {
         printf( "\n[trk2dictionary] Unable to create output files" );
@@ -530,6 +530,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
             if ( FiberLen > minFiberLen && FiberLen < maxFiberLen )
             {
                 float_pos = 0.0;
+                // pos = (int)round(float_pos*256.0);
+                // fwrite( &pos, 4, 1, pDict_IC_pos ); // first position is always 0
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 {
@@ -537,7 +539,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;
                     float_pos += (it->second/FiberLenTot);
-                    pos = round(float_pos*100.0);
+                    pos = (int)round(float_pos*256.0);
 
                     fwrite( &sumFibers,      4, 1, pDict_IC_f );
                     fwrite( &v,              4, 1, pDict_IC_v );
