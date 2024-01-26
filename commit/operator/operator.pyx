@@ -12,7 +12,7 @@ cdef extern void COMMIT_A(
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
-    float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, double *_wmcSFP, float *_wmhSFP, float *_isoSFP,
     unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads
 ) nogil
 
@@ -22,7 +22,7 @@ cdef extern void COMMIT_At(
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, float *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
-    float *_wmrSFP, float *_wmcSFP, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, double *_wmcSFP, float *_wmhSFP, float *_isoSFP,
     unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
 ) nogil
 
@@ -50,7 +50,7 @@ cdef class LinearOperator :
     cdef unsigned int*   ISOv
 
     cdef float* LUT_IC
-    cdef float* LUT_IC_modulation
+    cdef double* LUT_IC_modulation
     cdef float* LUT_EC
     cdef float* LUT_ISO
 
@@ -123,7 +123,7 @@ cdef class LinearOperator :
         cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
         self.LUT_IC  = &wmrSFP[0,0,0]
 
-        cdef float [:, ::1] wmcSFP = KERNELS['wmc']
+        cdef double [:, ::1] wmcSFP = KERNELS['wmc']
         self.LUT_IC_modulation = &wmcSFP[0,0]
 
         cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']

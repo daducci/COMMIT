@@ -125,27 +125,18 @@ class ModulatedVolumeFractions(BaseModel):
     def generate(self, out_path, aux, idx_in, idx_out, ndirs):
        return
 
-    def DCT_profile(self, nSp, num_samples):
-        t = np.linspace(0, 1, num_samples)
-        profiles = np.arange(nSp)
-
-        # Compute cosine functions
-        cosine_functions = np.zeros((len(profiles), num_samples), dtype=np.float32)
-        for i, frequency in enumerate(profiles):
-            cosine_functions[i,:] = np.cos(2 * np.pi * frequency * t)
-        return cosine_functions
 
     def compute_dct_base(self, k, num_samples):
         k = np.arange(k)
         # Compute cosine functions
-        dct_functions = np.zeros((len(k), num_samples), dtype=np.float32)
+        dct_functions = np.zeros((len(k), num_samples), dtype=np.float64)
         for i, k in enumerate(k):
             for n in range(num_samples):
                 dct_functions[i, n] = np.cos(np.pi * k * (n + 0.5) / num_samples)
                 if k == 0:
-                    dct_functions[i, n] *= 2 * np.sqrt(0.25 / num_samples)
+                    dct_functions[i, n] *= np.sqrt(0.25 / num_samples)
                 else:
-                    dct_functions[i, n] *= 2 * np.sqrt(0.5 / num_samples)
+                    dct_functions[i, n] *= np.sqrt(0.5 / num_samples)
         return dct_functions
 
     def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs, nprofiles, nsamples):

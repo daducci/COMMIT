@@ -11,6 +11,8 @@
 #include <thread>
 #include <numeric>
 #include <chrono>
+#include <cstdlib> // for rand() and srand()
+
 
 #define _FILE_OFFSET_BITS 64
 #define MAX_FIB_LEN 10000
@@ -781,7 +783,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 /********************************************************************************************************************/
 /*                                                segmentForwardModel                                               */
 /********************************************************************************************************************/
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable )
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable)
 {
     thread_local static Vector<int>    vox;
     thread_local static Vector<double> dir, dirTrue;
@@ -818,9 +820,11 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     if ( ptrMASK && ptrMASK[ vox.z + dim.z * ( vox.y + dim.y * vox.x ) ]==0 )
         return;
 
+    // float random_value = 2.0 * ((float)rand() / RAND_MAX) - 1.0;
+
     // add the segment to the data structure
-    longitude  = atan2(dir.y, dir.x);
-    colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
+    longitude  = atan2(dir.y, dir.x); // + random_value;
+    colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z ); // + random_value;
     ox = (int)round(colatitude/M_PI*180.0); // theta // i1
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );

@@ -15,13 +15,12 @@
 
 /* global variables */
 int         nF, n, nSf;
-double      *x, *Y;
+double      *x, *Y, *icSFB0, *icSFB1, *icSFB2, *icSFB3, *icSFB4, *icSFB5, *icSFB6, *icSFB7, *icSFB8, *icSFB9;
 uint32_t    *ICthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ISOthreadsT;
 uint32_t    *ICf, *ICv, *ISOv;
 float       *ICl, *ICp;
-float       *icSFB0, *icSFB1, *icSFB2, *icSFB3, *icSFB4, *icSFB5, *icSFB6, *icSFB7, *icSFB8, *icSFB9;
 
 
 // ====================================================
@@ -32,8 +31,7 @@ void* COMMIT_A__block( void *ptr )
     int      id = (long)ptr;
     double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, w;
     double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3, *x_Ptr4, *x_Ptr5, *x_Ptr6, *x_Ptr7, *x_Ptr8, *x_Ptr9;
-    double   *Yptr;
-    float    *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
+    double   *Yptr, *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
     uint32_t *t_v, *t_vEnd, *t_f, *t_p;
     float    *t_l;
     int      offset;
@@ -182,6 +180,7 @@ void* COMMIT_A__block( void *ptr )
                         + x9 * (*SFP9ptr)
                         #endif
                     );
+                    printf("w = %f\n", w);
                     // printf("SFP0ptr = %f, SFP1ptr = %f, SFP2ptr = %f, SFP3ptr = %f, SFP4ptr = %f, SFP5ptr = %f, SFP6ptr = %f, SFP7ptr = %f, SFP8ptr = %f, SFP9ptr = %f\n", *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr);
                     // printf("SFP1ptr = %f, SFP2ptr = %f, SFP7ptr = %f, SFP9ptr = %f\n", *SFP1ptr, *SFP2ptr, *SFP7ptr, *SFP9ptr);
 
@@ -220,7 +219,7 @@ void COMMIT_A(
     uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl, float *_ICp,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
-    float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, double *_ICmod, float *_wmhSFP, float *_isoSFP,
     uint32_t* _ICthreads, uint32_t* _ECthreads, uint32_t* _ISOthreads
 )
 {
@@ -289,8 +288,7 @@ void COMMIT_A(
 void* COMMIT_At__block( void *ptr )
 {
     int      id = (long)ptr;
-    double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, w, Y_tmp;
-    float    *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
+    double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, w, Y_tmp, *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
     double   *Yptr;
     uint32_t *t_v, *t_vEnd, *t_f, *t_p;
     float    *t_l;
@@ -418,7 +416,7 @@ void COMMIT_At(
     uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl, float *_ICp,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
-    float *_wmrSFP, float *_ICmod, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, double *_ICmod, float *_wmhSFP, float *_isoSFP,
     uint8_t* _ICthreadsT, uint32_t* _ECthreadsT, uint32_t* _ISOthreadsT
 )
 {

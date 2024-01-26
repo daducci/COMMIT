@@ -346,7 +346,7 @@ cdef class Evaluation :
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
-        self.KERNELS['wmc'] = np.ascontiguousarray( self.KERNELS['wmc'] )
+        self.KERNELS['wmc'] = np.ascontiguousarray( self.KERNELS['wmc'], dtype=np.float64 )
         self.KERNELS['wmh'] = np.ascontiguousarray( self.KERNELS['wmh'] )
         self.KERNELS['iso'] = np.ascontiguousarray( self.KERNELS['iso'] )
 
