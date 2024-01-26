@@ -316,7 +316,7 @@ void* COMMIT_At__block( void *ptr )
     uint32_t *t_v, *t_vEnd, *t_f, *t_p;
     float    *t_l;
     uint8_t  *t_t;
-    int      offset;
+    int      start_offset, offset;
     double   *xPtr;
 
     #if ( nICs >= 1)
@@ -336,76 +336,80 @@ void* COMMIT_At__block( void *ptr )
             {
                 Yptr    = Y + (*t_v);
                 Y_tmp = *Yptr;
-
+                start_offset = 0;
                 offset = (*t_p);
-                SFP0ptr   = icSFB0 + offset;
-                x0 = (*SFP0ptr) * Y_tmp;
-                #if nICs>=2
-                SFP1ptr   = icSFB1 + offset;
-                x1 = (*SFP1ptr) * Y_tmp;
-                #endif
-                #if nICs>=3
-                SFP2ptr   = icSFB2 + offset;
-                x2 = (*SFP2ptr) * Y_tmp;
-                #endif
-                #if nICs>=4
-                SFP3ptr   = icSFB3 + offset;
-                x3 = (*SFP3ptr) * Y_tmp;
-                #endif
-                #if nICs>=5
-                SFP4ptr   = icSFB4 + offset;
-                x4 = (*SFP4ptr) * Y_tmp;
-                #endif
-                #if nICs>=6
-                SFP5ptr   = icSFB5 + offset;
-                x5 = (*SFP5ptr) * Y_tmp;
-                #endif
-                #if nICs>=7
-                SFP6ptr   = icSFB6 + offset;
-                x6 = (*SFP6ptr) * Y_tmp;
-                #endif
-                #if nICs>=8
-                SFP7ptr   = icSFB7 + offset;
-                x7 = (*SFP7ptr) * Y_tmp;
-                #endif
-                #if nICs>=9
-                SFP8ptr   = icSFB8 + offset;
-                x8 = (*SFP8ptr) * Y_tmp;
-                #endif
-                #if nICs>=10
-                SFP9ptr   = icSFB9 + offset;
-                x9 = (*SFP9ptr) * Y_tmp;
-                #endif
+                while (start_offset != offset)
+                {
+                    SFP0ptr = icSFB0 + start_offset;
+                    x0 = (*SFP0ptr) * Y_tmp;
+                    #if nICs>=2
+                    SFP1ptr = icSFB1 + start_offset;
+                    x1 = (*SFP1ptr) * Y_tmp;
+                    #endif
+                    #if nICs>=3
+                    SFP2ptr = icSFB2 + start_offset;
+                    x2 = (*SFP2ptr) * Y_tmp;
+                    #endif
+                    #if nICs>=4
+                    SFP3ptr = icSFB3 + start_offset;
+                    x3 = (*SFP3ptr) * Y_tmp;
+                    #endif
+                    #if nICs>=5
+                    SFP4ptr = icSFB4 + start_offset;
+                    x4 = (*SFP4ptr) * Y_tmp;
+                    #endif
+                    #if nICs>=6
+                    SFP5ptr = icSFB5 + start_offset;
+                    x5 = (*SFP5ptr) * Y_tmp;
+                    #endif
+                    #if nICs>=7
+                    SFP6ptr = icSFB6 + start_offset;
+                    x6 = (*SFP6ptr) * Y_tmp;
+                    #endif
+                    #if nICs>=8
+                    SFP7ptr = icSFB7 + start_offset;
+                    x7 = (*SFP7ptr) * Y_tmp;
+                    #endif
+                    #if nICs>=9
+                    SFP8ptr = icSFB8 + start_offset;
+                    x8 = (*SFP8ptr) * Y_tmp;
+                    #endif
+                    #if nICs>=10
+                    SFP9ptr = icSFB9 + start_offset;
+                    x9 = (*SFP9ptr) * Y_tmp;
+                    #endif
 
-                w = (double)(*t_l);
-                x[*t_f]      += w * x0;
-                #if nICs>=2
-                x[*t_f+nF]   += w * x1;
-                #endif
-                #if nICs>=3
-                x[*t_f+2*nF] += w * x2;
-                #endif
-                #if nICs>=4
-                x[*t_f+3*nF] += w * x3;
-                #endif
-                #if nICs>=5
-                x[*t_f+4*nF] += w * x4;
-                #endif
-                #if nICs>=6
-                x[*t_f+5*nF] += w * x5;
-                #endif
-                #if nICs>=7
-                x[*t_f+6*nF] += w * x6;
-                #endif
-                #if nICs>=8
-                x[*t_f+7*nF] += w * x7;
-                #endif
-                #if nICs>=9
-                x[*t_f+8*nF] += w * x8;
-                #endif
-                #if nICs>=10
-                x[*t_f+9*nF] += w * x9;
-                #endif
+                    w = (double)(*t_l);
+                    x[*t_f]      += w * x0;
+                    #if nICs>=2
+                    x[*t_f+nF]   += w * x1;
+                    #endif
+                    #if nICs>=3
+                    x[*t_f+2*nF] += w * x2;
+                    #endif
+                    #if nICs>=4
+                    x[*t_f] += w * x3;
+                    #endif
+                    #if nICs>=5
+                    x[*t_f] += w * x4;
+                    #endif
+                    #if nICs>=6
+                    x[*t_f] += w * x5;
+                    #endif
+                    #if nICs>=7
+                    x[*t_f] += w * x6;
+                    #endif
+                    #if nICs>=8
+                    x[*t_f] += w * x7;
+                    #endif
+                    #if nICs>=9
+                    x[*t_f] += w * x8;
+                    #endif
+                    #if nICs>=10
+                    x[*t_f] += w * x9;
+                    #endif
+                    start_offset++;
+                }
             }
 
             t_f++;
