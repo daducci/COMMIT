@@ -30,11 +30,12 @@ void* COMMIT_A__block( void *ptr )
 {
     int      id = (long)ptr;
     double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, w;
+    double   x0_tmp, x1_tmp, x2_tmp, x3_tmp, x4_tmp, x5_tmp, x6_tmp, x7_tmp, x8_tmp, x9_tmp;
     double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3, *x_Ptr4, *x_Ptr5, *x_Ptr6, *x_Ptr7, *x_Ptr8, *x_Ptr9;
     double   *Yptr, *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
     uint32_t *t_v, *t_vEnd, *t_f, *t_p;
     float    *t_l;
-    int      offset;
+    int      start_offset, offset;
     // intra-cellular compartments
     #if nICs>=1
         // DCT basis functions 
@@ -48,41 +49,51 @@ void* COMMIT_A__block( void *ptr )
         {
             x_Ptr0 = x + *t_f;
             x0 = *x_Ptr0;
+            x0_tmp = 0;
             #if nICs>=2
             x_Ptr1 = x_Ptr0 + nF;
             x1 = *x_Ptr1;
+            x1_tmp = 0;
             #endif
             #if nICs>=3
             x_Ptr2 = x_Ptr1 + nF;
             x2 = *x_Ptr2;
+            x2_tmp = 0;
             #endif
             #if nICs>=4
             x_Ptr3 = x_Ptr2 + nF;
             x3 = *x_Ptr3;
+            x3_tmp = 0;
             #endif
             #if nICs>=5
             x_Ptr4 = x_Ptr3 + nF;
             x4 = *x_Ptr4;
+            x4_tmp = 0;
             #endif
             #if nICs>=6
             x_Ptr5 = x_Ptr4 + nF;
             x5 = *x_Ptr5;
+            x5_tmp = 0;
             #endif
             #if nICs>=7
             x_Ptr6 = x_Ptr5 + nF;
             x6 = *x_Ptr6;
+            x6_tmp = 0;
             #endif
             #if nICs>=8
             x_Ptr7 = x_Ptr6 + nF;
             x7 = *x_Ptr7;
+            x7_tmp = 0;
             #endif
             #if nICs>=9
             x_Ptr8 = x_Ptr7 + nF;
             x8 = *x_Ptr8;
+            x8_tmp = 0;
             #endif
             #if nICs>=10
             x_Ptr9 = x_Ptr8 + nF;
             x9 = *x_Ptr9;
+            x9_tmp = 0;
             #endif
 
             if ( x0 != 0
@@ -116,74 +127,86 @@ void* COMMIT_A__block( void *ptr )
 
             )
             {
-                Yptr    = Y + (*t_v);
-                // YptrEnd = Yptr + nICs;
-                w       = (double)(*t_l);
-                offset  = (*t_p) - 1;
-                // printf("offset = %d\n", offset);
-                SFP0ptr = icSFB0; 
+            Yptr    = Y + (*t_v);
+            w       = (double)(*t_l);
+            start_offset = 0;
+            offset  = (*t_p);
+            while (start_offset != offset)
+            {
+                // printf("start_offset = %d, offset = %d\n", start_offset, offset);
+                SFP0ptr = icSFB0 + start_offset;
+                x0_tmp += x0 * (*SFP0ptr);
+                // printf("x0_tmp = %f\n", x0_tmp);
+                // printf("SFP0ptr = %f\n", *SFP0ptr);
                 #if nICs>=2
-                SFP1ptr = icSFB1 + offset;
+                SFP1ptr = icSFB1 + start_offset;
+                x1_tmp += x1 * (*SFP1ptr);
                 #endif
                 #if nICs>=3
-                SFP2ptr = icSFB2 + offset;
+                SFP2ptr = icSFB2 + start_offset;
+                x2_tmp += x2 * (*SFP2ptr);
                 #endif
                 #if nICs>=4
-                SFP3ptr = icSFB3 + offset;
+                SFP3ptr = icSFB3 + start_offset;
+                x3_tmp += x3 * (*SFP3ptr);
                 #endif
                 #if nICs>=5
-                SFP4ptr = icSFB4 + offset;
+                SFP4ptr = icSFB4 + start_offset;
+                x4_tmp += x4 * (*SFP4ptr);
                 #endif
                 #if nICs>=6
-                SFP5ptr = icSFB5 + offset;
+                SFP5ptr = icSFB5 + start_offset;
+                x5_tmp += x5 * (*SFP5ptr);
                 #endif
                 #if nICs>=7
-                SFP6ptr = icSFB6 + offset;
+                SFP6ptr = icSFB6 + start_offset;
+                x6_tmp += x6 * (*SFP6ptr);
                 #endif
                 #if nICs>=8
-                SFP7ptr = icSFB7 + offset;
+                SFP7ptr = icSFB7 + start_offset;
+                x7_tmp += x7 * (*SFP7ptr);
                 #endif
                 #if nICs>=9
-                SFP8ptr = icSFB8 + offset;
+                SFP8ptr = icSFB8 + start_offset;
+                x8_tmp += x8 * (*SFP8ptr);
                 #endif
                 #if nICs>=10
-                SFP9ptr = icSFB9 + offset;
-                #endif
+                SFP9ptr = icSFB9 + start_offset;
+                x9_tmp += x9 * (*SFP9ptr);
+                #endif                
+                start_offset++;
+                }
 
                 (*Yptr++) = w * (
-                        x0 * (*SFP0ptr)
+                        x0_tmp
                         #if nICs>=2
-                        + x1 * (*SFP1ptr)
+                        + x1_tmp
                         #endif
                         #if nICs>=3
-                        + x2 * (*SFP2ptr)
+                        + x2_tmp
                         #endif
                         #if nICs>=4
-                        + x3 * (*SFP3ptr)
+                        + x3_tmp
                         #endif
                         #if nICs>=5
-                        + x4 * (*SFP4ptr)
+                        + x4_tmp
                         #endif
                         #if nICs>=6
-                        + x5 * (*SFP5ptr)
+                        + x5_tmp
                         #endif
                         #if nICs>=7
-                        + x6 * (*SFP6ptr)
+                        + x6_tmp
                         #endif
                         #if nICs>=8
-                        + x7 * (*SFP7ptr)
+                        + x7_tmp
                         #endif
                         #if nICs>=9
-                        + x8 * (*SFP8ptr)
+                        + x8_tmp
                         #endif
                         #if nICs>=10
-                        + x9 * (*SFP9ptr)
+                        + x9_tmp
                         #endif
                     );
-                    printf("w = %f\n", w);
-                    // printf("SFP0ptr = %f, SFP1ptr = %f, SFP2ptr = %f, SFP3ptr = %f, SFP4ptr = %f, SFP5ptr = %f, SFP6ptr = %f, SFP7ptr = %f, SFP8ptr = %f, SFP9ptr = %f\n", *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr);
-                    // printf("SFP1ptr = %f, SFP2ptr = %f, SFP7ptr = %f, SFP9ptr = %f\n", *SFP1ptr, *SFP2ptr, *SFP7ptr, *SFP9ptr);
-
             }
             t_f++;
             t_v++;
@@ -315,7 +338,7 @@ void* COMMIT_At__block( void *ptr )
                 Y_tmp = *Yptr;
 
                 offset = (*t_p);
-                SFP0ptr   = icSFB0;
+                SFP0ptr   = icSFB0 + offset;
                 x0 = (*SFP0ptr) * Y_tmp;
                 #if nICs>=2
                 SFP1ptr   = icSFB1 + offset;
