@@ -6,7 +6,6 @@ from libc.stdlib cimport malloc, free
 import nibabel
 from dicelib.clustering import run_clustering
 from dicelib.ui import _in_notebook
-from dicelib.ui import _in_notebook
 
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
@@ -300,7 +299,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                 ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
 
         input_tractogram = os.path.basename(filename_tractogram)[:len(os.path.basename(filename_tractogram))-4]
-        input_tractogram = os.path.basename(filename_tractogram)[:len(os.path.basename(filename_tractogram))-4]
         filename_out = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
 
         if blur_clust_groupby:
@@ -417,7 +415,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else :
         print( '\t- No mask specified to filter IC compartments' )
         ptrMASK = NULL
-        niiMASK_img = np.ascontiguousarray( np.ones((Nx,Ny,Nz),dtype=np.float32) )
 
     # peaks file for EC contributions
     cdef float* ptrPEAKS
@@ -479,15 +476,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
         ptrISO  = &niiISO_img[0,0,0]
     else :
-        if filename_mask is not None :
-            print( '\t- No ISO map specified, using the whole white-matter' )
-            niiMASK_img = np.ascontiguousarray( np.ones((Nx,Ny,Nz),dtype=np.float32) )
-            ptrISO = &niiMASK_img[0,0,0]
-        else :
-            print( '\t- No ISO map specified' )
-            niiISO_img = np.ascontiguousarray( np.zeros((Nx,Ny,Nz),dtype=np.float32) )
-            ptrISO = &niiISO_img[0,0,0]
-            
+        print( '\t- No ISO map specified, using tdi' )
+        ptrISO = NULL
 
     # write dictionary information info file
     dictionary_info = {}
@@ -586,18 +576,17 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
     cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_IC_pos.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_IC_pos_{j}.dict' ]
-    cat_function( dict_list, fileout )
-
     fileout = path_out + '/dictionary_IC_len.dict'
     dict_list = []
     for j in range(n_threads):
         dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
     cat_function( dict_list, fileout )
 
+    fileout = path_out + '/dictionary_IC_pos.dict'
+    dict_list = []
+    for j in range(n_threads):
+        dict_list += [ path_temp + f'/dictionary_IC_pos_{j}.dict' ]
+    cat_function( dict_list, fileout )
 
     # save TDI and MASK maps
     if TCK_ref_image is not None:

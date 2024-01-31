@@ -35,7 +35,8 @@ void* COMMIT_A__block( void *ptr )
     double   *Yptr, *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
     uint32_t *t_v, *t_vEnd, *t_f, *t_p;
     float    *t_l;
-    int      start_offset, offset;
+    int      start_offset = 0;
+    int      offset;
     // intra-cellular compartments
     #if nICs>=1
         // DCT basis functions 
@@ -129,15 +130,14 @@ void* COMMIT_A__block( void *ptr )
             {
             Yptr    = Y + (*t_v);
             w       = (double)(*t_l);
-            start_offset = 0;
             offset  = (*t_p);
             while (start_offset != offset)
             {
-                // printf("start_offset = %d, offset = %d\n", start_offset, offset);
+                printf("start_offset = %d, offset = %d\n", start_offset, offset);
                 SFP0ptr = icSFB0 + start_offset;
-                x0_tmp += x0 * (*SFP0ptr);
-                // printf("x0_tmp = %f\n", x0_tmp);
-                // printf("SFP0ptr = %f\n", *SFP0ptr);
+                x0 *= (*SFP0ptr);
+                printf("x0 = %f\n", x0);
+                printf("SFP0ptr = %f\n", *SFP0ptr);
                 #if nICs>=2
                 SFP1ptr = icSFB1 + start_offset;
                 x1_tmp += x1 * (*SFP1ptr);
@@ -174,11 +174,9 @@ void* COMMIT_A__block( void *ptr )
                 SFP9ptr = icSFB9 + start_offset;
                 x9_tmp += x9 * (*SFP9ptr);
                 #endif                
-                start_offset++;
-                }
 
-                (*Yptr++) = w * (
-                        x0_tmp
+                (*Yptr++) += w * (
+                        x0
                         #if nICs>=2
                         + x1_tmp
                         #endif
@@ -207,6 +205,8 @@ void* COMMIT_A__block( void *ptr )
                         + x9_tmp
                         #endif
                     );
+                start_offset++;
+            }
             }
             t_f++;
             t_v++;
@@ -316,7 +316,8 @@ void* COMMIT_At__block( void *ptr )
     uint32_t *t_v, *t_vEnd, *t_f, *t_p;
     float    *t_l;
     uint8_t  *t_t;
-    int      start_offset, offset;
+    int      start_offset = 0;
+    int      offset;
     double   *xPtr;
 
     #if ( nICs >= 1)
@@ -326,8 +327,7 @@ void* COMMIT_At__block( void *ptr )
         t_l    = ICl;
         t_f    = ICf;
         t_p    = ICp;
-        t_t    = ICthreadsT;
-        
+        t_t    = ICthreadsT;        
 
         while( t_v != t_vEnd )
         {
@@ -336,7 +336,6 @@ void* COMMIT_At__block( void *ptr )
             {
                 Yptr    = Y + (*t_v);
                 Y_tmp = *Yptr;
-                start_offset = 0;
                 offset = (*t_p);
                 while (start_offset != offset)
                 {

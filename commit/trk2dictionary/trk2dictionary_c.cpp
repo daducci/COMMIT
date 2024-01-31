@@ -11,8 +11,6 @@
 #include <thread>
 #include <numeric>
 #include <chrono>
-#include <cstdlib> // for rand() and srand()
-
 
 #define _FILE_OFFSET_BITS 64
 #define MAX_FIB_LEN 10000
@@ -25,9 +23,9 @@ ProgressBar* PROGRESS = new ProgressBar();
 class segKey
 {
     public:
-    unsigned short x=0, y=0, z=0;
-    unsigned short o=0;
-    segKey() {}
+    unsigned short x, y, z;
+    unsigned short o;
+    segKey(){}
 
     void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned short _o)
     {
@@ -83,10 +81,8 @@ vector<unsigned int>    totFibers;
 unsigned int            totECVoxels = 0;
 unsigned int            totECSegments = 0;
 
-
 // progressbar verbosity
 int verbosity = 0;
-
 
 // --- Functions Definitions ----
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
@@ -140,8 +136,7 @@ int trk2dictionary(
     totECVoxels   = 0;
     totECSegments = 0;
     verbosity     = verbose;
-    verbosity     = verbose;
-
+    
 
     // Compute the batch size for each thread
     // ---------------------------------------
@@ -241,12 +236,7 @@ int trk2dictionary(
     printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
     // unsigned int width = 25;
     // PROGRESS = new ProgressBar( (unsigned int) n_count, (unsigned int) width);
-    if (verbosity > 0)
-    {
-        PROGRESS->reset((unsigned int) n_count);
-        PROGRESS->setPrefix("     ");
-    }
-    if (verbosity > 0)
+        if (verbosity > 0)
     {
         PROGRESS->reset((unsigned int) n_count);
         PROGRESS->setPrefix("     ");
@@ -265,10 +255,7 @@ int trk2dictionary(
 
     if (verbosity > 0)
         PROGRESS->close();
-    if (verbosity > 0)
-        PROGRESS->close();
     
-
     printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
     totFibers.clear();
     threads.clear();
@@ -429,8 +416,13 @@ int ISOcompartments(double** ptrTDI, char* path_out, int threads){
     for(iz=0; iz<dim.z ;iz++){
         for(iy=0; iy<dim.y ;iy++)
         for(ix=0; ix<dim.x ;ix++){
+// check if ptrISO and ptrMASK are not NULL
+            if ( ptrISO != NULL ){
             if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-            if ( ptrMASK && ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+            }
+            if ( ptrMASK != NULL ){
+                if ( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+}
             // check if in mask previously computed from IC segments
             for(int i =0; i<threads; i++){
                 if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ){
@@ -467,8 +459,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     // Variables definition
     float           fiber[3][MAX_FIB_LEN] = {0} ;
     float           fiberNorm;   // normalization
-    unsigned int    pos;
-    float           float_pos; // TODO uint8
+    unsigned int    pos=0;
+    float           float_pos=0.0;
     unsigned int    N, v, tempTotFibers, temp_totICSegments;
     unsigned short  o;
     unsigned char   kept;
@@ -487,7 +479,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
 
     // Creo e apro i files per i risultati
-    filename = OUTPUT_path+"/dictionary_TRK_norm_" + std::to_string(idx) + ".dict";    FILE* pDict_TRK_norm   = fopen(filename.c_str(),"wb");
+    filename = OUTPUT_path+"/dictionary_TRK_norm_" + std::to_string(idx) + ".dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");
     if ( !pDict_TRK_norm )
     {
         printf( "\n[trk2dictionary] Unable to create output files" );
@@ -512,6 +504,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     temp_totICSegments = 0;
     int incr_new = 0;
     int incr_old = 0;
+    unsigned int pos_count = 1;
     // Iterate over streamlines
 
     for(int f=startpos; f<endpos; f++) 
@@ -540,24 +533,25 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                     // NB: plese note inverted ordering for 'v'
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;
-                    float_pos += (it->second/FiberLenTot);
+
+                    float_pos += (it->second)/FiberLenTot;                    
                     pos = (int)round(float_pos*256.0);
 
+                    fwrite( &pos,            4, 1, pDict_IC_pos );
                     fwrite( &sumFibers,      4, 1, pDict_IC_f );
                     fwrite( &v,              4, 1, pDict_IC_v );
                     fwrite( &o,              2, 1, pDict_IC_o );
                     fwrite( &(it->second),   4, 1, pDict_IC_len );
-                    fwrite( &pos,            4, 1, pDict_IC_pos );
 
                     ptrTDI[ it->first.z + dim.z * ( it->first.y + dim.y * it->first.x ) ] += it->second;
 
                     inVoxKey.set( it->first.x, it->first.y, it->first.z );
                     FiberNorm[inVoxKey] += it->second;
+                    pos_count += 1;
                 }
 
                 for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
-                    // std::cout << "FiberNorm: " << itNorm->second << std::endl;
-                    fiberNorm += pow(itNorm->second,2);
+                                        fiberNorm += pow(itNorm->second,2);
                 fiberNorm = sqrt(fiberNorm);
                 FiberNorm.clear();
 
@@ -783,7 +777,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 /********************************************************************************************************************/
 /*                                                segmentForwardModel                                               */
 /********************************************************************************************************************/
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable)
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable )
 {
     thread_local static Vector<int>    vox;
     thread_local static Vector<double> dir, dirTrue;
@@ -820,11 +814,9 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     if ( ptrMASK && ptrMASK[ vox.z + dim.z * ( vox.y + dim.y * vox.x ) ]==0 )
         return;
 
-    // float random_value = 2.0 * ((float)rand() / RAND_MAX) - 1.0;
-
-    // add the segment to the data structure
-    longitude  = atan2(dir.y, dir.x); // + random_value;
-    colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z ); // + random_value;
+        // add the segment to the data structure
+    longitude  = atan2(dir.y, dir.x);
+    colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
     ox = (int)round(colatitude/M_PI*180.0); // theta // i1
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );

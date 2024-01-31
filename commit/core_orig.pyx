@@ -256,7 +256,7 @@ cdef class Evaluation :
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
 
-    def generate_kernels( self, regenerate=False, lmax=12, ndirs=500):
+    def generate_kernels( self, regenerate=False, lmax=12, ndirs=500 ) :
         """Generate the high-resolution response functions for each compartment.
         Dispatch to the proper function, depending on the model.
 
@@ -314,7 +314,7 @@ cdef class Evaluation :
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
-    def load_kernels( self, nprof=1, nsamples=256 ) :
+    def load_kernels( self ) :
         """Load rotated kernels and project to the specific gradient scheme of this subject.
         Dispatch to the proper function, depending on the model.
         """
@@ -334,11 +334,7 @@ cdef class Evaluation :
             print( '\t* Merging multiple b0 volume(s)...' )
         else :
             print( '\t* Keeping all b0 volume(s)...' )
-        
-        if self.model.id == "ModulatedVolumeFractions":
-            self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
-        else:
-            self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
+        self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
@@ -346,7 +342,6 @@ cdef class Evaluation :
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
-        self.KERNELS['wmc'] = np.ascontiguousarray( self.KERNELS['wmc'], dtype=np.float64 )
         self.KERNELS['wmh'] = np.ascontiguousarray( self.KERNELS['wmh'] )
         self.KERNELS['iso'] = np.ascontiguousarray( self.KERNELS['iso'] )
 
@@ -364,7 +359,7 @@ cdef class Evaluation :
 
         # Normalize atoms
         if self.get_config('doNormalizeKernels') :
-            print( '\t* Normalizing...', end='' )
+            print( '\t* Normalizing... ', end='' )
 
             self.KERNELS['wmr_norm'] = np.zeros( nIC )
             for i in xrange(nIC) :
@@ -451,10 +446,8 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
         self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
         self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
-        self.DICTIONARY['IC']['p']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_pos.dict'), dtype=np.uint32 )
         self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
         self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
-        
 
         # reorder the segments based on the "v" field
         idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
@@ -462,7 +455,6 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
         self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
         self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
-        self.DICTIONARY['IC']['p']     = self.DICTIONARY['IC']['p'][ idx ]
         del idx
 
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
@@ -737,8 +729,6 @@ cdef class Evaluation :
             compilation_is_needed = True
         if config.nIC is None or config.nIC != self.KERNELS['wmr'].shape[0]:
             compilation_is_needed = True
-        if config.nICs is None or config.nICs != self.KERNELS['wmc'].shape[0]:
-            compilation_is_needed = True
         if config.model is None or config.model != self.model.id:
             compilation_is_needed = True
         if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
@@ -761,7 +751,6 @@ cdef class Evaluation :
             config.nTHREADS   = self.THREADS['n']
             config.model      = self.model.id
             config.nIC        = self.KERNELS['wmr'].shape[0]
-            config.nICs       = self.KERNELS['wmc'].shape[0]
             config.nEC        = self.KERNELS['wmh'].shape[0]
             config.nISO       = self.KERNELS['iso'].shape[0]
             config.build_dir  = build_dir
@@ -791,7 +780,6 @@ cdef class Evaluation :
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
         # y[y < 0] = 0
         return y
-
 
     def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
         """
@@ -850,7 +838,7 @@ cdef class Evaluation :
         regularisation = {}
 
         regularisation['startIC']  = 0
-        regularisation['sizeIC']   = int( self.DICTIONARY['IC']['nF'] * self.KERNELS['wmr'].shape[0]) * self.KERNELS['wmc'].shape[0]
+        regularisation['sizeIC']   = int( self.DICTIONARY['IC']['nF'] * self.KERNELS['wmr'].shape[0])
         regularisation['startEC']  = int( regularisation['sizeIC'] )
         regularisation['sizeEC']   = int( self.DICTIONARY['EC']['nE'] * self.KERNELS['wmh'].shape[0])
         regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
@@ -1122,9 +1110,9 @@ cdef class Evaluation :
         else :
             x = self.x
 
-        offset1 = nF * self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]
+        offset1 = nF * self.KERNELS['wmr'].shape[0]
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
-        kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] )
+        kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0] )
         xic = np.zeros( kept.size )
         xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
@@ -1170,7 +1158,7 @@ cdef class Evaluation :
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
-            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
@@ -1303,7 +1291,6 @@ cdef class Evaluation :
         xic, _, _ = self.get_coeffs()
         if stat_coeffs != 'all' and xic.size > 0 :
             xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
-
             if stat_coeffs == 'sum' :
                 xic = np.sum( xic, axis=0 )
             elif stat_coeffs == 'mean' :
