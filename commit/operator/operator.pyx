@@ -13,7 +13,8 @@ cdef extern void COMMIT_A(
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads
+    unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads,
+    unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
 ) nogil
 
 cdef extern void COMMIT_At(
@@ -23,7 +24,8 @@ cdef extern void COMMIT_At(
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
+    unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT,
+    unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
 ) nogil
 
 
@@ -166,17 +168,22 @@ cdef class LinearOperator :
         # Create output array
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
 
+        cdef unsigned int nthreads = self.THREADS['n']
+        cdef unsigned int nIC = self.KERNELS['wmr'].shape[0]
+        cdef unsigned int nEC = self.KERNELS['wmh'].shape[0]
+        cdef unsigned int nISO = self.KERNELS['iso'].shape[0]
+
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
-
             with nogil :
                 COMMIT_A(
                     self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                    self.ICthreads, self.ECthreads, self.ISOthreads
+                    self.ICthreads, self.ECthreads, self.ISOthreads,
+                    nIC, nEC, nISO, nthreads
                 )
         else :
             # INVERSE PRODUCT A'*y
@@ -186,7 +193,8 @@ cdef class LinearOperator :
                     &v_in[0], &v_out[0],
                     self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
                     self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                    self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
+                    self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
+                    nIC, nEC, nISO, nthreads
                 )
 
         return v_out
