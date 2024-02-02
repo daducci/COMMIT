@@ -376,25 +376,25 @@ void* COMMIT_At__block( void *ptr )
                 x[*t_f+2*nF] += w * x2;
                 #endif
                 #if nICs>=4
-                x[*t_f] += w * x3;
+                x[*t_f+3*nF] += w * x3;
                 #endif
                 #if nICs>=5
-                x[*t_f] += w * x4;
+                x[*t_f+4*nF] += w * x4;
                 #endif
                 #if nICs>=6
-                x[*t_f] += w * x5;
+                x[*t_f+5*nF] += w * x5;
                 #endif
                 #if nICs>=7
-                x[*t_f] += w * x6;
+                x[*t_f+6*nF] += w * x6;
                 #endif
                 #if nICs>=8
-                x[*t_f] += w * x7;
+                x[*t_f+7*nF] += w * x7;
                 #endif
                 #if nICs>=9
-                x[*t_f] += w * x8;
+                x[*t_f+8*nF] += w * x8;
                 #endif
                 #if nICs>=10
-                x[*t_f] += w * x9;
+                x[*t_f+9*nF] += w * x9;
                 #endif
             }
             t_f++;
