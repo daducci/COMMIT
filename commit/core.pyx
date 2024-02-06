@@ -1114,10 +1114,10 @@ cdef class Evaluation :
 
         if get_normalized and self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
-            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
+            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF*self.KERNELS['wmc'].shape[0])
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
-            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
@@ -1167,7 +1167,7 @@ cdef class Evaluation :
         # self.x is the x preconditioned
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
-            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
+            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF*self.KERNELS['wmc'].shape[0])
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
             norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
