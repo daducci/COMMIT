@@ -1121,7 +1121,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, do_reweighting=True ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -1335,7 +1335,7 @@ cdef class Evaluation :
         self.temp_data['streamline_weights'] = xic
         self.temp_data['RESULTS_path'] = RESULTS_path
 
-        if hasattr(self.model, '_postprocess'):
+        if hasattr(self.model, '_postprocess') and do_reweighting:
             self.model._postprocess(self.temp_data, verbose=self.CONFIG['optimization']['verbose'])
         else:
             print( '\t\t- streamline_weights.txt... ', end='' )
