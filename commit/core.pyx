@@ -1255,19 +1255,21 @@ cdef class Evaluation :
         sys.stdout.flush()
         niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmr']) > 0 :
-            offset = nF * self.KERNELS['wmr'].shape[0]
-            tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
+            offset = nF * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
+            # tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
+            tmp = x[:offset] * norm_fib
             xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
                 weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
             ).astype(np.float32)
             niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
+            niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
         print( '[ OK ]' )
 
         print( '\t\t- Extra-axonal... ', end='' )
         sys.stdout.flush()
         niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmh']) > 0 :
-            offset = nF * self.KERNELS['wmr'].shape[0]
+            offset = nF * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
             tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
             niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
@@ -1277,7 +1279,7 @@ cdef class Evaluation :
         sys.stdout.flush()
         niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
-            offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
+            offset = nF * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
             offset_iso = offset + self.DICTIONARY['ISO']['nV']
             tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['nV']) ).sum( axis=0 )
             xv = np.bincount( self.DICTIONARY['ISO']['v'], weights=tmp, minlength=nV ).astype(np.float32)
