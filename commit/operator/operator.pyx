@@ -7,23 +7,23 @@ cimport numpy as np
 
 # Interfaces to actual C code performing the multiplications
 cdef extern void COMMIT_A(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, unsigned int *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
-    float *_wmrSFP, double *_wmcSFP, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
     unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads,
     unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
 ) nogil
 
 cdef extern void COMMIT_At(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _nSf, int _ndirs,
+    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, unsigned int *_ICp,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
-    float *_wmrSFP, double *_wmcSFP, float *_wmhSFP, float *_isoSFP,
+    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
     unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT,
     unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
 ) nogil
@@ -248,12 +248,12 @@ cdef class LinearOperator :
                 # DIRECT PRODUCT A*x
                 with nogil :
                     COMMIT_A(
-                        self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
+                        self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
                         self.ICf, self.ICv, self.ICo, self.ICl, self.ICp,
                         self.ECv, self.ECo,
                         self.ISOv,
-                        self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
+                        self.LUT_IC, self.LUT_EC, self.LUT_ISO,
                         self.ICthreads, self.ECthreads, self.ISOthreads,
                         nIC, nEC, nISO, nthreads
                     )
@@ -262,12 +262,12 @@ cdef class LinearOperator :
                 # INVERSE PRODUCT A'*y
                 with nogil :
                     COMMIT_At(
-                        self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
+                        self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
                         self.ICf, self.ICv, self.ICo, self.ICl, self.ICp,
                         self.ECv, self.ECo,
                         self.ISOv,
-                        self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
+                        self.LUT_IC, self.LUT_EC, self.LUT_ISO,
                         self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
                         nIC, nEC, nISO, nthreads
                     )
