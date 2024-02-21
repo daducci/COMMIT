@@ -335,7 +335,7 @@ cdef class Evaluation :
         else :
             print( '\t* Keeping all b0 volume(s)...' )
         
-        if self.model.id == "ModulatedVolumeFractions":
+        if self.model.id == "VolumeFractions":
             self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
         else:
             self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
@@ -346,7 +346,7 @@ cdef class Evaluation :
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
-        self.KERNELS['wmc'] = np.ascontiguousarray( self.KERNELS['wmc'], dtype=np.float64 ) if self.model.nolut else np.array([1])
+        self.KERNELS['wmc'] = np.ascontiguousarray( self.KERNELS['wmc'], dtype=np.float64 ) if hasattr(self.model, 'nolut') else np.array([1])
         self.KERNELS['wmh'] = np.ascontiguousarray( self.KERNELS['wmh'] )
         self.KERNELS['iso'] = np.ascontiguousarray( self.KERNELS['iso'] )
 
@@ -729,7 +729,7 @@ cdef class Evaluation :
         LOG( '\n-> Building linear operator A:' )
 
         from commit.operator import operator
-        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.model.nolut )
+        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
