@@ -9,7 +9,7 @@ cimport numpy as np
 cdef extern void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, unsigned int *_ICp,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -20,7 +20,7 @@ cdef extern void COMMIT_A(
 cdef extern void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl, unsigned int *_ICp,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
