@@ -22,7 +22,7 @@ def get_extensions():
                      extra_compile_args=['-w'],
                      language='c++')
     operator = Extension(name=f'{package_name}.operator.operator',
-                    sources=[f'{package_name}/operator/operator.pyx', f'{package_name}/operator/operator_withLUT.c'],
+                    sources=[f'{package_name}/operator/operator.pyx', f'{package_name}/operator/operator_c.c'],
                     extra_compile_args=['-w'],
                     language='c')
                  
