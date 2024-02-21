@@ -19,9 +19,9 @@ float       *isoSFP0, *isoSFP1, *isoSFP2, *isoSFP3, *isoSFP4, *isoSFP5, *isoSFP6
 uint32_t    nIC, nEC, nISO;
 
 
-/* ====================================================
-   Compute a sub-block of the A*x MATRIX-VECTOR product
-   ==================================================== */
+//////////////////////////////////////////////////////////
+// Compute a sub-block of the A*x MATRIX-VECTOR product //
+//////////////////////////////////////////////////////////
 void* COMMIT_A__block( void *ptr )
 {
     int      id = (long)ptr;
@@ -2862,9 +2862,9 @@ void* COMMIT_A__block( void *ptr )
     pthread_exit( 0 );
 }
 
-/* =========================
-   Function called by CYTHON
-   ========================= */
+///////////////////////////////
+// Function called by CYTHON //
+///////////////////////////////
 void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
@@ -3675,9 +3675,9 @@ void COMMIT_A(
 }
 
 
-/* =====================================================
-   Compute a sub-block of the A'*y MAtRIX-VECTOR product
-   ===================================================== */
+///////////////////////////////////////////////////////////
+// Compute a sub-block of the A'*y MAtRIX-VECTOR product //
+///////////////////////////////////////////////////////////
 void* COMMIT_At__block( void *ptr )
 {
     int      id = (long)ptr;
@@ -7686,9 +7686,9 @@ void* COMMIT_At__block( void *ptr )
     pthread_exit( 0 );
 }
 
-/* =========================
-   Function called by CYTHON
-   ========================= */
+///////////////////////////////
+// Function called by CYTHON //
+///////////////////////////////
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
@@ -8493,6 +8493,1112 @@ void COMMIT_At(
     int t;
     for(t=0; t<_nThreads ; t++)
         pthread_create( &threads[t], NULL, COMMIT_At__block, (void *) (long int)t );
+    for(t=0; t<_nThreads ; t++)
+        pthread_join( threads[t], NULL );
+    return;
+}
+
+// more global variables
+int nSf;
+double *icSFB0, *icSFB1, *icSFB2, *icSFB3, *icSFB4, *icSFB5, *icSFB6, *icSFB7, *icSFB8, *icSFB9;
+float *ICp;
+uint32_t nICs;
+
+//////////////////////////////////////////////////////////
+// Compute a sub-block of the A*x MATRIX-VECTOR product //
+//////////////////////////////////////////////////////////
+void* COMMIT_A__block_nolut( void *ptr )
+{
+    int      id = (long)ptr;
+    double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, w;
+    double   x0_tmp, x1_tmp, x2_tmp, x3_tmp, x4_tmp, x5_tmp, x6_tmp, x7_tmp, x8_tmp, x9_tmp;
+    double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3, *x_Ptr4, *x_Ptr5, *x_Ptr6, *x_Ptr7, *x_Ptr8, *x_Ptr9;
+    double   *Yptr, *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
+    uint32_t *t_v, *t_vEnd, *t_f, *t_p;
+    float    *t_l;
+    int      offset;
+
+    // intra-cellular compartments
+    if (nICs > 0)
+    {
+        // DCT basis functions 
+        t_v = ICv + ICthreads[id];
+        t_vEnd = ICv + ICthreads[id+1];
+        t_l = ICl + ICthreads[id];
+        t_f = ICf + ICthreads[id];
+        t_p = ICp + ICthreads[id];
+        switch (nICs)
+        {
+            case 1:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x0 = *x_Ptr0;
+                    x0_tmp = 0;
+                    if (x0 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        x0 *= (*SFP0ptr);
+                        (*Yptr++) += w * (x0);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 2:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    if (x0 != 0 || x1 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 3:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x_Ptr2 = x_Ptr1 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x2 = *x_Ptr2;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    x2_tmp = 0;
+                    if (x0 != 0 || x1 != 0 || x2 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        x2_tmp += x2 * (*SFP2ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp + x2_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 4:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x_Ptr2 = x_Ptr1 + nF;
+                    x_Ptr3 = x_Ptr2 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x2 = *x_Ptr2;
+                    x3 = *x_Ptr3;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    x2_tmp = 0;
+                    x3_tmp = 0;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        x2_tmp += x2 * (*SFP2ptr);
+                        x3_tmp += x3 * (*SFP3ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 5:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x_Ptr2 = x_Ptr1 + nF;
+                    x_Ptr3 = x_Ptr2 + nF;
+                    x_Ptr4 = x_Ptr3 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x2 = *x_Ptr2;
+                    x3 = *x_Ptr3;
+                    x4 = *x_Ptr4;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    x2_tmp = 0;
+                    x3_tmp = 0;
+                    x4_tmp = 0;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        x2_tmp += x2 * (*SFP2ptr);
+                        x3_tmp += x3 * (*SFP3ptr);
+                        x4_tmp += x4 * (*SFP4ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 6:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x_Ptr2 = x_Ptr1 + nF;
+                    x_Ptr3 = x_Ptr2 + nF;
+                    x_Ptr4 = x_Ptr3 + nF;
+                    x_Ptr5 = x_Ptr4 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x2 = *x_Ptr2;
+                    x3 = *x_Ptr3;
+                    x4 = *x_Ptr4;
+                    x5 = *x_Ptr5;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    x2_tmp = 0;
+                    x3_tmp = 0;
+                    x4_tmp = 0;
+                    x5_tmp = 0;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        x2_tmp += x2 * (*SFP2ptr);
+                        x3_tmp += x3 * (*SFP3ptr);
+                        x4_tmp += x4 * (*SFP4ptr);
+                        x5_tmp += x5 * (*SFP5ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 7:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x_Ptr2 = x_Ptr1 + nF;
+                    x_Ptr3 = x_Ptr2 + nF;
+                    x_Ptr4 = x_Ptr3 + nF;
+                    x_Ptr5 = x_Ptr4 + nF;
+                    x_Ptr6 = x_Ptr5 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x2 = *x_Ptr2;
+                    x3 = *x_Ptr3;
+                    x4 = *x_Ptr4;
+                    x5 = *x_Ptr5;
+                    x6 = *x_Ptr6;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    x2_tmp = 0;
+                    x3_tmp = 0;
+                    x4_tmp = 0;
+                    x5_tmp = 0;
+                    x6_tmp = 0;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        SFP6ptr = icSFB6 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        x2_tmp += x2 * (*SFP2ptr);
+                        x3_tmp += x3 * (*SFP3ptr);
+                        x4_tmp += x4 * (*SFP4ptr);
+                        x5_tmp += x5 * (*SFP5ptr);
+                        x6_tmp += x6 * (*SFP6ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 8:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x_Ptr2 = x_Ptr1 + nF;
+                    x_Ptr3 = x_Ptr2 + nF;
+                    x_Ptr4 = x_Ptr3 + nF;
+                    x_Ptr5 = x_Ptr4 + nF;
+                    x_Ptr6 = x_Ptr5 + nF;
+                    x_Ptr7 = x_Ptr6 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x2 = *x_Ptr2;
+                    x3 = *x_Ptr3;
+                    x4 = *x_Ptr4;
+                    x5 = *x_Ptr5;
+                    x6 = *x_Ptr6;
+                    x7 = *x_Ptr7;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    x2_tmp = 0;
+                    x3_tmp = 0;
+                    x4_tmp = 0;
+                    x5_tmp = 0;
+                    x6_tmp = 0;
+                    x7_tmp = 0;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        SFP6ptr = icSFB6 + offset;
+                        SFP7ptr = icSFB7 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        x2_tmp += x2 * (*SFP2ptr);
+                        x3_tmp += x3 * (*SFP3ptr);
+                        x4_tmp += x4 * (*SFP4ptr);
+                        x5_tmp += x5 * (*SFP5ptr);
+                        x6_tmp += x6 * (*SFP6ptr);
+                        x7_tmp += x7 * (*SFP7ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 9:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x_Ptr2 = x_Ptr1 + nF;
+                    x_Ptr3 = x_Ptr2 + nF;
+                    x_Ptr4 = x_Ptr3 + nF;
+                    x_Ptr5 = x_Ptr4 + nF;
+                    x_Ptr6 = x_Ptr5 + nF;
+                    x_Ptr7 = x_Ptr6 + nF;
+                    x_Ptr8 = x_Ptr7 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x2 = *x_Ptr2;
+                    x3 = *x_Ptr3;
+                    x4 = *x_Ptr4;
+                    x5 = *x_Ptr5;
+                    x6 = *x_Ptr6;
+                    x7 = *x_Ptr7;
+                    x8 = *x_Ptr8;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    x2_tmp = 0;
+                    x3_tmp = 0;
+                    x4_tmp = 0;
+                    x5_tmp = 0;
+                    x6_tmp = 0;
+                    x7_tmp = 0;
+                    x8_tmp = 0;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        SFP6ptr = icSFB6 + offset;
+                        SFP7ptr = icSFB7 + offset;
+                        SFP8ptr = icSFB8 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        x2_tmp += x2 * (*SFP2ptr);
+                        x3_tmp += x3 * (*SFP3ptr);
+                        x4_tmp += x4 * (*SFP4ptr);
+                        x5_tmp += x5 * (*SFP5ptr);
+                        x6_tmp += x6 * (*SFP6ptr);
+                        x7_tmp += x7 * (*SFP7ptr);
+                        x8_tmp += x8 * (*SFP8ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp + x8_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+            case 10:
+                while (t_v != t_vEnd)
+                {
+                    x_Ptr0 = x + *t_f;
+                    x_Ptr1 = x_Ptr0 + nF;
+                    x_Ptr2 = x_Ptr1 + nF;
+                    x_Ptr3 = x_Ptr2 + nF;
+                    x_Ptr4 = x_Ptr3 + nF;
+                    x_Ptr5 = x_Ptr4 + nF;
+                    x_Ptr6 = x_Ptr5 + nF;
+                    x_Ptr7 = x_Ptr6 + nF;
+                    x_Ptr8 = x_Ptr7 + nF;
+                    x_Ptr9 = x_Ptr8 + nF;
+                    x0 = *x_Ptr0;
+                    x1 = *x_Ptr1;
+                    x2 = *x_Ptr2;
+                    x3 = *x_Ptr3;
+                    x4 = *x_Ptr4;
+                    x5 = *x_Ptr5;
+                    x6 = *x_Ptr6;
+                    x7 = *x_Ptr7;
+                    x8 = *x_Ptr8;
+                    x9 = *x_Ptr9;
+                    x0_tmp = 0;
+                    x1_tmp = 0;
+                    x2_tmp = 0;
+                    x3_tmp = 0;
+                    x4_tmp = 0;
+                    x5_tmp = 0;
+                    x6_tmp = 0;
+                    x7_tmp = 0;
+                    x8_tmp = 0;
+                    x9_tmp = 0;
+                    if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
+                    {
+                        Yptr = Y + (*t_v);
+                        w = (double)(*t_l);
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        SFP6ptr = icSFB6 + offset;
+                        SFP7ptr = icSFB7 + offset;
+                        SFP8ptr = icSFB8 + offset;
+                        SFP9ptr = icSFB9 + offset;
+                        x0 *= (*SFP0ptr);
+                        x1_tmp += x1 * (*SFP1ptr);
+                        x2_tmp += x2 * (*SFP2ptr);
+                        x3_tmp += x3 * (*SFP3ptr);
+                        x4_tmp += x4 * (*SFP4ptr);
+                        x5_tmp += x5 * (*SFP5ptr);
+                        x6_tmp += x6 * (*SFP6ptr);
+                        x7_tmp += x7 * (*SFP7ptr);
+                        x8_tmp += x8 * (*SFP8ptr);
+                        x9_tmp += x9 * (*SFP9ptr);
+                        (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp + x8_tmp + x9_tmp);
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                }
+                break;
+        }
+    }
+
+    // isotropic compartments
+    if (nISO > 0)
+    {
+        t_v = ISOv + ISOthreads[id];
+        t_vEnd = ISOv + ISOthreads[id+1];
+        xPtr = x + nF + ISOthreads[id];
+
+        while (t_v != t_vEnd)
+        {
+            x0 = *xPtr++;
+            if (x0 != 0)
+                Y[*t_v] += x0;
+            t_v++;
+        }
+    }
+
+    pthread_exit( 0 );
+}
+
+///////////////////////////////
+// Function called by CYTHON //
+///////////////////////////////
+void COMMIT_A_nolut(
+    int _nF, int _n, int _nSf,
+    double* _vIN, double* _vOUT,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, float *_ICp,
+    uint32_t *_ISOv,
+    double *_ICmod,
+    uint32_t* _ICthreads, uint32_t* _ISOthreads,
+    uint32_t _nICs, uint32_t _nISO, uint32_t _nThreads
+)
+{
+    nF = _nF;
+    n  = _n;
+    nSf = _nSf;
+
+    x = _vIN;
+    Y = _vOUT;
+
+    ICf  = _ICf;
+    ICv  = _ICv;
+    ICl  = _ICl;
+    ICp  = _ICp;
+    ISOv = _ISOv;
+
+    nICs = _nICs;
+    nISO = _nISO;
+
+    switch (nICs)
+    {
+        case 1:
+            icSFB0 = _ICmod;
+            break;
+        case 2:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            break;
+        case 3:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            break;
+        case 4:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            break;
+        case 5:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            break;
+        case 6:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            icSFB5 = icSFB4 + nSf;
+            break;
+        case 7:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            icSFB5 = icSFB4 + nSf;
+            icSFB6 = icSFB5 + nSf;
+            break;
+        case 8:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            icSFB5 = icSFB4 + nSf;
+            icSFB6 = icSFB5 + nSf;
+            icSFB7 = icSFB6 + nSf;
+            break;
+        case 9:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            icSFB5 = icSFB4 + nSf;
+            icSFB6 = icSFB5 + nSf;
+            icSFB7 = icSFB6 + nSf;
+            icSFB8 = icSFB7 + nSf;
+            break;
+        case 10:
+            icSFB0  = _ICmod;
+            icSFB1  = icSFB0 + nSf;
+            icSFB2  = icSFB1 + nSf;
+            icSFB3  = icSFB2 + nSf;
+            icSFB4  = icSFB3 + nSf;
+            icSFB5  = icSFB4 + nSf;
+            icSFB6  = icSFB5 + nSf;
+            icSFB7  = icSFB6 + nSf;
+            icSFB8  = icSFB7 + nSf;
+            icSFB9  = icSFB8 + nSf;
+            break;
+    }
+
+    ICthreadsT  = _ICthreads;
+    ISOthreadsT = _ISOthreads;
+
+    // Run SEPARATE THREADS to perform the multiplication
+    pthread_t threads[MAX_THREADS];
+    int t;
+    for(t=0; t<_nThreads ; t++)
+        pthread_create( &threads[t], NULL, COMMIT_A__block_nolut, (void *) (long int)t );
+    for(t=0; t<_nThreads ; t++)
+        pthread_join( threads[t], NULL );
+    return;
+}
+
+
+///////////////////////////////////////////////////////////
+// Compute a sub-block of the A'*y MAtRIX-VECTOR product //
+///////////////////////////////////////////////////////////
+void* COMMIT_At__block_nolut( void *ptr )
+{
+    int      id = (long)ptr;
+    double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, w, Y_tmp;
+    double   *Yptr, *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
+    uint32_t *t_v, *t_vEnd, *t_f, *t_p;
+    float    *t_l;
+    uint8_t  *t_t;
+    int      offset;
+    double   *xPtr;
+
+    // intra-cellular compartments
+    if (nICs > 0)
+    {
+        t_v = ICv;
+        t_vEnd = ICv + n;
+        t_l = ICl;
+        t_f = ICf;
+        t_p = ICp;
+        t_t = ICthreadsT;
+
+        switch (nICs)
+        {
+            case 1:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 2:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 3:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        x2 = (*SFP2ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 4:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        x2 = (*SFP2ptr) * Y_tmp;
+                        x3 = (*SFP3ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 5:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        x2 = (*SFP2ptr) * Y_tmp;
+                        x3 = (*SFP3ptr) * Y_tmp;
+                        x4 = (*SFP4ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 6:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        x2 = (*SFP2ptr) * Y_tmp;
+                        x3 = (*SFP3ptr) * Y_tmp;
+                        x4 = (*SFP4ptr) * Y_tmp;
+                        x5 = (*SFP5ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 7:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        SFP6ptr = icSFB6 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        x2 = (*SFP2ptr) * Y_tmp;
+                        x3 = (*SFP3ptr) * Y_tmp;
+                        x4 = (*SFP4ptr) * Y_tmp;
+                        x5 = (*SFP5ptr) * Y_tmp;
+                        x6 = (*SFP6ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 8:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        SFP6ptr = icSFB6 + offset;
+                        SFP7ptr = icSFB7 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        x2 = (*SFP2ptr) * Y_tmp;
+                        x3 = (*SFP3ptr) * Y_tmp;
+                        x4 = (*SFP4ptr) * Y_tmp;
+                        x5 = (*SFP5ptr) * Y_tmp;
+                        x6 = (*SFP6ptr) * Y_tmp;
+                        x7 = (*SFP7ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 9:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        SFP6ptr = icSFB6 + offset;
+                        SFP7ptr = icSFB7 + offset;
+                        SFP8ptr = icSFB8 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        x2 = (*SFP2ptr) * Y_tmp;
+                        x3 = (*SFP3ptr) * Y_tmp;
+                        x4 = (*SFP4ptr) * Y_tmp;
+                        x5 = (*SFP5ptr) * Y_tmp;
+                        x6 = (*SFP6ptr) * Y_tmp;
+                        x7 = (*SFP7ptr) * Y_tmp;
+                        x8 = (*SFP8ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+            case 10:
+                while (t_v != t_vEnd)
+                {
+                    if (*t_t == id)
+                    {
+                        Yptr = Y + (*t_v);
+                        Y_tmp = *Yptr;
+                        offset = (*t_p) - 1;
+                        SFP0ptr = icSFB0 + offset;
+                        SFP1ptr = icSFB1 + offset;
+                        SFP2ptr = icSFB2 + offset;
+                        SFP3ptr = icSFB3 + offset;
+                        SFP4ptr = icSFB4 + offset;
+                        SFP5ptr = icSFB5 + offset;
+                        SFP6ptr = icSFB6 + offset;
+                        SFP7ptr = icSFB7 + offset;
+                        SFP8ptr = icSFB8 + offset;
+                        SFP9ptr = icSFB9 + offset;
+                        x0 = (*SFP0ptr) * Y_tmp;
+                        x1 = (*SFP1ptr) * Y_tmp;
+                        x2 = (*SFP2ptr) * Y_tmp;
+                        x3 = (*SFP3ptr) * Y_tmp;
+                        x4 = (*SFP4ptr) * Y_tmp;
+                        x5 = (*SFP5ptr) * Y_tmp;
+                        x6 = (*SFP6ptr) * Y_tmp;
+                        x7 = (*SFP7ptr) * Y_tmp;
+                        x8 = (*SFP8ptr) * Y_tmp;
+                        x9 = (*SFP9ptr) * Y_tmp;
+                        w = (double)(*t_l);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                    }
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
+                    t_t++;
+                }
+                break;
+        }
+    }
+
+    // isotropic compartments
+    if (nISO > 0)
+    {
+        t_v = ISOv + ISOthreadsT[id];
+        t_vEnd = ISOv + ISOthreadsT[id+1];
+        xPtr = x + nF + ISOthreadsT[id];
+
+        while (t_v != t_vEnd)
+            (*xPtr++) += Y[*t_v++];
+    }
+}
+
+///////////////////////////////
+// Function called by CYTHON //
+///////////////////////////////
+void COMMIT_At_nolut(
+    int _nF, int _n,
+    double *_vIN, double *_vOUT,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, float *_ICp,
+    uint32_t *_ISOv,
+    double *_ICmod,
+    uint8_t* _ICthreadsT, uint32_t* _ISOthreadsT,
+    uint32_t _nICs, uint32_t _nISO, uint32_t _nThreads
+)
+{
+    nF = _nF;
+    n  = _n;
+
+    x = _vOUT;
+    Y = _vIN;
+    
+    ICf  = _ICf;
+    ICv  = _ICv;
+    ICl  = _ICl;
+    ICp  = _ICp;
+    ISOv = _ISOv;
+
+    nICs = _nICs;
+    nISO = _nISO;
+
+    switch (nICs)
+    {
+        case 1:
+            icSFB0 = _ICmod;
+            break;
+        case 2:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            break;
+        case 3:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            break;
+        case 4:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            break;
+        case 5:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            break;
+        case 6:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            icSFB5 = icSFB4 + nSf;
+            break;
+        case 7:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            icSFB5 = icSFB4 + nSf;
+            icSFB6 = icSFB5 + nSf;
+            break;
+        case 8:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            icSFB5 = icSFB4 + nSf;
+            icSFB6 = icSFB5 + nSf;
+            icSFB7 = icSFB6 + nSf;
+            break;
+        case 9:
+            icSFB0 = _ICmod;
+            icSFB1 = icSFB0 + nSf;
+            icSFB2 = icSFB1 + nSf;
+            icSFB3 = icSFB2 + nSf;
+            icSFB4 = icSFB3 + nSf;
+            icSFB5 = icSFB4 + nSf;
+            icSFB6 = icSFB5 + nSf;
+            icSFB7 = icSFB6 + nSf;
+            icSFB8 = icSFB7 + nSf;
+            break;
+        case 10:
+            icSFB0  = _ICmod;
+            icSFB1  = icSFB0 + nSf;
+            icSFB2  = icSFB1 + nSf;
+            icSFB3  = icSFB2 + nSf;
+            icSFB4  = icSFB3 + nSf;
+            icSFB5  = icSFB4 + nSf;
+            icSFB6  = icSFB5 + nSf;
+            icSFB7  = icSFB6 + nSf;
+            icSFB8  = icSFB7 + nSf;
+            icSFB9  = icSFB8 + nSf;
+            break;
+    }
+
+    ICthreadsT  = _ICthreadsT;
+    ISOthreadsT = _ISOthreadsT;
+
+    // Run SEPARATE THREADS to perform the multiplication
+    pthread_t threads[MAX_THREADS];
+    int t;
+    for(t=0; t<_nThreads ; t++)
+        pthread_create( &threads[t], NULL, COMMIT_At__block_nolut, (void *) (long int)t );
     for(t=0; t<_nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
