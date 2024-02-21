@@ -95,8 +95,11 @@ cdef class LinearOperator :
         self.nF         = DICTIONARY['IC']['nF']    # number of FIBERS
         self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
 
-        self.nC         = KERNELS['wmc'].shape[0]   # number of DCT profiles
-        self.nSf        = KERNELS['wmc'].shape[1]   # number of SAMPLES for Cosine coefficients
+        if self.nolut:
+            self.nC = KERNELS['wmc'].shape[0]   # number of DCT profiles
+            self.nSf = KERNELS['wmc'].shape[1]   # number of SAMPLES for Cosine coefficients
+        else:
+            self.nC = 1
 
         self.nE         = DICTIONARY['EC']['nE']    # number of EC segments
         self.nT         = KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
@@ -146,8 +149,10 @@ cdef class LinearOperator :
         cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
         self.LUT_IC  = &wmrSFP[0,0,0]
 
-        cdef double [:, ::1] wmcSFP = KERNELS['wmc']
-        self.LUT_IC_modulation = &wmcSFP[0,0]
+        cdef double [:, ::1] wmcSFP
+        if self.nolut:
+            wmcSFP = KERNELS['wmc']
+            self.LUT_IC_modulation = &wmcSFP[0,0]
 
         cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
         self.LUT_EC  = &wmhSFP[0,0,0]
@@ -211,7 +216,9 @@ cdef class LinearOperator :
 
         cdef unsigned int nthreads = self.THREADS['n']
         cdef unsigned int nIC = self.KERNELS['wmr'].shape[0]
-        cdef unsigned int nICs = self.KERNELS['wmc'].shape[0]
+        cdef unsigned int nICs
+        if self.nolut:
+            nICs = self.KERNELS['wmc'].shape[0]
         cdef unsigned int nEC = self.KERNELS['wmh'].shape[0]
         cdef unsigned int nISO = self.KERNELS['iso'].shape[0]
 

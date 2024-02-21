@@ -346,7 +346,7 @@ cdef class Evaluation :
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
-        self.KERNELS['wmc'] = np.ascontiguousarray( self.KERNELS['wmc'], dtype=np.float64 )
+        self.KERNELS['wmc'] = np.ascontiguousarray( self.KERNELS['wmc'], dtype=np.float64 ) if self.model.nolut else np.array([1])
         self.KERNELS['wmh'] = np.ascontiguousarray( self.KERNELS['wmh'] )
         self.KERNELS['iso'] = np.ascontiguousarray( self.KERNELS['iso'] )
 
@@ -727,51 +727,6 @@ cdef class Evaluation :
 
         tic = time.time()
         LOG( '\n-> Building linear operator A:' )
-
-        # need to pass these parameters at runtime for compiling the C code
-        # from commit.operator import config
-
-        # compilation_is_needed = False
-
-        # if config.nTHREADS is None or config.nTHREADS != self.THREADS['n']:
-        #     compilation_is_needed = True
-        # if config.nIC is None or config.nIC != self.KERNELS['wmr'].shape[0]:
-        #     compilation_is_needed = True
-        # if config.nICs is None or config.nICs != self.KERNELS['wmc'].shape[0]:
-        #     compilation_is_needed = True
-        # if config.model is None or config.model != self.model.id:
-        #     compilation_is_needed = True
-        # if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
-        #     compilation_is_needed = True
-        # if config.nISO is None or config.nISO != self.KERNELS['iso'].shape[0]:
-        #     compilation_is_needed = True
-        # if config.build_dir != build_dir:
-        #     compilation_is_needed = True
-
-        # if compilation_is_needed or not 'commit.operator.operator' in sys.modules :
-
-        #     if build_dir is not None:
-        #         if isdir(build_dir) and not len(listdir(build_dir)) == 0:
-        #             ERROR( '\nbuild_dir is not empty, unsafe build option.' )
-        #         elif config.nTHREADS is not None:
-        #             ERROR( '\nThe parameter build_dir has changed, unsafe build option.' )
-        #         else:
-        #             WARNING( '\nUsing build_dir, always quit your python console between COMMIT Evaluation.' )
-
-            # config.nTHREADS   = self.THREADS['n']
-            # config.model      = self.model.id
-            # config.nIC        = self.KERNELS['wmr'].shape[0]
-            # config.nICs       = self.KERNELS['wmc'].shape[0]
-            # config.nEC        = self.KERNELS['wmh'].shape[0]
-            # config.nISO       = self.KERNELS['iso'].shape[0]
-            # config.build_dir  = build_dir
-
-        #     sys.dont_write_bytecode = True
-        #     pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
-
-        # if 'commit.operator.operator' in sys.modules :
-        #     del sys.modules['commit.operator.operator']
-        # import commit.operator.operator
 
         from commit.operator import operator
         self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.model.nolut )
