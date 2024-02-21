@@ -60,6 +60,7 @@ cdef class LinearOperator :
     cdef DICTIONARY
     cdef KERNELS
     cdef THREADS
+    cdef nolut
 
     cdef unsigned int*   ICf
     cdef float*          ICl
