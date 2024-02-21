@@ -257,7 +257,7 @@ cdef class LinearOperator :
                     COMMIT_A(
                         self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICv, self.ICo, self.ICl, self.ICp,
+                        self.ICf, self.ICv, self.ICo, self.ICl,
                         self.ECv, self.ECo,
                         self.ISOv,
                         self.LUT_IC, self.LUT_EC, self.LUT_ISO,
@@ -271,7 +271,7 @@ cdef class LinearOperator :
                     COMMIT_At(
                         self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICv, self.ICo, self.ICl, self.ICp,
+                        self.ICf, self.ICv, self.ICo, self.ICl,
                         self.ECv, self.ECo,
                         self.ISOv,
                         self.LUT_IC, self.LUT_EC, self.LUT_ISO,
