@@ -774,7 +774,7 @@ cdef class Evaluation :
         # import commit.operator.operator
 
         from commit.operator import operator
-        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.model.nolut )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 

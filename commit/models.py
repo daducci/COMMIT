@@ -63,6 +63,7 @@ class VolumeFractions(BaseModel):
         self.name = 'Volume fractions'
         self.maps_name = []
         self.maps_descr = []
+        self.nolut = True
 
     def set(self):
         return
@@ -109,6 +110,7 @@ class ModulatedVolumeFractions(BaseModel):
         self.name = 'Modulated volume fractions'
         self.maps_name = []
         self.maps_descr = []
+        self.nolut = True
         # TODO add parameters here
 
     def set(self):

@@ -28,6 +28,25 @@ cdef extern void COMMIT_At(
     unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
 ) nogil
 
+cdef extern void COMMIT_A_nolut(
+    int _nF, int _n, int _nSf,
+    double* _vIN, double* _vOUT,
+    unsigned int *_ICf, unsigned int *_ICv, float *_ICl, float *_ICp,
+    unsigned int *_ISOv,
+    double *_ICmod,
+    unsigned int* _ICthreads, unsigned int* _ISOthreads,
+    unsigned int _nICs, unsigned int _nISO, unsigned int _nThreads
+) nogil
+
+cdef extern void COMMIT_At_nolut(
+    int _nF, int _n,
+    double *_vIN, double *_vOUT,
+    unsigned int *_ICf, unsigned int *_ICv, float *_ICl, float *_ICp,
+    unsigned int *_ISOv,
+    double *_ICmod,
+    unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
+    unsigned int _nICs, unsigned int _nISO, unsigned int _nThreads
+) nogil
 
 
 cdef class LinearOperator :
@@ -65,7 +84,7 @@ cdef class LinearOperator :
     cdef unsigned int*   ISOthreadsT
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, nolut=False ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
@@ -190,36 +209,65 @@ cdef class LinearOperator :
 
         cdef unsigned int nthreads = self.THREADS['n']
         cdef unsigned int nIC = self.KERNELS['wmr'].shape[0]
+        cdef unsigned int nICs = self.KERNELS['wmc'].shape[0]
         cdef unsigned int nEC = self.KERNELS['wmh'].shape[0]
         cdef unsigned int nISO = self.KERNELS['iso'].shape[0]
 
-        # Call the cython function to read the memory pointers
-        if not self.adjoint :
-            # DIRECT PRODUCT A*x
-            with nogil :
-                COMMIT_A(
-                    self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
-                    &v_in[0], &v_out[0],
-                    self.ICf, self.ICv, self.ICo, self.ICl, self.ICp,
-                    self.ECv, self.ECo,
-                    self.ISOv,
-                    self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
-                    self.ICthreads, self.ECthreads, self.ISOthreads,
-                    nIC, nEC, nISO, nthreads
-                )
+        if nolut:
+            # Call the cython function to read the memory pointers
+            if not self.adjoint :
+                # DIRECT PRODUCT A*x
+                with nogil :
+                    COMMIT_A_nolut(
+                        self.nF, self.n, self.nSf,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICl, self.ICp,
+                        self.ISOv,
+                        self.LUT_IC_modulation,
+                        self.ICthreads, self.ISOthreads,
+                        nICs, nISO, nthreads
+                    )
 
-        else :
-            # INVERSE PRODUCT A'*y
-            with nogil :
-                COMMIT_At(
-                    self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
-                    &v_in[0], &v_out[0],
-                    self.ICf, self.ICv, self.ICo, self.ICl, self.ICp,
-                    self.ECv, self.ECo,
-                    self.ISOv,
-                    self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
-                    self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
-                    nIC, nEC, nISO, nthreads
-                )
+            else :
+                # INVERSE PRODUCT A'*y
+                with nogil :
+                    COMMIT_At_nolut(
+                        self.nF, self.n,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICl, self.ICp,
+                        self.ISOv,
+                        self.LUT_IC_modulation,
+                        self.ICthreadsT, self.ISOthreadsT,
+                        nICs, nISO, nthreads
+                    )
+        else:
+            # Call the cython function to read the memory pointers
+            if not self.adjoint :
+                # DIRECT PRODUCT A*x
+                with nogil :
+                    COMMIT_A(
+                        self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICo, self.ICl, self.ICp,
+                        self.ECv, self.ECo,
+                        self.ISOv,
+                        self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
+                        self.ICthreads, self.ECthreads, self.ISOthreads,
+                        nIC, nEC, nISO, nthreads
+                    )
+
+            else :
+                # INVERSE PRODUCT A'*y
+                with nogil :
+                    COMMIT_At(
+                        self.nF, self.n, self.nE, self.nV, self.nS, self.nSf, self.ndirs,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICo, self.ICl, self.ICp,
+                        self.ECv, self.ECo,
+                        self.ISOv,
+                        self.LUT_IC, self.LUT_IC_modulation, self.LUT_EC, self.LUT_ISO,
+                        self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
+                        nIC, nEC, nISO, nthreads
+                    )
 
         return v_out
