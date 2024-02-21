@@ -8518,6 +8518,7 @@ void* COMMIT_A__block_nolut( void *ptr )
     uint32_t *t_v, *t_vEnd, *t_f, *t_p;
     float    *t_l;
     int      offset;
+    double   *xPtr;
 
     // intra-cellular compartments
     if (nICs > 0)
