@@ -1212,13 +1212,19 @@ cdef class Evaluation :
         niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['wmr']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
-            # tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
-            tmp = x[:offset] * norm_fib
-            xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
-                weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
-            ).astype(np.float32)
-            niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-            niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+            if self.KERNELS['wmc'].shape[0] > 1:
+                tmp = x[:offset] * norm_fib
+                xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
+                    weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
+                ).astype(np.float32)
+                niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+            else:
+                tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
+                xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
+                    weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
+                ).astype(np.float32)
+                niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
+            
         print( '[ OK ]' )
 
         print( '\t\t- Extra-axonal... ', end='' )
