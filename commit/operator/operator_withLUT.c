@@ -8498,10 +8498,11 @@ void COMMIT_At(
     return;
 }
 
+
 // more global variables
 int nSf;
 double *icSFB0, *icSFB1, *icSFB2, *icSFB3, *icSFB4, *icSFB5, *icSFB6, *icSFB7, *icSFB8, *icSFB9;
-float *ICp;
+uint32_t *ICp;
 uint32_t nICs;
 
 //////////////////////////////////////////////////////////
@@ -8992,7 +8993,7 @@ void* COMMIT_A__block_nolut( void *ptr )
 void COMMIT_A_nolut(
     int _nF, int _n, int _nSf,
     double* _vIN, double* _vOUT,
-    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, float *_ICp,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, uint32_t *_ICp,
     uint32_t *_ISOv,
     double *_ICmod,
     uint32_t* _ICthreads, uint32_t* _ISOthreads,
@@ -9490,7 +9491,7 @@ void* COMMIT_At__block_nolut( void *ptr )
 void COMMIT_At_nolut(
     int _nF, int _n,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, float *_ICp,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl, uint32_t *_ICp,
     uint32_t *_ISOv,
     double *_ICmod,
     uint8_t* _ICthreadsT, uint32_t* _ISOthreadsT,
