@@ -31,7 +31,7 @@ cdef extern void COMMIT_At(
 cdef extern void COMMIT_A_nolut(
     int _nF, int _n, int _nSf,
     double* _vIN, double* _vOUT,
-    unsigned int *_ICf, unsigned int *_ICv, float *_ICl, uint32_t *_ICp,
+    unsigned int *_ICf, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
     unsigned int *_ISOv,
     double *_ICmod,
     unsigned int* _ICthreads, unsigned int* _ISOthreads,
@@ -41,7 +41,7 @@ cdef extern void COMMIT_A_nolut(
 cdef extern void COMMIT_At_nolut(
     int _nF, int _n,
     double *_vIN, double *_vOUT,
-    unsigned int *_ICf, unsigned int *_ICv, float *_ICl, uint32_t *_ICp,
+    unsigned int *_ICf, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
     unsigned int *_ISOv,
     double *_ICmod,
     unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
