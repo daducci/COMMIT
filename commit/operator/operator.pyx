@@ -174,7 +174,7 @@ cdef class LinearOperator :
     @property
     def T( self ) :
         """Transpose of the explicit matrix."""
-        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.nolut )
         C.adjoint = 1 - C.adjoint
         return C
 
