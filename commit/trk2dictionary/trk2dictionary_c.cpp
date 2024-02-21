@@ -416,13 +416,13 @@ int ISOcompartments(double** ptrTDI, char* path_out, int threads){
     for(iz=0; iz<dim.z ;iz++){
         for(iy=0; iy<dim.y ;iy++)
         for(ix=0; ix<dim.x ;ix++){
-// check if ptrISO and ptrMASK are not NULL
+            // check if ptrISO and ptrMASK are not NULL
             if ( ptrISO != NULL ){
-            if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+                if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
             }
             if ( ptrMASK != NULL ){
                 if ( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-}
+            }
             // check if in mask previously computed from IC segments
             for(int i =0; i<threads; i++){
                 if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ){

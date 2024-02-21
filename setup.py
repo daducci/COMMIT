@@ -21,8 +21,12 @@ def get_extensions():
                      sources=[f'{package_name}/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
+    operator = Extension(name=f'{package_name}.operator.operator',
+                    sources=[f'{package_name}/operator/operator.pyx', f'{package_name}/operator/operator_withLUT.c'],
+                    extra_compile_args=['-w'],
+                    language='c')
                  
-    return [trk2dictionary, core, proximals]
+    return [trk2dictionary, core, proximals, operator]
 
 class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """
