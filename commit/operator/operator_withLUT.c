@@ -9096,8 +9096,8 @@ void COMMIT_A_nolut(
             break;
     }
 
-    ICthreadsT  = _ICthreads;
-    ISOthreadsT = _ISOthreads;
+    ICthreads  = _ICthreads;
+    ISOthreads = _ISOthreads;
 
     // Run SEPARATE THREADS to perform the multiplication
     pthread_t threads[MAX_THREADS];
