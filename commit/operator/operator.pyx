@@ -89,6 +89,7 @@ cdef class LinearOperator :
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
         self.THREADS    = THREADS
+        self.nolut      = nolut
 
         self.nF         = DICTIONARY['IC']['nF']    # number of FIBERS
         self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
@@ -213,7 +214,7 @@ cdef class LinearOperator :
         cdef unsigned int nEC = self.KERNELS['wmh'].shape[0]
         cdef unsigned int nISO = self.KERNELS['iso'].shape[0]
 
-        if nolut:
+        if self.nolut:
             # Call the cython function to read the memory pointers
             if not self.adjoint :
                 # DIRECT PRODUCT A*x
