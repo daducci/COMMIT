@@ -39,7 +39,7 @@ cdef extern void COMMIT_A_nolut(
 ) nogil
 
 cdef extern void COMMIT_At_nolut(
-    int _nF, int _n,
+    int _nF, int _n, int _nSf,
     double *_vIN, double *_vOUT,
     unsigned int *_ICf, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
     unsigned int *_ISOv,
@@ -234,7 +234,7 @@ cdef class LinearOperator :
                 # INVERSE PRODUCT A'*y
                 with nogil :
                     COMMIT_At_nolut(
-                        self.nF, self.n,
+                        self.nF, self.n, self.nSf,
                         &v_in[0], &v_out[0],
                         self.ICf, self.ICv, self.ICl, self.ICp,
                         self.ISOv,
