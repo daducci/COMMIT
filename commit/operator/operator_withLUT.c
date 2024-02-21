@@ -9490,7 +9490,7 @@ void* COMMIT_At__block_nolut( void *ptr )
 // Function called by CYTHON //
 ///////////////////////////////
 void COMMIT_At_nolut(
-    int _nF, int _n,
+    int _nF, int _n, int _nSf,
     double *_vIN, double *_vOUT,
     uint32_t *_ICf, uint32_t *_ICv, float *_ICl, uint32_t *_ICp,
     uint32_t *_ISOv,
@@ -9501,6 +9501,7 @@ void COMMIT_At_nolut(
 {
     nF = _nF;
     n  = _n;
+    nSf = _nSf;
 
     x = _vOUT;
     Y = _vIN;
