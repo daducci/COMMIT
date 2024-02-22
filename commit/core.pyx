@@ -1264,8 +1264,6 @@ cdef class Evaluation :
         xic, _, _ = self.get_coeffs()
 
         if stat_coeffs != 'all' and xic.size > 0 :
-            xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
-
             if stat_coeffs == 'sum' :
                 if self.KERNELS['wmc'].shape[0] > 1:
                     x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
@@ -1281,6 +1279,7 @@ cdef class Evaluation :
                         pos += 1
                     xic = x_ic_rescaled
                 else:
+                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.sum( xic, axis=0 )
             elif stat_coeffs == 'mean' :
                 if self.KERNELS['wmc'].shape[0] > 1:
@@ -1297,6 +1296,7 @@ cdef class Evaluation :
                         pos += 1
                     xic = x_ic_rescaled
                 else:
+                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.mean( xic, axis=0 )
             elif stat_coeffs == 'median' :
                 if self.KERNELS['wmc'].shape[0] > 1:
@@ -1313,6 +1313,7 @@ cdef class Evaluation :
                         pos += 1
                     xic = x_ic_rescaled
                 else:
+                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.median( xic, axis=0 )
             elif stat_coeffs == 'min' :
                 if self.KERNELS['wmc'].shape[0] > 1:
@@ -1337,6 +1338,7 @@ cdef class Evaluation :
 
                     xic = x_ic_rescaled
                 else:
+                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.min( xic, axis=0 )
             elif stat_coeffs == 'max' :
                 xic = np.max( xic, axis=0 )
