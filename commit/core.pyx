@@ -1214,9 +1214,6 @@ cdef class Evaluation :
             offset = nF * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
             if self.KERNELS['wmc'].shape[0] > 1:
                 tmp = x[:offset] * norm_fib
-                xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
-                    weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
-                ).astype(np.float32)
                 niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
             else:
                 tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
@@ -1265,17 +1262,82 @@ cdef class Evaluation :
         print( '\t* Configuration and results:' )
 
         xic, _, _ = self.get_coeffs()
+
         if stat_coeffs != 'all' and xic.size > 0 :
             xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
 
             if stat_coeffs == 'sum' :
-                xic = np.sum( xic, axis=0 )
+                if self.KERNELS['wmc'].shape[0] > 1:
+                    x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
+                    pos = 0
+                    niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
+                    tmp = np.zeros( xic.size, dtype=np.float64 )
+                    for i in range(0, xic.size, self.KERNELS['wmc'].shape[0]):
+                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = self.x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
+                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                        x_ic_rescaled[pos] = np.sum(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
+                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
+                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                        pos += 1
+                    xic = x_ic_rescaled
+                else:
+                    xic = np.sum( xic, axis=0 )
             elif stat_coeffs == 'mean' :
-                xic = np.mean( xic, axis=0 )
+                if self.KERNELS['wmc'].shape[0] > 1:
+                    x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
+                    pos = 0
+                    niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
+                    tmp = np.zeros( xic.size, dtype=np.float64 )
+                    for i in range(0, xic.size, self.KERNELS['wmc'].shape[0]):
+                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = self.x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
+                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                        x_ic_rescaled[pos] = np.mean(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
+                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
+                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                        pos += 1
+                    xic = x_ic_rescaled
+                else:
+                    xic = np.mean( xic, axis=0 )
             elif stat_coeffs == 'median' :
-                xic = np.median( xic, axis=0 )
+                if self.KERNELS['wmc'].shape[0] > 1:
+                    x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
+                    pos = 0
+                    niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
+                    tmp = np.zeros( xic.size, dtype=np.float64 )
+                    for i in range(0, xic.size, self.KERNELS['wmc'].shape[0]):
+                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = self.x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
+                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                        x_ic_rescaled[pos] = np.median(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
+                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
+                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                        pos += 1
+                    xic = x_ic_rescaled
+                else:
+                    xic = np.median( xic, axis=0 )
             elif stat_coeffs == 'min' :
-                xic = np.min( xic, axis=0 )
+                if self.KERNELS['wmc'].shape[0] > 1:
+                    x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
+                    pos = 0
+                    niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
+                    tmp = np.zeros( xic.size, dtype=np.float64 )
+                    for i in range(0, xic.size, self.KERNELS['wmc'].shape[0]):
+                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = self.x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
+                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                        x_ic_rescaled[pos] = np.min(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
+                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
+                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                        pos += 1
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    #     x_s = np.zeros(xic.size, dtype=np.float64)
+                    #     x_s[i:i+self.KERNELS['wmc'].shape[0]] = 1
+                    #     tot_IC = self.A.dot(x_s)
+                    #     x_ic_rescaled[pos] = np.min(tot_IC)
+                    #     x_s[i:i+self.KERNELS['wmc'].shape[0]] = 0
+                    #     pos += 1
+
+                    xic = x_ic_rescaled
+                else:
+                    xic = np.min( xic, axis=0 )
             elif stat_coeffs == 'max' :
                 xic = np.max( xic, axis=0 )
             else :
