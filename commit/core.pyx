@@ -1270,7 +1270,7 @@ cdef class Evaluation :
                     pos = 0
                     niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
                     tmp = np.zeros( x.size, dtype=np.float64 )
-                    for i in range(0, xic.size, self.KERNELS['wmc'].shape[0]):
+                    for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
                         tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
                         niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
                         x_ic_rescaled[pos] = np.sum(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
@@ -1287,7 +1287,7 @@ cdef class Evaluation :
                     pos = 0
                     niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
                     tmp = np.zeros( x.size, dtype=np.float64 )
-                    for i in range(0, xic.size, self.KERNELS['wmc'].shape[0]):
+                    for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
                         tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
                         niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
                         x_ic_rescaled[pos] = np.mean(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
@@ -1304,7 +1304,7 @@ cdef class Evaluation :
                     pos = 0
                     niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
                     tmp = np.zeros( x.size, dtype=np.float64 )
-                    for i in range(0, xic.size, self.KERNELS['wmc'].shape[0]):
+                    for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
                         tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
                         niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
                         x_ic_rescaled[pos] = np.median(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
@@ -1321,7 +1321,7 @@ cdef class Evaluation :
                     pos = 0
                     niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
                     tmp = np.zeros( x.size, dtype=np.float64 )
-                    for i in range(0, xic.size, self.KERNELS['wmc'].shape[0]):
+                    for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
                         tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
                         niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
                         x_ic_rescaled[pos] = np.min(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
