@@ -7,18 +7,16 @@ cimport numpy as np
 import time
 import glob
 import sys
-from os import makedirs, remove, getcwd, listdir
-from os.path import exists, join as pjoin, isfile, isdir
+from os import makedirs, remove
+from os.path import exists, join as pjoin, isfile
 import nibabel
 import pickle
 import commit.models
 import commit.solvers
 import amico.scheme
 import amico.lut
-from importlib import reload, invalidate_caches
-import pyximport
 from pkg_resources import get_distribution
-
+from dicelib import ui
 from amico.util import LOG, NOTE, WARNING, ERROR
 
 
@@ -1088,6 +1086,32 @@ cdef class Evaluation :
 
         return xic, xec, xiso
 
+    def compute_chunks(lst, n):
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
+
+    
+    cpdef compute_contribution(self, x, x_chunk, norm_fib, pbar_array, idx_chunk):
+        cdef float[:,:,::1] niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
+        cdef float[:] tmp = np.zeros( x.size, dtype=np.float64 )
+        cdef float[:] x_ic_rescaled = np.zeros( len(x_chunk)//self.KERNELS['wmc'].shape[0], dtype=np.float32 )
+        cdef size_t i, pos = 0
+        cdef float[:] tmp = np.zeros(self.KERNELS['wmc'].shape[0], dtype=np.float64) 
+
+        with nogil:
+            for i in range(len(x_chunk)):
+                tmp[x_chunk[i]] = x[x_chunk[i]] * norm_fib[x_chunk[i]]
+                niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                x_ic_rescaled[pos] = np.min(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
+                tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
+                niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                pbar_array[idx_chunk] += 1
+                pos += 1
+        
+        return x_ic_rescaled
+        
+    
 
     def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
         """Save the output (coefficients, errors, maps etc).
@@ -1264,6 +1288,11 @@ cdef class Evaluation :
         xic, _, _ = self.get_coeffs()
 
         if stat_coeffs != 'all' and xic.size > 0 :
+            verbose = self.CONFIG['optimization']['verbose']
+            chunk_size = int((x.size/self.KERNELS['wmc'].shape[0])/self.THREADS['n'])
+            chunk_groups = [e for e in compute_chunks( np.arange(x.size),chunk_size*self.KERNELS['wmc'].shape[0] )]
+            pbar_array = np.zeros(self.THREADS['n'], dtype=np.int32)
+
             if stat_coeffs == 'sum' :
                 if self.KERNELS['wmc'].shape[0] > 1:
                     x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
@@ -1317,17 +1346,23 @@ cdef class Evaluation :
                     xic = np.median( xic, axis=0 )
             elif stat_coeffs == 'min' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
-                    pos = 0
-                    niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
-                    tmp = np.zeros( x.size, dtype=np.float64 )
-                    for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
-                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
-                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                        x_ic_rescaled[pos] = np.min(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
-                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
-                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
-                        pos += 1
+                    # x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
+                    # pos = 0
+                    # niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
+                    # tmp = np.zeros( x.size, dtype=np.float64 )
+                    # for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
+                    #     tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
+                    #     niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    #     x_ic_rescaled[pos] = np.min(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
+                    #     tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
+                    #     niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    #     pos += 1
+
+                    with ui.ProgressBar( multithread_progress=pbar_array, total=x.size, disable=(verbose in [0,1,3]), hide_on_exit=True) as pbar:
+                        with tdp(max_workers=self.THREADS['n']) as executor:
+                            future = [executor.submit(self.compute_contribution, x, chunk, pbar_array, i) for i, chunk in enumerate(chunk_groups)]
+                            chunks_rew = [f.result() for f in future]
+                            chunks_rew = [c for f in chunks_rew for c in f]
                     # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
                     #     x_s = np.zeros(xic.size, dtype=np.float64)
                     #     x_s[i:i+self.KERNELS['wmc'].shape[0]] = 1
@@ -1336,7 +1371,7 @@ cdef class Evaluation :
                     #     x_s[i:i+self.KERNELS['wmc'].shape[0]] = 0
                     #     pos += 1
 
-                    xic = x_ic_rescaled
+                    xic = chunks_rew
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.min( xic, axis=0 )
