@@ -852,14 +852,6 @@ cdef class Evaluation :
         regularisation['nnEC']  = is_nonnegative[1]
         regularisation['nnISO'] = is_nonnegative[2]
 
-        regularisation['paramsIC']  = params[0]
-        regularisation['paramsEC']  = params[1]
-        regularisation['paramsISO'] = params[2]
-
-        regularisation['dictIC_params']  = params[0]
-        regularisation['dictEC_params']  = params[1]
-        regularisation['dictISO_params'] = params[2]
-
         # unpack parameters inside params as three separate dictionaries
         dictIC_params, dictEC_params, dictISO_params = params
 
@@ -880,24 +872,17 @@ cdef class Evaluation :
                 regularisation['lambdaISO'] = lambdas[2]
 
         elif regularisation['regIC'] == 'smoothness':
+            raise ValueError('Not yet implemented')
+        elif regularisation['regEC'] == 'smoothness':
+            raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'smoothness':
+            raise ValueError('Not yet implemented')
+
+        elif regularisation['regIC'] == 'group_lasso':
             if lambdas[0] is None:
                 raise ValueError('Missing regularisation parameter for the IC compartment')
             else:
                 regularisation['lambdaIC'] = lambdas[0]
-        elif regularisation['regEC'] == 'smoothness':
-                raise ValueError('Not yet implemented')
-        elif regularisation['regISO'] == 'smoothness':
-                raise ValueError('Not yet implemented')
-
-        elif regularisation['regIC'] == 'group_lasso':
-            if lambdas[0] is None:
-                raise ValueError('Group structure for the IC compartment not provided')
-            else:
-                regularisation['lambdaIC'] = lambdas[0]
-            if lambdas[1] is not None:
-                raise ValueError('Not yet implemented')
-            if lambdas[2] is not None:
-                raise ValueError('Not yet implemented')
             if dictIC_params["group_idx"] is None:
                 raise ValueError('Group structure for the IC compartment not provided')
             if dictIC_params["group_weights"] is None:
@@ -909,7 +894,7 @@ cdef class Evaluation :
 
         elif regularisation['regIC'] == 'sparse_group_lasso':
             if len(lambdas[0]) != 2:
-                raise ValueError('Group structure for the IC compartment not provided')
+                raise ValueError('Regularisation parameters for the IC compartment ara not exactly two')
             else:
                 regularisation['lambdaIC'] = lambdas[0]
             if lambdas[1] is not None:

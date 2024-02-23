@@ -117,11 +117,6 @@ cpdef prox_group_lasso( double [::1] x, int [::1] group_idx, int [::1] group_siz
         int j = 0
         double wl, gNorm, x_i
 
-    k = x.size
-    for i in xrange(k):
-        if x[i] <= 0.0:
-            x[i] = 0.0
-
     if lam != 0:
         for k in xrange(nG) :
             N = group_size[k]
