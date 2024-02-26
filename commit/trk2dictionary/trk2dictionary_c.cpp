@@ -778,6 +778,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     thread_local static int            id;
     thread_local static float          peakMax;
     thread_local static float          norm, angle;
+    thread_local static unsigned int   tempt;
 
 
     // direction of the segment
@@ -813,6 +814,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
 
     // get the orientation of the current peak
     // ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+    tempt = 0;
     for(id=0; id<Np ;id++)
     {   
         ptr_peak = ptrPEAKS + 3*(id + Np * ( vox.z + dim.z * ( vox.y + dim.y * vox.x ) ));
@@ -820,11 +822,36 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
         dirpeak.y = ptr_peak[1];
         dirpeak.z = ptr_peak[2];
         peakMax = -1;
-        norm = dirpeak.norm();
-        if ( norm > peakMax )
-            ptr_peak = ptrPEAKS + 3*(id + Np * ( vox.z + dim.z * ( vox.y + dim.y * vox.x ) ));
-            peakMax = norm;
+
+        if ( dirpeak.y < 0 )
+        {
+            dirpeak.x = -dirpeak.x;
+            dirpeak.y = -dirpeak.y;
+            dirpeak.z = -dirpeak.z;
+        }
+
+        if ( dirpeak.y < 0 )
+        {
+            dirpeak.x = -dirpeak.x;
+            dirpeak.y = -dirpeak.y;
+            dirpeak.z = -dirpeak.z;
+        }
+
+        // compute angle between the segment and the peak
+        // std::cout << "computing angle" << std::endl;
+        angle = acos( dir.x*dirpeak.x + dir.y*dirpeak.y + dir.z*dirpeak.z );
+
+        // if ( angle > M_PI/2 )
+        //     angle = M_PI - angle;
+
+        if ( angle < angle_thr )
+            // break;
+            break;
+        tempt++;
     }
+    if (tempt == Np-1)
+        return;
+
     // std::cout << "peakMax: " << peakMax << std::endl;
     // multiply by the affine matrix
     // dirpeak.x = ptr_peak[0] * ptrPeaksAffine[0] + ptr_peak[1] * ptrPeaksAffine[1] + ptr_peak[2] * ptrPeaksAffine[2];
@@ -833,34 +860,34 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
 
     // std::cout << "dirpeak: " << dirpeak.x << " " << dirpeak.y << " " << dirpeak.z << std::endl;
 
-    dirpeak.x = ptr_peak[0];
-    dirpeak.y = ptr_peak[1];
-    dirpeak.z = ptr_peak[2];
-    dirpeak.Normalize();
+    // dirpeak.x = ptr_peak[0];
+    // dirpeak.y = ptr_peak[1];
+    // dirpeak.z = ptr_peak[2];
+    // dirpeak.Normalize();
 
-    if ( dirpeak.y < 0 )
-    {
-        dirpeak.x = -dirpeak.x;
-        dirpeak.y = -dirpeak.y;
-        dirpeak.z = -dirpeak.z;
-    }
+    // if ( dirpeak.y < 0 )
+    // {
+    //     dirpeak.x = -dirpeak.x;
+    //     dirpeak.y = -dirpeak.y;
+    //     dirpeak.z = -dirpeak.z;
+    // }
 
-    if ( dirpeak.y < 0 )
-    {
-        dirpeak.x = -dirpeak.x;
-        dirpeak.y = -dirpeak.y;
-        dirpeak.z = -dirpeak.z;
-    }
+    // if ( dirpeak.y < 0 )
+    // {
+    //     dirpeak.x = -dirpeak.x;
+    //     dirpeak.y = -dirpeak.y;
+    //     dirpeak.z = -dirpeak.z;
+    // }
 
-    // compute angle between the segment and the peak
-    // std::cout << "computing angle" << std::endl;
-    angle = acos( dir.x*dirpeak.x + dir.y*dirpeak.y + dir.z*dirpeak.z );
+    // // compute angle between the segment and the peak
+    // // std::cout << "computing angle" << std::endl;
+    // angle = acos( dir.x*dirpeak.x + dir.y*dirpeak.y + dir.z*dirpeak.z );
 
-    if ( angle > M_PI/2 )
-        angle = M_PI - angle;
+    // if ( angle > M_PI/2 )
+    //     angle = M_PI - angle;
 
-    if ( angle > angle_thr )
-        return;
+    // if ( angle > angle_thr )
+    //     return;
     
 
     // add the segment to the data structure
