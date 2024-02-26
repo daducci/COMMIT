@@ -73,28 +73,28 @@ float*          ptrISO;
 float           fiberShiftXmm, fiberShiftYmm, fiberShiftZmm;
 bool            doIntersect;
 float           minSegLen, minFiberLen, maxFiberLen;
-
 // Threads variables
 vector<thread>  threads;
 vector<unsigned int>    totICSegments; 
 vector<unsigned int>    totFibers;
 unsigned int            totECVoxels = 0;
 unsigned int            totECSegments = 0;
+bool                    skip_ec = false;
 
 // progressbar verbosity
 int verbosity = 0;
 
 // --- Functions Definitions ----
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
-void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, vector<Vector<double>>& P );
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable);
+void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, vector<Vector<double>>& P );
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr );
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOXMM );
 
 
 // ---------- Parallel fuction --------------
 int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
-double* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
+double* ptrTDI, float angle_thr, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, char* path_out, 
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos );
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
@@ -111,7 +111,7 @@ int ISOcompartments(double** ptrTDI, char* path_out, int idx);
 int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
-    float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
+    float* ptrPEAKS, float angle_thr, int _Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* _ptrISO, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
     float* ptrToVOXMM, short* ptrHashTable, int threads_count, int verbose
@@ -136,6 +136,7 @@ int trk2dictionary(
     totECVoxels   = 0;
     totECSegments = 0;
     verbosity     = verbose;
+    Np            = Np;
 
 
     // Compute the batch size for each thread
@@ -244,7 +245,7 @@ int trk2dictionary(
     // ---- Original ------
     for( int i = 0; i<threads_count; i++ ){
         threads.push_back( thread( ICSegments, str_filename, isTRK, n_count, nReplicas, n_scalars, n_properties, ptrToVOXMM,
-        ptrTDI[i] , ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo, ptrHashTable, path_out, OffsetArr[i], 
+        ptrTDI[i], angle_thr, ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo, ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, path_out, OffsetArr[i], 
         i, Pos[i], Pos[i+1]  ) );
     }
 
@@ -301,7 +302,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
     filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v       = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_EC_o.dict";        FILE* pDict_EC_o       = fopen(filename.c_str(),"wb");
 
-    if ( ptrPEAKS != NULL )
+    if ( ptrPEAKS != NULL &&  skip_ec )
     {
         Vector<double> dir;
         double         longitude, colatitude;
@@ -451,8 +452,8 @@ int ISOcompartments(double** ptrTDI, char* path_out, int threads){
 /*                                                Parallel Function                                                 */
 /********************************************************************************************************************/
 
-int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, double* ptrBlurRho, 
-double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
+int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, float angle_thr, double* ptrBlurRho, 
+double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, char* path_out, 
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos ) 
 {
 
@@ -512,7 +513,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
             N = read_fiberTCK( fpTractogram1, fiber , ptrToVOXMM );
 
 
-        fiberForwardModel( fiber, N, nReplicas, ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo[f], ptrHashTable, P );
+        fiberForwardModel( fiber, N, nReplicas, ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo[f], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, P );
 
         kept = 0;
 
@@ -588,7 +589,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 /********************************************************************************************************************/
 /*                                                 fiberForwardModel                                                */
 /********************************************************************************************************************/
-void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, vector<Vector<double>>& P )
+void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable,
+                        float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, vector<Vector<double>>& P )
 {
     thread_local static Vector<double> S1, S2, S1m, S2m, P_old, P_int, q, n, nr, qxn, qxqxn;
     thread_local static Vector<double> vox, vmin, vmax, dir1, dir2;
@@ -704,7 +706,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 
                 /* save segment */
                 if ( doIntersect==false )
-                    segmentForwardModel( P_old, P[k], k, ptrBlurWeights[k], ptrHashTable );
+                    segmentForwardModel( P_old, P[k], k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr );
                 else
                 {
                     S1m.x = P_old.x;
@@ -725,7 +727,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                             )
                         {
                             // same voxel, no need to compute intersections
-                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable );
+                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr);
                             break;
                         }
 
@@ -743,7 +745,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                             P_int.x = S1m.x + t*dir1.x;
                             P_int.y = S1m.y + t*dir1.y;
                             P_int.z = S1m.z + t*dir1.z;
-                            segmentForwardModel( S1m, P_int, k, ptrBlurWeights[k], ptrHashTable );
+                            segmentForwardModel( S1m, P_int, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr );
                             S1m.x = P_int.x;
                             S1m.y = P_int.y;
                             S1m.z = P_int.z;
@@ -751,7 +753,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                         else
                         {
                             // add the segment S1S2 and stop iterating
-                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable );
+                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr );
                             break;
                         }
                     }
@@ -765,13 +767,19 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 /********************************************************************************************************************/
 /*                                                segmentForwardModel                                               */
 /********************************************************************************************************************/
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable )
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr )
 {
     thread_local static Vector<int>    vox;
-    thread_local static Vector<double> dir, dirTrue;
+    thread_local static Vector<double> dir, dirpeak;
     thread_local static double         longitude, colatitude, len;
     thread_local static segKey         key;
     thread_local static int            ox, oy;
+    thread_local static int            skip = 0;
+    thread_local static float          *ptr_peak;
+    thread_local static int            id;
+    thread_local static float          peakMax;
+    thread_local static float          norm, angle;
+
 
     // direction of the segment
     dir.y = P2.y-P1.y;
@@ -797,10 +805,64 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     vox.x = floor( 0.5 * (P1.x + P2.x) / pixdim.x );
     vox.y = floor( 0.5 * (P1.y + P2.y) / pixdim.y );
     vox.z = floor( 0.5 * (P1.z + P2.z) / pixdim.z );
+
     if ( vox.x>=dim.x || vox.x<0 || vox.y>=dim.y || vox.y<0 || vox.z>=dim.z || vox.z<0 )
         return;
     if ( ptrMASK && ptrMASK[ vox.z + dim.z * ( vox.y + dim.y * vox.x ) ]==0 )
         return;
+
+
+    // get the orientation of the current peak
+    // ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+    for(id=0; id<Np ;id++)
+    {   
+        ptr_peak = ptrPEAKS + 3*(id + Np * ( vox.z + dim.z * ( vox.y + dim.y * vox.x ) ));
+        dirpeak.x = ptr_peak[0];
+        dirpeak.y = ptr_peak[1];
+        dirpeak.z = ptr_peak[2];
+        peakMax = -1;
+        norm = dirpeak.norm();
+        if ( norm > peakMax )
+            ptr_peak = ptrPEAKS + 3*(id + Np * ( vox.z + dim.z * ( vox.y + dim.y * vox.x ) ));
+            peakMax = norm;
+    }
+    // std::cout << "peakMax: " << peakMax << std::endl;
+    // multiply by the affine matrix
+    // dirpeak.x = ptr_peak[0] * ptrPeaksAffine[0] + ptr_peak[1] * ptrPeaksAffine[1] + ptr_peak[2] * ptrPeaksAffine[2];
+    // dirpeak.y = ptr_peak[0] * ptrPeaksAffine[3] + ptr_peak[1] * ptrPeaksAffine[4] + ptr_peak[2] * ptrPeaksAffine[5];
+    // dirpeak.z = ptr_peak[0] * ptrPeaksAffine[6] + ptr_peak[1] * ptrPeaksAffine[7] + ptr_peak[2] * ptrPeaksAffine[8];
+
+    // std::cout << "dirpeak: " << dirpeak.x << " " << dirpeak.y << " " << dirpeak.z << std::endl;
+
+    dirpeak.x = ptr_peak[0];
+    dirpeak.y = ptr_peak[1];
+    dirpeak.z = ptr_peak[2];
+    dirpeak.Normalize();
+
+    if ( dirpeak.y < 0 )
+    {
+        dirpeak.x = -dirpeak.x;
+        dirpeak.y = -dirpeak.y;
+        dirpeak.z = -dirpeak.z;
+    }
+
+    if ( dirpeak.y < 0 )
+    {
+        dirpeak.x = -dirpeak.x;
+        dirpeak.y = -dirpeak.y;
+        dirpeak.z = -dirpeak.z;
+    }
+
+    // compute angle between the segment and the peak
+    // std::cout << "computing angle" << std::endl;
+    angle = acos( dir.x*dirpeak.x + dir.y*dirpeak.y + dir.z*dirpeak.z );
+
+    if ( angle > M_PI/2 )
+        angle = M_PI - angle;
+
+    if ( angle > angle_thr )
+        return;
+    
 
     // add the segment to the data structure
     longitude  = atan2(dir.y, dir.x);

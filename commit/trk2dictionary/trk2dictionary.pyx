@@ -24,7 +24,7 @@ cdef extern from "trk2dictionary_c.cpp":
     int trk2dictionary(
         char* filename_tractogram, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars,
         int n_properties, float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len,  float max_fiber_len,
-        float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
+        float* ptrPEAKS, float angle_thr, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
         float* _ptrMASK, float* _ptrISO, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
         int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
         float* ptrTractsAffine, short* prtHashTable, int threads_count, int verbose
@@ -52,7 +52,7 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
     return tdi
 
 
-cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_ISO=None,
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, peaks_alignment_thr=0.9, filename_mask=None, filename_ISO=None,
             do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
@@ -201,6 +201,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         bool [:] blurApplyTo
         int nReplicas
         float blur_sigma
+        float angle_thr = peaks_alignment_thr
         int i = 0
 
     if (blur_gauss_extent==0 and blur_core_extent==0) or (blur_spacing==0) :
@@ -448,7 +449,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiPEAKS_img = np.ascontiguousarray( np.asanyarray( niiPEAKS.dataobj ).astype(np.float32) )
         ptrPEAKS = &niiPEAKS_img[0,0,0,0]
         Np = niiPEAKS.shape[3]/3
-
+        print( f'\t\t- {Np} peaks')
         # affine matrix to rotate gradien directions (if required)
         if peaks_use_affine :
             peaksAffine = np.ascontiguousarray( niiPEAKS.affine[:3,:3].T )
@@ -513,7 +514,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     ret = trk2dictionary( filename_tractogram, data_offset,
         Nx, Ny, Nz, Px, Py, Pz, n_count, n_scalars, n_properties,
         fiber_shiftX, fiber_shiftY, fiber_shiftZ, min_seg_len, min_fiber_len, max_fiber_len,
-        ptrPEAKS, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
+        ptrPEAKS, angle_thr, Np, vf_THR, -1 if flip_peaks[0] else 1, -1 if flip_peaks[1] else 1, -1 if flip_peaks[2] else 1,
         ptrMASK, ptrISO, ptrTDI, path_temp, 1 if do_intersect else 0, ptrPeaksAffine,
         nReplicas, &blurRho[0], &blurAngle[0], &blurWeights[0], &blurApplyTo[0], ptrToVOXMM, ptrHashTable, n_threads, verbose if not _in_notebook() else 0 );
     if ret == 0 :
