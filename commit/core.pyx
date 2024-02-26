@@ -784,28 +784,37 @@ cdef class Evaluation :
     def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
         """
         Set the regularisation parameters for the optimisation problem.
-         Input
-        -----
+
+        Parameters
+        ----------
         regularisers - tuple :
             sets the penalty term to be used for each compartment:
                 regularisers[0] corresponds to the Intracellular compartment
                 regularisers[1] corresponds to the Extracellular compartment
                 regularisers[2] corresponds to the Isotropic compartment
-            Each regularisers[k] must be one of: {None, 'lasso', weighted_lasso, 'group_lasso'}:
+            Each regularisers[k] must be one of: {None, 'lasso', 'group_lasso', 'sparse_group_lasso'}:
                 'lasso' penalises with the 1-norm of the coefficients
                     corresponding to the compartment.
                 'group_lasso' penalises according to the following formulation (see [1]):
                     $\Omega(x) = \lambda \sum_{g\in G} w_g |x_g|
                     Considers both the non-overlapping and the hierarchical formulations.
                     NB: this option is allowed only in the IC compartment.
+                'sparse_group_lasso' combines lasso and group lasso penalisations
+                    NB: this option is allowed only in the IC compartment.
             Default = (None, None, None).
 
         lambdas - tuple :
-            regularisation parameter for each compartment.
+            regularisation parameter for each compartment:
+                lambdas[0] corresponds to the Intracellular compartment
+                lambdas[1] corresponds to the Extracellular compartment
+                lambdas[2] corresponds to the Isotropic compartment
             The lambdas correspond to the ones described in the mathematical
             formulation of the regularisation term
             $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
-            Default = (0.0, 0.0, 0.0, 0.0).
+            NB: if regularisers[k] is None, then lambdas[k] is ignored.
+            NB: if regularisers[0] is 'sparse_group_lasso', then lambdas[k] must be a tuple of two elements,
+                the first corresponding to the l1 penalty and the second to the l2 penalty.
+            Default = (0.0, 0.0, 0.0).
 
         is_nonnegative - tuple :
             impose a non negativity constraint for each compartment:
@@ -814,25 +823,34 @@ cdef class Evaluation :
                 is_nonnegative[2] corresponds to the Isotropic compartment
             Default = (True, True, True).
 
-        structureIC - np.array(list(list), dtype=np.object_) :
-            group structure for the IC compartment.
-                This field is necessary only if regterm[0]='group_lasso'.
-                Example:
-                    structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
+        params - tuple :
+            dictionary of additional parameters for the regularisation term for each compartment:
+                params[0] corresponds to the Intracellular compartment
+                params[1] corresponds to the Extracellular compartment
+                params[2] corresponds to the Isotropic compartment
+            Default = (None, None, None).
+            Available kyes for each compartment:
+                'group_idx' - np.array(np.int32) :
+                    group indices for the IC compartment.
+                    This field is necessary only if regterm[0] is 'group_lasso' or 'sparse_group_lasso'.
+                    Example:
+                        structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
+                        that is equivalent to
+                                    [0,1,2,3,4,5]        [6]
+                                    /       \
+                                [0,2,5]       [1,3,4]
+                        which has two non-overlapping groups, one of which is the union
+                        of two other non-overlapping groups.                    
+                'group_weights' - np.array(np.float64) :
+                    weights associated to each group of the IC compartment.
+                    This field is necessary only if regterm[0] is 'group_lasso' or 'sparse_group_lasso'.
+                    NB: the length of this array must be equal to the number of groups in 'group_idx'.
+                'weightsIC' - np.array(np.float64) :
+                    this defines the weights associated to each element of the Intracellular compartment.
+                    This field can be specified only if regterm[0] is 'lasso' or 'sparse_group_lasso'.
 
-                    that is equivalent to
-                                [0,1,2,3,4,5]        [6]
-                                /       \
-                            [0,2,5]       [1,3,4]
-                    which has two non overlapping groups, one of which is the union
-                    of two other non-overlapping groups.
-
-        weightsIC - np.array(np.float64) :
-            this defines the weights associated to each element of structure IC.
-
-        weightsIC_group - np.array(np.float64) :
-            this defines the weights associated to each group of structure IC.
-
+        References:
+            [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
         """
 
         regularisation = {}
@@ -934,6 +952,10 @@ cdef class Evaluation :
 
             dictIC_params["group_idx"] = np.array(newICgroup_idx, dtype=np.object_)
             dictIC_params['group_weights'] = np.array(newweightsIC_group)
+
+        regularisation['dictIC_params']  = dictIC_params
+        regularisation['dictEC_params']  = dictEC_params
+        regularisation['dictISO_params'] = dictISO_params
 
         self.regularisation_params = commit.solvers.init_regularisation(regularisation)
 
