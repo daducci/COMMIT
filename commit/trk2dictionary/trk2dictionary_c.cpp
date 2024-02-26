@@ -111,7 +111,7 @@ int ISOcompartments(double** ptrTDI, char* path_out, int idx);
 int trk2dictionary(
     char* str_filename, int data_offset, int Nx, int Ny, int Nz, float Px, float Py, float Pz, int n_count, int n_scalars, int n_properties,
     float fiber_shiftX, float fiber_shiftY, float fiber_shiftZ, float min_seg_len, float min_fiber_len, float max_fiber_len,
-    float* ptrPEAKS, float angle_thr, int _Np, float vf_THR, int ECix, int ECiy, int ECiz,
+    float* ptrPEAKS, float angle_thr, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
     float* _ptrMASK, float* _ptrISO, double** ptrTDI, char* path_out, int c, double* ptrPeaksAffine,
     int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo,
     float* ptrToVOXMM, short* ptrHashTable, int threads_count, int verbose
