@@ -136,7 +136,6 @@ int trk2dictionary(
     totECVoxels   = 0;
     totECSegments = 0;
     verbosity     = verbose;
-    Np            = Np;
 
 
     // Compute the batch size for each thread
