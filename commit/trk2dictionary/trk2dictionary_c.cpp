@@ -813,7 +813,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     if ( ptrMASK && ptrMASK[ vox.z + dim.z * ( vox.y + dim.y * vox.x ) ]==0 )
         return;
 
-    if ( k>0 && R > 1.0) {
+    if ( k>0 && R > 0.5) {
         tempt = 0;
         peakMax = -1;
         for(id=0; id<Np ;id++)
