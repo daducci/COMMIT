@@ -87,7 +87,7 @@ int verbosity = 0;
 // --- Functions Definitions ----
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, vector<Vector<double>>& P );
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr );
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, float R );
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOXMM );
 
@@ -705,7 +705,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 
                 /* save segment */
                 if ( doIntersect==false )
-                    segmentForwardModel( P_old, P[k], k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr );
+                    segmentForwardModel( P_old, P[k], k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, R );
                 else
                 {
                     S1m.x = P_old.x;
@@ -726,7 +726,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                             )
                         {
                             // same voxel, no need to compute intersections
-                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr);
+                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, R);
                             break;
                         }
 
@@ -744,7 +744,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                             P_int.x = S1m.x + t*dir1.x;
                             P_int.y = S1m.y + t*dir1.y;
                             P_int.z = S1m.z + t*dir1.z;
-                            segmentForwardModel( S1m, P_int, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr );
+                            segmentForwardModel( S1m, P_int, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, R );
                             S1m.x = P_int.x;
                             S1m.y = P_int.y;
                             S1m.z = P_int.z;
@@ -752,7 +752,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                         else
                         {
                             // add the segment S1S2 and stop iterating
-                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr );
+                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, R );
                             break;
                         }
                     }
@@ -766,7 +766,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 /********************************************************************************************************************/
 /*                                                segmentForwardModel                                               */
 /********************************************************************************************************************/
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr )
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, float R)
 {
     thread_local static Vector<int>    vox;
     thread_local static Vector<double> dir, dirpeak;
@@ -813,7 +813,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     if ( ptrMASK && ptrMASK[ vox.z + dim.z * ( vox.y + dim.y * vox.x ) ]==0 )
         return;
 
-    if ( k>0 ) {
+    if ( k>0 && R > 1.0) {
         tempt = 0;
         peakMax = -1;
         for(id=0; id<Np ;id++)
