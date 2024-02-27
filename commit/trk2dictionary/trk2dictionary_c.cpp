@@ -835,7 +835,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     {
         ptr_peak = ptrPEAKS + 3*(id + Np * ( vox.z + dim.z * ( vox.y + dim.y * vox.x ) ));
         
-        // check in peak is nan
+        // check if peak is nan
         if (isnan(ptr_peak[0]) || isnan(ptr_peak[1]) || isnan(ptr_peak[2]))
         {
             break;
@@ -870,7 +870,6 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
         }
 
         if ( angle < angle_thr )
-            // break;
             break;
         tempt++;
     }
