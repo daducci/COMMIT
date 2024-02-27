@@ -834,12 +834,15 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     for (id=0; id<Np ;id++)
     {
         ptr_peak = ptrPEAKS + 3*(id + Np * ( vox.z + dim.z * ( vox.y + dim.y * vox.x ) ));
-        if (ptr_peak[0] == 0 && ptr_peak[1] == 0 && ptr_peak[2] == 0)
+        
+        // check in peak is nan
+        if (isnan(ptr_peak[0]) || isnan(ptr_peak[1]) || isnan(ptr_peak[2]))
         {
             break;
         }
+
         dirpeak.x = ptr_peak[0];
-        dirpeak.y = ptr_peak[1];
+        dirpeak.y = ptr_peak[1];    
         dirpeak.z = ptr_peak[2];
         norm = dirpeak.norm();
         if ( norm < 0.1*peakMax ){
