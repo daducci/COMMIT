@@ -1092,25 +1092,59 @@ cdef class Evaluation :
             yield lst[i:i + n]
 
     
-    cpdef compute_contribution(self, x, x_chunk, norm_fib, pbar_array, idx_chunk):
-        cdef float[:,:,::1] niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
-        cdef float[:] tmp = np.zeros( x.size, dtype=np.float64 )
-        cdef float[:] x_ic_rescaled = np.zeros( len(x_chunk)//self.KERNELS['wmc'].shape[0], dtype=np.float32 )
-        cdef size_t i, pos = 0
-        cdef float[:] tmp = np.zeros(self.KERNELS['wmc'].shape[0], dtype=np.float64) 
+    cpdef compute_contribution(self, x, norm_fib, metric, verbose):
+        cdef double[:] tmp = np.zeros( x.size, dtype=np.float64 )
+        cdef double[:] x_mem = x.astype(np.float64)
+        cdef double[:] norm_fib_mem = norm_fib.astype(np.float64)
+        cdef double[:] x_ic_rescaled = np.zeros( self.DICTIONARY['IC']['nF'], dtype=np.float64 )
+        cdef size_t i, j, pos = 0
+        cdef int offset = self.KERNELS['wmc'].shape[0]
+        niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
 
-        with nogil:
-            for i in range(len(x_chunk)):
-                tmp[x_chunk[i]] = x[x_chunk[i]] * norm_fib[x_chunk[i]]
-                niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                x_ic_rescaled[pos] = np.min(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
-                tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
-                niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
-                pbar_array[idx_chunk] += 1
-                pos += 1
-        
+        with ui.ProgressBar( total=self.DICTIONARY['IC']['nF'], disable=(verbose in [0,1,3]), hide_on_exit=True) as pbar:
+            if metric=='mean':
+                for i in range(0, x.size, offset):
+                    for j in range(offset):
+                        tmp[i+j] = x_mem[i+j] * norm_fib_mem[i+j]
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    x_ic_rescaled[pos] = np.mean(niiIC_img)
+                    tmp[i:i + offset] = 0
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    pos += 1
+                    pbar.update()
+            elif metric=='min':
+                for i in range(0, x.size, offset):
+                    for j in range(offset):
+                        tmp[i+j] = x_mem[i+j] * norm_fib_mem[i+j]
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    x_ic_rescaled[pos] = np.min(niiIC_img)
+                    tmp[i:i + offset] = 0
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    pos += 1
+                    pbar.update()
+            elif metric=='max':
+                for i in range(0, x.size, offset):
+                    for j in range(offset):
+                        tmp[i+j] = x_mem[i+j] * norm_fib_mem[i+j]
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    x_ic_rescaled[pos] = np.max(niiIC_img)
+                    tmp[i:i + offset] = 0
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    pos += 1
+                    pbar.update()
+            elif metric=='median':
+                for i in range(0, x.size, offset):
+                    for j in range(offset):
+                        tmp[i+j] = x_mem[i+j] * norm_fib_mem[i+j]
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    x_ic_rescaled[pos] = np.median(niiIC_img)
+                    tmp[i:i + offset] = 0
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    pos += 1
+                    pbar.update()
+
+
         return x_ic_rescaled
-        
     
 
     def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
@@ -1289,94 +1323,42 @@ cdef class Evaluation :
 
         if stat_coeffs != 'all' and xic.size > 0 :
             verbose = self.CONFIG['optimization']['verbose']
-            chunk_size = int((x.size/self.KERNELS['wmc'].shape[0])/self.THREADS['n'])
-            chunk_groups = [e for e in compute_chunks( np.arange(x.size),chunk_size*self.KERNELS['wmc'].shape[0] )]
-            pbar_array = np.zeros(self.THREADS['n'], dtype=np.int32)
-
+            xic_kept = self.DICTIONARY['TRK']['kept']
             if stat_coeffs == 'sum' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
-                    pos = 0
-                    niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
-                    tmp = np.zeros( x.size, dtype=np.float64 )
-                    for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
-                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
-                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                        x_ic_rescaled[pos] = np.sum(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
-                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
-                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
-                        pos += 1
-                    xic = x_ic_rescaled
+                    xic = self.compute_contribution(x, norm_fib, "mean", verbose)
+                    xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.sum( xic, axis=0 )
             elif stat_coeffs == 'mean' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
-                    pos = 0
-                    niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
-                    tmp = np.zeros( x.size, dtype=np.float64 )
-                    for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
-                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
-                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                        x_ic_rescaled[pos] = np.mean(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
-                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
-                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
-                        pos += 1
-                    xic = x_ic_rescaled
+                    xic = self.compute_contribution(x, norm_fib, "mean", verbose)
+                    xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.mean( xic, axis=0 )
             elif stat_coeffs == 'median' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
-                    pos = 0
-                    niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
-                    tmp = np.zeros( x.size, dtype=np.float64 )
-                    for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
-                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
-                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                        x_ic_rescaled[pos] = np.median(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
-                        tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
-                        niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
-                        pos += 1
-                    xic = x_ic_rescaled
+                    xic = self.compute_contribution(x, norm_fib, "median", verbose)
+                    xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.median( xic, axis=0 )
             elif stat_coeffs == 'min' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    # x_ic_rescaled = np.zeros( self.DICTIONARY['TRK']['kept'].size )
-                    # pos = 0
-                    # niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
-                    # tmp = np.zeros( x.size, dtype=np.float64 )
-                    # for i in range(0, x.size, self.KERNELS['wmc'].shape[0]):
-                    #     tmp[i:i+self.KERNELS['wmc'].shape[0]] = x[i:i+self.KERNELS['wmc'].shape[0]] * norm_fib[i:i+self.KERNELS['wmc'].shape[0]]
-                    #     niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                    #     x_ic_rescaled[pos] = np.min(niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ])
-                    #     tmp[i:i+self.KERNELS['wmc'].shape[0]] = 0
-                    #     niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
-                    #     pos += 1
-
-                    with ui.ProgressBar( multithread_progress=pbar_array, total=x.size, disable=(verbose in [0,1,3]), hide_on_exit=True) as pbar:
-                        with tdp(max_workers=self.THREADS['n']) as executor:
-                            future = [executor.submit(self.compute_contribution, x, chunk, pbar_array, i) for i, chunk in enumerate(chunk_groups)]
-                            chunks_rew = [f.result() for f in future]
-                            chunks_rew = [c for f in chunks_rew for c in f]
-                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                    #     x_s = np.zeros(xic.size, dtype=np.float64)
-                    #     x_s[i:i+self.KERNELS['wmc'].shape[0]] = 1
-                    #     tot_IC = self.A.dot(x_s)
-                    #     x_ic_rescaled[pos] = np.min(tot_IC)
-                    #     x_s[i:i+self.KERNELS['wmc'].shape[0]] = 0
-                    #     pos += 1
-
-                    xic = chunks_rew
+                    xic = self.compute_contribution(x, norm_fib, "min", verbose)
+                    xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.min( xic, axis=0 )
             elif stat_coeffs == 'max' :
-                xic = np.max( xic, axis=0 )
+                if self.KERNELS['wmc'].shape[0] > 1:
+                    xic = self.compute_contribution(x, norm_fib, "max", verbose)
+                    xic_kept[xic_kept==1] = xic
+                else:
+                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
+                    xic = np.max( xic, axis=0 )
             else :
                 ERROR( 'Stat not allowed. Possible values: sum, mean, median, min, max, all', prefix='\n' )
 
