@@ -1106,40 +1106,40 @@ cdef class Evaluation :
                 for i in range(0, x.size, offset):
                     for j in range(offset):
                         tmp[i+j] = x_mem[i+j] * norm_fib_mem[i+j]
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                    x_ic_rescaled[pos] = np.mean(niiIC_img)
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    x_ic_rescaled[pos] = np.mean(self.A.dot(tmp))
                     tmp[i:i + offset] = 0
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
                     pos += 1
                     pbar.update()
             elif metric=='min':
                 for i in range(0, x.size, offset):
                     for j in range(offset):
                         tmp[i+j] = x_mem[i+j] * norm_fib_mem[i+j]
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                    x_ic_rescaled[pos] = np.min(niiIC_img)
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    x_ic_rescaled[pos] = np.min(self.A.dot(tmp))
                     tmp[i:i + offset] = 0
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
                     pos += 1
                     pbar.update()
             elif metric=='max':
                 for i in range(0, x.size, offset):
                     for j in range(offset):
                         tmp[i+j] = x_mem[i+j] * norm_fib_mem[i+j]
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                    x_ic_rescaled[pos] = np.max(niiIC_img)
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    x_ic_rescaled[pos] = np.max(self.A.dot(tmp))
                     tmp[i:i + offset] = 0
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
                     pos += 1
                     pbar.update()
             elif metric=='median':
                 for i in range(0, x.size, offset):
                     for j in range(offset):
                         tmp[i+j] = x_mem[i+j] * norm_fib_mem[i+j]
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
-                    x_ic_rescaled[pos] = np.median(niiIC_img)
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    x_ic_rescaled[pos] = np.median(self.A.dot(tmp))
                     tmp[i:i + offset] = 0
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
+                    # niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = 0
                     pos += 1
                     pbar.update()
 
