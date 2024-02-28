@@ -827,51 +827,53 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
                 peakMax = norm;
                 id_peak = id;
         }
-            
-        for (id=0; id<Np ;id++)
-        {
-            ptr_peak = ptrPEAKS + 3*(id + Np * ( vox.z + dim.z * ( vox.y + dim.y * vox.x ) ));
-            
-            // check if peak is nan
-            if (isnan(ptr_peak[0]) || isnan(ptr_peak[1]) || isnan(ptr_peak[2]))
-            {
-                break;
-            }
+        if (peakMax > 0.2){
 
-            dirpeak.x = ptr_peak[0];
-            dirpeak.y = ptr_peak[1];    
-            dirpeak.z = ptr_peak[2];
-            norm = dirpeak.norm();
-            if ( norm < 0.1*peakMax ){
+            for (id=0; id<Np ;id++)
+            {
+                ptr_peak = ptrPEAKS + 3*(id + Np * ( vox.z + dim.z * ( vox.y + dim.y * vox.x ) ));
+                
+                // check if peak is nan
+                if (isnan(ptr_peak[0]) || isnan(ptr_peak[1]) || isnan(ptr_peak[2]))
+                {
+                    break;
+                }
+
+                dirpeak.x = ptr_peak[0];
+                dirpeak.y = ptr_peak[1];    
+                dirpeak.z = ptr_peak[2];
+                norm = dirpeak.norm();
+                if ( norm < 0.1*peakMax ){
+                    tempt++;
+                    continue;
+                }
+
+                dirpeak.Normalize();
+            
+                if ( dir.y < 0 )
+                {
+                    dirpeak.x = -dirpeak.x;
+                    dirpeak.y = -dirpeak.y;
+                    dirpeak.z = -dirpeak.z;
+                }
+
+                dot_angle = dir.x*dirpeak.x + dir.y*dirpeak.y + dir.z*dirpeak.z;
+
+                if ( dot_angle < 0 ){
+                    dot_angle = -dot_angle;
+                    angle = acos( dot_angle );
+                }
+                else {
+                    angle = acos( dot_angle );
+                }
+
+                if ( angle < angle_thr )
+                    break;
                 tempt++;
-                continue;
             }
-
-            dirpeak.Normalize();
-        
-            if ( dir.y < 0 )
-            {
-                dirpeak.x = -dirpeak.x;
-                dirpeak.y = -dirpeak.y;
-                dirpeak.z = -dirpeak.z;
-            }
-
-            dot_angle = dir.x*dirpeak.x + dir.y*dirpeak.y + dir.z*dirpeak.z;
-
-            if ( dot_angle < 0 ){
-                dot_angle = -dot_angle;
-                angle = acos( dot_angle );
-            }
-            else {
-                angle = acos( dot_angle );
-            }
-
-            if ( angle < angle_thr )
-                break;
-            tempt++;
+            if (tempt == Np)
+                return;
         }
-        if (tempt == Np)
-            return;
     }
 
     // add the segment to the data structure
