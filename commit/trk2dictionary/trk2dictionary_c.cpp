@@ -87,7 +87,7 @@ int verbosity = 0;
 // --- Functions Definitions ----
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, vector<Vector<double>>& P );
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, float R );
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, double R );
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOXMM );
 
@@ -766,7 +766,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 /********************************************************************************************************************/
 /*                                                segmentForwardModel                                               */
 /********************************************************************************************************************/
-void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, float R)
+void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable, float* ptrPEAKS, double* ptrPeaksAffine, int Np, float angle_thr, double R)
 {
     thread_local static Vector<int>    vox;
     thread_local static Vector<double> dir, dirpeak;
