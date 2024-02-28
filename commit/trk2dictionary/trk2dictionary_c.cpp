@@ -539,7 +539,6 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                 }
 
                 for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
-                    // std::cout << "FiberNorm: " << itNorm->second << std::endl;
                     fiberNorm += pow(itNorm->second,2);
                 fiberNorm = sqrt(fiberNorm);
                 FiberNorm.clear();
@@ -705,7 +704,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
 
                 /* save segment */
                 if ( doIntersect==false )
-                    segmentForwardModel( P_old, P[k], k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, R );
+                    segmentForwardModel( P_old, P[k], k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, ptrBlurRho[k] );
                 else
                 {
                     S1m.x = P_old.x;
@@ -726,7 +725,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                             )
                         {
                             // same voxel, no need to compute intersections
-                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, R);
+                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, ptrBlurRho[k]);
                             break;
                         }
 
@@ -744,7 +743,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                             P_int.x = S1m.x + t*dir1.x;
                             P_int.y = S1m.y + t*dir1.y;
                             P_int.z = S1m.z + t*dir1.z;
-                            segmentForwardModel( S1m, P_int, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, R );
+                            segmentForwardModel( S1m, P_int, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, ptrBlurRho[k] );
                             S1m.x = P_int.x;
                             S1m.y = P_int.y;
                             S1m.z = P_int.z;
@@ -752,7 +751,7 @@ void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nRepl
                         else
                         {
                             // add the segment S1S2 and stop iterating
-                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, R );
+                            segmentForwardModel( S1m, S2m, k, ptrBlurWeights[k], ptrHashTable, ptrPEAKS, ptrPeaksAffine, Np, angle_thr, ptrBlurRho[k] );
                             break;
                         }
                     }
