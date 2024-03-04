@@ -495,11 +495,18 @@ cdef class Evaluation :
 
         self.DICTIONARY['ISO'] = {}
 
-        self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
-        if self.DICTIONARY['ISO']['v'].size > 0:
-            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
+        if hasattr(self.model, '_postprocess'):
+            self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
+            if self.DICTIONARY['ISO']['v'].size > 0:
+                self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
+            else:
+                self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['MASK'].sum()
         else:
-            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['MASK'].sum()
+            vx, vy, vz = ( self.DICTIONARY['MASK'] > 0 ).nonzero()
+            vx = vx.astype(np.int32)
+            vy = vy.astype(np.int32)
+            vz = vz.astype(np.int32)
+            self.DICTIONARY['ISO']['v'] = vx + self.get_config('dim')[0] * ( vy + self.get_config('dim')[1] * vz )
 
         self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
@@ -508,7 +515,10 @@ cdef class Evaluation :
         self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
         del idx
 
-        print( '[ %d voxels ]' % self.DICTIONARY['ISO']['nV'] )
+        if hasattr(self.model, '_postprocess'):
+            print( '[ %d voxels ]' % self.DICTIONARY['ISO']['nV'] )
+        else:
+            print( '[ %d voxels ]' % self.DICTIONARY['nV'] )
 
         # post-processing
         # ---------------
@@ -603,7 +613,7 @@ cdef class Evaluation :
             self.THREADS['EC'] = None
 
         if self.DICTIONARY['nV'] > 0 :
-            if self.DICTIONARY['ISO']['nV'] > 0 :
+            if hasattr(self.model, '_postprocess'):
                 self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
                 N = np.floor( self.DICTIONARY['ISO']['nV']/n )
                 t = 1
@@ -620,7 +630,7 @@ cdef class Evaluation :
                 self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
                 for i in xrange(n) :
                     self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
+                self.THREADS['ISO'][n] = self.DICTIONARY['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
@@ -673,12 +683,17 @@ cdef class Evaluation :
 
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
-            N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+            if hasattr(self.model, '_postprocess'):
+                N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+            else:
+                N = np.floor( self.DICTIONARY['nV']/n )
 
             for i in xrange(1,n) :
                 self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
-            self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
-
+            if hasattr(self.model, '_postprocess'):
+                self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
+            else:
+                self.THREADS['ISOt'][n] = self.DICTIONARY['nV']
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
@@ -1266,9 +1281,12 @@ cdef class Evaluation :
         niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         if len(self.KERNELS['iso']) > 0 :
             offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-            offset_iso = offset + self.DICTIONARY['ISO']['nV']
-            tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['nV']) ).sum( axis=0 )
-            xv = np.bincount( self.DICTIONARY['ISO']['v'], weights=tmp, minlength=nV ).astype(np.float32)
+            if hasattr(self.model, '_postprocess'):
+                offset_iso = offset + self.DICTIONARY['ISO']['nV']
+                tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['nV']) ).sum( axis=0 )
+                xv = np.bincount( self.DICTIONARY['ISO']['v'], weights=tmp, minlength=nV ).astype(np.float32)
+            else:
+                xv = x[offset:].reshape( (-1,nV) ).sum( axis=0 )
             niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
         print( '   [ OK ]' )
 
