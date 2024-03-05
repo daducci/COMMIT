@@ -496,11 +496,8 @@ cdef class Evaluation :
         self.DICTIONARY['ISO'] = {}
 
         self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
-        if self.DICTIONARY['ISO']['v'].size > 0:
-            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
-        else:
-            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['MASK'].sum()
-
+        self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
+            
         self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
         # reorder the segments based on the "v" field
@@ -509,7 +506,7 @@ cdef class Evaluation :
         del idx
 
         print( '[ %d voxels ]' % self.DICTIONARY['ISO']['nV'] )
-
+        
         # post-processing
         # ---------------
         print( '\t* Post-processing...          ', end='' )
@@ -529,6 +526,7 @@ cdef class Evaluation :
         print( '[ OK ]' )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+
 
 
     def set_threads( self, n=None ) :
@@ -603,24 +601,10 @@ cdef class Evaluation :
             self.THREADS['EC'] = None
 
         if self.DICTIONARY['nV'] > 0 :
-            if self.DICTIONARY['ISO']['nV'] > 0 :
-                self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
-                N = np.floor( self.DICTIONARY['ISO']['nV']/n )
-                t = 1
-                tot = 0
-                C = np.bincount( self.DICTIONARY['ISO']['v'] )
-                for c in C :
-                    tot += c
-                    if tot >= N and t <= n :
-                        self.THREADS['ISO'][t] = self.THREADS['ISO'][t-1] + tot
-                        t += 1
-                        tot = 0
-                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
-            else:
-                self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
-                for i in xrange(n) :
-                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
+            self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
+            for i in xrange(n) :
+                self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
+            self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
 
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
@@ -674,11 +658,11 @@ cdef class Evaluation :
         if self.DICTIONARY['nV'] > 0 :
             self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
             N = np.floor( self.DICTIONARY['ISO']['nV']/n )
-
+            
             for i in xrange(1,n) :
                 self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
             self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
-
+            
             # check if some threads are not assigned any segment
             if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                 self.THREADS = None
