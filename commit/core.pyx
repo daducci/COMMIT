@@ -765,6 +765,7 @@ cdef class Evaluation :
         # y[y < 0] = 0
         return y
 
+
     def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
         """
         Set the regularisation parameters for the optimisation problem.
@@ -824,17 +825,32 @@ cdef class Evaluation :
                                     /       \
                                 [0,2,5]       [1,3,4]
                         which has two non-overlapping groups, one of which is the union
-                        of two other non-overlapping groups.                    
-                'group_weights' - np.array(np.float64) :
-                    weights associated to each group of the IC compartment.
-                    This field is necessary only if regterm[0] is 'group_lasso' or 'sparse_group_lasso'.
-                    NB: the length of this array must be equal to the number of groups in 'group_idx'.
+                        of two other non-overlapping groups.
+                'group_weights_kind' - string :
+                    kind of group weights to be used for the IC compartment if regterm[0] is 'group_lasso' or 'sparse_group_lasso'
+                    Available options are: {'standard', 'adaptive'}:
+                        'standard' - each group has as weight the square root of the group size.
+                        'adaptive' - the weights are computed as in [2].
+                    Default = 'adaptive'.
+                'group_weights_prior' - np.array(np.float64) :
+                    weights associated to each group of the IC compartment, based on prior knowledge.
+                    If None, then the weights are computed as in [2], assuming that the fit has already been 
+                        performed without regularisation. Otherwise, the provided weights are used as they are.
+                    This field can be specified only if regterm[0] is 'group_lasso' or 'sparse_group_lasso' 
+                        and group_weights_kind is 'adaptive'.
+                    Default = None.
+                # 'group_weights' - np.array(np.float64) :
+                #     weights associated to each group of the IC compartment.
+                #     This field is necessary only if regterm[0] is 'group_lasso' or 'sparse_group_lasso'.
+                #     NB: the length of this array must be equal to the number of groups in 'group_idx'.
                 'weightsIC' - np.array(np.float64) :
                     this defines the weights associated to each element of the Intracellular compartment.
                     This field can be specified only if regterm[0] is 'lasso' or 'sparse_group_lasso'.
 
         References:
             [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
+            [2] Schiavi et al. - 'A new method for accurate in vivo mapping of human brain connections using 
+                microstructural and anatomical information'
         """
 
         regularisation = {}
@@ -854,46 +870,32 @@ cdef class Evaluation :
         regularisation['nnEC']  = is_nonnegative[1]
         regularisation['nnISO'] = is_nonnegative[2]
 
-        # unpack parameters inside params as three separate dictionaries
         dictIC_params, dictEC_params, dictISO_params = params
 
+        tr = time.time()
+        LOG( '\n-> Setting regularisation:' )
+        
+        # set regularisation for the intracellular compartment
         if regularisation['regIC'] == 'lasso':
             if lambdas[0] is None:
                 raise ValueError('Missing regularisation parameter for the IC compartment')
             else:
                 regularisation['lambdaIC'] = lambdas[0]
-        elif regularisation['regEC'] == 'lasso':
-            if lambdas[1] is None:
-                raise ValueError('Missing regularisation parameter for the EC compartment')
-            else:
-                regularisation['lambdaEC'] = lambdas[1]
-        elif regularisation['regISO'] == 'lasso':
-            if lambdas[2] is None:
-                raise ValueError('Missing regularisation parameter for the ISO compartment')
-            else:
-                regularisation['lambdaISO'] = lambdas[2]
-
         elif regularisation['regIC'] == 'smoothness':
             raise ValueError('Not yet implemented')
-        elif regularisation['regEC'] == 'smoothness':
-            raise ValueError('Not yet implemented')
-        elif regularisation['regISO'] == 'smoothness':
-            raise ValueError('Not yet implemented')
-
         elif regularisation['regIC'] == 'group_lasso':
             if lambdas[0] is None:
                 raise ValueError('Missing regularisation parameter for the IC compartment')
             else:
                 regularisation['lambdaIC'] = lambdas[0]
+            if dictIC_params is None:
+                raise ValueError('Dictionary of additional parameters for the IC compartment not provided')
             if dictIC_params["group_idx"] is None:
                 raise ValueError('Group structure for the IC compartment not provided')
-            if dictIC_params["group_weights"] is None:
-                raise ValueError('Group weights for the IC compartment not provided')
-        elif regularisation['regEC'] == 'group_lasso':
-            raise ValueError('Not yet implemented')
-        elif regularisation['regISO'] == 'group_lasso':
-            raise ValueError('Not yet implemented')
-
+            # if dictIC_params["group_weights"] is None:
+            #     raise ValueError('Group weights for the IC compartment not provided')
+            if dictIC_params["group_weights_kind"] not in ['standard', 'adaptive']:
+                raise ValueError('Kind of group weights not among the available options, i.e. {standard, adaptive}')
         elif regularisation['regIC'] == 'sparse_group_lasso':
             if len(lambdas[0]) != 2:
                 raise ValueError('Regularisation parameters for the IC compartment ara not exactly two')
@@ -903,19 +905,65 @@ cdef class Evaluation :
                 raise ValueError('Not yet implemented')
             if lambdas[2] is not None:
                 raise ValueError('Not yet implemented')
+            if dictIC_params is None:
+                raise ValueError('Dictionary of additional parameters for the IC compartment not provided')
             if dictIC_params["group_idx"] is None:
                 raise ValueError('Group structure for the IC compartment not provided')
-            if dictIC_params["group_weights"] is None:
-                raise ValueError('Group weights for the IC compartment not provided')
+            # if dictIC_params["group_weights"] is None:
+            #     raise ValueError('Group weights for the IC compartment not provided')
+            if dictIC_params["group_weights_kind"] not in ['standard', 'adaptive']:
+                raise ValueError('Kind of group weights not among the available options, i.e. {standard, adaptive}')
+
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            if dictIC_params["group_weights_kind"] == 'standard' and "group_weights_prior" in dictIC_params:
+                raise ValueError('Group weights prior knowledge is not allowed for standard group weights')
+            if dictIC_params["group_weights_kind"] == 'adaptive' and "group_weights_prior" in dictIC_params:
+                if dictIC_params["group_weights_prior"].size != dictIC_params["group_idx"].size:
+                    raise ValueError('Group weights and group indices must have the same size')
+
+        if regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            if dictIC_params is not None and 'weightsIC' in dictIC_params:
+                dictIC_params['weightsIC'] = dictIC_params['weightsIC'][self.DICTIONARY['TRK']['kept']==1]
+                if dictIC_params['weightsIC'].size != regularisation['sizeIC']:
+                    raise ValueError('weightsIC must have the same size as the number of elements in the Intracellular compartment')
+
+        # set regularisation for the extracellular compartment
+        if regularisation['regEC'] == 'lasso':
+            if lambdas[1] is None:
+                raise ValueError('Missing regularisation parameter for the EC compartment')
+            else:
+                regularisation['lambdaEC'] = lambdas[1]
+                print(f'lambdaEC  set to {regularisation["lambdaEC"]}')
+        elif regularisation['regEC'] == 'smoothness':
+            raise ValueError('Not yet implemented')
+        elif regularisation['regEC'] == 'group_lasso':
+            raise ValueError('Not yet implemented')
         elif regularisation['regEC'] == 'sparse_group_lasso':
+            raise ValueError('Not yet implemented')
+
+        # set regularisation for the isotropic compartment
+        if regularisation['regISO'] == 'lasso':
+            if lambdas[2] is None:
+                raise ValueError('Missing regularisation parameter for the ISO compartment')
+            else:
+                regularisation['lambdaISO'] = lambdas[2]
+        elif regularisation['regISO'] == 'smoothness':
+            raise ValueError('Not yet implemented')
+        elif regularisation['regISO'] == 'group_lasso':
             raise ValueError('Not yet implemented')
         elif regularisation['regISO'] == 'sparse_group_lasso':
             raise ValueError('Not yet implemented')
 
+
         # Check if group indices need to be updated in case of 'group_lasso' or 'sparse_group_lasso'
-        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso'  and (0 in self.DICTIONARY['TRK']['kept']) :
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso' and (0 in self.DICTIONARY['TRK']['kept']) :
+            # update the group indices considering only the kept elements
             dictionary_TRK_kept = self.DICTIONARY['TRK']['kept']
-            weightsIC_group = dictIC_params["group_weights"]
+            if "group_weights_prior" in dictIC_params:
+                weightsIC_group = dictIC_params["group_weights_prior"]
+            else:
+                weightsIC_group = None
+            # weightsIC_group = dictIC_params["group_weights"]
             idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
             idx_in_kept[dictionary_TRK_kept==1] = list(range(self.DICTIONARY['IC']['nF']))
 
@@ -929,19 +977,95 @@ cdef class Evaluation :
                     group = np.delete(group,idx_to_delete)
                     if(group.size>0):
                         newICgroup_idx.append(group)
-                        newweightsIC_group.append(weightsIC_group[count])
+                        # newweightsIC_group.append(weightsIC_group[count])
                 else:
                     newICgroup_idx.append(group)
+                    # newweightsIC_group.append(weightsIC_group[count])
+                if weightsIC_group is not None and group.size>0:
                     newweightsIC_group.append(weightsIC_group[count])
 
             dictIC_params["group_idx"] = np.array(newICgroup_idx, dtype=np.object_)
-            dictIC_params['group_weights'] = np.array(newweightsIC_group)
+            # dictIC_params['group_weights'] = np.array(newweightsIC_group)
+        else:
+            if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso' and "group_weights_prior" in dictIC_params:
+                newweightsIC_group = dictIC_params["group_weights_prior"]
+
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            # set the group weights
+            if dictIC_params["group_weights_kind"] is 'standard':
+                group_size = np.array([g.size for g in dictIC_params["group_idx"]], dtype=np.int32)
+                dictIC_params['group_weights'] = np.sqrt(group_size)
+            elif dictIC_params["group_weights_kind"] is 'adaptive':
+                if "group_weights_prior" not in dictIC_params: # default weights (both cardinality and x_nnls, like in wiki)
+                    # check if fit has been performed
+                    if self.x is None:
+                        raise ValueError('Group weights cannot be computed if the fit (without regularisation) has not been performed yet')
+                    group_size = np.array([g.size for g in dictIC_params["group_idx"]], dtype=np.int32)
+                    x_nnls, _, _ = self.get_coeffs(get_normalized=False)[self.DICTIONARY['TRK']['kept']==1] 
+                    group_x_norm = np.array([np.linalg.norm(x_nnls[g])+1e-12 for g in dictIC_params["group_idx"]], dtype=np.float64)
+                    dictIC_params['group_weights'] = np.sqrt(group_size) / group_x_norm
+                else:
+                    dictIC_params['group_weights'] = np.array(newweightsIC_group)
+            else:
+                raise ValueError('Kind of group weights not among the available options, i.e. {standard, adaptive}')
+
 
         regularisation['dictIC_params']  = dictIC_params
         regularisation['dictEC_params']  = dictEC_params
         regularisation['dictISO_params'] = dictISO_params
 
         self.regularisation_params = commit.solvers.init_regularisation(regularisation)
+
+        print( '\t* IC compartment:' )
+        print( f'\t\t- Regularisation type: {regularisation["regIC"]}', end='' )
+        if regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            if dictIC_params is not None and 'weightsIC' in dictIC_params:
+                print( f' (weighted version)', end='' )
+        print( f'\n\t\t- Non-negativity constraint: {regularisation["nnIC"]}')
+        if regularisation['regIC'] is not None: 
+            print( f'\t\t- Lambda: {regularisation["lambdaIC"]}' )
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            print( f'\t\t- Number of groups: {len(dictIC_params["group_idx"])}' )
+            print( f'\t\t- Kind of group weights: {dictIC_params["group_weights_kind"]}', end='' )
+            if "group_weights_prior" in dictIC_params:
+                print( f', with prior knowledge', end='' )
+            print()
+
+        # compute lambda_max if regularisation is lasso, group_lasso ir sparse_group_lasso
+        if regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            lambda_max_lasso = self.compute_lambda_max_lasso()
+            print( f'\t\t- Lambda max lasso: {lambda_max_lasso}' )
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            lambda_max_group = self.compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params["group_idx"])
+            print( f'\t\t- Lambda max group: {lambda_max_group}' )
+
+        print( '\t* EC compartment:' )
+        print( f'\t\t- Regularisation type: {regularisation["regEC"]}', end='' )
+        print( f'\n\t\t- Non-negativity constraint: {regularisation["nnEC"]}')
+        if regularisation['regEC'] is not None: 
+            print( f'\t\t- Lambda: {regularisation["lambdaEC"]}' )
+        print( '\t* ISO compartment:' )
+        print( f'\t\t- Regularisation type: {regularisation["regISO"]}', end='' )
+        print( f'\n\t\t- Non-negativity constraint: {regularisation["nnISO"]}')
+        if regularisation['regISO'] is not None: 
+            print( f'\t\t- Lambda: {regularisation["lambdaISO"]}' )
+
+        LOG( '   [ %.1f seconds ]' % ( time.time() - tr ) )
+
+    def compute_lambda_max_group(self, w_group, idx_group): 
+        # Ref. Ming, Yi - 'Model selection and estimation in regression with grouped variables'
+        At = self.A.T
+        y  = self.get_y()
+        Aty = np.asarray(At.dot(y))
+        norm_group = np.zeros( w_group.shape, dtype=np.float64 )
+        for g in range(w_group.size):
+            norm_group[g] = np.sqrt(np.sum(Aty[idx_group[g]]**2)) / w_group[g]
+        return np.max(norm_group)
+    def compute_lambda_max_lasso(self): 
+        # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
+        At = self.A.T
+        y  = self.get_y()
+        return np.max(np.abs(At.dot(y)))
 
 
     def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, confidence_map_filename=None, confidence_map_rescale=False ) :
