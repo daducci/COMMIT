@@ -793,9 +793,8 @@ cdef class Evaluation :
                 lambdas[0] corresponds to the Intracellular compartment
                 lambdas[1] corresponds to the Extracellular compartment
                 lambdas[2] corresponds to the Isotropic compartment
-            The lambdas correspond to the ones described in the mathematical
-            formulation of the regularisation term
-            $\Omega(x) = lambdas[0]*regnorm[0](x) + lambdas[1]*regnorm[1](x) + lambdas[2]*regnorm[2](x)$
+            The lambdas correspond to the ones described in the mathematical formulation of the regularisation term
+            $\Omega(x) = lambdas[0]*regularisers[0](x) + lambdas[1]*regularisers[1](x) + lambdas[2]*regularisers[2](x)$
             NB: if regularisers[k] is None, then lambdas[k] is ignored.
             NB: if regularisers[0] is 'sparse_group_lasso', then lambdas[k] must be a tuple of two elements,
                 the first corresponding to the l1 penalty and the second to the l2 penalty.
@@ -814,10 +813,10 @@ cdef class Evaluation :
                 params[1] corresponds to the Extracellular compartment
                 params[2] corresponds to the Isotropic compartment
             Default = (None, None, None).
-            Available kyes for each compartment:
+            Available options:
                 'group_idx' - np.array(np.int32) :
                     group indices for the IC compartment.
-                    This field is necessary only if regterm[0] is 'group_lasso' or 'sparse_group_lasso'.
+                    This field is necessary only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
                     Example:
                         structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
                         that is equivalent to
@@ -827,7 +826,8 @@ cdef class Evaluation :
                         which has two non-overlapping groups, one of which is the union
                         of two other non-overlapping groups.
                 'group_weights_kind' - string :
-                    kind of group weights to be used for the IC compartment if regterm[0] is 'group_lasso' or 'sparse_group_lasso'
+                    kind of group weights to be used for the IC compartment if regularisers[0] is 'group_lasso' 
+                        or 'sparse_group_lasso'
                     Available options are: {'standard', 'adaptive'}:
                         'standard' - each group has as weight the square root of the group size.
                         'adaptive' - the weights are computed as in [2].
@@ -836,16 +836,12 @@ cdef class Evaluation :
                     weights associated to each group of the IC compartment, based on prior knowledge.
                     If None, then the weights are computed as in [2], assuming that the fit has already been 
                         performed without regularisation. Otherwise, the provided weights are used as they are.
-                    This field can be specified only if regterm[0] is 'group_lasso' or 'sparse_group_lasso' 
+                    This field can be specified only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso' 
                         and group_weights_kind is 'adaptive'.
                     Default = None.
-                # 'group_weights' - np.array(np.float64) :
-                #     weights associated to each group of the IC compartment.
-                #     This field is necessary only if regterm[0] is 'group_lasso' or 'sparse_group_lasso'.
-                #     NB: the length of this array must be equal to the number of groups in 'group_idx'.
                 'weightsIC' - np.array(np.float64) :
                     this defines the weights associated to each element of the Intracellular compartment.
-                    This field can be specified only if regterm[0] is 'lasso' or 'sparse_group_lasso'.
+                    This field can be specified only if regularisers[0] is 'lasso' or 'sparse_group_lasso'.
 
         References:
             [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
@@ -1061,6 +1057,7 @@ cdef class Evaluation :
         for g in range(w_group.size):
             norm_group[g] = np.sqrt(np.sum(Aty[idx_group[g]]**2)) / w_group[g]
         return np.max(norm_group)
+        
     def compute_lambda_max_lasso(self): 
         # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
         At = self.A.T
