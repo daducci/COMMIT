@@ -798,7 +798,7 @@ cdef class Evaluation :
             NB: if regularisers[k] is None, then lambdas[k] is ignored.
             NB: if regularisers[0] is 'sparse_group_lasso', then lambdas[k] must be a tuple of two elements,
                 the first corresponding to the l1 penalty and the second to the l2 penalty.
-            Default = (0.0, 0.0, 0.0).
+            Default = (None, None, None).
 
         is_nonnegative - tuple :
             impose a non negativity constraint for each compartment:
@@ -849,6 +849,26 @@ cdef class Evaluation :
             [2] Schiavi et al. - 'A new method for accurate in vivo mapping of human brain connections using 
                 microstructural and anatomical information'
         """
+
+        # function to compute the maximum value of the regularisation parameter (lambda)
+
+        def compute_lambda_max_group(w_group, idx_group): 
+            # Ref. Ming, Yi - 'Model selection and estimation in regression with grouped variables'
+            At = self.A.T
+            y  = self.get_y()
+            Aty = np.asarray(At.dot(y))
+            norm_group = np.zeros( w_group.shape, dtype=np.float64 )
+            for g in range(w_group.size):
+                norm_group[g] = np.sqrt(np.sum(Aty[idx_group[g]]**2)) / w_group[g]
+            return np.max(norm_group)
+            
+        def compute_lambda_max_lasso(start, size): 
+            # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
+            At = self.A.T
+            y  = self.get_y()
+            Aty = np.asarray(At.dot(y))
+            return np.max(np.abs(Aty[start:start+size]))
+
 
         regularisation = {}
 
@@ -1028,10 +1048,10 @@ cdef class Evaluation :
 
         # compute lambda_max if regularisation is lasso, group_lasso or sparse_group_lasso
         if regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso':
-            lambda_max_lasso = self.compute_lambda_max_lasso()
+            lambda_max_lasso = compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'])
             print( f'\t\t- Lambda max lasso: {lambda_max_lasso}' )
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
-            lambda_max_group = self.compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params["group_idx"])
+            lambda_max_group = compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params["group_idx"])
             print( f'\t\t- Lambda max group: {lambda_max_group}' )
 
         print( '\t* EC compartment:' )
@@ -1053,22 +1073,6 @@ cdef class Evaluation :
             print( f'\t\t- Lambda: {regularisation["lambdaISO"]}' )
 
         LOG( '   [ %.1f seconds ]' % ( time.time() - tr ) )
-
-    def compute_lambda_max_group(self, w_group, idx_group): 
-        # Ref. Ming, Yi - 'Model selection and estimation in regression with grouped variables'
-        At = self.A.T
-        y  = self.get_y()
-        Aty = np.asarray(At.dot(y))
-        norm_group = np.zeros( w_group.shape, dtype=np.float64 )
-        for g in range(w_group.size):
-            norm_group[g] = np.sqrt(np.sum(Aty[idx_group[g]]**2)) / w_group[g]
-        return np.max(norm_group)
-        
-    def compute_lambda_max_lasso(self): 
-        # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
-        At = self.A.T
-        y  = self.get_y()
-        return np.max(np.abs(At.dot(y)))
 
 
     def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, verbose=True, x0=None, confidence_map_filename=None, confidence_map_rescale=False ) :
