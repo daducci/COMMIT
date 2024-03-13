@@ -20,7 +20,7 @@ jobs:
           7z x demo01_data.zip
           mv demo01_fibers.tck demo01_data
       - name: Set up Python ${{ matrix.py }}
-        if: ! (startsWith(matrix.py, '3.8') || startsWith(matrix.py, '3.9')) && startsWith(matrix.os, 'macos-14')
+        if: (! ((startsWith(matrix.py, '3.8') || startsWith(matrix.py, '3.9')) && startsWith(matrix.os, 'macos-14')))
         uses: actions/setup-python@v5.0.0
         with:
           python-version: ${{ matrix.py }}
