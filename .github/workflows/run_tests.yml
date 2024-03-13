@@ -5,21 +5,22 @@ jobs:
   run_test:
     strategy:
       matrix:
+        # NOTE: Python 3.12 is not supported yet
         config:
           [
             {os: ubuntu-latest, py: '3.8'},
             {os: ubuntu-latest, py: '3.9'},
             {os: ubuntu-latest, py: '3.10'},
             {os: ubuntu-latest, py: '3.11'},
-            {os: ubuntu-latest, py: '3.12'},
+            # {os: ubuntu-latest, py: '3.12'},
             {os: macos-latest, py: '3.8'},
             {os: macos-latest, py: '3.9'},
             {os: macos-latest, py: '3.10'},
             {os: macos-latest, py: '3.11'},
-            {os: macos-latest, py: '3.12'},
+            # {os: macos-latest, py: '3.12'},
             {os: macos-14, py: '3.10'},
             {os: macos-14, py: '3.11'},
-            {os: macos-14, py: '3.12'}
+            # {os: macos-14, py: '3.12'}
           ]
     name: Python ${{ matrix.config.py }} on ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
