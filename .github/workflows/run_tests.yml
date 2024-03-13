@@ -19,10 +19,10 @@ jobs:
             {os: macos-latest, py: '3.12'},
             {os: macos-14, py: '3.10'},
             {os: macos-14, py: '3.11'},
-            {os: macos-14, py: '3.12'},
+            {os: macos-14, py: '3.12'}
           ]
-    name: Python ${{ matrix.py }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Python ${{ matrix.config.py }} on ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.1
@@ -33,10 +33,10 @@ jobs:
           curl -L -O https://github.com/daducci/COMMIT/wiki/files/demo01_fibers.tck
           7z x demo01_data.zip
           mv demo01_fibers.tck demo01_data
-      - name: Set up Python ${{ matrix.py }}
+      - name: Set up Python ${{ matrix.config.py }}
         uses: actions/setup-python@v5.0.0
         with:
-          python-version: ${{ matrix.py }}
+          python-version: ${{ matrix.config.py }}
       - name: Install dmri-commit
         run: pip install . --no-cache-dir --force-reinstall
       - name: Run tests
