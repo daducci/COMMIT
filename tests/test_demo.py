@@ -116,7 +116,7 @@ def check_results(pickle_result, ref_pickle):
     result_optimization = data[0]["optimization"]
     ref_optimization = ref_data[0]["optimization"]
     try:
-        assert result_optimization["fit_parameters"] == ref_optimization["fit_parameters"]
+        assert result_optimization["fit_details"] == ref_optimization["fit_details"]
     except AssertionError:
         sys.exit(1)
 
