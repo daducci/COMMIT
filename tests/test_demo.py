@@ -38,7 +38,7 @@ def run_commit_StickZeppelinBall(local_path):
     mit.set_threads()
     mit.build_operator()
 
-    mit.fit( tol_fun=1e-3, max_iter=1000 )
+    mit.fit( tol_fun=1e-3, max_iter=1000, verbose=False )
     mit.save_results()
 
 
@@ -53,7 +53,7 @@ def run_commit_BallandStick(local_path):
 
     amico.util.fsl2scheme( os.path.join( local_path, 'bvals.txt'), os.path.join( local_path, 'bvecs.txt'), os.path.join( local_path, 'DWI.scheme') )
 
-    mit = commit.Evaluation( '.', '.' )
+    mit = commit.Evaluation( local_path, '.' )
     mit.load_data( os.path.join( local_path, 'DWI.nii.gz'), os.path.join( local_path, 'DWI.scheme') )
 
     mit.set_model( 'StickZeppelinBall' )
@@ -69,7 +69,7 @@ def run_commit_BallandStick(local_path):
     mit.set_threads()
     mit.build_operator()
 
-    mit.fit( tol_fun=1e-3, max_iter=1000 )
+    mit.fit( tol_fun=1e-3, max_iter=1000, verbose=False )
     mit.save_results()
 
 
@@ -84,7 +84,7 @@ def run_commit_VolumeFractions(local_path):
 
     amico.util.fsl2scheme( os.path.join( local_path, 'bvals.txt'), os.path.join( local_path, 'bvecs.txt'), os.path.join( local_path, 'DWI.scheme') )
 
-    mit = commit.Evaluation( '.', '.' )
+    mit = commit.Evaluation( local_path, '.' )
     mit.load_data( os.path.join( local_path, 'DWI.nii.gz'), os.path.join( local_path, 'DWI.scheme') )
 
     mit.set_model( 'StickZeppelinBall' )
@@ -100,7 +100,7 @@ def run_commit_VolumeFractions(local_path):
     mit.set_threads()
     mit.build_operator()
 
-    mit.fit( tol_fun=1e-3, max_iter=1000 )
+    mit.fit( tol_fun=1e-3, max_iter=1000, verbose=False)
     mit.save_results()
 
 
