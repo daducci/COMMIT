@@ -118,6 +118,7 @@ def check_results(pickle_result, ref_pickle):
     try:
         assert result_optimization["fit_details"] == ref_optimization["fit_details"]
     except AssertionError:
+        print("fit_details are not equal")
         sys.exit(1)
 
 
