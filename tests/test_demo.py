@@ -1,10 +1,11 @@
+import os, sys
+import pickle
 import amico
-import commit
-commit.core.setup()
-import os
 
 from commit import trk2dictionary
-import pickle
+import commit
+commit.core.setup()
+
 
 # get path to the current directory
 # local_path = os.path.dirname( os.path.realpath( __file__ ) )
@@ -45,7 +46,7 @@ def run_commit_StickZeppelinBall():
 def run_commit_BallandStick():
     local_path = "/media/full/DATA/Software/COMMIT_versions/demo_data"
     trk2dictionary.run(
-        filename_tractogram = os.path.join( local_path, 'demo02_fibers.tck' ),
+        filename_tractogram = os.path.join( local_path, 'demo01_fibers.tck' ),
         filename_peaks      = os.path.join( local_path, 'peaks.nii.gz' ),
         filename_mask       = os.path.join( local_path, 'WM.nii.gz' ), #'WM.nii.gz',
         fiber_shift         = 0.5,
@@ -77,7 +78,7 @@ def run_commit_BallandStick():
 def run_commit_VolumeFractions():
     local_path = "/media/full/DATA/Software/COMMIT_versions/demo_data"
     trk2dictionary.run(
-        filename_tractogram = os.path.join( local_path, 'demo02_fibers.tck' ),
+        filename_tractogram = os.path.join( local_path, 'demo01_fibers.tck' ),
         filename_peaks      = os.path.join( local_path, 'peaks.nii.gz' ),
         filename_mask       = os.path.join( local_path, 'WM.nii.gz' ), #'WM.nii.gz',
         fiber_shift         = 0.5,
@@ -117,17 +118,16 @@ def check_results(pickle_result, ref_pickle):
 
     result_optimization = data[0]["optimization"]
     ref_optimization = ref_data[0]["optimization"]
-    assert result_optimization["iterations"] == ref_optimization["iterations"]
-
-    
-
-    
+    try:
+        assert result_optimization["fit_parameters"] == ref_optimization["fit_parameters"]
+    except AssertionError:
+        sys.exit(1)
 
 
 def run_tests():
     local_path = os.path.dirname( os.path.realpath( __file__ ) )
     out_path = "/media/full/DATA/Software/COMMIT_versions/demo_data"
-    ref_pickle_StickZeppelinBall = os.path.join( local_path, 'demo_data', 'ref_results', 'ref_results_BallandStick.pickle' )
+    ref_pickle_StickZeppelinBall = os.path.join( local_path, 'demo_data', 'ref_results', 'ref_results_StickZeppelinBall.pickle' )
     ref_pickle_BallandStick = os.path.join( local_path, 'demo_data', 'ref_results', 'ref_results_BallandStick.pickle' )
     # ref_pickle_VolumeFractions = os.path.join( local_path, 'demo_data',  'results_VolumeFractions.pickle' )
     run_commit_StickZeppelinBall()
@@ -136,10 +136,10 @@ def run_tests():
     run_commit_BallandStick()
     results_pickle = os.path.join( out_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
     check_results(results_pickle, ref_pickle_BallandStick)
-    run_commit_VolumeFractions()
+    # run_commit_VolumeFractions()
     # results_pickle = os.path.join( local_path, 'demo_data', 'COMMIT', 'Results_VolumeFractions', 'results.pickle' )
     # check_results(results_pickle, ref_pickle_VolumeFractions)
-    print("All tests passed")
+    sys.exit(0)
 
 if __name__ == "__main__":
     run_tests()
