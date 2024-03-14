@@ -123,15 +123,14 @@ def check_results(pickle_result, ref_pickle):
 
 def run_tests():
     local_path = os.path.join(os.path.dirname( os.path.realpath( __file__ ) ), 'demo_data')
-    out_path = os.path.join( local_path, 'ref_results' )
     ref_pickle_StickZeppelinBall = os.path.join( local_path, 'ref_results', 'ref_results_StickZeppelinBall.pickle' )
     ref_pickle_BallandStick = os.path.join( local_path, 'ref_results', 'ref_results_BallandStick.pickle' )
     # ref_pickle_VolumeFractions = os.path.join( local_path, 'results_VolumeFractions.pickle' )
     run_commit_StickZeppelinBall(local_path)
-    results_pickle = os.path.join( out_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
+    results_pickle = os.path.join( local_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
     check_results(results_pickle, ref_pickle_StickZeppelinBall)
     run_commit_BallandStick(local_path)
-    results_pickle = os.path.join( out_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
+    results_pickle = os.path.join( local_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
     check_results(results_pickle, ref_pickle_BallandStick)
     # run_commit_VolumeFractions()
     # results_pickle = os.path.join( local_path, 'demo_data', 'COMMIT', 'Results_VolumeFractions', 'results.pickle' )
