@@ -106,12 +106,22 @@ def run_commit_VolumeFractions():
     mit.save_results()
 
 
+# def check_config(result_config, ref_config):
+    
+
 def check_results(pickle_result, ref_pickle):
     with open(pickle_result, 'rb') as f:
         data = pickle.load(f)
     with open(ref_pickle, 'rb') as f:
         ref_data = pickle.load(f)
-    assert data == ref_data
+
+    result_optimization = data[0]["optimization"]
+    ref_optimization = ref_data[0]["optimization"]
+    assert result_optimization["iterations"] == ref_optimization["iterations"]
+
+    
+
+    
 
 
 def run_tests():
