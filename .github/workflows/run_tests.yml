@@ -33,17 +33,24 @@ jobs:
           curl -L -O https://github.com/daducci/COMMIT/wiki/files/demo01_data.zip
           curl -L -O https://github.com/daducci/COMMIT/wiki/files/demo01_fibers.tck
           7z x demo01_data.zip
-          mv demo01_fibers.tck demo01_data
+          mv demo01_fibers.tck demo_data
+          mv demo01_data/* demo_data
       - name: Set up Python ${{ matrix.config.py }}
         uses: actions/setup-python@v5.0.0
         with:
           python-version: ${{ matrix.config.py }}
       - name: Install dmri-commit
         run: pip install . --no-cache-dir --force-reinstall
-      - name: Run tests
+      - name: Run test
+        id: run_test
         working-directory: tests
         run: |
           echo "Run tests"
-      - name: Done
+          python test_demo.py
+        continue-on-error: true
+      - name: Check on failures
+        if: steps.run_test.outcome != 'success'
         run: |
-          echo "All tests passed!"
+          echo "Test failed"
+          exit 1
+          
