@@ -16,8 +16,7 @@ def run_commit_StickZeppelinBall(local_path):
         filename_peaks      = os.path.join( local_path, 'peaks.nii.gz' ),
         filename_mask       = os.path.join( local_path, 'WM.nii.gz' ), #'WM.nii.gz',
         fiber_shift         = 0.5,
-        peaks_use_affine    = True,
-        n_threads = 2
+        peaks_use_affine    = True
     )
 
     amico.util.fsl2scheme( os.path.join( local_path, 'bvals.txt'), os.path.join( local_path, 'bvecs.txt'), os.path.join( local_path, 'DWI.scheme') )
