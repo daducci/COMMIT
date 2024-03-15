@@ -43,7 +43,6 @@ jobs:
         run: pip install . --no-cache-dir --force-reinstall
       - name: Print info
         run: |
-          cat /proc/cpuinfo | grep "model name"
           gcc --version
           python -V
           pip list
