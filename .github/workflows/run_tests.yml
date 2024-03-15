@@ -8,18 +8,18 @@ jobs:
         # NOTE: Python 3.12 is not supported yet
         config:
           [
-            {os: ubuntu-latest, py: '3.8'},
-            {os: ubuntu-latest, py: '3.9'},
-            {os: ubuntu-latest, py: '3.10'},
-            {os: ubuntu-latest, py: '3.11'},
-            # {os: ubuntu-latest, py: '3.12'},
-            {os: macos-latest, py: '3.8'},
-            {os: macos-latest, py: '3.9'},
-            {os: macos-latest, py: '3.10'},
-            {os: macos-latest, py: '3.11'},
+            {os: ubuntu-20.04, py: '3.8'},
+            {os: ubuntu-20.04, py: '3.9'},
+            {os: ubuntu-20.04, py: '3.10'},
+            {os: ubuntu-20.04, py: '3.11'},
+            # {os: ubuntu-20.04, py: '3.12'},
+            # {os: macos-latest, py: '3.8'},
+            # {os: macos-latest, py: '3.9'},
+            # {os: macos-latest, py: '3.10'},
+            # {os: macos-latest, py: '3.11'},
             # {os: macos-latest, py: '3.12'},
-            {os: macos-14, py: '3.10'},
-            {os: macos-14, py: '3.11'},
+            # {os: macos-14, py: '3.10'},
+            # {os: macos-14, py: '3.11'},
             # {os: macos-14, py: '3.12'}
           ]
     name: Python ${{ matrix.config.py }} on ${{ matrix.config.os }}
@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.1
+      - name: gcc version
+        run: gcc --version
       - name: Download data
         working-directory: tests
         run: |
@@ -41,6 +43,10 @@ jobs:
           python-version: ${{ matrix.config.py }}
       - name: Install dmri-commit
         run: pip install . --no-cache-dir --force-reinstall
+      - name: pip list
+        run: |
+          python -V
+          pip list
       - name: Run test
         id: run_test
         working-directory: tests

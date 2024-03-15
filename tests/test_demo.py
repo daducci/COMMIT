@@ -38,7 +38,7 @@ def run_commit_StickZeppelinBall(local_path):
     mit.set_threads()
     mit.build_operator()
 
-    mit.fit( tol_fun=1e-3, max_iter=1000, verbose=False )
+    mit.fit( tol_fun=1e-3, max_iter=1000, verbose=True )
     mit.save_results()
 
 
@@ -115,9 +115,12 @@ def check_results(pickle_result, ref_pickle):
 
     result_optimization = data[0]["optimization"]
     ref_optimization = ref_data[0]["optimization"]
+    print(result_optimization["fit_details"])
+    print(ref_optimization["fit_details"])
     try:
         assert result_optimization["fit_details"] == ref_optimization["fit_details"]
     except AssertionError:
+        print("fit_details are not equal")
         sys.exit(1)
 
 
