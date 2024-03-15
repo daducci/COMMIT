@@ -54,6 +54,11 @@ jobs:
           echo "Run tests"
           python test_demo.py
         continue-on-error: true
+      - name: Download results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tests/demo_data/COMMIT
       - name: Check on failures
         if: steps.run_test.outcome != 'success'
         run: |

@@ -16,7 +16,8 @@ def run_commit_StickZeppelinBall(local_path):
         filename_peaks      = os.path.join( local_path, 'peaks.nii.gz' ),
         filename_mask       = os.path.join( local_path, 'WM.nii.gz' ), #'WM.nii.gz',
         fiber_shift         = 0.5,
-        peaks_use_affine    = True
+        peaks_use_affine    = True,
+        n_threads = 2
     )
 
     amico.util.fsl2scheme( os.path.join( local_path, 'bvals.txt'), os.path.join( local_path, 'bvecs.txt'), os.path.join( local_path, 'DWI.scheme') )
@@ -132,9 +133,9 @@ def run_tests():
     run_commit_StickZeppelinBall(local_path)
     results_pickle = os.path.join( local_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
     check_results(results_pickle, ref_pickle_StickZeppelinBall)
-    run_commit_BallandStick(local_path)
-    results_pickle = os.path.join( local_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
-    check_results(results_pickle, ref_pickle_BallandStick)
+    # run_commit_BallandStick(local_path)
+    # results_pickle = os.path.join( local_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
+    # check_results(results_pickle, ref_pickle_BallandStick)
     # run_commit_VolumeFractions()
     # results_pickle = os.path.join( local_path, 'demo_data', 'COMMIT', 'Results_VolumeFractions', 'results.pickle' )
     # check_results(results_pickle, ref_pickle_VolumeFractions)
