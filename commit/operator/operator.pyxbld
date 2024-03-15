@@ -36,4 +36,4 @@ def make_ext(modname, pyxfilename):
                                     ('nIC', config.nIC),
                                     ('nEC', config.nEC),
                                     ('nISO', config.nISO)],
-                     extra_compile_args=['-w', '-O3'])
+                     extra_compile_args=['-w', '-O3', '-Ofast'])

@@ -1,6 +1,8 @@
 name: Run tests
 run-name: Run tests - ${{ github.sha }}
 on: push
+env:
+  OPENBLAS_NUM_THREADS: 1
 jobs:
   run_test:
     strategy:
@@ -41,11 +43,6 @@ jobs:
           python-version: ${{ matrix.config.py }}
       - name: Install dmri-commit
         run: pip install . --no-cache-dir --force-reinstall
-      - name: Print info
-        run: |
-          gcc --version
-          python -V
-          pip list
       - name: Run test
         id: run_test
         working-directory: tests

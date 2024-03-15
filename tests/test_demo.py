@@ -116,12 +116,12 @@ def check_results(pickle_result, ref_pickle):
     result_optimization = data[0]["optimization"]
     ref_optimization = ref_data[0]["optimization"]
     print(result_optimization["fit_details"])
-    # print(ref_optimization["fit_details"])
-    # try:
-    #     assert result_optimization["fit_details"] == ref_optimization["fit_details"]
-    # except AssertionError:
-    #     print("fit_details are not equal")
-    #     sys.exit(1)
+    print(ref_optimization["fit_details"])
+    try:
+        assert result_optimization["fit_details"] == ref_optimization["fit_details"]
+    except AssertionError:
+        print("fit_details are not equal")
+        sys.exit(1)
 
 
 def run_tests():
@@ -132,9 +132,9 @@ def run_tests():
     run_commit_StickZeppelinBall(local_path)
     results_pickle = os.path.join( local_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
     check_results(results_pickle, ref_pickle_StickZeppelinBall)
-    # run_commit_BallandStick(local_path)
-    # results_pickle = os.path.join( local_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
-    # check_results(results_pickle, ref_pickle_BallandStick)
+    run_commit_BallandStick(local_path)
+    results_pickle = os.path.join( local_path, 'COMMIT', 'Results_StickZeppelinBall', 'results.pickle' )
+    check_results(results_pickle, ref_pickle_BallandStick)
     # run_commit_VolumeFractions()
     # results_pickle = os.path.join( local_path, 'demo_data', 'COMMIT', 'Results_VolumeFractions', 'results.pickle' )
     # check_results(results_pickle, ref_pickle_VolumeFractions)
