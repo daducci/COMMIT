@@ -43,6 +43,10 @@ jobs:
           python-version: ${{ matrix.config.py }}
       - name: Install dmri-commit
         run: pip install . --no-cache-dir --force-reinstall
+      - name: pip list
+        run: |
+          python -V
+          pip list
       - name: Run test
         id: run_test
         working-directory: tests
