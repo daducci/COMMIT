@@ -188,7 +188,7 @@ def evaluate_model(y, A, x, regularisation=None):
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 
-def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0=None, regularisation=None, confidence_array=None):
+def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0  =None, regularisation=None, confidence_array=None):
     """
     Solve the regularised least squares problem
 

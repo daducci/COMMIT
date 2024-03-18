@@ -1,6 +1,16 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.1.1`<br>_2024-03-06_
+### 🐛Fixed
+- Fix `set_thread` isotropic compartment voxel distribution
+
+### ✨Added
+- Add `do_reweighting` parameter to `save_results()`
+
+---
+---
+
 ## `v2.1.0`<br>_2024-01-22_
 ### ✨Added
 - Work In Progress (WIP) models
