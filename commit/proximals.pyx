@@ -26,10 +26,6 @@ cpdef soft_thresholding(double [::1] x, double lam, int compartment_start, int c
     cdef:
         int i
     for i in xrange(compartment_start, compartment_start+compartment_size):
-        # if x[i] <= lam:
-        #     x[i] = 0.0
-        # else:
-        #     x[i] = x[i] - lam
         if x[i] > lam:
             x[i] = x[i] - lam
         elif x[i] < -lam:
@@ -47,10 +43,6 @@ cpdef w_soft_thresholding(double [::1] x, double [::1] w, double lam, int compar
     cdef:
         int i
     for i in xrange(compartment_start, compartment_start+compartment_size):
-        # if x[i] <= lam:
-        #     x[i] = 0.0
-        # else:
-        #     x[i] = x[i] - lam
         if x[i] > w[i]*lam:
             x[i] = x[i] - w[i]*lam
         elif x[i] < -w[i]*lam:
@@ -116,11 +108,6 @@ cpdef prox_group_lasso( double [::1] x, int [::1] group_idx, int [::1] group_siz
         int i = 0
         int j = 0
         double wl, gNorm, x_i
-
-    k = x.size
-    for i in xrange(k):
-        if x[i] <= 0.0:
-            x[i] = 0.0
 
     if lam != 0:
         for k in xrange(nG) :
