@@ -19,7 +19,7 @@ from importlib import reload, invalidate_caches
 import pyximport
 from pkg_resources import get_distribution
 
-from amico.util import LOG, NOTE, WARNING, ERROR
+from dicelib.ui import INFO, WARNING, ERROR, DEBUG
 
 
 def setup( lmax=12 ) :
@@ -142,7 +142,7 @@ cdef class Evaluation :
 
         # Loading data and acquisition scheme
         tic = time.time()
-        LOG( '\n-> Loading data:' )
+        INFO( '\n-> Loading data:' )
 
         print( '\t* Acquisition scheme:' )
         if scheme_filename is not None:
@@ -188,12 +188,12 @@ cdef class Evaluation :
             else:
                 ERROR('Nan or Inf values in the raw signal. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
         # Preprocessing
         if self.get_config('scheme_filename') is not None:
             tic = time.time()
-            LOG( '\n-> Preprocessing:' )
+            INFO( '\n-> Preprocessing:' )
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
@@ -236,7 +236,7 @@ cdef class Evaluation :
                 else:
                     ERROR('Nan or Inf values in the signal after the pre-processing. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
-            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def set_model( self, model_name ) :
@@ -269,7 +269,7 @@ cdef class Evaluation :
         ndirs : int
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 500)
         """
-        LOG( '\n-> Simulating with "%s" model:' % self.model.name )
+        INFO( '\n-> Simulating with "%s" model:' % self.model.name )
 
         if not amico.lut.is_valid( ndirs ):
             ERROR( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
@@ -294,7 +294,7 @@ cdef class Evaluation :
         # check if kernels were already generated
         tmp = glob.glob( pjoin(self.get_config('ATOMS_path'),'A_*.npy') )
         if len(tmp)>0 and not regenerate :
-            LOG( '   [ Kernels already computed. Use option "regenerate=True" to force regeneration ]' )
+            INFO( '   [ Kernels already computed. Use option "regenerate=True" to force regeneration ]' )
             return
 
         # create folder or delete existing files (if any)
@@ -311,7 +311,7 @@ cdef class Evaluation :
         # Dispatch to the right handler for each model
         tic = time.time()
         self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT, ndirs )
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def load_kernels( self ) :
@@ -324,7 +324,7 @@ cdef class Evaluation :
             ERROR( 'Scheme not loaded; call "load_data()" first' )
 
         tic = time.time()
-        LOG( '\n-> Resampling LUT for subject "%s":' % self.get_config('subject') )
+        INFO( '\n-> Resampling LUT for subject "%s":' % self.get_config('subject') )
 
         # auxiliary data structures
         idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
@@ -380,7 +380,7 @@ cdef class Evaluation :
 
             print( '[ OK ]' )
 
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
@@ -400,7 +400,7 @@ cdef class Evaluation :
             ERROR( 'Data not loaded; call "load_data()" first' )
 
         tic = time.time()
-        LOG( '\n-> Loading the dictionary:' )
+        INFO( '\n-> Loading the dictionary:' )
         self.DICTIONARY = {}
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
@@ -525,7 +525,7 @@ cdef class Evaluation :
 
         print( '[ OK ]' )
 
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
 
@@ -558,7 +558,7 @@ cdef class Evaluation :
             int i
 
         tic = time.time()
-        LOG( '\n-> Distributing workload to different threads:' )
+        INFO( '\n-> Distributing workload to different threads:' )
         print( '\t* Number of threads : %d' % n )
 
         # Distribute load for the computation of A*x product
@@ -672,7 +672,7 @@ cdef class Evaluation :
 
         print( '[ OK ]' )
 
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def build_operator( self, build_dir=None ) :
@@ -702,7 +702,7 @@ cdef class Evaluation :
             ERROR( 'The selected model has EC compartments, but no peaks have been provided; check your data' )
 
         tic = time.time()
-        LOG( '\n-> Building linear operator A:' )
+        INFO( '\n-> Building linear operator A:' )
 
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
@@ -748,7 +748,7 @@ cdef class Evaluation :
 
         self.A = commit.operator.operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
 
     def get_y( self ):
@@ -981,7 +981,7 @@ cdef class Evaluation :
         if confidence_map_filename is not None:
             # Loading confidence map
             tic = time.time()
-            LOG( '\n-> Loading confidence map:' )
+            INFO( '\n-> Loading confidence map:' )
 
             if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :
                 ERROR( 'Confidence map not found' )
@@ -1002,7 +1002,7 @@ cdef class Evaluation :
             print( '\t\t- dim    : %d x %d x %d x %d' % self.confidence_map_img.shape )
             print( '\t\t- pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim )
 
-            LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )
 
             if ( self.get_config('dim') != confidence_map_dim ):
                 ERROR( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
@@ -1031,7 +1031,7 @@ cdef class Evaluation :
 
             elif(confidence_map_rescale):
                 confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
-                LOG ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) )
+                INFO ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) )
                 confidence_array_changed = True
 
             if(confidence_array_changed):
@@ -1055,14 +1055,14 @@ cdef class Evaluation :
 
         # run solver
         t = time.time()
-        LOG( '\n-> Fit model:' )
+        INFO( '\n-> Fit model:' )
 
         self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
 
-        LOG( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
+        INFO( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
 
 
     def get_coeffs( self, get_normalized=True ):
@@ -1125,7 +1125,7 @@ cdef class Evaluation :
             self.set_config('path_suffix', path_suffix)
             RESULTS_path = RESULTS_path + path_suffix
 
-        LOG( '\n-> Saving results to "%s/*":' % RESULTS_path )
+        INFO( '\n-> Saving results to "%s/*":' % RESULTS_path )
         tic = time.time()
 
         if self.x is None :
@@ -1355,4 +1355,4 @@ cdef class Evaluation :
             self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
             print( '[ OK ]' )
 
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        INFO( '   [ %.1f seconds ]' % ( time.time() - tic ) )

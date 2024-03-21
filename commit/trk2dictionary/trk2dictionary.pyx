@@ -6,6 +6,7 @@ from libc.stdlib cimport malloc, free
 import nibabel
 from dicelib.clustering import run_clustering
 from dicelib.ui import _in_notebook
+from dicelib.ui import INFO, ERROR, WARNING, DEBUG, ProgressBar
 
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
@@ -13,7 +14,6 @@ from os import makedirs, remove
 import time
 import amico
 import pickle
-from amico.util import LOG, NOTE, WARNING, ERROR
 from pkg_resources import get_distribution
 import shutil
 
@@ -47,8 +47,10 @@ cpdef cat_function( infilename, outfilename ):
 cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz ):
     cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
     cdef int i
-    for i in xrange(v.size):
-        tdi[ v[i] ] += l[i]
+    with ProgressBar(total=v.size, disable=(verbose in [0, 1, 3]), hide_on_exit=True) as pbar:
+        for i in xrange(v.size):
+            tdi[ v[i] ] += l[i]
+            pbar.update()
     return tdi
 
 
@@ -179,19 +181,19 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             ERROR( 'The grid spacing of the blur must be positive' )
 
     tic = time.time()
-    LOG( '\n-> Creating the dictionary from tractogram:' )
+    INFO( '\n-> Creating the dictionary from tractogram:' )
 
-    LOG( '\n   * Configuration:' )
-    print( f'\t- Segment position = {"COMPUTE INTERSECTIONS" if do_intersect else "CENTROID"}' )
-    print( f'\t- Coordinates shift in X = {fiber_shiftX:.3f} (voxel-size units)' )
-    print( f'\t- Coordinates shift in Y = {fiber_shiftY:.3f} (voxel-size units)' )
-    print( f'\t- Coordinates shift in Z = {fiber_shiftZ:.3f} (voxel-size units)' )
+    INFO( '\n   * Configuration:' )
+    INFO( f'\t- Segment position = {"COMPUTE INTERSECTIONS" if do_intersect else "CENTROID"}' )
+    INFO( f'\t- Coordinates shift in X = {fiber_shiftX:.3f} (voxel-size units)' )
+    INFO( f'\t- Coordinates shift in Y = {fiber_shiftY:.3f} (voxel-size units)' )
+    INFO( f'\t- Coordinates shift in Z = {fiber_shiftZ:.3f} (voxel-size units)' )
     if min_seg_len >= 1e-3:
-        print( f'\t- Min segment len  = {min_seg_len:.3f} mm' )
+        INFO( f'\t- Min segment len  = {min_seg_len:.3f} mm' )
     else:
-        print( f'\t- Min segment len  = {min_seg_len:.2e} mm' )
-    print( f'\t- Min streamline len    = {min_fiber_len:.2f} mm' )
-    print( f'\t- Max streamline len    = {max_fiber_len:.2f} mm' )
+        INFO( f'\t- Min segment len  = {min_seg_len:.2e} mm' )
+    INFO( f'\t- Min streamline len    = {min_fiber_len:.2f} mm' )
+    INFO( f'\t- Max streamline len    = {max_fiber_len:.2f} mm' )
 
     # check blur params
     cdef :
@@ -222,7 +224,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if blur_gauss_extent == 0 :
             blurWeights[:] = 1.0
         else:
-            blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.log( blur_gauss_min ) )
+            blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.INFO( blur_gauss_min ) )
             for i in xrange(nReplicas):
                 if blurRho[i] <= blur_core_extent :
                     blurWeights[i] = 1.0
@@ -230,13 +232,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                     blurWeights[i] = np.exp( -(blurRho[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
 
     if nReplicas == 1 :
-        print( '\t- Do not blur streamlines' )
+        INFO( '\t- Do not blur streamlines' )
     else :
-        print( '\t- Blur streamlines:' )
-        print( f'\t\t- core extent  = {blur_core_extent:.3f}' )
-        print( f'\t\t- gauss extent = {blur_gauss_extent:.3f} (sigma = {blur_sigma:.3f})' )
-        print( f'\t\t- grid spacing = {blur_spacing:.3f}' )
-        print( f'\t\t- weights = [ {np.min(blurWeights):.3f} ... {np.max(blurWeights):.3f} ]' )
+        INFO( '\t- Blur streamlines:' )
+        INFO( f'\t\t- core extent  = {blur_core_extent:.3f}' )
+        INFO( f'\t\t- gauss extent = {blur_gauss_extent:.3f} (sigma = {blur_sigma:.3f})' )
+        INFO( f'\t\t- grid spacing = {blur_spacing:.3f}' )
+        INFO( f'\t\t- weights = [ {np.min(blurWeights):.3f} ... {np.max(blurWeights):.3f} ]' )
 
     if min_seg_len < 0 :
         ERROR( '"min_seg_len" must be >= 0' )
@@ -257,12 +259,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         path_out = join(path_out,'COMMIT')
 
     # create output path
-    print( f'\t- Output written to "{path_out}"' )
+    INFO( f'\t- Output written to "{path_out}"' )
     if not exists( path_out ):
         makedirs( path_out )
 
     path_temp = join(path_out, 'temp')
-    print( f'\t- Temporary files written to "{path_temp}"' )
+    INFO( f'\t- Temporary files written to "{path_temp}"' )
 
     if exists(path_temp):
         shutil.rmtree(path_temp, ignore_errors=True)
@@ -278,15 +280,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         except :
             n_threads = 1
 
-    print( f'\t- Using parallel computation with {n_threads} threads' )
+    INFO( f'\t- Using parallel computation with {n_threads} threads' )
 
     if np.isscalar(blur_clust_thr):
         blur_clust_thr = np.array( [blur_clust_thr] )
 
     if blur_clust_thr[0]> 0:
-        LOG( '\n   * Running tractogram clustering:' )
-        print( f'\t- Input tractogram "{filename_tractogram}"' )
-        print( f'\t- Clustering threshold = {blur_clust_thr[0]}' )
+        INFO( '\n   * Running tractogram clustering:' )
+        INFO( f'\t- Input tractogram "{filename_tractogram}"' )
+        INFO( f'\t- Clustering threshold = {blur_clust_thr[0]}' )
         input_hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
         input_n_count = int(input_hdr['count'])
 
@@ -318,12 +320,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
 
     # Load data from files
-    LOG( '\n   * Loading data:' )
+    INFO( '\n   * Loading data:' )
     cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
     cdef short* ptrHashTable = &htable[0]
 
     # Streamlines from tractogram
-    print( '\t- Tractogram' )
+    INFO( '\t- Tractogram' )
 
     if not exists(filename_tractogram):
         ERROR( f'Tractogram file not found: {filename_tractogram}' )
@@ -335,7 +337,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
 
     if extension == ".trk":
-        print ( f'\t\t- geometry taken from "{filename_tractogram}"' )
+        INFO ( f'\t\t- geometry taken from "{filename_tractogram}"' )
         Nx = int(hdr['dimensions'][0])
         Ny = int(hdr['dimensions'][1])
         Nz = int(hdr['dimensions'][2])
@@ -356,7 +358,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                 TCK_ref_image = filename_mask
             else:
                 ERROR( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
-        print ( f'\t\t- geometry taken from "{TCK_ref_image}"' )
+        INFO ( f'\t\t- geometry taken from "{TCK_ref_image}"' )
 
         niiREF = nibabel.load( TCK_ref_image )
         niiREF_hdr = _get_header( niiREF )
@@ -371,12 +373,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         n_scalars = 0
         n_properties = 0
 
-    print( f'\t\t- {Nx} x {Ny} x {Nz}' )
-    print( f'\t\t- {Px:.4f} x {Py:.4f} x {Pz:.4f}' )
+    INFO( f'\t\t- {Nx} x {Ny} x {Nz}' )
+    INFO( f'\t\t- {Px:.4f} x {Py:.4f} x {Pz:.4f}' )
     if blur_clust_thr[0]> 0:
-        print( f'\t\t- {input_n_count} streamlines' )
+        INFO( f'\t\t- {input_n_count} streamlines' )
     else:
-        print( f'\t\t- {n_count} streamlines' )
+        INFO( f'\t\t- {n_count} streamlines' )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         ERROR( 'The max dim size is 2^16 voxels' )
 
@@ -386,7 +388,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else :
         if blur_apply_to.size != n_count :
             ERROR( '"blur_apply_to" must have one value per streamline' )
-        print( f'\t\t\t- {sum(blur_apply_to)} blurred streamlines' )
+        INFO( f'\t\t\t- {sum(blur_apply_to)} blurred streamlines' )
     blurApplyTo = blur_apply_to
 
     # get toVOXMM matrix (remove voxel scaling from affine) in case of TCK
@@ -402,18 +404,18 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrMASK
     cdef float [:, :, ::1] niiMASK_img
     if filename_mask is not None :
-        print( '\t- Filtering mask' )
+        INFO( '\t- Filtering mask' )
         niiMASK = nibabel.load( filename_mask )
         niiMASK_hdr = _get_header( niiMASK )
-        print( f'\t\t- {niiMASK.shape[0]} x {niiMASK.shape[1]} x {niiMASK.shape[2]}' )
-        print( f'\t\t- {niiMASK_hdr["pixdim"][1]:.4f} x {niiMASK_hdr["pixdim"][2]:.4f} x {niiMASK_hdr["pixdim"][3]:.4f}' )
+        INFO( f'\t\t- {niiMASK.shape[0]} x {niiMASK.shape[1]} x {niiMASK.shape[2]}' )
+        INFO( f'\t\t- {niiMASK_hdr["pixdim"][1]:.4f} x {niiMASK_hdr["pixdim"][2]:.4f} x {niiMASK_hdr["pixdim"][3]:.4f}' )
         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
             abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             WARNING( 'Dataset does not have the same geometry as the tractogram' )
         niiMASK_img = np.ascontiguousarray( np.asanyarray( niiMASK.dataobj ).astype(np.float32) )
         ptrMASK  = &niiMASK_img[0,0,0]
     else :
-        print( '\t- No mask specified to filter IC compartments' )
+        INFO( '\t- No mask specified to filter IC compartments' )
         ptrMASK = NULL
 
     # peaks file for EC contributions
@@ -429,15 +431,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef double* ptrPeaksAffine
 
     if filename_peaks is not None :
-        print( '\t- EC orientations' )
+        INFO( '\t- EC orientations' )
         niiPEAKS = nibabel.load( filename_peaks )
         niiPEAKS_hdr = _get_header( niiPEAKS )
-        print( f'\t\t- {niiPEAKS.shape[0]} x {niiPEAKS.shape[1]} x {niiPEAKS.shape[2]} x {niiPEAKS.shape[3]}' )
-        print( f'\t\t- {niiPEAKS_hdr["pixdim"][1]:.4f} x {niiPEAKS_hdr["pixdim"][2]:.4f} x {niiPEAKS_hdr["pixdim"][3]:.4f}' )
+        INFO( f'\t\t- {niiPEAKS.shape[0]} x {niiPEAKS.shape[1]} x {niiPEAKS.shape[2]} x {niiPEAKS.shape[3]}' )
+        INFO( f'\t\t- {niiPEAKS_hdr["pixdim"][1]:.4f} x {niiPEAKS_hdr["pixdim"][2]:.4f} x {niiPEAKS_hdr["pixdim"][3]:.4f}' )
 
-        print( f'\t\t- ignoring peaks < {vf_THR:.2f} * MaxPeak' )
-        print( f'\t\t- {"" if peaks_use_affine else "not "}using affine matrix' )
-        print( f'\t\t- flipping axes : [ x={flip_peaks[0]}, y={flip_peaks[1]}, z={flip_peaks[2]} ]' )
+        INFO( f'\t\t- ignoring peaks < {vf_THR:.2f} * MaxPeak' )
+        INFO( f'\t\t- {"" if peaks_use_affine else "not "}using affine matrix' )
+        INFO( f'\t\t- flipping axes : [ x={flip_peaks[0]}, y={flip_peaks[1]}, z={flip_peaks[2]} ]' )
         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
             abs(Px-niiPEAKS_hdr['pixdim'][1])>1e-3 or abs(Py-niiPEAKS_hdr['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS_hdr['pixdim'][3])>1e-3 ) :
             WARNING( "Dataset does not have the same geometry as the tractogram" )
@@ -456,7 +458,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             peaksAffine = np.ascontiguousarray( np.eye(3) )
         ptrPeaksAffine = &peaksAffine[0,0]
     else :
-        print( '\t- No dataset specified for EC compartments' )
+        INFO( '\t- No dataset specified for EC compartments' )
         Np = 0
         ptrPEAKS = NULL
         ptrPeaksAffine = NULL
@@ -465,18 +467,18 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrISO
     cdef float [:, :, ::1] niiISO_img
     if filename_ISO is not None :
-        print( '\t- Restricted ISO map' )
+        INFO( '\t- Restricted ISO map' )
         niiISO = nibabel.load( filename_ISO )
         niiISO_hdr = _get_header( niiISO )
-        print( f'\t\t- {niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}' )
-        print( f'\t\t- {niiISO_hdr["pixdim"][1]:.4f} x {niiISO_hdr["pixdim"][2]:.4f} x {niiISO_hdr["pixdim"][3]:.4f}' )
+        INFO( f'\t\t- {niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}' )
+        INFO( f'\t\t- {niiISO_hdr["pixdim"][1]:.4f} x {niiISO_hdr["pixdim"][2]:.4f} x {niiISO_hdr["pixdim"][3]:.4f}' )
         if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
             abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
             WARNING( 'Dataset does not have the same geometry as the tractogram' )
         niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
         ptrISO  = &niiISO_img[0,0,0]
     else :
-        print( '\t- No ISO map specified, using tdi' )
+        INFO( '\t- No ISO map specified, using tdi' )
         ptrISO = NULL
 
     # write dictionary information info file
@@ -521,78 +523,82 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         return None
 
     # Concatenate files together
+    INFO( '\t- Saving dictionaries' )
     cdef int discarded = 0
-    for j in range(n_threads-1):
-        path_IC_f = path_temp + f'/dictionary_IC_f_{j+1}.dict'
-        kept = np.fromfile( path_temp + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
-        IC_f = np.fromfile( path_temp + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
-        discarded += np.count_nonzero(kept==0)
-        IC_f -= discarded
-        IC_f_save = np.memmap( path_IC_f, dtype="uint32", mode='w+', shape=IC_f.shape )
-        IC_f_save[:] = IC_f[:]
-        IC_f_save.flush()
-        del IC_f_save
-        # np.save( path_out + f'/dictionary_IC_f_{j+1}.dict', IC_f, allow_pickle=True)
+    with ProgressBar(disable=(verbose in [0, 1, 3]), hide_on_exit=True) as pbar:
+        for j in range(n_threads-1):
+            path_IC_f = path_temp + f'/dictionary_IC_f_{j+1}.dict'
+            kept = np.fromfile( path_temp + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
+            IC_f = np.fromfile( path_temp + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
+            discarded += np.count_nonzero(kept==0)
+            IC_f -= discarded
+            IC_f_save = np.memmap( path_IC_f, dtype="uint32", mode='w+', shape=IC_f.shape )
+            IC_f_save[:] = IC_f[:]
+            IC_f_save.flush()
+            del IC_f_save
+            # np.save( path_out + f'/dictionary_IC_f_{j+1}.dict', IC_f, allow_pickle=True)
 
-    fileout = path_out + '/dictionary_TRK_kept.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_TRK_kept_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_TRK_kept.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_TRK_kept_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_TRK_norm.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_TRK_norm_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_TRK_norm.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_TRK_norm_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_TRK_len.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_TRK_len_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_TRK_len.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_TRK_len_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_TRK_lenTot.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_TRK_lenTot_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_TRK_lenTot.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_TRK_lenTot_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_IC_f.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_IC_f_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_IC_f.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_IC_f_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_IC_v.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_IC_v_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_IC_v.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_IC_v_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_IC_o.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_IC_o.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_IC_len.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_IC_len.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
+
+        # save TDI and MASK maps
+        if TCK_ref_image is not None:
+            TDI_affine = _get_affine( niiREF )
+        elif filename_mask is not None :
+            TDI_affine = _get_affine( niiMASK )
+        elif filename_peaks is not None :
+            TDI_affine = _get_affine( niiPEAKS )
+        else :
+            TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
     # save TDI and MASK maps
-    if TCK_ref_image is not None:
-        TDI_affine = _get_affine( niiREF )
-    elif filename_mask is not None :
-        TDI_affine = _get_affine( niiMASK )
-    elif filename_peaks is not None :
-        TDI_affine = _get_affine( niiPEAKS )
-    else :
-        TDI_affine = np.diag( [Px, Py, Pz, 1] )
-
+    INFO( '\t- Saving TDI and MASK maps' )
     v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
     l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
@@ -618,4 +624,4 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         shutil.rmtree(path_temp)
 
 
-    LOG( f'\n   [ {time.time() - tic:.1f} seconds ]' )
+    INFO( f'\n   [ {time.time() - tic:.1f} seconds ]' )
