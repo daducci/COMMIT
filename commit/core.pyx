@@ -19,7 +19,7 @@ from importlib import reload, invalidate_caches
 import pyximport
 from pkg_resources import get_distribution
 
-from dicelib.ui import INFO, WARNING, ERROR, DEBUG
+from dicelib.ui import INFO, WARNING, ERROR
 
 
 def setup( lmax=12 ) :

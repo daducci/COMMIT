@@ -524,7 +524,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 {
-                    // NB: plese note inverted ordering for 'v'
+                    // NB: please note inverted ordering for 'v'
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;       
 

@@ -1,12 +1,12 @@
 #!python
-# cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
+# cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=True, wraparound=False, profile=False
 import numpy as np
 cimport numpy as np
 from libc.stdlib cimport malloc, free
 import nibabel
 from dicelib.clustering import run_clustering
 from dicelib.ui import _in_notebook
-from dicelib.ui import INFO, ERROR, WARNING, DEBUG, ProgressBar
+from dicelib.ui import INFO, ERROR, WARNING, ProgressBar
 
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
@@ -48,9 +48,13 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
     cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
     cdef int i
     with ProgressBar(total=v.size, disable=(verbose in [0, 1, 3]), hide_on_exit=True) as pbar:
-        for i in xrange(v.size):
-            tdi[ v[i] ] += l[i]
-            pbar.update()
+        try:
+            for i in range(v.size):
+                tdi[ v[i] ] += l[i]
+                pbar.update()
+        except IndexError as e:
+            print(f"v.size = {v.size}, l.size = {l.size}, tdi.size = {tdi.size}")
+            print(f"i = {i}, v[i] = {v[i]}, l[i] = {l[i]}")
     return tdi
 
 
