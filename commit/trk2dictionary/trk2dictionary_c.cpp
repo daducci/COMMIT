@@ -76,10 +76,10 @@ float           minSegLen, minFiberLen, maxFiberLen;
 
 // Threads variables
 vector<thread>  threads;
-vector<unsigned int>    totICSegments; 
-vector<unsigned int>    totFibers;
-unsigned int            totECVoxels = 0;
-unsigned int            totECSegments = 0;
+vector<unsigned long int>   totICSegments; 
+vector<unsigned int>        totFibers;
+unsigned int                totECVoxels = 0;
+unsigned int                totECSegments = 0;
 
 // progressbar verbosity
 int verbosity = 0;
@@ -457,13 +457,14 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 {
 
     // Variables definition
-    float           fiber[3][MAX_FIB_LEN] = {0} ;
-    float           fiberNorm;   // normalization
-    unsigned int    N, v, tempTotFibers, temp_totICSegments;
-    unsigned short  o;
-    unsigned char   kept;
-    string          filename;
-    string          OUTPUT_path(path_out);
+    float               fiber[3][MAX_FIB_LEN] = {0} ;
+    float               fiberNorm;   // normalization
+    unsigned int        N, v, tempTotFibers;
+    unsigned long int   temp_totICSegments;
+    unsigned short      o;
+    unsigned char       kept;
+    string              filename;
+    string              OUTPUT_path(path_out);
 
     unsigned int sumFibers = startpos;
 
