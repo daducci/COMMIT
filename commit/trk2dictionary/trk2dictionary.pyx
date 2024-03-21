@@ -44,7 +44,7 @@ cpdef cat_function( infilename, outfilename ):
                 shutil.copyfileobj( inFile, outfile )
                 remove( fname )
 
-cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz ):
+cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz, int verbose):
     cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
     cdef int i
     with ProgressBar(total=v.size, disable=(verbose in [0, 1, 3]), hide_on_exit=True) as pbar:
@@ -603,7 +603,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
     cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
-    niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz )
+    niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose )
     niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
 
     niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
