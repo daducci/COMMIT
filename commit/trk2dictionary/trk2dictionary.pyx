@@ -310,10 +310,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             temp_idx = np.arange(int(hdr['count']))
             idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                            temp_folder=path_temp, atlas=blur_clust_groupby, clust_thr=blur_clust_thr[0],
-                                           n_threads=n_threads, force=True, verbose=verbose)
+                                           n_threads=n_threads, keep_temp_files=True, force=True, verbose=verbose)
         else:
             idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
-                                           temp_folder=path_temp, clust_thr=blur_clust_thr[0], force=True, verbose=verbose)
+                                           temp_folder=path_temp, clust_thr=blur_clust_thr[0],
+                                           keep_temp_files=True, force=True, verbose=verbose)
         filename_tractogram = filename_out
 
 
