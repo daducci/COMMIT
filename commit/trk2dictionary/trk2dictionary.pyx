@@ -303,7 +303,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                 ERROR( 'Unknown file extension. Use "filename_mask" or "TCK_ref_image" for that' )
 
         input_tractogram = os.path.basename(filename_tractogram)[:len(os.path.basename(filename_tractogram))-4]
-        filename_out = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
+        filename_out = join( path_out, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
 
         if blur_clust_groupby:
             hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
