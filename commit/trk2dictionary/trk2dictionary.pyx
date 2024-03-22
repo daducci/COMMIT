@@ -226,7 +226,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if blur_gauss_extent == 0 :
             blurWeights[:] = 1.0
         else:
-            blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.INFO( blur_gauss_min ) )
+            blur_sigma = blur_gauss_extent / np.sqrt( -2.0 * np.log( blur_gauss_min ) )
             for i in xrange(nReplicas):
                 if blurRho[i] <= blur_core_extent :
                     blurWeights[i] = 1.0
@@ -306,16 +306,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         filename_out = join( path_temp, f'{input_tractogram}_clustered_thr_{float(blur_clust_thr[0])}.tck' )
 
         if blur_clust_groupby:
-            file_assignments = join( path_temp, f'{input_tractogram}_clustered_thr_{blur_clust_thr[0]}_assignments.txt' )
             hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
             temp_idx = np.arange(int(hdr['count']))
-            path_streamline_idx = join( path_temp,"streamline_idx.npy")
-            np.save( path_streamline_idx, temp_idx )
-            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, atlas=blur_clust_groupby,
-                            clust_thr=blur_clust_thr[0], save_assignments=file_assignments,
-                            temp_idx=path_streamline_idx, n_threads=n_threads, force=True, verbose=verbose)
+            idx_centroids = run_clustering(tractogram_in=filename_tractogram, temp_folder=path_temp, atlas=blur_clust_groupby,
+                            clust_thr=blur_clust_thr[0], n_threads=n_threads, force=True, verbose=verbose)
         else:
-            idx_centroids = run_clustering(file_name_in=filename_tractogram, output_folder=path_temp, clust_thr=blur_clust_thr[0],
+            idx_centroids = run_clustering(file_name_in=filename_tractogram, temp_folder=path_temp, clust_thr=blur_clust_thr[0],
                             force=True, verbose=verbose)
         filename_tractogram = filename_out
 
