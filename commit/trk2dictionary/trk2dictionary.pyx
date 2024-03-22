@@ -308,11 +308,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if blur_clust_groupby:
             hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
             temp_idx = np.arange(int(hdr['count']))
-            idx_centroids = run_clustering(tractogram_in=filename_tractogram, temp_folder=path_temp, atlas=blur_clust_groupby,
-                            clust_thr=blur_clust_thr[0], n_threads=n_threads, force=True, verbose=verbose)
+            idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
+                                           temp_folder=path_temp, atlas=blur_clust_groupby, clust_thr=blur_clust_thr[0],
+                                           n_threads=n_threads, force=True, verbose=verbose)
         else:
-            idx_centroids = run_clustering(file_name_in=filename_tractogram, temp_folder=path_temp, clust_thr=blur_clust_thr[0],
-                            force=True, verbose=verbose)
+            idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
+                                           temp_folder=path_temp, clust_thr=blur_clust_thr[0], force=True, verbose=verbose)
         filename_tractogram = filename_out
 
 
