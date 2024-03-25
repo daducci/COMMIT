@@ -76,10 +76,10 @@ float           minSegLen, minFiberLen, maxFiberLen;
 
 // Threads variables
 vector<thread>  threads;
-vector<unsigned int>    totICSegments; 
-vector<unsigned int>    totFibers;
-unsigned int            totECVoxels = 0;
-unsigned int            totECSegments = 0;
+vector<unsigned long int>   totICSegments; 
+vector<unsigned int>        totFibers;
+unsigned int                totECVoxels = 0;
+unsigned int                totECSegments = 0;
 
 // progressbar verbosity
 int verbosity = 0;
@@ -256,7 +256,7 @@ int trk2dictionary(
     if (verbosity > 0)
         PROGRESS->close();
 
-    printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
+    printf( "     [ %d streamlines kept, %ld segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
     totFibers.clear();
     threads.clear();
 
@@ -457,13 +457,14 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 {
 
     // Variables definition
-    float           fiber[3][MAX_FIB_LEN] = {0} ;
-    float           fiberNorm;   // normalization
-    unsigned int    N, v, tempTotFibers, temp_totICSegments;
-    unsigned short  o;
-    unsigned char   kept;
-    string          filename;
-    string          OUTPUT_path(path_out);
+    float               fiber[3][MAX_FIB_LEN] = {0} ;
+    float               fiberNorm;   // normalization
+    unsigned int        N, v, tempTotFibers;
+    unsigned long int   temp_totICSegments;
+    unsigned short      o;
+    unsigned char       kept;
+    string              filename;
+    string              OUTPUT_path(path_out);
 
     unsigned int sumFibers = startpos;
 
@@ -523,7 +524,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 {
-                    // NB: plese note inverted ordering for 'v'
+                    // NB: please note inverted ordering for 'v'
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;       
 
