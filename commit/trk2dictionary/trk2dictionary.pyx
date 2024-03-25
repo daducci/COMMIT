@@ -623,7 +623,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if filename_mask is not None :
         niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
     else :
-        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img)>0).astype(np.float32), TDI_affine )
+        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img_save)>0).astype(np.float32), TDI_affine )
 
     niiMASK_hdr = _get_header( niiMASK )
     niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
