@@ -1048,7 +1048,7 @@ cdef class Evaluation :
                     if self.x is None:
                         ERROR('Group weights cannot be computed if the fit (without regularisation) has not been performed yet')
                     group_size = np.array([g.size for g in dictIC_params['group_idx']], dtype=np.int32)
-                    x_nnls, _, _ = self.get_coeffs(get_normalized=False)[self.DICTIONARY['TRK']['kept']==1] 
+                    x_nnls, _, _ = self.get_coeffs(get_normalized=False)
                     group_x_norm = np.array([np.linalg.norm(x_nnls[g])+1e-12 for g in dictIC_params['group_idx']], dtype=np.float64)
                     dictIC_params['group_weights'] = np.sqrt(group_size) / group_x_norm
                 else:
