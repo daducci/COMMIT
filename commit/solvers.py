@@ -2,6 +2,7 @@ import numpy as np
 from math import sqrt
 import sys
 eps = np.finfo(float).eps
+from dicelib.ui import __logger__ as logger
 
 list_regularizers = [None, 'lasso', 'group_lasso', 'sparse_group_lasso']
 from commit.proximals import non_negativity, omega_group_lasso, prox_group_lasso, soft_thresholding, w_soft_thresholding, omega_sparse_group_lasso, omega_w_sparse_group_lasso
@@ -283,14 +284,14 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     step_size = 1.9 / L
     # Main loop
-    if verbose :
+    if verbose==4 :
         print()
-        print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
-        print( "------|--------------------------------|-----------------------------------------------|------------------------------" )
+        print( "                   |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
+        print( "             ------|--------------------------------|-----------------------------------------------|------------------------------" )
     iter = 1
     while True :
-        if verbose :
-            print( "%4d  |" % iter, end="" )
+        if verbose==4 :
+            print( "             %4d  |" % iter, end="" )
             sys.stdout.flush()
 
         # Smooth step
@@ -334,7 +335,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
-        if verbose :
+        if verbose==4 :
             print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
 
         if abs_obj < eps :
@@ -372,8 +373,8 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         told = t
         qfval = 0.5 * np.linalg.norm(res)**2
 
-    if verbose :
-        print( "< Stopping criterion: %s >" % criterion )
+    if verbose==4 :
+        print( "             < Stopping criterion: %s >" % criterion )
 
     opt_details = {}
     opt_details['residual'] = 0.5*res_norm**2

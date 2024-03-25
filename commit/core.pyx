@@ -74,6 +74,7 @@ cdef class Evaluation :
     cdef public CONFIG
     cdef public temp_data
     cdef public confidence_map_img
+    cdef public verbose
 
     def __init__( self, study_path='.', subject='.' ) :
         """Setup the data structures with default values.
@@ -158,7 +159,8 @@ cdef class Evaluation :
 
         # Loading data and acquisition scheme
         tic = time.time()
-        logger.info( '\n-> Loading data:' )
+        logger.subinfo('')
+        logger.info( 'Loading data:' )
 
         logger.subinfo('Acquisition scheme:', indent_lvl=1, indent_char='*' )
         if scheme_filename is not None:
@@ -167,17 +169,16 @@ cdef class Evaluation :
             logger.subinfo('diffusion-weighted signal', indent_char='-', indent_lvl=2)
             self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
             logger.subinfo('%d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) , indent_lvl=2, indent_char='-' )
-            logger.subinfo('%d @ b=0' % ( self.scheme.b0_count ), indent_lvl=2, indent_char='-' )
-            scheme_string = ''
+            scheme_string = f'{self.scheme.b0_count} @ b=0'
             for i in xrange(len(self.scheme.shells)) :
-                scheme_string += ', %d @ b=%.1f' % ( len(self.scheme.shells[i]['idx']), self.scheme.shells[i]['b'] )
-            logger.subinfo( scheme_string[2:])
+                scheme_string += f', {len(self.scheme.shells[i]["idx"])} @ b={self.scheme.shells[i]["b"]:.1f}'
+            logger.subinfo( scheme_string, indent_lvl=2, indent_char='-' )
         else:
             # if no scheme is passed, assume data is scalar
             self.scheme = amico.scheme.Scheme( np.array( [[0,0,0,1000]] ), 0 )
             logger.subinfo('scalar map', indent_char='-', indent_lvl=2)
 
-        logger.subinfo(' Signal dataset:', indent_lvl=1, indent_char='*' )
+        logger.subinfo('Signal dataset:', indent_lvl=1, indent_char='*' )
         self.set_config('dwi_filename', dwi_filename)
         self.set_config('b0_min_signal', b0_min_signal)
         self.set_config('replace_bad_voxels', replace_bad_voxels)
@@ -205,12 +206,13 @@ cdef class Evaluation :
             else:
                 logger.error('Nan or Inf values in the raw signal. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
-        logger.info( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
 
         # Preprocessing
         if self.get_config('scheme_filename') is not None:
             tic = time.time()
-            logger.info( '\n-> Preprocessing:' )
+            logger.subinfo('')
+            logger.info( 'Preprocessing:' )
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
@@ -230,18 +232,18 @@ cdef class Evaluation :
 
             if self.scheme.b0_count > 1:
                 if self.get_config('doMergeB0') :
-                    logger.subinfo(' Merging multiple b0 volume(s)', indent_char='*', indent_lvl=1)
+                    logger.subinfo('Merging multiple b0 volume(s)', indent_char='*', indent_lvl=1)
                     mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                     self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
                     del mean
                 else :
-                    logger.subinfo(' Keeping all b0 volume(s)', indent_char='*', indent_lvl=1)
+                    logger.subinfo('Keeping all b0 volume(s)', indent_char='*', indent_lvl=1)
                 logger.subinfo('[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
 
             if self.get_config('doDemean'):
                 mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
                 self.niiDWI_img = self.niiDWI_img - mean
-                logger.subinfo(' Demeaning signal [ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=1, indent_char='*' )
+                logger.subinfo('Demeaning signal [ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=1, indent_char='*' )
 
             # Check for Nan or Inf values in pre-processed data
             if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
@@ -251,7 +253,7 @@ cdef class Evaluation :
                 else:
                     logger.error('Nan or Inf values in the signal after the pre-processing. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
-            logger.info( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            logger.subinfo( f'[ {( time.time() - tic ):.1f} seconds ]' )
 
 
     def set_model( self, model_name ) :
@@ -284,6 +286,7 @@ cdef class Evaluation :
         ndirs : int
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 500)
         """
+        logger.subinfo('')
         logger.info( 'Simulating with "%s" model:' % self.model.name )
 
         if not amico.lut.is_valid( ndirs ):
@@ -294,11 +297,11 @@ cdef class Evaluation :
             logger.error( 'Model not set; call "set_model()" method first' )
         if self.model.id=='VolumeFractions' and ndirs!=1:
             ndirs = 1
-            logger.subinfo(' Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
+            logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
         if 'commitwipmodels' in sys.modules :
             if self.model.restrictedISO is not None and ndirs!=1:
                 ndirs = 1
-                logger.subinfo(' Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
+                logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
  
         # store some values for later use
         self.set_config('lmax', lmax)
@@ -309,7 +312,7 @@ cdef class Evaluation :
         # check if kernels were already generated
         tmp = glob.glob( pjoin(self.get_config('ATOMS_path'),'A_*.npy') )
         if len(tmp)>0 and not regenerate :
-            logger.subinfo( '   [ Kernels already computed. Use option "regenerate=True" to force regeneration ]' )
+            logger.subinfo( '[ Kernels already computed. Use option "regenerate=True" to force regeneration ]' )
             return
 
         # create folder or delete existing files (if any)
@@ -326,7 +329,7 @@ cdef class Evaluation :
         # Dispatch to the right handler for each model
         tic = time.time()
         self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT, ndirs )
-        logger.subinfo( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
     def load_kernels( self ) :
@@ -339,21 +342,23 @@ cdef class Evaluation :
             logger.error( 'Scheme not loaded; call "load_data()" first' )
 
         tic = time.time()
-        logger.info( 'Resampling LUT for subject "%s":' % self.get_config('subject'), with_progress=True )
+        logger.subinfo('')
+        logger.info( 'Loading the kernels:' )
+        logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
-
-            # Dispatch to the right handler for each model
-            if self.get_config('doMergeB0') :
-                logger.subinfo( 'Merging multiple b0 volume(s)...', indent_char='*', indent_lvl=1 )
-            else :
-                logger.subinfo( 'Keeping all b0 volume(s)...', indent_char='*', indent_lvl=1 )
 
             self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
             nIC  = self.KERNELS['wmr'].shape[0]
             nEC  = self.KERNELS['wmh'].shape[0]
             nISO = self.KERNELS['iso'].shape[0]
+
+        # Dispatch to the right handler for each model
+        if self.get_config('doMergeB0') :
+            logger.subinfo( 'Merging multiple b0 volume(s) [-OK-]', indent_char='-', indent_lvl=1 )
+        else :
+            logger.subinfo( 'Keeping all b0 volume(s)      [-OK-]', indent_char='-', indent_lvl=1 )
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
@@ -362,7 +367,7 @@ cdef class Evaluation :
 
         # De-mean kernels
         if self.get_config('doDemean') :
-            logger.subinfo(' Demeaning signal', with_progress=True, indent_lvl=1, indent_char='*' )
+            logger.subinfo('Demeaning signal            ', with_progress=True, indent_lvl=1, indent_char='-' )
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                 for j in xrange(self.get_config('ndirs')) :
                     for i in xrange(nIC) :
@@ -374,7 +379,7 @@ cdef class Evaluation :
 
         # Normalize atoms
         if self.get_config('doNormalizeKernels') :
-            logger.subinfo(' Normalizing kernels', with_progress=True, indent_lvl=1, indent_char='*' )
+            logger.subinfo('Normalizing kernels         ', with_progress=True, indent_lvl=1, indent_char='-' )
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                 self.KERNELS['wmr_norm'] = np.zeros( nIC )
                 for i in xrange(nIC) :
@@ -393,7 +398,7 @@ cdef class Evaluation :
                     self.KERNELS['iso_norm'][i] = np.linalg.norm( self.KERNELS['iso'][i,:] )
                     self.KERNELS['iso'][i,:] /= self.KERNELS['iso_norm'][i]
 
-        logger.info( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
     cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
@@ -413,7 +418,8 @@ cdef class Evaluation :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
         tic = time.time()
-        logger.info( '\n-> Loading the dictionary:' )
+        logger.subinfo('')
+        logger.info( 'Loading the dictionary:' )
         self.DICTIONARY = {}
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
@@ -444,31 +450,30 @@ cdef class Evaluation :
 
         # segments from the tracts
         # ------------------------
-        logger.subinfo(' Segments from the tracts... ', end='' )
-        sys.stdout.flush()
+        logger.subinfo('Segments from the tracts', indent_char='*', with_progress=True )
+        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
+            self.DICTIONARY['TRK'] = {}
+            self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
+            self.DICTIONARY['TRK']['norm']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
+            self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
+            self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
 
-        self.DICTIONARY['TRK'] = {}
-        self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
-        self.DICTIONARY['TRK']['norm']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
-        self.DICTIONARY['TRK']['len']    = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_len.dict'), dtype=np.float32 )
-        self.DICTIONARY['TRK']['lenTot'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_lenTot.dict'), dtype=np.float32 )
 
+            self.DICTIONARY['IC'] = {}
+            self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
+            self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
+            self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
+            self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
+            self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
+            self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
 
-        self.DICTIONARY['IC'] = {}
-        self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
-        self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
-        self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
-        self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
-        self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
-        self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
-
-        # reorder the segments based on the "v" field
-        idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
-        self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
-        self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
-        self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
-        self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
-        del idx
+            # reorder the segments based on the "v" field
+            idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
+            self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
+            self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
+            self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
+            self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+            del idx
 
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
@@ -481,46 +486,46 @@ cdef class Evaluation :
             for s in xrange(self.DICTIONARY['IC']['n']) :
                 sl[s] /= tl[ f[s] ]
 
-        logger.subinfo('[ %d fibers and %d segments ]' % ( self.DICTIONARY['IC']['nF'], self.DICTIONARY['IC']['n'] ) )
+        logger.subinfo(f"{self.DICTIONARY['IC']['nF']} fibers and {self.DICTIONARY['IC']['n']} segments", indent_char='-', indent_lvl=1 )
 
         # segments from the peaks
         # -----------------------
-        logger.subinfo(' Segments from the peaks', indent_char='*', indent_lvl=1 )
+        logger.subinfo('Segments from the peaks ', indent_char='*', with_progress=True )
+        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
+            self.DICTIONARY['EC'] = {}
+            self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
+            self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
+            self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
-        self.DICTIONARY['EC'] = {}
-        self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
-        self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
-        self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
+            # reorder the segments based on the "v" field
+            idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
+            self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
+            self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
+            del idx
 
-        # reorder the segments based on the "v" field
-        idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
-        self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
-        self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
-        del idx
-
-        logger.subinfo( '[ %d segments ]' % self.DICTIONARY['EC']['nE'] )
+        logger.subinfo( f"{self.DICTIONARY['EC']['nE']} segments", indent_char='-', indent_lvl=1)
 
         # isotropic compartments
         # ----------------------
-        logger.subinfo(' Isotropic contributions', indent_char='*', indent_lvl=1 )
+        logger.subinfo('Isotropic contributions ', indent_char='*', with_progress=True )
+        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
+            self.DICTIONARY['ISO'] = {}
 
-        self.DICTIONARY['ISO'] = {}
+            self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
+            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
+                
+            self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
-        self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
-        self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
-            
-        self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
+            # reorder the segments based on the "v" field
+            idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
+            self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
+            del idx
 
-        # reorder the segments based on the "v" field
-        idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
-        self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
-        del idx
-
-        logger.subinfo( '[ %d voxels ]' % self.DICTIONARY['ISO']['nV'], indent_lvl=1 )
+        logger.subinfo( f"{self.DICTIONARY['ISO']['nV']} voxels", indent_char='-', indent_lvl=1 )
         
         # post-processing
         # ---------------
-        logger.subinfo('Post-processing', indent_char='*', indent_lvl=1, with_progress=True )
+        logger.subinfo('Post-processing         ', indent_char='*', with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
             idx = self.DICTIONARY['MASK'].ravel(order='F').nonzero()[0]
@@ -533,7 +538,7 @@ cdef class Evaluation :
             self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
             self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
 
-        logger.info( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
 
@@ -566,11 +571,12 @@ cdef class Evaluation :
             int i
 
         tic = time.time()
-        logger.info( '\n-> Distributing workload to different threads:' )
-        logger.subinfo(' Number of threads : %d' % n , indent_char='*' )
+        logger.subinfo('')
+        logger.info( 'Distributing workload to different threads:' )
+        logger.subinfo('Number of threads : %d' % n , indent_char='*' )
 
         # Distribute load for the computation of A*x product
-        logger.subinfo(' A operator', indent_char='*', with_progress=True )
+        logger.subinfo('A operator ', indent_char='*', with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
@@ -675,7 +681,7 @@ cdef class Evaluation :
             else :
                 self.THREADS['ISOt'] = None
 
-        logger.info( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
     def build_operator( self, build_dir=None ) :
@@ -705,6 +711,7 @@ cdef class Evaluation :
             logger.error( 'The selected model has EC compartments, but no peaks have been provided; check your data' )
 
         tic = time.time()
+        logger.subinfo('')
         logger.info( 'Building linear operator A:' )
 
         # need to pass these parameters at runtime for compiling the C code
@@ -751,7 +758,7 @@ cdef class Evaluation :
 
         self.A = commit.operator.operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
-        logger.info( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
     def get_y( self ):
@@ -898,114 +905,115 @@ cdef class Evaluation :
         dictIC_params, dictEC_params, dictISO_params = params
 
         tr = time.time()
-        LOG( '\n-> Setting regularisation:' )
+        logger.subinfo('')
+        logger.info( 'Setting regularisation:' )
         
         # set regularisation for the intracellular compartment
         if regularisation['regIC'] == 'lasso':
             if lambdas[0] is None:
-                ERROR('Missing regularisation parameter for the IC compartment')
+                logger.error('Missing regularisation parameter for the IC compartment')
             elif lambdas[0] < 0:
-                ERROR('Regularisation parameter for the IC compartment must be greater than 0')
+                logger.error('Regularisation parameter for the IC compartment must be greater than 0')
             elif lambdas[0] == 0:
-                WARNING('Regularisation parameter for the IC compartment is 0, the solution will be the same as the one without regularisation')
+                logger.warning('Regularisation parameter for the IC compartment is 0, the solution will be the same as the one without regularisation')
                 regularisation['lambdaIC_perc'] = lambdas[0]
             else:
                 regularisation['lambdaIC_perc'] = lambdas[0]
         elif regularisation['regIC'] == 'smoothness':
-            ERROR('Not yet implemented')
+            logger.error('Not yet implemented')
         elif regularisation['regIC'] == 'group_lasso':
             if lambdas[0] is None:
-                ERROR('Missing regularisation parameter for the IC compartment')
+                logger.error('Missing regularisation parameter for the IC compartment')
             elif lambdas[0] < 0:
-                ERROR('Regularisation parameter for the IC compartment must be greater than 0')
+                logger.error('Regularisation parameter for the IC compartment must be greater than 0')
             elif lambdas[0] == 0:
-                WARNING('Regularisation parameter for the IC compartment is 0, the solution will be the same as the one without regularisation')
+                logger.warning('Regularisation parameter for the IC compartment is 0, the solution will be the same as the one without regularisation')
                 regularisation['lambdaIC_perc'] = lambdas[0]
             else:
                 regularisation['lambdaIC_perc'] = lambdas[0]
             if dictIC_params is None:
-                ERROR('Dictionary of additional parameters for the IC compartment not provided')
+                logger.error('Dictionary of additional parameters for the IC compartment not provided')
             if dictIC_params['group_idx'] is None:
-                ERROR('Group structure for the IC compartment not provided')
+                logger.error('Group structure for the IC compartment not provided')
             if dictIC_params['group_weights_type'] not in ['standard', 'adaptive']:
-                ERROR('Type of group weights not among the available options, i.e. {standard, adaptive}')
+                logger.error('Type of group weights not among the available options, i.e. {standard, adaptive}')
         elif regularisation['regIC'] == 'sparse_group_lasso':
             if len(lambdas[0]) != 2:
-                ERROR('Regularisation parameters for the IC compartment ara not exactly two')
+                logger.error('Regularisation parameters for the IC compartment ara not exactly two')
             elif lambdas[0][0] < 0 or lambdas[0][1] < 0:
-                ERROR('Regularisation parameters for the IC compartment must be greater than 0')
+                logger.error('Regularisation parameters for the IC compartment must be greater than 0')
             elif lambdas[0][0] == 0 or lambdas[0][1] == 0:
-                WARNING('Regularisation parameters for the IC compartment are both 0, the solution will be the same as the one without regularisation')
+                logger.warning('Regularisation parameters for the IC compartment are both 0, the solution will be the same as the one without regularisation')
                 regularisation['lambdaIC_perc'] = lambdas[0]
             else:
                 regularisation['lambdaIC_perc'] = lambdas[0]
             if dictIC_params is None:
-                ERROR('Dictionary of additional parameters for the IC compartment not provided')
+                logger.error('Dictionary of additional parameters for the IC compartment not provided')
             if dictIC_params['group_idx'] is None:
-                ERROR('Group structure for the IC compartment not provided')
+                logger.error('Group structure for the IC compartment not provided')
             if dictIC_params['group_weights_type'] not in ['standard', 'adaptive']:
-                ERROR('Type of group weights not among the available options, i.e. {standard, adaptive}')
+                logger.error('Type of group weights not among the available options, i.e. {standard, adaptive}')
 
         # check if group_weights_prior is consistent with group_weights_type and group_idx
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
             if dictIC_params['group_weights_type'] == 'standard' and 'group_weights_prior' in dictIC_params:
-                ERROR('Group weights prior knowledge is not allowed for standard group weights')
+                logger.error('Group weights prior knowledge is not allowed for standard group weights')
             if dictIC_params['group_weights_type'] == 'adaptive' and 'group_weights_prior' in dictIC_params:
                 if dictIC_params['group_weights_prior'].size != dictIC_params['group_idx'].size:
-                    ERROR('Group weights and group indices must have the same size')
+                    logger.error('Group weights and group indices must have the same size')
 
         # check if coeff_weights is consistent with the compartment size
         if regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso':
             if dictIC_params is not None and 'coeff_weights' in dictIC_params:
                 if dictIC_params['coeff_weights'].size != len(self.DICTIONARY['TRK']['kept']):
-                    ERROR(f'"coeff_weights" must have the same size as the number of elements in the IC compartment (got {dictIC_params["coeff_weights"].size} but {len(self.DICTIONARY["TRK"]["kept"])} expected)')
+                    logger.error(f'"coeff_weights" must have the same size as the number of elements in the IC compartment (got {dictIC_params["coeff_weights"].size} but {len(self.DICTIONARY["TRK"]["kept"])} expected)')
                 dictIC_params['coeff_weights'] = dictIC_params['coeff_weights'][self.DICTIONARY['TRK']['kept']==1]
 
         # set regularisation for the extracellular compartment
         if regularisation['regEC'] == 'lasso':
             if regularisation['sizeEC'] == 0:
-                ERROR('No extracellular compartment found in the dictionary. Unable to set regularisation for the EC compartment.')
+                logger.error('No extracellular compartment found in the dictionary. Unable to set regularisation for the EC compartment.')
             if lambdas[1] is None:
-                ERROR('Missing regularisation parameter for the EC compartment')
+                logger.error('Missing regularisation parameter for the EC compartment')
             elif lambdas[1] < 0:
-                ERROR('Regularisation parameter for the EC compartment must be greater than 0')
+                logger.error('Regularisation parameter for the EC compartment must be greater than 0')
             elif lambdas[1] == 0:
-                WARNING('Regularisation parameter for the EC compartment is 0, the solution will be the same as the one without regularisation')
+                logger.warning('Regularisation parameter for the EC compartment is 0, the solution will be the same as the one without regularisation')
                 regularisation['lambdaEC_perc'] = lambdas[1]
             else:
                 regularisation['lambdaEC_perc'] = lambdas[1]
             if dictEC_params is not None and 'coeff_weights' in dictEC_params:
                 if dictEC_params['coeff_weights'].size != regularisation['sizeEC']:
-                    ERROR(f'"coeff_weights" must have the same size as the number of elements in the EC compartment (got {dictEC_params["coeff_weights"].size} but {regularisation["sizeEC"]} expected)')
+                    logger.error(f'"coeff_weights" must have the same size as the number of elements in the EC compartment (got {dictEC_params["coeff_weights"].size} but {regularisation["sizeEC"]} expected)')
         elif regularisation['regEC'] == 'smoothness':
-            ERROR('Not yet implemented')
+            logger.error('Not yet implemented')
         elif regularisation['regEC'] == 'group_lasso':
-            ERROR('Not yet implemented')
+            logger.error('Not yet implemented')
         elif regularisation['regEC'] == 'sparse_group_lasso':
-            ERROR('Not yet implemented')
+            logger.error('Not yet implemented')
 
         # set regularisation for the isotropic compartment
         if regularisation['regISO'] == 'lasso':
             if regularisation['sizeISO'] == 0:
-                ERROR('No isotropic compartment found in the dictionary. Unable to set regularisation for the ISO compartment.')
+                logger.error('No isotropic compartment found in the dictionary. Unable to set regularisation for the ISO compartment.')
             if lambdas[2] is None:
-                ERROR('Missing regularisation parameter for the ISO compartment')
+                logger.error('Missing regularisation parameter for the ISO compartment')
             elif lambdas[2] < 0:
-                ERROR('Regularisation parameter for the ISO compartment must be greater than 0')
+                logger.error('Regularisation parameter for the ISO compartment must be greater than 0')
             elif lambdas[2] == 0:
-                WARNING('Regularisation parameter for the ISO compartment is 0, the solution will be the same as the one without regularisation')
+                logger.warning('Regularisation parameter for the ISO compartment is 0, the solution will be the same as the one without regularisation')
                 regularisation['lambdaISO_perc'] = lambdas[2]
             else:
                 regularisation['lambdaISO_perc'] = lambdas[2]
             if dictISO_params is not None and 'coeff_weights' in dictISO_params:
                 if dictISO_params['coeff_weights'].size != regularisation['sizeISO']:
-                    ERROR(f'"coeff_weights" must have the same size as the number of elements in the ISO compartment (got {dictISO_params["coeff_weights"].size} but {regularisation["sizeISO"]} expected)')
+                    logger.error(f'"coeff_weights" must have the same size as the number of elements in the ISO compartment (got {dictISO_params["coeff_weights"].size} but {regularisation["sizeISO"]} expected)')
         elif regularisation['regISO'] == 'smoothness':
-            ERROR('Not yet implemented')
+            logger.error('Not yet implemented')
         elif regularisation['regISO'] == 'group_lasso':
-            ERROR('Not yet implemented')
+            logger.error('Not yet implemented')
         elif regularisation['regISO'] == 'sparse_group_lasso':
-            ERROR('Not yet implemented')
+            logger.error('Not yet implemented')
 
 
         # Check if group indices need to be updated in case of 'group_lasso' or 'sparse_group_lasso'
@@ -1049,7 +1057,7 @@ cdef class Evaluation :
                 if 'group_weights_prior' not in dictIC_params: # default weights (both cardinality and x_nnls, like in wiki)
                     # check if fit has been performed
                     if self.x is None:
-                        ERROR('Group weights cannot be computed if the fit (without regularisation) has not been performed yet')
+                        logger.error('Group weights cannot be computed if the fit (without regularisation) has not been performed yet')
                     group_size = np.array([g.size for g in dictIC_params['group_idx']], dtype=np.int32)
                     x_nnls, _, _ = self.get_coeffs(get_normalized=False)
                     group_x_norm = np.array([np.linalg.norm(x_nnls[g])+1e-12 for g in dictIC_params['group_idx']], dtype=np.float64)
@@ -1057,7 +1065,7 @@ cdef class Evaluation :
                 else:
                     dictIC_params['group_weights'] = np.array(newweightsIC_group)
             else:
-                ERROR('Type of group weights not among the available options, i.e. {standard, adaptive}')
+                logger.error('Type of group weights not among the available options, i.e. {standard, adaptive}')
 
         regularisation['dictIC_params']  = dictIC_params
         regularisation['dictEC_params']  = dictEC_params
@@ -1094,46 +1102,46 @@ cdef class Evaluation :
 
         self.regularisation_params = commit.solvers.init_regularisation(regularisation)
 
-        print( '\t* IC compartment:' )
-        print( f'\t\t- Regularisation type: {regularisation["regIC"]}', end='' )
-        if regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso':
-            if dictIC_params is not None and 'coeff_weights' in dictIC_params:
-                print( f' (weighted version)', end='' )
-        print( f'\n\t\t- Non-negativity constraint: {regularisation["nnIC"]}')
-        if regularisation['regIC'] is not None: 
-            print( f'\t\t- Lambda max: {regularisation["lambdaIC_max"]}' )
-            print( f'\t\t- % lambda: {regularisation["lambdaIC_perc"]}' )
-            print( f'\t\t- Lambda used: {regularisation["lambdaIC"]}' )
+        logger.subinfo( 'IC compartment:', indent_char='*' )
+        if (regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso') and dictIC_params is not None and 'coeff_weights' in dictIC_params:
+                logger.subinfo( f'Regularisation type: {regularisation["regIC"]} (weighted version)', indent_lvl=1, indent_char='-' )
+        else:
+            logger.subinfo( f'Regularisation type: {regularisation["regIC"]}', indent_lvl=1, indent_char='-' )
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnIC"]}', indent_lvl=1, indent_char='-' )
+        if regularisation['regIC'] is not None:
+            logger.subinfo( f'Lambda max: {regularisation["lambdaIC_max"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'% lambda: {regularisation["lambdaIC_perc"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Lambda used: {regularisation["lambdaIC"]}', indent_lvl=1, indent_char='-' )
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
-            print( f'\t\t- Number of groups: {len(dictIC_params["group_idx"])}' )
-            print( f'\t\t- Type of group weights: {dictIC_params["group_weights_type"]}', end='' )
+            logger.subinfo( f'Number of groups: {len(dictIC_params["group_idx"])}', indent_lvl=1, indent_char='-' )
             if 'group_weights_prior' in dictIC_params:
-                print( f', with prior knowledge', end='' )
-            print()
+                logger.subinfo( f'Type of group weights: {dictIC_params["group_weights_type"]}, with prior knowledge', indent_lvl=1, indent_char='-' )
+            else:
+                logger.subinfo( f'Type of group weights: {dictIC_params["group_weights_type"]}', indent_lvl=1, indent_char='-' )
 
-        print( '\t* EC compartment:' )
-        print( f'\t\t- Regularisation type: {regularisation["regEC"]}', end='' )
-        if regularisation['regEC'] == 'lasso':
-            if dictEC_params is not None and 'coeff_weights' in dictEC_params:
-                print( f' (weighted version)', end='' )
-        print( f'\n\t\t- Non-negativity constraint: {regularisation["nnEC"]}')
+        logger.subinfo( 'EC compartment:', indent_char='*' )
+        if regularisation['regEC'] == 'lasso' and dictEC_params is not None and 'coeff_weights' in dictEC_params:
+            logger.subinfo( f'Regularisation type: {regularisation["regEC"]} (weighted version)', indent_lvl=1, indent_char='-' )
+        else:
+            logger.subinfo( f'Regularisation type: {regularisation["regEC"]}', indent_lvl=1, indent_char='-' )
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnEC"]}', indent_lvl=1, indent_char='-' )
         if regularisation['regEC'] is not None:
-            print( f'\t\t- Lambda max: {regularisation["lambdaEC_max"]}' )
-            print( f'\t\t- % lambda: {regularisation["lambdaEC_perc"]}' )
-            print( f'\t\t- Lambda used: {regularisation["lambdaEC"]}' )
+            logger.subinfo( f'Lambda max: {regularisation["lambdaEC_max"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'% lambda: {regularisation["lambdaEC_perc"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Lambda used: {regularisation["lambdaEC"]}', indent_lvl=1, indent_char='-' )
 
-        print( '\t* ISO compartment:' )
-        print( f'\t\t- Regularisation type: {regularisation["regISO"]}', end='' )
-        if regularisation['regISO'] == 'lasso':
-            if dictISO_params is not None and 'coeff_weights' in dictISO_params:
-                print( f' (weighted version)', end='' )
-        print( f'\n\t\t- Non-negativity constraint: {regularisation["nnISO"]}')
+        logger.subinfo( 'ISO compartment:', indent_char='*' )
+        if regularisation['regISO'] == 'lasso' and dictISO_params is not None and 'coeff_weights' in dictISO_params:
+            logger.subinfo( f'Regularisation type: {regularisation["regISO"]} (weighted version)', indent_lvl=1, indent_char='-' )
+        else:
+            logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=1, indent_char='-' )
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnISO"]}', indent_lvl=1, indent_char='-' )
         if regularisation['regISO'] is not None: 
-            print( f'\t\t- Lambda max: {regularisation["lambdaISO_max"]}' )
-            print( f'\t\t- % lambda: {regularisation["lambdaISO_perc"]}' )
-            print( f'\t\t- Lambda used: {regularisation["lambdaISO"]}' )
+            logger.subinfo( f'Lambda max: {regularisation["lambdaISO_max"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'% lambda: {regularisation["lambdaISO_perc"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Lambda used: {regularisation["lambdaISO"]}', indent_lvl=1, indent_char='-' )
 
-        LOG( '   [ %.1f seconds ]' % ( time.time() - tr ) )
+        logger.subinfo( f'[ {time.time() - tr:.1f} seconds ]' )
 
 
     def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False ) :
@@ -1169,6 +1177,12 @@ cdef class Evaluation :
         if self.A is None :
             logger.error( 'Operator not built; call "build_operator()" first' )
 
+        if self.regularisation_params is None:
+            self.set_regularisation()
+
+        logger.subinfo('')
+        logger.info( 'Fit model:' )
+
         # Confidence map
         self.confidence_map_img = None
         self.set_config('confidence_map_filename', None)
@@ -1178,7 +1192,7 @@ cdef class Evaluation :
         if confidence_map_filename is not None:
             # Loading confidence map
             tic = time.time()
-            logger.info( 'Loading confidence map:' )
+            logger.subinfo( 'Loading confidence map:' )
 
             if not exists( pjoin( self.get_config('DATA_path'), confidence_map_filename)  ) :
                 logger.error( 'Confidence map not found' )
@@ -1191,7 +1205,7 @@ cdef class Evaluation :
                 logger.error( 'Confidence map must be 3D or 4D dataset' )
 
             if self.confidence_map_img.ndim == 3:
-                logger.subinfo('Extending the confidence map volume to match the DWI signal volume(s)... ' )
+                logger.subinfo('Extending the confidence map volume to match the DWI signal volume(s)... ', indent_lvl=1, indent_char='-' )
                 self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
             hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
             confidence_map_dim = self.confidence_map_img.shape[0:3]
@@ -1199,7 +1213,7 @@ cdef class Evaluation :
             logger.subinfo('dim    : %d x %d x %d x %d' % self.confidence_map_img.shape, indent_lvl=2, indent_char='-')
             logger.subinfo('pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim, indent_lvl=2, indent_char='-')
 
-            logger.info( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+            logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
 
             if ( self.get_config('dim') != confidence_map_dim ):
                 logger.error( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
@@ -1228,7 +1242,7 @@ cdef class Evaluation :
 
             elif(confidence_map_rescale):
                 confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
-                logger.info ( '\n   [Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ) )
+                logger.subinfo ( '[Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ), indent_lvl=2 )
                 confidence_array_changed = True
 
             if(confidence_array_changed):
@@ -1239,9 +1253,6 @@ cdef class Evaluation :
             if x0.shape[0] != self.A.shape[1] :
                 logger.error( 'x0 dimension does not match the number of columns of the dictionary' )
 
-        if self.regularisation_params is None:
-            self.set_regularisation()
-
 
         self.CONFIG['optimization']                   = {}
         self.CONFIG['optimization']['tol_fun']        = tol_fun
@@ -1251,14 +1262,13 @@ cdef class Evaluation :
 
         # run solver
         t = time.time()
-        logger.info( '\n-> Fit model:' )
-
-        self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+        with ProgressBar(disable=self.verbose!=3, hide_on_exit=True) as pb:
+            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
 
-        logger.info( '\n   [ %s ]' % ( time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG['optimization']['fit_time']) ) ) )
+        logger.subinfo( f'[ {time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG["optimization"]["fit_time"]) )} ]' )
 
 
     def get_coeffs( self, get_normalized=True ):
@@ -1321,7 +1331,8 @@ cdef class Evaluation :
             self.set_config('path_suffix', path_suffix)
             RESULTS_path = RESULTS_path + path_suffix
 
-        logger.info( '\n-> Saving results to "%s/*":' % RESULTS_path )
+        logger.subinfo('')
+        logger.info( 'Saving results to "%s/*":' % RESULTS_path )
         tic = time.time()
 
         if self.x is None :
@@ -1353,7 +1364,7 @@ cdef class Evaluation :
         self.set_config('RESULTS_path', RESULTS_path)
 
         # Map of voxelwise errors
-        logger.subinfo('Fitting errors:' )
+        logger.subinfo('Fitting errors:', indent_lvl=2, indent_char='-' )
 
         niiMAP_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
@@ -1364,52 +1375,48 @@ cdef class Evaluation :
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
 
-        logger.subinfo('RMSE:', indent_lvl=2, indent_char='-')
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+        logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
         niiMAP_hdr['cal_min'] = 0
         niiMAP_hdr['cal_max'] = tmp.max()
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
-        logger.subinfo( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ), indent_lvl=3)
 
-        logger.subinfo('NRMSE:', indent_lvl=2, indent_char='-')
         tmp = np.sum(y_mea**2,axis=1)
         idx = np.where( tmp < 1E-12 )
         tmp[ idx ] = 1
         tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
         tmp[ idx ] = 0
+        logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
         niiMAP_hdr['cal_min'] = 0
         niiMAP_hdr['cal_max'] = 1
         nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
-        logger.subinfo( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ), indent_lvl=3)
 
         if self.confidence_map_img is not None:
             confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
 
-            logger.subinfo('RMSE considering the confidence map:', indent_lvl=2, indent_char='-')
             tmp = np.sum(confidence_array,axis=1)
             idx = np.where( tmp < 1E-12 )
             tmp[ idx ] = 1
             tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
             tmp[ idx ] = 0
+            logger.subinfo(f'RMSE considering the confidence map:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = tmp.max()
             nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE_adjusted.nii.gz') )
-            logger.subinfo( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ), indent_lvl=3)
 
-            logger.subinfo('NRMSE considering the confidence map:', indent_lvl=2, indent_char='-')
             tmp = np.sum(confidence_array*y_mea**2,axis=1)
             idx = np.where( tmp < 1E-12 )
             tmp[ idx ] = 1
             tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
             tmp[ idx ] = 0
+            logger.subinfo(f'NRMSE considering the confidence map: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = 1
             nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE_adjusted.nii.gz') )
-            logger.subinfo( '[ %.3f +/- %.3f ]' % ( tmp.mean(), tmp.std() ), indent_lvl=3)
             confidence_array = None
 
         # Map of compartment contributions
@@ -1435,7 +1442,7 @@ cdef class Evaluation :
                 xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
                 niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
-        logger.subinfo('Isotropic', indent_lvl=2, indent_char='-', with_progress=True)
+        logger.subinfo('Isotropic   ', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['iso']) > 0 :
@@ -1459,7 +1466,8 @@ cdef class Evaluation :
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # Configuration and results
-        logger.subinfo('Configuration and results:', indent_char='*', with_progress=True)
+        logger.subinfo('Configuration and results:', indent_char='*')
+        logger.subinfo('Saving streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             xic, _, _ = self.get_coeffs()
             if stat_coeffs != 'all' and xic.size > 0 :
@@ -1510,9 +1518,6 @@ cdef class Evaluation :
 
             if hasattr(self.model, '_postprocess') and do_reweighting:
                 self.model._postprocess(self.temp_data, verbose=self.verbose)
-            else:
-                logger.subinfo('Saving streamline_weights.txt', indent_char='-', indent_lvl=2)
-
 
             np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
             self.set_config('stat_coeffs', stat_coeffs)
@@ -1521,13 +1526,15 @@ cdef class Evaluation :
         #   item 0: dictionary with all the configuration details
         #   item 1: np.array obtained through the optimisation process with the normalised kernels
         #   item 2: np.array renormalisation of coeffs in item 1
-        logger.subinfo('results.pickle:', indent_char='-', indent_lvl=2, with_progress=True)
+        logger.subinfo('results.pickle:              ', indent_char='-', indent_lvl=2, with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             xic, xec, xiso = self.get_coeffs()
             x = self.x
             if self.get_config('doNormalizeKernels') :
                 x = x * np.hstack( (norm1*norm_fib,norm2,norm3) )
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
+                self.CONFIG['optimization']['regularisation'].pop('omega', None)
+                self.CONFIG['optimization']['regularisation'].pop('prox', None)
                 pickle.dump( [self.CONFIG, x, self.x], fid, protocol=2 )
 
         if save_est_dwi :
@@ -1537,4 +1544,4 @@ cdef class Evaluation :
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
 
-        logger.info( '   [ %.1f seconds ]' % ( time.time() - tic ) )
+        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
