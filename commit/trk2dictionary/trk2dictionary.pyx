@@ -238,7 +238,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                     blurWeights[i] = np.exp( -(blurRho[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
 
     if nReplicas == 1 :
-        logger.info( '\t- Do not blur streamlines' )
+        logger.subinfo( '\t- Do not blur streamlines', indent_lvl=1, indent_char='-' )
     else :
         logger.subinfo( 'Blur streamlines:', indent_lvl=1, indent_char='-' )
         logger.subinfo( f'core extent  = {blur_core_extent:.3f}', indent_lvl=2, indent_char='-' )
