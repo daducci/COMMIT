@@ -532,7 +532,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         return None
 
     # Concatenate files together
-    logger.subinfo( '\nSaving dictionaries', indent_lvl=1, indent_char='-', with_progress=True )
+    logger.subinfo('')
+    logger.subinfo( 'Saving dictionaries', indent_lvl=1, indent_char='-', with_progress=True )
     cdef int discarded = 0
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
         for j in range(n_threads-1):
