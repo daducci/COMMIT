@@ -238,7 +238,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                     blurWeights[i] = np.exp( -(blurRho[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
 
     if nReplicas == 1 :
-        logger.subinfo( '\t- Do not blur streamlines', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'Do not blur streamlines', indent_lvl=1, indent_char='-' )
     else :
         logger.subinfo( 'Blur streamlines:', indent_lvl=1, indent_char='-' )
         logger.subinfo( f'core extent  = {blur_core_extent:.3f}', indent_lvl=2, indent_char='-' )
@@ -532,7 +532,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         return None
 
     # Concatenate files together
-    logger.subinfo( 'Saving dictionaries', indent_lvl=1, indent_char='-', with_progress=True )
+    logger.subinfo( '\nSaving dictionaries', indent_lvl=1, indent_char='-', with_progress=True )
     cdef int discarded = 0
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
         for j in range(n_threads-1):

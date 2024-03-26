@@ -356,9 +356,9 @@ cdef class Evaluation :
 
         # Dispatch to the right handler for each model
         if self.get_config('doMergeB0') :
-            logger.subinfo( 'Merging multiple b0 volume(s) [-OK-]', indent_char='-', indent_lvl=1 )
+            logger.subinfo( 'Merging multiple b0 volume(s)', indent_char='-', indent_lvl=1 )
         else :
-            logger.subinfo( 'Keeping all b0 volume(s)      [-OK-]', indent_char='-', indent_lvl=1 )
+            logger.subinfo( 'Keeping all b0 volume(s)', indent_char='-', indent_lvl=1 )
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
@@ -367,7 +367,7 @@ cdef class Evaluation :
 
         # De-mean kernels
         if self.get_config('doDemean') :
-            logger.subinfo('Demeaning signal            ', with_progress=True, indent_lvl=1, indent_char='-' )
+            logger.subinfo('Demeaning signal', with_progress=True, indent_lvl=1, indent_char='-' )
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                 for j in xrange(self.get_config('ndirs')) :
                     for i in xrange(nIC) :
@@ -379,7 +379,7 @@ cdef class Evaluation :
 
         # Normalize atoms
         if self.get_config('doNormalizeKernels') :
-            logger.subinfo('Normalizing kernels         ', with_progress=True, indent_lvl=1, indent_char='-' )
+            logger.subinfo('Normalizing kernels', with_progress=True, indent_lvl=1, indent_char='-' )
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                 self.KERNELS['wmr_norm'] = np.zeros( nIC )
                 for i in xrange(nIC) :
