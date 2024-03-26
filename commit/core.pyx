@@ -596,7 +596,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['IC'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    logger.error( 'Too many threads for the IC compartments to evaluate; try decreasing the number', prefix='\n' )
+                    logger.error( 'Too many threads for the IC compartments to evaluate; try decreasing the number' )
             else :
                 self.THREADS['IC'] = None
 
@@ -609,7 +609,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    logger.error( 'Too many threads for the EC compartments to evaluate; try decreasing the number', prefix='\n' )
+                    logger.error( 'Too many threads for the EC compartments to evaluate; try decreasing the number' )
             else :
                 self.THREADS['EC'] = None
 
@@ -622,7 +622,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    logger.error( 'Too many threads for the ISO compartments to evaluate; try decreasing the number', prefix='\n' )
+                    logger.error( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
             else :
                 self.THREADS['ISO'] = None
 
@@ -662,7 +662,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    logger.error( 'Too many threads for the EC compartments to evaluate; try decreasing the number', prefix='\n' )
+                    logger.error( 'Too many threads for the EC compartments to evaluate; try decreasing the number' )
             else :
                 self.THREADS['ECt'] = None
 
@@ -677,7 +677,7 @@ cdef class Evaluation :
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
-                    logger.error( 'Too many threads for the ISO compartments to evaluate; try decreasing the number', prefix='\n' )
+                    logger.error( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
             else :
                 self.THREADS['ISOt'] = None
 
@@ -1483,7 +1483,7 @@ cdef class Evaluation :
                 elif stat_coeffs == 'max' :
                     xic = np.max( xic, axis=0 )
                 else :
-                    logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all', prefix='\n' )
+                    logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all' )
 
             # scale output weights if blur was used
             dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
