@@ -1515,6 +1515,7 @@ cdef class Evaluation :
             self.temp_data['niiISO_img'] = niiISO_img
             self.temp_data['streamline_weights'] = xic
             self.temp_data['RESULTS_path'] = RESULTS_path
+            self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
 
             if hasattr(self.model, '_postprocess') and do_reweighting:
                 self.model._postprocess(self.temp_data, verbose=self.verbose)
