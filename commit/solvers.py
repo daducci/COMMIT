@@ -19,7 +19,7 @@ def init_regularisation(regularisation_params):
 
     # check if regularisations are in the list
     if regularisation_params['regIC'] not in list_regularizers or regularisation_params['regEC'] not in list_regularizers or regularisation_params['regISO'] not in list_regularizers:
-        raise ValueError('Regularisation not in the list')
+        logger.error('Regularisation not in the list')
     
     startIC  = regularisation_params.get('startIC')
     sizeIC   = regularisation_params.get('sizeIC')
@@ -74,7 +74,7 @@ def init_regularisation(regularisation_params):
 
     elif regularisation_params['regIC'] == 'group_lasso':
         if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
-            raise ValueError('Number of groups and weights do not match')
+            logger.error('Number of groups and weights do not match')
 
         lambda_group_IC = regularisation_params['lambdaIC']
 
@@ -96,7 +96,7 @@ def init_regularisation(regularisation_params):
   
     elif regularisation_params['regIC'] == 'sparse_group_lasso':
         if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
-            raise ValueError('Number of groups and weights do not match')
+            logger.error('Number of groups and weights do not match')
 
         lambdaIC = regularisation_params['lambdaIC'][0]
         lambda_group_IC = regularisation_params['lambdaIC'][1]

@@ -162,23 +162,23 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading data:' )
 
-        logger.subinfo('Acquisition scheme:', indent_lvl=1, indent_char='*' )
+        logger.subinfo('Acquisition scheme:', indent_char='*' )
         if scheme_filename is not None:
             self.set_config('scheme_filename', scheme_filename)
             self.set_config('b0_thr', b0_thr)
-            logger.subinfo('diffusion-weighted signal', indent_char='-', indent_lvl=2)
+            logger.subinfo('diffusion-weighted signal', indent_char='-', indent_lvl=1)
             self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
-            logger.subinfo('%d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ) , indent_lvl=2, indent_char='-' )
+            logger.subinfo('%d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ), indent_lvl=1, indent_char='-' )
             scheme_string = f'{self.scheme.b0_count} @ b=0'
             for i in xrange(len(self.scheme.shells)) :
                 scheme_string += f', {len(self.scheme.shells[i]["idx"])} @ b={self.scheme.shells[i]["b"]:.1f}'
-            logger.subinfo( scheme_string, indent_lvl=2, indent_char='-' )
+            logger.subinfo( scheme_string, indent_lvl=1, indent_char='-' )
         else:
             # if no scheme is passed, assume data is scalar
             self.scheme = amico.scheme.Scheme( np.array( [[0,0,0,1000]] ), 0 )
-            logger.subinfo('scalar map', indent_char='-', indent_lvl=2)
+            logger.subinfo('scalar map', indent_char='-', indent_lvl=1)
 
-        logger.subinfo('Signal dataset:', indent_lvl=1, indent_char='*' )
+        logger.subinfo('Signal dataset:', indent_char='*' )
         self.set_config('dwi_filename', dwi_filename)
         self.set_config('b0_min_signal', b0_min_signal)
         self.set_config('replace_bad_voxels', replace_bad_voxels)
@@ -189,9 +189,9 @@ cdef class Evaluation :
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
         self.set_config('dim', self.niiDWI_img.shape[0:3])
         self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
-        logger.subinfo('dim    : %d x %d x %d x %d' % self.niiDWI_img.shape, indent_lvl=2, indent_char='-' )
-        logger.subinfo('pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim'), indent_lvl=2, indent_char='-' )
-        logger.subinfo('values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2, indent_char='-' )
+        logger.subinfo('dim    : %d x %d x %d x %d' % self.niiDWI_img.shape, indent_lvl=1, indent_char='-' )
+        logger.subinfo('pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim'), indent_lvl=1, indent_char='-' )
+        logger.subinfo('values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=1, indent_char='-' )
 
         if self.scheme.nS != self.niiDWI_img.shape[3] :
             logger.error( 'Scheme does not match with input data' )
@@ -216,7 +216,7 @@ cdef class Evaluation :
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
-                    logger.subinfo(' Normalizing to b0', with_progress=True, indent_lvl=1, indent_char='*')
+                    logger.subinfo('Normalizing to b0', with_progress=True, indent_char='*')
                     with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                         b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
                         idx = b0 <= b0_min_signal * b0[b0>0].mean()
@@ -232,18 +232,18 @@ cdef class Evaluation :
 
             if self.scheme.b0_count > 1:
                 if self.get_config('doMergeB0') :
-                    logger.subinfo('Merging multiple b0 volume(s)', indent_char='*', indent_lvl=1)
+                    logger.subinfo('Merging multiple b0 volume(s)', indent_char='*')
                     mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                     self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
                     del mean
                 else :
-                    logger.subinfo('Keeping all b0 volume(s)', indent_char='*', indent_lvl=1)
-                logger.subinfo('[ %d x %d x %d x %d ]' % self.niiDWI_img.shape )
+                    logger.subinfo('Keeping all b0 volume(s)', indent_char='*')
+                logger.subinfo('[ %d x %d x %d x %d ]' % self.niiDWI_img.shape, indent_lvl=1 )
 
             if self.get_config('doDemean'):
                 mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
                 self.niiDWI_img = self.niiDWI_img - mean
-                logger.subinfo('Demeaning signal [ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=1, indent_char='*' )
+                logger.subinfo('Demeaning signal [ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_char='*' )
 
             # Check for Nan or Inf values in pre-processed data
             if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
@@ -297,11 +297,11 @@ cdef class Evaluation :
             logger.error( 'Model not set; call "set_model()" method first' )
         if self.model.id=='VolumeFractions' and ndirs!=1:
             ndirs = 1
-            logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
+            logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*')
         if 'commitwipmodels' in sys.modules :
             if self.model.restrictedISO is not None and ndirs!=1:
                 ndirs = 1
-                logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
+                logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*')
  
         # store some values for later use
         self.set_config('lmax', lmax)
@@ -344,7 +344,7 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the kernels:' )
-        logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', with_progress=True )
+        logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', with_progress=True ) # TODO: check why not printed
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
@@ -490,7 +490,7 @@ cdef class Evaluation :
 
         # segments from the peaks
         # -----------------------
-        logger.subinfo('Segments from the peaks ', indent_char='*', with_progress=True )
+        logger.subinfo('Segments from the peaks', indent_char='*', with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             self.DICTIONARY['EC'] = {}
             self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
@@ -507,7 +507,7 @@ cdef class Evaluation :
 
         # isotropic compartments
         # ----------------------
-        logger.subinfo('Isotropic contributions ', indent_char='*', with_progress=True )
+        logger.subinfo('Isotropic contributions', indent_char='*', with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             self.DICTIONARY['ISO'] = {}
 
@@ -525,7 +525,7 @@ cdef class Evaluation :
         
         # post-processing
         # ---------------
-        logger.subinfo('Post-processing         ', indent_char='*', with_progress=True )
+        logger.subinfo('Post-processing', indent_char='*', with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
             idx = self.DICTIONARY['MASK'].ravel(order='F').nonzero()[0]
