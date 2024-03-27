@@ -1178,7 +1178,9 @@ cdef class Evaluation :
             logger.error( 'Operator not built; call "build_operator()" first' )
 
         if self.regularisation_params is None:
+            ui.set_verbose(1)
             self.set_regularisation()
+            ui.set_verbose(self.verbose)
 
         logger.subinfo('')
         logger.info( 'Fit model:' )
