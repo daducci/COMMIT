@@ -187,7 +187,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             logger.error( 'The grid spacing of the blur must be positive' )
 
     tic = time.time()
-    logger.info( 'Creating the dictionary from tractogram:' )
+    logger.info( 'Creating data structure from tractogram:' )
 
     logger.subinfo( 'Configuration:', indent_char='*' )
     logger.subinfo( f'Segment position = {"COMPUTE INTERSECTIONS" if do_intersect else "CENTROID"}', indent_lvl=1, indent_char='-' )
@@ -533,7 +533,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     # Concatenate files together
     logger.subinfo('')
-    logger.subinfo( 'Saving dictionaries', indent_lvl=1, indent_char='-', with_progress=True )
+    logger.subinfo( 'Saving data structure', indent_char='*', with_progress=True )
     cdef int discarded = 0
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
         for j in range(n_threads-1):
@@ -608,7 +608,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
     # save TDI and MASK maps
-    logger.subinfo( 'Saving TDI and MASK maps', indent_char='-', indent_lvl=1 )
+    logger.subinfo( 'Saving TDI and MASK maps', indent_char='*' )
     v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
     l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
