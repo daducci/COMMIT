@@ -1,4 +1,4 @@
-[DEBUG] Log created                                                   <module:COMMIT, line:0> [2024-03-28, 10:24:43]
+[DEBUG] Log created                                                   <module:COMMIT, line:0> [2024-03-28, 10:44:13]
 
 [INFO] Loading data:                                               
    * Acquisition scheme:
@@ -9,7 +9,7 @@
       - dim    : 106 x 106 x 60 x 100
       - pixdim : 2.000 x 2.000 x 2.000
       - values : min=0.00, max=4095.00, mean=54.18
-   [ 0.5 seconds ]
+   [ 0.4 seconds ]
 
 [INFO] Preprocessing:                                              
    * Normalizing to b0
@@ -35,7 +35,7 @@
    * Isotropic contributions
       - 53008 voxels
    * Post-processing
-   [ 2.7 seconds ]
+   [ 2.6 seconds ]
 
 [INFO] Distributing workload to different threads:                 
    * Number of threads : 10
@@ -74,10 +74,16 @@ default
       - Lambda used: 81.56236727351153
       - Number of groups: 2255
       - Group weights computed using the group cardinality, the l2 norm of the streamline weights 
+[WARNING] No regularisation is set for the EC compartment but 
+the corresponding lambda is provided, it will be    
+ignored                                             
    * EC compartment:
       - Regularisation type: None
       - Non-negativity constraint: True
    * ISO compartment:
-      - Regularisation type: None
+      - Regularisation type: lasso
       - Non-negativity constraint: True
-   [ 0.1 seconds ]
+      - Lambda max: 6.2996032497414856
+      - % lambda: 0.1
+      - Lambda used: 0.6299603249741486
+   [ 0.2 seconds ]
