@@ -7,7 +7,7 @@ from Cython.Build.Inline import _get_build_extension
 from Cython.Build import cythonize
 import numpy as np
 from amico.models import BaseModel, StickZeppelinBall as _StickZeppelinBall, CylinderZeppelinBall as _CylinderZeppelinBall
-from amico.util import ERROR
+from amico.util import ERROR, set_verbose
 
 try:
     sys.path.append(environ["WIP_MODEL"])
@@ -44,14 +44,18 @@ class StickZeppelinBall(_StickZeppelinBall):
     """Simulate the response functions according to the Stick-Zeppelin-Ball model.
     See the AMICO.model module for details.
     """
-    pass
+    def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
+        set_verbose(2)
+        super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
 
 
 class CylinderZeppelinBall(_CylinderZeppelinBall):
     """Simulate the response functions according to the Cylinder-Zeppelin-Ball model.
     See the AMICO.model module for details.
     """
-    pass
+    def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
+        set_verbose(2)
+        super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
 
 class VolumeFractions(BaseModel):
     """Implements a simple model where each compartment contributes only with
