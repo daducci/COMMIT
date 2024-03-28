@@ -1,1 +1,83 @@
-[--DEBUG---]  Log created                                                   <module:COMMIT, line:0> [2024-03-22, 17:37:31]
+[DEBUG] Log created                                                   <module:COMMIT, line:0> [2024-03-28, 10:24:43]
+
+[INFO] Loading data:                                               
+   * Acquisition scheme:
+      - diffusion-weighted signal
+      - 100 samples, 2 shells
+      - 10 @ b=0, 30 @ b=700.0, 60 @ b=2000.0
+   * Signal dataset:
+      - dim    : 106 x 106 x 60 x 100
+      - pixdim : 2.000 x 2.000 x 2.000
+      - values : min=0.00, max=4095.00, mean=54.18
+   [ 0.5 seconds ]
+
+[INFO] Preprocessing:                                              
+   * Normalizing to b0
+      [ min=0.00, max=290.00, mean=0.65 ]
+   * Keeping all b0 volume(s)
+      [ 106 x 106 x 60 x 100 ]
+   [ 0.1 seconds ]
+
+[INFO] Simulating with "Stick-Zeppelin-Ball" model:                
+   [ 0.1 seconds ]
+
+[INFO] Loading the kernels:                                        
+   * Resampling LUT for subject ".":
+      - Keeping all b0 volume(s)
+      - Normalizing kernels
+   [ 0.0 seconds ]
+
+[INFO] Loading the dictionary:                                     
+   * Segments from the tracts
+      - 283522 fibers and 15825021 segments
+   * Segments from the peaks
+      - 0 segments
+   * Isotropic contributions
+      - 53008 voxels
+   * Post-processing
+   [ 2.7 seconds ]
+
+[INFO] Distributing workload to different threads:                 
+   * Number of threads : 10
+   * A operator 
+   * A' operator
+   [ 1.4 seconds ]
+
+[INFO] Building linear operator A:                                 
+   [ 5.3 seconds ]
+
+[INFO] Setting regularisation:                                     
+   * IC compartment:
+      - Regularisation type: None
+      - Non-negativity constraint: True
+   * EC compartment:
+      - Regularisation type: None
+      - Non-negativity constraint: True
+   * ISO compartment:
+      - Regularisation type: None
+      - Non-negativity constraint: True
+   [ 0.0 seconds ]
+
+[INFO] Fit model:                                                  
+   [ 00h 00m 18s ]
+
+[INFO] Setting regularisation:                                     
+[WARNING] "group_weights_cardinality" not given, set to True  
+by default                                          
+[WARNING] "group_weights_adaptive" not given, set to True by  
+default                                             
+   * IC compartment:
+      - Regularisation type: group_lasso
+      - Non-negativity constraint: True
+      - Lambda max: 679.6863939459294
+      - % lambda: 0.12
+      - Lambda used: 81.56236727351153
+      - Number of groups: 2255
+      - Group weights computed using the group cardinality, the l2 norm of the streamline weights 
+   * EC compartment:
+      - Regularisation type: None
+      - Non-negativity constraint: True
+   * ISO compartment:
+      - Regularisation type: None
+      - Non-negativity constraint: True
+   [ 0.1 seconds ]
