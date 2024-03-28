@@ -162,6 +162,7 @@ def init_regularisation(regularisation_params):
     #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
 
+
     ########################
     # ISOTROPIC COMPARTMENT#
     ########################
