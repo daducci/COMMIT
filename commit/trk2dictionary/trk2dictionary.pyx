@@ -189,17 +189,17 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     tic = time.time()
     logger.info( 'Creating data structure from tractogram:' )
 
-    logger.subinfo( 'Configuration:', indent_char='*' )
-    logger.subinfo( f'Segment position = {"COMPUTE INTERSECTIONS" if do_intersect else "CENTROID"}', indent_lvl=1, indent_char='-' )
-    logger.subinfo( f'Coordinates shift in X = {fiber_shiftX:.3f} (voxel-size units)', indent_lvl=1, indent_char='-' )
-    logger.subinfo( f'Coordinates shift in Y = {fiber_shiftY:.3f} (voxel-size units)', indent_lvl=1, indent_char='-' )
-    logger.subinfo( f'Coordinates shift in Z = {fiber_shiftZ:.3f} (voxel-size units)', indent_lvl=1, indent_char='-' )
+    logger.subinfo( 'Configuration:', indent_char='*', indent_lvl=1 )
+    logger.subinfo( f'Segment position = {"COMPUTE INTERSECTIONS" if do_intersect else "CENTROID"}', indent_lvl=2, indent_char='-' )
+    logger.subinfo( f'Coordinates shift in X = {fiber_shiftX:.3f} (voxel-size units)', indent_lvl=2, indent_char='-' )
+    logger.subinfo( f'Coordinates shift in Y = {fiber_shiftY:.3f} (voxel-size units)', indent_lvl=2, indent_char='-' )
+    logger.subinfo( f'Coordinates shift in Z = {fiber_shiftZ:.3f} (voxel-size units)', indent_lvl=2, indent_char='-' )
     if min_seg_len >= 1e-3:
-        logger.subinfo( f'Min segment len  = {min_seg_len:.3f} mm', indent_lvl=1, indent_char='-' )
+        logger.subinfo( f'Min segment len  = {min_seg_len:.3f} mm', indent_lvl=2, indent_char='-' )
     else:
-        logger.subinfo( f'Min segment len  = {min_seg_len:.2e} mm', indent_lvl=1, indent_char='-' )
-    logger.subinfo( f'Min streamline len    = {min_fiber_len:.2f} mm', indent_lvl=1, indent_char='-' )
-    logger.subinfo( f'Max streamline len    = {max_fiber_len:.2f} mm', indent_lvl=1, indent_char='-' )
+        logger.subinfo( f'Min segment len  = {min_seg_len:.2e} mm', indent_lvl=2, indent_char='-' )
+    logger.subinfo( f'Min streamline len    = {min_fiber_len:.2f} mm', indent_lvl=2, indent_char='-' )
+    logger.subinfo( f'Max streamline len    = {max_fiber_len:.2f} mm', indent_lvl=2, indent_char='-' )
 
     # check blur params
     cdef :
@@ -238,13 +238,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                     blurWeights[i] = np.exp( -(blurRho[i] - blur_core_extent)**2 / (2.0*blur_sigma**2) )
 
     if nReplicas == 1 :
-        logger.subinfo( 'Do not blur streamlines', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'Do not blur streamlines', indent_lvl=2, indent_char='-' )
     else :
-        logger.subinfo( 'Blur streamlines:', indent_lvl=1, indent_char='-' )
-        logger.subinfo( f'core extent  = {blur_core_extent:.3f}', indent_lvl=2, indent_char='-' )
-        logger.subinfo( f'gauss extent = {blur_gauss_extent:.3f} (sigma = {blur_sigma:.3f})', indent_lvl=2, indent_char='-' )
-        logger.subinfo( f'grid spacing = {blur_spacing:.3f}' , indent_lvl=2, indent_char='-' )
-        logger.subinfo( f'weights = [ {np.min(blurWeights):.3f} ... {np.max(blurWeights):.3f} ]', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'Blur streamlines:', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'core extent  = {blur_core_extent:.3f}', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'gauss extent = {blur_gauss_extent:.3f} (sigma = {blur_sigma:.3f})', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'grid spacing = {blur_spacing:.3f}' , indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'weights = [ {np.min(blurWeights):.3f} ... {np.max(blurWeights):.3f} ]', indent_lvl=3, indent_char='-' )
 
     if min_seg_len < 0 :
         logger.error( '"min_seg_len" must be >= 0' )
@@ -265,12 +265,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         path_out = join(path_out,'COMMIT')
 
     # create output path
-    logger.subinfo( f'Output written to "{path_out}"', indent_char='-', indent_lvl=1 )
+    logger.subinfo( f'Output written to "{path_out}"', indent_char='-', indent_lvl=2 )
     if not exists( path_out ):
         makedirs( path_out )
 
     path_temp = join(path_out, 'temp')
-    logger.subinfo( f'Temporary files written to "{path_temp}"', indent_char='-', indent_lvl=1 )
+    logger.subinfo( f'Temporary files written to "{path_temp}"', indent_char='-', indent_lvl=2 )
 
     if exists(path_temp):
         shutil.rmtree(path_temp, ignore_errors=True)
@@ -286,15 +286,14 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         except :
             n_threads = 1
 
-    logger.subinfo( f'Using parallel computation with {n_threads} threads', indent_char='-', indent_lvl=1 )
+    logger.subinfo( f'Using parallel computation with {n_threads} threads', indent_char='-', indent_lvl=2 )
 
     if np.isscalar(blur_clust_thr):
         blur_clust_thr = np.array( [blur_clust_thr] )
 
     if blur_clust_thr[0]> 0:
-        logger.subinfo( 'Running tractogram clustering:', indent_char='*' )
-        logger.subinfo( f'Input tractogram "{filename_tractogram}"', indent_lvl=1, indent_char='-' )
-        logger.subinfo( f'Clustering threshold = {blur_clust_thr[0]}', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'Reducing streamlines redundancy:', indent_char='*', indent_lvl=1)
+        logger.subinfo( f'Input tractogram "{filename_tractogram}"', indent_lvl=2, indent_char='-' )
         input_hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
         input_n_count = int(input_hdr['count'])
 
@@ -312,13 +311,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if blur_clust_groupby:
             hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
             temp_idx = np.arange(int(hdr['count']))
-            logger.subinfo('Reducing streamlines redundancy', indent_lvl=1, indent_char='-', with_progress=True)
+            logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=True)
             with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
                 idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                             temp_folder=path_temp, atlas=blur_clust_groupby, clust_thr=blur_clust_thr[0],
                                             n_threads=n_threads, keep_temp_files=True, force=True, verbose=1)
         else:
-            logger.subinfo('Reducing streamlines redundancy', indent_lvl=1, indent_char='-', with_progress=True)
+            logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=True)
             with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
                 idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                             temp_folder=path_temp, clust_thr=blur_clust_thr[0],
@@ -329,12 +328,12 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
 
     # Load data from files
-    logger.subinfo( 'Loading data:', indent_char='*' )
+    logger.subinfo( 'Loading data:', indent_char='*', indent_lvl=1 )
     cdef short [:] htable = amico.lut.load_precomputed_hash_table(ndirs)
     cdef short* ptrHashTable = &htable[0]
 
     # Streamlines from tractogram
-    logger.subinfo( 'Tractogram', indent_lvl=1, indent_char='-' )
+    logger.subinfo( 'Tractogram', indent_lvl=2, indent_char='-' )
 
     if not exists(filename_tractogram):
         logger.error( f'Tractogram file not found: {filename_tractogram}' )
@@ -346,7 +345,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
 
     if extension == ".trk":
-        logger.subinfoinfo ( f'geometry taken from "{filename_tractogram}"', indent_lvl=2, indent_char='-' )
+        logger.subinfoinfo ( f'geometry taken from "{filename_tractogram}"', indent_lvl=3, indent_char='-' )
         Nx = int(hdr['dimensions'][0])
         Ny = int(hdr['dimensions'][1])
         Nz = int(hdr['dimensions'][2])
@@ -367,7 +366,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                 TCK_ref_image = filename_mask
             else:
                 logger.error( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
-        logger.subinfo ( f'geometry taken from "{TCK_ref_image}"', indent_lvl=2, indent_char='-' )
+        logger.subinfo ( f'geometry taken from "{TCK_ref_image}"', indent_lvl=3, indent_char='-' )
 
         niiREF = nibabel.load( TCK_ref_image )
         niiREF_hdr = _get_header( niiREF )
@@ -382,12 +381,16 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         n_scalars = 0
         n_properties = 0
 
-    logger.subinfo( f'{Nx} x {Ny} x {Nz}', indent_lvl=2, indent_char='-' )
-    logger.subinfo( f'{Px:.4f} x {Py:.4f} x {Pz:.4f}', indent_lvl=2, indent_char='-' )
+    if n_threads > n_count:
+        logger.warning( 'Reducing the number of threads to the number of streamlines' )
+        n_threads = n_count
+
+    logger.subinfo( f'{Nx} x {Ny} x {Nz}', indent_lvl=3, indent_char='-' )
+    logger.subinfo( f'{Px:.4f} x {Py:.4f} x {Pz:.4f}', indent_lvl=3, indent_char='-' )
     if blur_clust_thr[0]> 0:
-        logger.subinfo( f'{input_n_count} streamlines', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'{input_n_count} streamlines', indent_lvl=3, indent_char='-' )
     else:
-        logger.subinfo( f'{n_count} streamlines', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'{n_count} streamlines', indent_lvl=3, indent_char='-' )
     if Nx >= 2**16 or Nz >= 2**16 or Nz >= 2**16 :
         logger.error( 'The max dim size is 2^16 voxels' )
 
@@ -397,7 +400,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     else :
         if blur_apply_to.size != n_count :
             logger.error( '"blur_apply_to" must have one value per streamline' )
-        logger.subinfo( f'{sum(blur_apply_to)} blurred streamlines', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'{sum(blur_apply_to)} blurred streamlines', indent_lvl=3, indent_char='-' )
     blurApplyTo = blur_apply_to
 
     # get toVOXMM matrix (remove voxel scaling from affine) in case of TCK
@@ -413,18 +416,18 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrMASK
     cdef float [:, :, ::1] niiMASK_img
     if filename_mask is not None :
-        logger.subinfo( 'Filtering mask', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'Filtering mask', indent_lvl=2, indent_char='-' )
         niiMASK = nibabel.load( filename_mask )
         niiMASK_hdr = _get_header( niiMASK )
-        logger.subinfo( f'{niiMASK.shape[0]} x {niiMASK.shape[1]} x {niiMASK.shape[2]}', indent_lvl=2, indent_char='-' )
-        logger.subinfo( f'{niiMASK_hdr["pixdim"][1]:.4f} x {niiMASK_hdr["pixdim"][2]:.4f} x {niiMASK_hdr["pixdim"][3]:.4f}', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'{niiMASK.shape[0]} x {niiMASK.shape[1]} x {niiMASK.shape[2]}', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'{niiMASK_hdr["pixdim"][1]:.4f} x {niiMASK_hdr["pixdim"][2]:.4f} x {niiMASK_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or 
             abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dataset does not have the same geometry as the tractogram' )
         niiMASK_img = np.ascontiguousarray( np.asanyarray( niiMASK.dataobj ).astype(np.float32) )
         ptrMASK  = &niiMASK_img[0,0,0]
     else :
-        logger.subinfo( 'No mask specified to filter IC compartments', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'No mask specified to filter IC compartments', indent_lvl=2, indent_char='-' )
         ptrMASK = NULL
 
     # peaks file for EC contributions
@@ -440,15 +443,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef double* ptrPeaksAffine
 
     if filename_peaks is not None :
-        logger.subinfo( 'EC orientations', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'EC orientations', indent_lvl=2, indent_char='-' )
         niiPEAKS = nibabel.load( filename_peaks )
         niiPEAKS_hdr = _get_header( niiPEAKS )
-        logger.subinfo( f'{niiPEAKS.shape[0]} x {niiPEAKS.shape[1]} x {niiPEAKS.shape[2]} x {niiPEAKS.shape[3]}', indent_lvl=2, indent_char='-' )
-        logger.subinfo( f'{niiPEAKS_hdr["pixdim"][1]:.4f} x {niiPEAKS_hdr["pixdim"][2]:.4f} x {niiPEAKS_hdr["pixdim"][3]:.4f}', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'{niiPEAKS.shape[0]} x {niiPEAKS.shape[1]} x {niiPEAKS.shape[2]} x {niiPEAKS.shape[3]}', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'{niiPEAKS_hdr["pixdim"][1]:.4f} x {niiPEAKS_hdr["pixdim"][2]:.4f} x {niiPEAKS_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
         
-        logger.subinfo( f'ignoring peaks < {vf_THR:.2f} * MaxPeak', indent_lvl=2, indent_char='-' )
-        logger.subinfo( f'{"" if peaks_use_affine else "not "}using affine matrix', indent_lvl=2, indent_char='-' )
-        logger.subinfo( f'flipping axes : [ x={flip_peaks[0]}, y={flip_peaks[1]}, z={flip_peaks[2]} ]', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'ignoring peaks < {vf_THR:.2f} * MaxPeak', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'{"" if peaks_use_affine else "not "}using affine matrix', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'flipping axes : [ x={flip_peaks[0]}, y={flip_peaks[1]}, z={flip_peaks[2]} ]', indent_lvl=3, indent_char='-' )
         if ( Nx!=niiPEAKS.shape[0] or Ny!=niiPEAKS.shape[1] or Nz!=niiPEAKS.shape[2] or
             abs(Px-niiPEAKS_hdr['pixdim'][1])>1e-3 or abs(Py-niiPEAKS_hdr['pixdim'][2])>1e-3 or abs(Pz-niiPEAKS_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( "Dataset does not have the same geometry as the tractogram" )
@@ -467,7 +470,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             peaksAffine = np.ascontiguousarray( np.eye(3) )
         ptrPeaksAffine = &peaksAffine[0,0]
     else :
-        logger.subinfo( 'No dataset specified for EC compartments', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'No dataset specified for EC compartments', indent_lvl=2, indent_char='-' )
         Np = 0
         ptrPEAKS = NULL
         ptrPeaksAffine = NULL
@@ -476,18 +479,18 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrISO
     cdef float [:, :, ::1] niiISO_img
     if filename_ISO is not None :
-        logger.subinfo( 'Restricted ISO map', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'Restricted ISO map', indent_lvl=2, indent_char='-' )
         niiISO = nibabel.load( filename_ISO )
         niiISO_hdr = _get_header( niiISO )
-        logger.subinfo( f'{niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}', indent_lvl=2, indent_char='-' )
-        logger.subinfo( f'{niiISO_hdr["pixdim"][1]:.4f} x {niiISO_hdr["pixdim"][2]:.4f} x {niiISO_hdr["pixdim"][3]:.4f}', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'{niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'{niiISO_hdr["pixdim"][1]:.4f} x {niiISO_hdr["pixdim"][2]:.4f} x {niiISO_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
         if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
             abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dataset does not have the same geometry as the tractogram' )
         niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
         ptrISO  = &niiISO_img[0,0,0]
     else :
-        logger.subinfo( 'No ISO map specified, using tdi', indent_lvl=1, indent_char='-' )
+        logger.subinfo( 'No ISO map specified, using tdi', indent_lvl=2, indent_char='-' )
         ptrISO = NULL
 
     # write dictionary information info file
@@ -533,7 +536,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     # Concatenate files together
     logger.subinfo('')
-    logger.subinfo( 'Saving data structure', indent_char='*', with_progress=True )
+    logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=True )
     cdef int discarded = 0
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
         for j in range(n_threads-1):
@@ -608,7 +611,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
     # save TDI and MASK maps
-    logger.subinfo( 'Saving TDI and MASK maps', indent_char='*' )
+    logger.subinfo( 'Saving TDI and MASK maps', indent_char='*', indent_lvl=1 )
     v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
     l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
@@ -634,4 +637,4 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         shutil.rmtree(path_temp)
 
 
-    logger.subinfo( f'[ {time.time() - tic:.1f} seconds ]' )
+    logger.subinfo( f'[ {time.time() - tic:.1f} seconds ]', indent_lvl=1 )

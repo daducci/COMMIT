@@ -233,7 +233,7 @@ int trk2dictionary(
     //          Parallel IC compartments
     // ==========================================
 
-    printf( "\n   \033[38;5;10m* Exporting IC compartments:\033[0m\n" );
+    printf( "\n   * Exporting IC compartments:\033[0m\n" );
     // unsigned int width = 25;
     // PROGRESS = new ProgressBar( (unsigned int) n_count, (unsigned int) width);
     if (verbosity > 0)
@@ -264,7 +264,7 @@ int trk2dictionary(
     //          Parallel EC compartments
     // ==========================================
 
-    printf( "\n   \033[38;5;10m* Exporting EC compartments:\033[0m\n" );
+    printf( "\n   * Exporting EC compartments:\033[0m\n" );
 
     int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
 
@@ -273,7 +273,7 @@ int trk2dictionary(
     /*=========================*/
     /*     Restricted ISO compartments     */
     /*=========================*/
-    printf( "\n   \033[38;5;10m* Exporting ISO compartments:\033[0m\n" );
+    printf( "\n   * Exporting ISO compartments:\033[0m\n" );
 
     int totISO = ISOcompartments(ptrTDI, path_out, threads_count);
 

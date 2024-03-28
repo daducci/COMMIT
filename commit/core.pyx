@@ -162,23 +162,23 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading data:' )
 
-        logger.subinfo('Acquisition scheme:', indent_char='*' )
+        logger.subinfo('Acquisition scheme:', indent_char='*', indent_lvl=1 )
         if scheme_filename is not None:
             self.set_config('scheme_filename', scheme_filename)
             self.set_config('b0_thr', b0_thr)
-            logger.subinfo('diffusion-weighted signal', indent_char='-', indent_lvl=1)
+            logger.subinfo('diffusion-weighted signal', indent_char='-', indent_lvl=2)
             self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
-            logger.subinfo('%d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ), indent_lvl=1, indent_char='-' )
+            logger.subinfo('%d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ), indent_lvl=2, indent_char='-' )
             scheme_string = f'{self.scheme.b0_count} @ b=0'
             for i in xrange(len(self.scheme.shells)) :
                 scheme_string += f', {len(self.scheme.shells[i]["idx"])} @ b={self.scheme.shells[i]["b"]:.1f}'
-            logger.subinfo( scheme_string, indent_lvl=1, indent_char='-' )
+            logger.subinfo( scheme_string, indent_lvl=2, indent_char='-' )
         else:
             # if no scheme is passed, assume data is scalar
             self.scheme = amico.scheme.Scheme( np.array( [[0,0,0,1000]] ), 0 )
-            logger.subinfo('scalar map', indent_char='-', indent_lvl=1)
+            logger.subinfo('scalar map', indent_char='-', indent_lvl=2)
 
-        logger.subinfo('Signal dataset:', indent_char='*' )
+        logger.subinfo('Signal dataset:', indent_char='*', indent_lvl=1 )
         self.set_config('dwi_filename', dwi_filename)
         self.set_config('b0_min_signal', b0_min_signal)
         self.set_config('replace_bad_voxels', replace_bad_voxels)
@@ -189,9 +189,9 @@ cdef class Evaluation :
         hdr = self.niiDWI.header if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_header()
         self.set_config('dim', self.niiDWI_img.shape[0:3])
         self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
-        logger.subinfo('dim    : %d x %d x %d x %d' % self.niiDWI_img.shape, indent_lvl=1, indent_char='-' )
-        logger.subinfo('pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim'), indent_lvl=1, indent_char='-' )
-        logger.subinfo('values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=1, indent_char='-' )
+        logger.subinfo('dim    : %d x %d x %d x %d' % self.niiDWI_img.shape, indent_lvl=2, indent_char='-' )
+        logger.subinfo('pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim'), indent_lvl=2, indent_char='-' )
+        logger.subinfo('values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2, indent_char='-' )
 
         if self.scheme.nS != self.niiDWI_img.shape[3] :
             logger.error( 'Scheme does not match with input data' )
@@ -206,7 +206,7 @@ cdef class Evaluation :
             else:
                 logger.error('Nan or Inf values in the raw signal. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
-        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
 
         # Preprocessing
         if self.get_config('scheme_filename') is not None:
@@ -216,7 +216,7 @@ cdef class Evaluation :
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
-                    logger.subinfo('Normalizing to b0', with_progress=True, indent_char='*')
+                    logger.subinfo('Normalizing to b0', with_progress=True, indent_char='*', indent_lvl=1)
                     with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                         b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
                         idx = b0 <= b0_min_signal * b0[b0>0].mean()
@@ -225,25 +225,25 @@ cdef class Evaluation :
                         b0[ idx ] = 0
                         for i in xrange(self.scheme.nS) :
                             self.niiDWI_img[:,:,:,i] *= b0
-                    logger.subinfo( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=1 )
+                    logger.subinfo( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2 )
                     del idx, b0
                 else :
                     logger.warning( 'There are no b0 volumes for normalization' )
 
             if self.scheme.b0_count > 1:
                 if self.get_config('doMergeB0') :
-                    logger.subinfo('Merging multiple b0 volume(s)', indent_char='*')
+                    logger.subinfo('Merging multiple b0 volume(s)', indent_char='*', indent_lvl=1)
                     mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                     self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
                     del mean
                 else :
-                    logger.subinfo('Keeping all b0 volume(s)', indent_char='*')
-                logger.subinfo('[ %d x %d x %d x %d ]' % self.niiDWI_img.shape, indent_lvl=1 )
+                    logger.subinfo('Keeping all b0 volume(s)', indent_char='*', indent_lvl=1)
+                logger.subinfo('[ %d x %d x %d x %d ]' % self.niiDWI_img.shape, indent_lvl=2 )
 
             if self.get_config('doDemean'):
                 mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
                 self.niiDWI_img = self.niiDWI_img - mean
-                logger.subinfo('Demeaning signal [ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_char='*' )
+                logger.subinfo('Demeaning signal [ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_char='*', indent_lvl=1 )
 
             # Check for Nan or Inf values in pre-processed data
             if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
@@ -297,11 +297,11 @@ cdef class Evaluation :
             logger.error( 'Model not set; call "set_model()" method first' )
         if self.model.id=='VolumeFractions' and ndirs!=1:
             ndirs = 1
-            logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*')
+            logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
         if 'commitwipmodels' in sys.modules :
             if self.model.restrictedISO is not None and ndirs!=1:
                 ndirs = 1
-                logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*')
+                logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
  
         # store some values for later use
         self.set_config('lmax', lmax)
@@ -329,7 +329,7 @@ cdef class Evaluation :
         # Dispatch to the right handler for each model
         tic = time.time()
         self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT, ndirs )
-        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
     def load_kernels( self ) :
@@ -344,7 +344,7 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the kernels:' )
-        logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', with_progress=True ) # TODO: check why not printed
+        logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', indent_lvl=1, with_progress=True ) # TODO: check why not printed
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
@@ -356,9 +356,9 @@ cdef class Evaluation :
 
         # Dispatch to the right handler for each model
         if self.get_config('doMergeB0') :
-            logger.subinfo( 'Merging multiple b0 volume(s)', indent_char='-', indent_lvl=1 )
+            logger.subinfo( 'Merging multiple b0 volume(s)', indent_char='-', indent_lvl=2 )
         else :
-            logger.subinfo( 'Keeping all b0 volume(s)', indent_char='-', indent_lvl=1 )
+            logger.subinfo( 'Keeping all b0 volume(s)', indent_char='-', indent_lvl=2 )
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
@@ -367,7 +367,7 @@ cdef class Evaluation :
 
         # De-mean kernels
         if self.get_config('doDemean') :
-            logger.subinfo('Demeaning signal', with_progress=True, indent_lvl=1, indent_char='-' )
+            logger.subinfo('Demeaning signal', with_progress=True, indent_lvl=2, indent_char='-' )
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                 for j in xrange(self.get_config('ndirs')) :
                     for i in xrange(nIC) :
@@ -379,7 +379,7 @@ cdef class Evaluation :
 
         # Normalize atoms
         if self.get_config('doNormalizeKernels') :
-            logger.subinfo('Normalizing kernels', with_progress=True, indent_lvl=1, indent_char='-' )
+            logger.subinfo('Normalizing kernels', with_progress=True, indent_lvl=2, indent_char='-' )
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                 self.KERNELS['wmr_norm'] = np.zeros( nIC )
                 for i in xrange(nIC) :
@@ -398,7 +398,7 @@ cdef class Evaluation :
                     self.KERNELS['iso_norm'][i] = np.linalg.norm( self.KERNELS['iso'][i,:] )
                     self.KERNELS['iso'][i,:] /= self.KERNELS['iso_norm'][i]
 
-        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
     cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
@@ -450,7 +450,7 @@ cdef class Evaluation :
 
         # segments from the tracts
         # ------------------------
-        logger.subinfo('Segments from the tracts', indent_char='*', with_progress=True )
+        logger.subinfo('Segments from the tracts', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             self.DICTIONARY['TRK'] = {}
             self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
@@ -486,11 +486,11 @@ cdef class Evaluation :
             for s in xrange(self.DICTIONARY['IC']['n']) :
                 sl[s] /= tl[ f[s] ]
 
-        logger.subinfo(f"{self.DICTIONARY['IC']['nF']} fibers and {self.DICTIONARY['IC']['n']} segments", indent_char='-', indent_lvl=1 )
+        logger.subinfo(f"{self.DICTIONARY['IC']['nF']} fibers and {self.DICTIONARY['IC']['n']} segments", indent_char='-', indent_lvl=2 )
 
         # segments from the peaks
         # -----------------------
-        logger.subinfo('Segments from the peaks', indent_char='*', with_progress=True )
+        logger.subinfo('Segments from the peaks', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             self.DICTIONARY['EC'] = {}
             self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
@@ -503,11 +503,11 @@ cdef class Evaluation :
             self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
             del idx
 
-        logger.subinfo( f"{self.DICTIONARY['EC']['nE']} segments", indent_char='-', indent_lvl=1)
+        logger.subinfo( f"{self.DICTIONARY['EC']['nE']} segments", indent_char='-', indent_lvl=2)
 
         # isotropic compartments
         # ----------------------
-        logger.subinfo('Isotropic contributions', indent_char='*', with_progress=True )
+        logger.subinfo('Isotropic contributions', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             self.DICTIONARY['ISO'] = {}
 
@@ -521,11 +521,11 @@ cdef class Evaluation :
             self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
             del idx
 
-        logger.subinfo( f"{self.DICTIONARY['ISO']['nV']} voxels", indent_char='-', indent_lvl=1 )
+        logger.subinfo( f"{self.DICTIONARY['ISO']['nV']} voxels", indent_char='-', indent_lvl=2 )
         
         # post-processing
         # ---------------
-        logger.subinfo('Post-processing', indent_char='*', with_progress=True )
+        logger.subinfo('Post-processing', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
             idx = self.DICTIONARY['MASK'].ravel(order='F').nonzero()[0]
@@ -538,7 +538,7 @@ cdef class Evaluation :
             self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
             self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
 
-        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
 
@@ -573,10 +573,10 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Distributing workload to different threads:' )
-        logger.subinfo('Number of threads : %d' % n , indent_char='*' )
+        logger.subinfo('Number of threads : %d' % n , indent_char='*', indent_lvl=1 )
 
         # Distribute load for the computation of A*x product
-        logger.subinfo('A operator ', indent_char='*', with_progress=True )
+        logger.subinfo('A operator ', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
@@ -628,7 +628,7 @@ cdef class Evaluation :
 
 
         # Distribute load for the computation of At*y product
-        logger.subinfo('A\' operator', indent_char='*', with_progress=True )
+        logger.subinfo('A\' operator', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
@@ -681,7 +681,7 @@ cdef class Evaluation :
             else :
                 self.THREADS['ISOt'] = None
 
-        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
     def build_operator( self, build_dir=None ) :
@@ -758,7 +758,7 @@ cdef class Evaluation :
 
         self.A = commit.operator.operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
-        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
 
 
     def get_y( self ):
@@ -1102,44 +1102,44 @@ cdef class Evaluation :
 
         self.regularisation_params = commit.solvers.init_regularisation(regularisation)
 
-        logger.subinfo( 'IC compartment:', indent_char='*' )
+        logger.subinfo( 'IC compartment:', indent_char='*', indent_lvl=1 )
         if (regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso') and dictIC_params is not None and 'coeff_weights' in dictIC_params:
-                logger.subinfo( f'Regularisation type: {regularisation["regIC"]} (weighted version)', indent_lvl=1, indent_char='-' )
+                logger.subinfo( f'Regularisation type: {regularisation["regIC"]} (weighted version)', indent_lvl=2, indent_char='-' )
         else:
-            logger.subinfo( f'Regularisation type: {regularisation["regIC"]}', indent_lvl=1, indent_char='-' )
-        logger.subinfo( f'Non-negativity constraint: {regularisation["nnIC"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Regularisation type: {regularisation["regIC"]}', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnIC"]}', indent_lvl=2, indent_char='-' )
         if regularisation['regIC'] is not None:
-            logger.subinfo( f'Lambda max: {regularisation["lambdaIC_max"]}', indent_lvl=1, indent_char='-' )
-            logger.subinfo( f'% lambda: {regularisation["lambdaIC_perc"]}', indent_lvl=1, indent_char='-' )
-            logger.subinfo( f'Lambda used: {regularisation["lambdaIC"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Lambda max: {regularisation["lambdaIC_max"]}', indent_lvl=2, indent_char='-' )
+            logger.subinfo( f'% lambda: {regularisation["lambdaIC_perc"]}', indent_lvl=2, indent_char='-' )
+            logger.subinfo( f'Lambda used: {regularisation["lambdaIC"]}', indent_lvl=2, indent_char='-' )
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
-            logger.subinfo( f'Number of groups: {len(dictIC_params["group_idx"])}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Number of groups: {len(dictIC_params["group_idx"])}', indent_lvl=2, indent_char='-' )
             if 'group_weights_prior' in dictIC_params:
-                logger.subinfo( f'Type of group weights: {dictIC_params["group_weights_type"]}, with prior knowledge', indent_lvl=1, indent_char='-' )
+                logger.subinfo( f'Type of group weights: {dictIC_params["group_weights_type"]}, with prior knowledge', indent_lvl=2, indent_char='-' )
             else:
-                logger.subinfo( f'Type of group weights: {dictIC_params["group_weights_type"]}', indent_lvl=1, indent_char='-' )
+                logger.subinfo( f'Type of group weights: {dictIC_params["group_weights_type"]}', indent_lvl=2, indent_char='-' )
 
-        logger.subinfo( 'EC compartment:', indent_char='*' )
+        logger.subinfo( 'EC compartment:', indent_char='*', indent_lvl=1 )
         if regularisation['regEC'] == 'lasso' and dictEC_params is not None and 'coeff_weights' in dictEC_params:
-            logger.subinfo( f'Regularisation type: {regularisation["regEC"]} (weighted version)', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Regularisation type: {regularisation["regEC"]} (weighted version)', indent_lvl=2, indent_char='-' )
         else:
-            logger.subinfo( f'Regularisation type: {regularisation["regEC"]}', indent_lvl=1, indent_char='-' )
-        logger.subinfo( f'Non-negativity constraint: {regularisation["nnEC"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Regularisation type: {regularisation["regEC"]}', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnEC"]}', indent_lvl=2, indent_char='-' )
         if regularisation['regEC'] is not None:
-            logger.subinfo( f'Lambda max: {regularisation["lambdaEC_max"]}', indent_lvl=1, indent_char='-' )
-            logger.subinfo( f'% lambda: {regularisation["lambdaEC_perc"]}', indent_lvl=1, indent_char='-' )
-            logger.subinfo( f'Lambda used: {regularisation["lambdaEC"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Lambda max: {regularisation["lambdaEC_max"]}', indent_lvl=2, indent_char='-' )
+            logger.subinfo( f'% lambda: {regularisation["lambdaEC_perc"]}', indent_lvl=2, indent_char='-' )
+            logger.subinfo( f'Lambda used: {regularisation["lambdaEC"]}', indent_lvl=2, indent_char='-' )
 
-        logger.subinfo( 'ISO compartment:', indent_char='*' )
+        logger.subinfo( 'ISO compartment:', indent_char='*', indent_lvl=1 )
         if regularisation['regISO'] == 'lasso' and dictISO_params is not None and 'coeff_weights' in dictISO_params:
-            logger.subinfo( f'Regularisation type: {regularisation["regISO"]} (weighted version)', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Regularisation type: {regularisation["regISO"]} (weighted version)', indent_lvl=2, indent_char='-' )
         else:
-            logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=1, indent_char='-' )
-        logger.subinfo( f'Non-negativity constraint: {regularisation["nnISO"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnISO"]}', indent_lvl=2, indent_char='-' )
         if regularisation['regISO'] is not None: 
-            logger.subinfo( f'Lambda max: {regularisation["lambdaISO_max"]}', indent_lvl=1, indent_char='-' )
-            logger.subinfo( f'% lambda: {regularisation["lambdaISO_perc"]}', indent_lvl=1, indent_char='-' )
-            logger.subinfo( f'Lambda used: {regularisation["lambdaISO"]}', indent_lvl=1, indent_char='-' )
+            logger.subinfo( f'Lambda max: {regularisation["lambdaISO_max"]}', indent_lvl=2, indent_char='-' )
+            logger.subinfo( f'% lambda: {regularisation["lambdaISO_perc"]}', indent_lvl=2, indent_char='-' )
+            logger.subinfo( f'Lambda used: {regularisation["lambdaISO"]}', indent_lvl=2, indent_char='-' )
 
         logger.subinfo( f'[ {time.time() - tr:.1f} seconds ]' )
 
@@ -1207,15 +1207,15 @@ cdef class Evaluation :
                 logger.error( 'Confidence map must be 3D or 4D dataset' )
 
             if self.confidence_map_img.ndim == 3:
-                logger.subinfo('Extending the confidence map volume to match the DWI signal volume(s)... ', indent_lvl=1, indent_char='-' )
+                logger.subinfo('Extending the confidence map volume to match the DWI signal volume(s)... ', indent_lvl=2, indent_char='-' )
                 self.confidence_map_img = np.repeat(self.confidence_map_img[:, :, :, np.newaxis], self.niiDWI_img.shape[3], axis=3)
             hdr = confidence_map.header if nibabel.__version__ >= '2.0.0' else confidence_map.get_header()
             confidence_map_dim = self.confidence_map_img.shape[0:3]
             confidence_map_pixdim = tuple( hdr.get_zooms()[:3] )
-            logger.subinfo('dim    : %d x %d x %d x %d' % self.confidence_map_img.shape, indent_lvl=2, indent_char='-')
-            logger.subinfo('pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim, indent_lvl=2, indent_char='-')
+            logger.subinfo('dim    : %d x %d x %d x %d' % self.confidence_map_img.shape, indent_lvl=3, indent_char='-')
+            logger.subinfo('pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim, indent_lvl=3, indent_char='-')
 
-            logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
+            logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
 
             if ( self.get_config('dim') != confidence_map_dim ):
                 logger.error( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
@@ -1244,7 +1244,7 @@ cdef class Evaluation :
 
             elif(confidence_map_rescale):
                 confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
-                logger.subinfo ( '[Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ), indent_lvl=2 )
+                logger.subinfo ( '[Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ), indent_lvl=3 )
                 confidence_array_changed = True
 
             if(confidence_array_changed):
@@ -1270,7 +1270,7 @@ cdef class Evaluation :
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
 
-        logger.subinfo( f'[ {time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG["optimization"]["fit_time"]) )} ]' )
+        logger.info( f'[ {time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG["optimization"]["fit_time"]) )} ]' )
 
 
     def get_coeffs( self, get_normalized=True ):
@@ -1366,7 +1366,7 @@ cdef class Evaluation :
         self.set_config('RESULTS_path', RESULTS_path)
 
         # Map of voxelwise errors
-        logger.subinfo('Fitting errors:', indent_lvl=2, indent_char='-' )
+        logger.subinfo('Fitting errors:', indent_lvl=3, indent_char='-' )
 
         niiMAP_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
@@ -1378,7 +1378,7 @@ cdef class Evaluation :
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
 
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-        logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+        logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=3, indent_char='-')
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
         niiMAP_hdr['cal_min'] = 0
         niiMAP_hdr['cal_max'] = tmp.max()
@@ -1389,7 +1389,7 @@ cdef class Evaluation :
         tmp[ idx ] = 1
         tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
         tmp[ idx ] = 0
-        logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+        logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=3, indent_char='-')
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
         niiMAP_hdr['cal_min'] = 0
         niiMAP_hdr['cal_max'] = 1
@@ -1403,7 +1403,7 @@ cdef class Evaluation :
             tmp[ idx ] = 1
             tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
             tmp[ idx ] = 0
-            logger.subinfo(f'RMSE considering the confidence map:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+            logger.subinfo(f'RMSE considering the confidence map:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=3, indent_char='-')
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = tmp.max()
@@ -1414,7 +1414,7 @@ cdef class Evaluation :
             tmp[ idx ] = 1
             tmp = np.sqrt( np.sum(confidence_array*(y_mea-y_est)**2,axis=1) / tmp )
             tmp[ idx ] = 0
-            logger.subinfo(f'NRMSE considering the confidence map: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+            logger.subinfo(f'NRMSE considering the confidence map: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=3, indent_char='-')
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
             niiMAP_hdr['cal_max'] = 1
@@ -1422,9 +1422,9 @@ cdef class Evaluation :
             confidence_array = None
 
         # Map of compartment contributions
-        logger.subinfo('Voxelwise contributions:', indent_char='*')
+        logger.subinfo('Voxelwise contributions:', indent_char='*', indent_lvl=1)
 
-        logger.subinfo('Intra-axonal', indent_lvl=2, indent_char='-', with_progress=True)
+        logger.subinfo('Intra-axonal', indent_lvl=3, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['wmr']) > 0 :
@@ -1435,7 +1435,7 @@ cdef class Evaluation :
                 ).astype(np.float32)
                 niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
-        logger.subinfo('Extra-axonal', indent_lvl=2, indent_char='-', with_progress=True)
+        logger.subinfo('Extra-axonal', indent_lvl=3, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['wmh']) > 0 :
@@ -1444,7 +1444,7 @@ cdef class Evaluation :
                 xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
                 niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
-        logger.subinfo('Isotropic   ', indent_lvl=2, indent_char='-', with_progress=True)
+        logger.subinfo('Isotropic   ', indent_lvl=3, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['iso']) > 0 :
@@ -1468,8 +1468,8 @@ cdef class Evaluation :
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # Configuration and results
-        logger.subinfo('Configuration and results:', indent_char='*')
-        logger.subinfo('Saving streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
+        logger.subinfo('Configuration and results:', indent_char='*', indent_lvl=1)
+        logger.subinfo('Saving streamline_weights.txt', indent_lvl=3, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             xic, _, _ = self.get_coeffs()
             if stat_coeffs != 'all' and xic.size > 0 :
@@ -1529,7 +1529,7 @@ cdef class Evaluation :
         #   item 0: dictionary with all the configuration details
         #   item 1: np.array obtained through the optimisation process with the normalised kernels
         #   item 2: np.array renormalisation of coeffs in item 1
-        logger.subinfo('results.pickle:              ', indent_char='-', indent_lvl=2, with_progress=True)
+        logger.subinfo('results.pickle:              ', indent_char='-', indent_lvl=3, with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             xic, xec, xiso = self.get_coeffs()
             x = self.x
@@ -1541,10 +1541,10 @@ cdef class Evaluation :
                 pickle.dump( [self.CONFIG, x, self.x], fid, protocol=2 )
 
         if save_est_dwi :
-            logger.subinfo('Estimated signal:', indent_char='-', indent_lvl=2, with_progress=True)
+            logger.subinfo('Estimated signal:', indent_char='-', indent_lvl=3, with_progress=True)
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:                    
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
 
-        logger.subinfo( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
