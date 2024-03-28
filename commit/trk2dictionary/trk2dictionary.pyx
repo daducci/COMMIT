@@ -345,7 +345,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
 
     if extension == ".trk":
-        logger.subinfoinfo ( f'geometry taken from "{filename_tractogram}"', indent_lvl=3, indent_char='-' )
+        logger.subinfo ( f'geometry taken from "{filename_tractogram}"', indent_lvl=3, indent_char='-' )
         Nx = int(hdr['dimensions'][0])
         Ny = int(hdr['dimensions'][1])
         Nz = int(hdr['dimensions'][2])
