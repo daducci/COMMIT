@@ -1092,8 +1092,8 @@ cdef class Evaluation :
                 logger.subinfo( f'Regularisation type: {regularisation["regIC"]} (weighted version)', indent_lvl=2, indent_char='-' )
             else:
                 logger.subinfo( f'Regularisation type: {regularisation["regIC"]}', indent_lvl=2, indent_char='-' )
-        if regularisation["nnIC"]:
-            logger.subinfo( f'Non-negativity constraint', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnIC"]}', indent_lvl=2, indent_char='-' )
+
         if regularisation['regIC'] is not None:
             logger.debug( f'Lambda max: {regularisation["lambdaIC_max"]}' )
             logger.debug( f'% lambda: {regularisation["lambdaIC_perc"]}' )
@@ -1158,8 +1158,9 @@ cdef class Evaluation :
                 logger.subinfo( f'Regularisation type: {regularisation["regEC"]} (weighted version)', indent_lvl=2, indent_char='-' )
             else:
                 logger.subinfo( f'Regularisation type: {regularisation["regEC"]}', indent_lvl=2, indent_char='-' )
-        if regularisation["nnEC"]:
-            logger.subinfo( f'Non-negativity constraint', indent_char='-', indent_lvl=2 )
+
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnEC"]}', indent_char='-', indent_lvl=2 )
+
         if regularisation['regEC'] is not None:
             logger.debug( f'Lambda max: {regularisation["lambdaEC_max"]}' )
             logger.debug( f'% lambda: {regularisation["lambdaEC_perc"]}' )
@@ -1212,8 +1213,8 @@ cdef class Evaluation :
                 logger.subinfo( f'Regularisation type: {regularisation["regISO"]} (weighted version)', indent_lvl=2, indent_char='-' )
             else:
                 logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=2, indent_char='-' )
-        if regularisation["nnISO"]:
-            logger.subinfo( f'Non-negativity constraint', indent_char='-', indent_lvl=2 )
+
+        logger.subinfo( f'Non-negativity constraint: {regularisation["nnISO"]}', indent_char='-', indent_lvl=2 )
         if regularisation['regISO'] is not None: 
             logger.debug( f'Lambda max: {regularisation["lambdaISO_max"]}' )
             logger.debug( f'% lambda: {regularisation["lambdaISO_perc"]}' )
