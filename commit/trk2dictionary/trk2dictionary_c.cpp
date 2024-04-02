@@ -233,10 +233,10 @@ int trk2dictionary(
     //          Parallel IC compartments
     // ==========================================
 
-    printf( "\n   * Exporting IC compartments:\033[0m\n" );
+    printf( "   * Exporting IC compartments:\033[0m\n" );
     // unsigned int width = 25;
     // PROGRESS = new ProgressBar( (unsigned int) n_count, (unsigned int) width);
-    if (verbosity > 0)
+    if (verbosity > 2)
     {
         PROGRESS->reset((unsigned int) n_count);
         PROGRESS->setPrefix("     ");
@@ -253,10 +253,10 @@ int trk2dictionary(
         threads[i].join();
     }
 
-    if (verbosity > 0)
+    if (verbosity > 2)
         PROGRESS->close();
 
-    printf( "     [ %d streamlines kept, %ld segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
+    printf( "      [ %d streamlines kept, %ld segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
     totFibers.clear();
     threads.clear();
 
@@ -264,20 +264,20 @@ int trk2dictionary(
     //          Parallel EC compartments
     // ==========================================
 
-    printf( "\n   * Exporting EC compartments:\033[0m\n" );
+    printf( "   * Exporting EC compartments:\033[0m\n" );
 
     int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
 
-    printf("     [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
+    printf("      [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 
     /*=========================*/
     /*     Restricted ISO compartments     */
     /*=========================*/
-    printf( "\n   * Exporting ISO compartments:\033[0m\n" );
+    printf( "   * Exporting ISO compartments:\033[0m\n" );
 
     int totISO = ISOcompartments(ptrTDI, path_out, threads_count);
 
-    printf("     [ %d voxels ]\n", totISO );
+    printf("      [ %d voxels ]\n", totISO );
 
     return 1;
 
@@ -561,7 +561,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
         totFibers[idx] = tempTotFibers;
         totICSegments[idx] = temp_totICSegments;
 
-        if (verbosity > 0)
+        if (verbosity > 2)
         {
             if (idx == 0)
             {

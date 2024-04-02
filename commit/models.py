@@ -46,7 +46,8 @@ class StickZeppelinBall(_StickZeppelinBall):
     """
     def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
         set_verbose(2)
-        super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
+        return super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
+
 
 
 class CylinderZeppelinBall(_CylinderZeppelinBall):
@@ -55,7 +56,7 @@ class CylinderZeppelinBall(_CylinderZeppelinBall):
     """
     def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
         set_verbose(2)
-        super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
+        return super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
 
 class VolumeFractions(BaseModel):
     """Implements a simple model where each compartment contributes only with

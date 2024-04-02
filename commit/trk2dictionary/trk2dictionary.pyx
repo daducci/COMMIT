@@ -535,7 +535,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         return None
 
     # Concatenate files together
-    logger.subinfo('')
     logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=True )
     cdef int discarded = 0
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
@@ -637,4 +636,4 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         shutil.rmtree(path_temp)
 
 
-    logger.subinfo( f'[ {time.time() - tic:.1f} seconds ]', indent_lvl=1 )
+    logger.info( f'[ {time.time() - tic:.1f} seconds ]' )
