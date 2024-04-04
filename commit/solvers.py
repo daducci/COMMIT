@@ -1,9 +1,13 @@
-import numpy as np
-from math import sqrt
 import sys
-eps = np.finfo(float).eps
-from dicelib.ui import __logger__ as logger
 
+from math import sqrt
+
+import numpy as np
+
+from dicelib.ui import setup_logger
+
+logger = setup_logger('solvers')
+eps = np.finfo(float).eps
 list_regularizers = [None, 'lasso', 'group_lasso', 'sparse_group_lasso']
 from commit.proximals import non_negativity, omega_group_lasso, prox_group_lasso, soft_thresholding, w_soft_thresholding, omega_sparse_group_lasso, omega_w_sparse_group_lasso
 # removed, for now, projection_onto_l2_ball

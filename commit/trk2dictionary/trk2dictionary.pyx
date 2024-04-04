@@ -1,25 +1,36 @@
 #!python
 # cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
-import numpy as np
-cimport numpy as np
+
 from libc.stdlib cimport malloc, free
+from libcpp cimport bool
+cimport numpy as np
+
 import nibabel
-from dicelib.clustering import run_clustering
-from dicelib.ui import _in_notebook
-from dicelib.ui import ProgressBar
-from dicelib.ui import __logger__ as logger
-from dicelib import ui 
+import numpy as np
 
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
 from os import makedirs, remove
-import time
-import amico
+
+from dicelib.clustering import run_clustering
+from dicelib.ui import _in_notebook
+from dicelib.ui import ProgressBar, setup_logger
+from dicelib import ui
+
 import pickle
+
 from pkg_resources import get_distribution
+
 import shutil
 
-from libcpp cimport bool
+import time
+
+import amico
+
+ 
+
+
+logger = setup_logger('trk2dictionary')
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
@@ -157,7 +168,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         The verbosity level (0: only errors, 1: errors and warnings, 2: errors, warnings and info, 3: errors, warnings, info and progress bars, 4: errors, warnings, info, progress bars and debug)
     """
 
-    ui.set_verbose(verbose)
+    ui.set_verbose('trk2dictionary' ,verbose)
 
     # check the value of ndirs
     if not amico.lut.is_valid(ndirs):
@@ -324,8 +335,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
                                             temp_folder=path_temp, clust_thr=blur_clust_thr[0],
                                             keep_temp_files=True, force=True, verbose=1)
         filename_tractogram = filename_out
-
-    ui.set_verbose(verbose)
 
 
     # Load data from files
@@ -635,6 +644,5 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     if not keep_temp:
         shutil.rmtree(path_temp)
-
 
     logger.info( f'[ {time.time() - tic:.1f} seconds ]' )

@@ -1,28 +1,34 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, nonecheck=False, cdivision=True, initializedcheck=False, binding=False
-cimport cython
-import numpy as np
+
 cimport numpy as np
 
-import time
 import glob
-import sys
-from os import makedirs, remove, getcwd, listdir
+from os import makedirs, remove, listdir
 from os.path import exists, join as pjoin, isfile, isdir
-import nibabel
-import pickle
-import commit.models
-import commit.solvers
-import amico.scheme
-import amico.lut
-from dicelib.ui import __logger__ as logger
-from dicelib.ui import ProgressBar
-from dicelib import ui
-from importlib import reload, invalidate_caches
 import pyximport
+import sys
+import time
+
+import nibabel
+
+import numpy as np
+
+import pickle
+
 from pkg_resources import get_distribution
 
+import amico.scheme
+import amico.lut
 
+from dicelib.ui import ProgressBar, setup_logger
+from dicelib import ui
+
+import commit.models
+import commit.solvers
+
+
+logger = setup_logger('core')
 
 def setup( lmax=12 ) :
     """General setup/initialization of the COMMIT framework.
@@ -112,7 +118,7 @@ cdef class Evaluation :
         self.set_config('doDemean', False)
         self.set_config('doNormalizeMaps', False)
 
-        ui.set_verbose( self.verbose )
+        ui.set_verbose( 'core', self.verbose )
 
 
     def set_verbose( self, verbose ) :
@@ -124,7 +130,7 @@ cdef class Evaluation :
             The verbosity level (0: only errors, 1: errors and warnings, 2: errors, warnings and info, 3: errors, warnings, info and progress bars, 4: errors, warnings, info, progress bars and debug)
         """
         self.verbose = verbose
-        ui.set_verbose( verbose )
+        ui.set_verbose( 'core', verbose )
 
     def set_config( self, key, value ) :
         self.CONFIG[ key ] = value
@@ -1260,9 +1266,7 @@ cdef class Evaluation :
             logger.error( 'Operator not built; call "build_operator()" first' )
 
         if self.regularisation_params is None:
-            # ui.set_verbose(1)
             self.set_regularisation()
-            # ui.set_verbose(self.verbose)
 
         logger.subinfo('')
         logger.info( 'Fit model:' )

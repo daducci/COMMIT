@@ -1,9 +1,14 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, profile=False
-cimport cython
+
+from libc.math cimport sqrt
+
 import numpy as np
 cimport numpy as np
-from libc.math cimport sqrt
+
+from dicelib.ui import setup_logger
+
+logger = setup_logger('proximals')
 
 
 cpdef non_negativity(double [::1] x, int compartment_start, int compartment_size):

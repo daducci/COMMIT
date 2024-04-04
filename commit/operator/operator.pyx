@@ -1,9 +1,10 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, profile=False
-
-import cython
-import numpy as np
 cimport numpy as np
+
+import numpy as np
+
+from dicelib.ui import setup_logger
 
 # Interfaces to actual C code performing the multiplications
 cdef extern void COMMIT_A(
@@ -26,7 +27,7 @@ cdef extern void COMMIT_At(
     unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
 ) nogil
 
-
+logger = setup_logger('core')
 
 cdef class LinearOperator :
     """This class is a wrapper to the C code for performing marix-vector multiplications
