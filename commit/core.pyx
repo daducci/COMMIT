@@ -23,6 +23,7 @@ import amico.lut
 
 from dicelib.ui import ProgressBar, setup_logger
 from dicelib import ui
+from dicelib.utils import format_time
 
 import commit.models
 import commit.solvers
@@ -212,7 +213,7 @@ cdef class Evaluation :
             else:
                 logger.error('Nan or Inf values in the raw signal. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
-        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
         # Preprocessing
         if self.get_config('scheme_filename') is not None:
@@ -259,7 +260,7 @@ cdef class Evaluation :
                 else:
                     logger.error('Nan or Inf values in the signal after the pre-processing. Try using the "replace_bad_voxels" or "b0_min_signal" parameters when calling "load_data()"')
 
-            logger.info( f'[ {( time.time() - tic ):.1f} seconds ]' )
+            logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
     def set_model( self, model_name ) :
@@ -335,7 +336,7 @@ cdef class Evaluation :
         # Dispatch to the right handler for each model
         tic = time.time()
         self.model.generate( self.get_config('ATOMS_path'), aux, idx_IN, idx_OUT, ndirs )
-        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
     def load_kernels( self ) :
@@ -404,7 +405,7 @@ cdef class Evaluation :
                     self.KERNELS['iso_norm'][i] = np.linalg.norm( self.KERNELS['iso'][i,:] )
                     self.KERNELS['iso'][i,:] /= self.KERNELS['iso_norm'][i]
 
-        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
     cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
@@ -544,7 +545,7 @@ cdef class Evaluation :
             self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
             self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
 
-        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
 
@@ -687,7 +688,7 @@ cdef class Evaluation :
             else :
                 self.THREADS['ISOt'] = None
 
-        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
     def build_operator( self, build_dir=None ) :
@@ -764,7 +765,7 @@ cdef class Evaluation :
 
         self.A = commit.operator.operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
 
-        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
     def get_y( self ):
@@ -1229,7 +1230,7 @@ cdef class Evaluation :
 
         self.regularisation_params = commit.solvers.init_regularisation(regularisation)
 
-        logger.info( f'[ {time.time() - tr:.1f} seconds ]' )
+        logger.info( f'[ {format_time(time.time() - tr)} ]' )
 
 
     def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False ) :
@@ -1301,7 +1302,7 @@ cdef class Evaluation :
             logger.subinfo('dim    : %d x %d x %d x %d' % self.confidence_map_img.shape, indent_lvl=3, indent_char='-')
             logger.subinfo('pixdim : %.3f x %.3f x %.3f' % confidence_map_pixdim, indent_lvl=3, indent_char='-')
 
-            logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
+            logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
             if ( self.get_config('dim') != confidence_map_dim ):
                 logger.error( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
@@ -1356,7 +1357,8 @@ cdef class Evaluation :
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
 
-        logger.info( f'[ {time.strftime("%Hh %Mm %Ss", time.gmtime(self.CONFIG["optimization"]["fit_time"]) )} ]' )
+        logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
+
 
 
     def get_coeffs( self, get_normalized=True ):
@@ -1633,4 +1635,4 @@ cdef class Evaluation :
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
 
-        logger.info( f'[ {(time.time() - tic):.1f} seconds ]' )
+        logger.info( f'[ {format_time(time.time() - tic)} ]' )

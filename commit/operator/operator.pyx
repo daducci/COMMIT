@@ -27,7 +27,7 @@ cdef extern void COMMIT_At(
     unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
 ) nogil
 
-logger = setup_logger('core')
+logger = setup_logger('operator')
 
 cdef class LinearOperator :
     """This class is a wrapper to the C code for performing marix-vector multiplications

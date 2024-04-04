@@ -16,6 +16,7 @@ from dicelib.clustering import run_clustering
 from dicelib.ui import _in_notebook
 from dicelib.ui import ProgressBar, setup_logger
 from dicelib import ui
+from dicelib.utils import format_time
 
 import pickle
 
@@ -645,4 +646,4 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if not keep_temp:
         shutil.rmtree(path_temp)
 
-    logger.info( f'[ {time.time() - tic:.1f} seconds ]' )
+    logger.info( f'[ {format_time(time.time() - tic)} ]' )
