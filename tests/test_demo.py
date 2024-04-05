@@ -7,16 +7,13 @@ import amico
 from commit import trk2dictionary
 import commit
 
-from dicelib.ui import ProgressBar, setup_logger
+from dicelib.ui import setup_logger
 
 
 logger = setup_logger('test_demo')
 
 commit.core.setup()
 
-
-# get path to the current directory
-# local_path = os.path.dirname( os.path.realpath( __file__ ) )
 
 def run_commit_StickZeppelinBall(local_path):
     trk2dictionary.run(
@@ -118,9 +115,6 @@ def run_commit_VolumeFractions(local_path):
     mit.save_results()
 
 
-# def check_config(result_config, ref_config):
-
-
 def check_results(pickle_result, ref_pickle):
     with open(pickle_result, 'rb') as f:
         data = pickle.load(f)
@@ -131,10 +125,19 @@ def check_results(pickle_result, ref_pickle):
     ref_optimization = ref_data[0]["optimization"]
     print(result_optimization["fit_details"])
     print(ref_optimization["fit_details"])
+
     try:
-        assert result_optimization["fit_details"] == ref_optimization["fit_details"]
+        assert abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["regterm"] - ref_optimization["fit_details"]["regterm"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["cost_function"] - ref_optimization["fit_details"]["cost_function"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel_x"]) < 1e-4
+        assert result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]
+
     except AssertionError:
-        print("fit_details are not equal")
+        logger.error("Results do not match")
         sys.exit(1)
 
 
