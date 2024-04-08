@@ -1056,6 +1056,7 @@ cdef class Evaluation :
                     if weightsIC_group is not None and group.size>0:
                         newweightsIC_group.append(weightsIC_group[count])
 
+                newweightsIC_group = np.array(newweightsIC_group, dtype=np.float64)
                 dictIC_params['group_idx'] = np.array(newICgroup_idx, dtype=np.object_)
                 if weightsIC_group.size != newweightsIC_group.size:
                     logger.warning(f"""\
