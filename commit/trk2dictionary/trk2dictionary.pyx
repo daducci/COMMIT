@@ -199,7 +199,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             logger.error( 'The grid spacing of the blur must be positive' )
 
     tic = time.time()
-    logger.info( 'Creating data structure from tractogram:' )
+    logger.info( 'Creating data structure from tractogram' )
 
     logger.subinfo( 'Configuration:', indent_char='*', indent_lvl=1 )
     logger.subinfo( f'Segment position = {"COMPUTE INTERSECTIONS" if do_intersect else "CENTROID"}', indent_lvl=2, indent_char='-' )

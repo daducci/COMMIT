@@ -167,7 +167,7 @@ cdef class Evaluation :
         # Loading data and acquisition scheme
         tic = time.time()
         logger.subinfo('')
-        logger.info( 'Loading data:' )
+        logger.info( 'Loading data' )
 
         logger.subinfo('Acquisition scheme:', indent_char='*', indent_lvl=1 )
         if scheme_filename is not None:
@@ -219,7 +219,7 @@ cdef class Evaluation :
         if self.get_config('scheme_filename') is not None:
             tic = time.time()
             logger.subinfo('')
-            logger.info( 'Preprocessing:' )
+            logger.info( 'Preprocessing' )
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
@@ -350,7 +350,7 @@ cdef class Evaluation :
 
         tic = time.time()
         logger.subinfo('')
-        logger.info( 'Loading the kernels:' )
+        logger.info( 'Loading the kernels' )
         logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', indent_lvl=1, with_progress=True ) # TODO: check why not printed
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             # auxiliary data structures
@@ -426,7 +426,7 @@ cdef class Evaluation :
 
         tic = time.time()
         logger.subinfo('')
-        logger.info( 'Loading the dictionary:' )
+        logger.info( 'Loading the dictionary' )
         self.DICTIONARY = {}
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
@@ -579,7 +579,7 @@ cdef class Evaluation :
 
         tic = time.time()
         logger.subinfo('')
-        logger.info( 'Distributing workload to different threads:' )
+        logger.info( 'Distributing workload to different threads' )
         logger.subinfo('Number of threads : %d' % n , indent_char='*', indent_lvl=1 )
 
         # Distribute load for the computation of A*x product
@@ -719,7 +719,7 @@ cdef class Evaluation :
 
         tic = time.time()
         logger.subinfo('')
-        logger.info( 'Building linear operator A:' )
+        logger.info( 'Building linear operator A' )
 
         # need to pass these parameters at runtime for compiling the C code
         from commit.operator import config
@@ -921,7 +921,7 @@ cdef class Evaluation :
 
         tr = time.time()
         logger.subinfo('')
-        logger.info( 'Setting regularisation:' )
+        logger.info( 'Setting regularisation' )
         
         ############################
         # INTRACELLULAR COMPARTMENT#
@@ -1271,7 +1271,7 @@ cdef class Evaluation :
             self.set_regularisation()
 
         logger.subinfo('')
-        logger.info( 'Fit model:' )
+        logger.info( 'Fit model' )
 
         # Confidence map
         self.confidence_map_img = None
