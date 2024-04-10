@@ -207,11 +207,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     logger.subinfo( f'Coordinates shift in Y = {fiber_shiftY:.3f} (voxel-size units)', indent_lvl=2, indent_char='-' )
     logger.subinfo( f'Coordinates shift in Z = {fiber_shiftZ:.3f} (voxel-size units)', indent_lvl=2, indent_char='-' )
     if min_seg_len >= 1e-3:
-        logger.subinfo( f'Min segment len  = {min_seg_len:.3f} mm', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'Min segment len    = {min_seg_len:.3f} mm', indent_lvl=2, indent_char='-' )
     else:
-        logger.subinfo( f'Min segment len  = {min_seg_len:.2e} mm', indent_lvl=2, indent_char='-' )
-    logger.subinfo( f'Min streamline len    = {min_fiber_len:.2f} mm', indent_lvl=2, indent_char='-' )
-    logger.subinfo( f'Max streamline len    = {max_fiber_len:.2f} mm', indent_lvl=2, indent_char='-' )
+        logger.subinfo( f'Min segment len    = {min_seg_len:.2e} mm', indent_lvl=2, indent_char='-' )
+    logger.subinfo( f'Min streamline len = {min_fiber_len:.2f} mm', indent_lvl=2, indent_char='-' )
+    logger.subinfo( f'Max streamline len = {max_fiber_len:.2f} mm', indent_lvl=2, indent_char='-' )
 
     # check blur params
     cdef :
@@ -344,7 +344,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef short* ptrHashTable = &htable[0]
 
     # Streamlines from tractogram
-    logger.subinfo( 'Tractogram', indent_lvl=2, indent_char='-' )
+    logger.subinfo( 'Tractogram:', indent_lvl=2, indent_char='-' )
 
     if not exists(filename_tractogram):
         logger.error( f'Tractogram file not found: {filename_tractogram}' )
@@ -427,7 +427,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrMASK
     cdef float [:, :, ::1] niiMASK_img
     if filename_mask is not None :
-        logger.subinfo( 'Filtering mask', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'Filtering mask:', indent_lvl=2, indent_char='-' )
         niiMASK = nibabel.load( filename_mask )
         niiMASK_hdr = _get_header( niiMASK )
         logger.subinfo( f'{niiMASK.shape[0]} x {niiMASK.shape[1]} x {niiMASK.shape[2]}', indent_lvl=3, indent_char='-' )
@@ -454,7 +454,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef double* ptrPeaksAffine
 
     if filename_peaks is not None :
-        logger.subinfo( 'EC orientations', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'EC orientations:', indent_lvl=2, indent_char='-' )
         niiPEAKS = nibabel.load( filename_peaks )
         niiPEAKS_hdr = _get_header( niiPEAKS )
         logger.subinfo( f'{niiPEAKS.shape[0]} x {niiPEAKS.shape[1]} x {niiPEAKS.shape[2]} x {niiPEAKS.shape[3]}', indent_lvl=3, indent_char='-' )

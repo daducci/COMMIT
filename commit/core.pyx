@@ -167,7 +167,7 @@ cdef class Evaluation :
         # Loading data and acquisition scheme
         tic = time.time()
         logger.subinfo('')
-        logger.info( 'Loading data' )
+        logger.info( 'Loading the data' )
 
         logger.subinfo('Acquisition scheme:', indent_char='*', indent_lvl=1 )
         if scheme_filename is not None:
@@ -223,7 +223,7 @@ cdef class Evaluation :
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
-                    logger.subinfo('Normalizing to b0', with_progress=True, indent_char='*', indent_lvl=1)
+                    logger.subinfo('Normalizing to b0:', with_progress=True, indent_char='*', indent_lvl=1)
                     with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
                         b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
                         idx = b0 <= b0_min_signal * b0[b0>0].mean()
@@ -239,18 +239,19 @@ cdef class Evaluation :
 
             if self.scheme.b0_count > 1:
                 if self.get_config('doMergeB0') :
-                    logger.subinfo('Merging multiple b0 volume(s)', indent_char='*', indent_lvl=1)
+                    logger.subinfo('Merging multiple b0 volume(s):', indent_char='*', indent_lvl=1)
                     mean = np.expand_dims( np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 ), axis=3 )
                     self.niiDWI_img = np.concatenate( (mean, self.niiDWI_img[:,:,:,self.scheme.dwi_idx]), axis=3 )
                     del mean
                 else :
-                    logger.subinfo('Keeping all b0 volume(s)', indent_char='*', indent_lvl=1)
+                    logger.subinfo('Keeping all b0 volume(s):', indent_char='*', indent_lvl=1)
                 logger.subinfo('[ %d x %d x %d x %d ]' % self.niiDWI_img.shape, indent_lvl=2 )
 
             if self.get_config('doDemean'):
                 mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
                 self.niiDWI_img = self.niiDWI_img - mean
-                logger.subinfo('Demeaning signal [ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_char='*', indent_lvl=1 )
+                logger.subinfo('Demeaning signal:', indent_char='*', indent_lvl=1)
+                logger.subinfo('[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2 )
 
             # Check for Nan or Inf values in pre-processed data
             if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
@@ -294,7 +295,7 @@ cdef class Evaluation :
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 500)
         """
         logger.subinfo('')
-        logger.info( 'Simulating with "%s" model:' % self.model.name )
+        logger.info( 'Simulating with "%s" model' % self.model.name )
 
         if not amico.lut.is_valid( ndirs ):
             logger.error( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
@@ -426,7 +427,7 @@ cdef class Evaluation :
 
         tic = time.time()
         logger.subinfo('')
-        logger.info( 'Loading the dictionary' )
+        logger.info( 'Loading the data structure' )
         self.DICTIONARY = {}
         self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
@@ -457,7 +458,7 @@ cdef class Evaluation :
 
         # segments from the tracts
         # ------------------------
-        logger.subinfo('Segments from the tracts', indent_char='*', indent_lvl=1, with_progress=True )
+        logger.subinfo('Segments from the tracts:', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             self.DICTIONARY['TRK'] = {}
             self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
@@ -497,7 +498,7 @@ cdef class Evaluation :
 
         # segments from the peaks
         # -----------------------
-        logger.subinfo('Segments from the peaks', indent_char='*', indent_lvl=1, with_progress=True )
+        logger.subinfo('Segments from the peaks:', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             self.DICTIONARY['EC'] = {}
             self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
@@ -514,7 +515,7 @@ cdef class Evaluation :
 
         # isotropic compartments
         # ----------------------
-        logger.subinfo('Isotropic contributions', indent_char='*', indent_lvl=1, with_progress=True )
+        logger.subinfo('Isotropic contributions:', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             self.DICTIONARY['ISO'] = {}
 
@@ -580,7 +581,7 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Distributing workload to different threads' )
-        logger.subinfo('Number of threads : %d' % n , indent_char='*', indent_lvl=1 )
+        logger.subinfo('Number of threads: %d' % n , indent_char='*', indent_lvl=1 )
 
         # Distribute load for the computation of A*x product
         logger.subinfo('A operator ', indent_char='*', indent_lvl=1, with_progress=True )
@@ -1423,7 +1424,7 @@ cdef class Evaluation :
             RESULTS_path = RESULTS_path + path_suffix
 
         logger.subinfo('')
-        logger.info( 'Saving results to "%s/*":' % RESULTS_path )
+        logger.info( 'Saving results to "%s/*"' % RESULTS_path )
         tic = time.time()
 
         if self.x is None :
