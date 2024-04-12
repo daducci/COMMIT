@@ -49,7 +49,7 @@ Repository = "https://github.com/daducci/COMMIT.git"
 Issues = "https://github.com/daducci/COMMIT/issues"
 Changelog = "https://github.com/daducci/COMMIT/blob/master/CHANGELOG.md"
 
-[tools.setuptools]
+[tool.setuptools]
 packages = [
     "commit",
     "commit.operator"
@@ -57,8 +57,8 @@ packages = [
 include-package-data = false
 
 [tool.setuptools.package-data]
-commit.operator = [
+"commit.operator" = [
     "*.c",
     "*.pyx",
-    "*.pxxbld"
+    "*.pyxbld"
 ]

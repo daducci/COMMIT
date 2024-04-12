@@ -1463,7 +1463,7 @@ cdef class Evaluation :
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
         niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
-        niiMap_hdr['db_name'] = ''
+        niiMAP_hdr['db_name'] = ''
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
