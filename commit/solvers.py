@@ -388,7 +388,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
     opt_details['abs_cost'] = abs_obj
     opt_details['rel_cost'] = rel_obj
     opt_details['abs_x'] = abs_x
-    opt_details['rel _x'] = rel_x
+    opt_details['rel_x'] = rel_x
     opt_details['iterations'] = iter
     opt_details['stopping_criterion'] = criterion
 
