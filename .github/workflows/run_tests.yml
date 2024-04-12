@@ -66,4 +66,3 @@ jobs:
         run: |
           echo "Test failed"
           exit 1
-          

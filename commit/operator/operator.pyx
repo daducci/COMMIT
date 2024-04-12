@@ -1,6 +1,5 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, profile=False
-cimport numpy as np
 
 import numpy as np
 

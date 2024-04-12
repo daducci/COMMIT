@@ -4,7 +4,6 @@
 from libc.math cimport sqrt
 
 import numpy as np
-cimport numpy as np
 
 from dicelib.ui import setup_logger
 
