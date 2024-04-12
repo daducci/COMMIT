@@ -123,8 +123,6 @@ def check_results(pickle_result, ref_pickle):
 
     result_optimization = data[0]["optimization"]
     ref_optimization = ref_data[0]["optimization"]
-    print(result_optimization["fit_details"])
-    print(ref_optimization["fit_details"])
 
     try:
         assert abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4
@@ -133,7 +131,7 @@ def check_results(pickle_result, ref_pickle):
         assert abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4
         assert abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4
         assert abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4
-        assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel_x"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel _x"]) < 1e-4 #NOTE: There is a space in the key name
         assert result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]
 
     except AssertionError:
