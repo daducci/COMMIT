@@ -10,7 +10,7 @@ import numpy as np
 from amico.models import BaseModel, StickZeppelinBall as _StickZeppelinBall, CylinderZeppelinBall as _CylinderZeppelinBall
 import amico.util as util
 
-from dicelib.ui import setup_logger, set_verbose
+from dicelib.ui import setup_logger
 
 
 logger = setup_logger('models')
