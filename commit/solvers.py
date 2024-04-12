@@ -1,8 +1,13 @@
-import numpy as np
-from math import sqrt
 import sys
-eps = np.finfo(float).eps
 
+from math import sqrt
+
+import numpy as np
+
+from dicelib.ui import setup_logger
+
+logger = setup_logger('solvers')
+eps = np.finfo(float).eps
 list_regularizers = [None, 'lasso', 'group_lasso', 'sparse_group_lasso']
 from commit.proximals import non_negativity, omega_group_lasso, prox_group_lasso, soft_thresholding, w_soft_thresholding, omega_sparse_group_lasso, omega_w_sparse_group_lasso
 # removed, for now, projection_onto_l2_ball
@@ -16,16 +21,30 @@ def init_regularisation(regularisation_params):
         [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
     """
 
+    # check if regularisations are in the list
+    if regularisation_params['regIC'] not in list_regularizers or regularisation_params['regEC'] not in list_regularizers or regularisation_params['regISO'] not in list_regularizers:
+        logger.error('Regularisation not in the list')
+    
+    startIC  = regularisation_params.get('startIC')
+    sizeIC   = regularisation_params.get('sizeIC')
+    startEC  = regularisation_params.get('startEC')
+    sizeEC   = regularisation_params.get('sizeEC')
+    startISO = regularisation_params.get('startISO')
+    sizeISO  = regularisation_params.get('sizeISO')
+
+    # create array with al coeff_weights for weighted version of 'lasso'
+    all_coeff_weights = np.ones(sizeIC+sizeEC+sizeISO, dtype=np.float64)
+    if regularisation_params.get('dictIC_params') is not None and "coeff_weights" in regularisation_params['dictIC_params'].keys():
+        all_coeff_weights[startIC:(startIC+sizeIC)] = regularisation_params['dictIC_params']["coeff_weights"]
+    if regularisation_params.get('dictEC_params') is not None and "coeff_weights" in regularisation_params['dictEC_params'].keys():
+        all_coeff_weights[startEC:(startEC+sizeEC)] = regularisation_params['dictEC_params']["coeff_weights"]
+    if regularisation_params.get('dictISO_params') is not None and "coeff_weights" in regularisation_params['dictISO_params'].keys():
+        all_coeff_weights[startISO:(startISO+sizeISO)] = regularisation_params['dictISO_params']["coeff_weights"]
+
     ############################
     # INTRACELLULAR COMPARTMENT#
     ############################
 
-    # check if regularisations are in the list
-    if regularisation_params['regIC'] not in list_regularizers or regularisation_params['regEC'] not in list_regularizers or regularisation_params['regISO'] not in list_regularizers:
-        raise ValueError('Regularisation not in the list')
-
-    startIC = regularisation_params.get('startIC')
-    sizeIC = regularisation_params.get('sizeIC')
     dictIC_params = regularisation_params.get('dictIC_params')
 
     if regularisation_params['regIC'] is None:
@@ -38,21 +57,19 @@ def init_regularisation(regularisation_params):
     elif regularisation_params['regIC'] == 'lasso':
         lambdaIC = regularisation_params['lambdaIC']
         # check if weights are provided
-        if dictIC_params is not None:
-            if "weightsIC" in dictIC_params.keys():
-                w = dictIC_params["weightsIC"]
-                omegaIC = lambda x: lambdaIC * np.linalg.norm(w[startIC:sizeIC]*x[startIC:sizeIC],1)
-                if regularisation_params.get('nnIC'):
-                    proxIC = lambda x, scaling: non_negativity(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
-                else:
-                    proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
+        if dictIC_params is not None and "coeff_weights" in dictIC_params.keys():
+            # w = dictIC_params["coeff_weights"]
+            omegaIC = lambda x: lambdaIC * np.linalg.norm(all_coeff_weights[startIC:sizeIC]*x[startIC:sizeIC],1)
+            if regularisation_params.get('nnIC'):
+                proxIC = lambda x, scaling: non_negativity(w_soft_thresholding(x,all_coeff_weights,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
+            else:
+                proxIC = lambda x, scaling: w_soft_thresholding(x,all_coeff_weights,scaling*lambdaIC,startIC,sizeIC)
         else:
             omegaIC = lambda x: lambdaIC * np.linalg.norm(x[startIC:sizeIC],1)
             if regularisation_params.get('nnIC'):
                 proxIC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),startIC,sizeIC)
             else:
-                proxIC = lambda x, _: non_negativity(x,startIC,sizeIC)
-
+                proxIC = lambda x, scaling: soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC)
 
     # elif regularisation_params['regIC'] == 'smoothness':
     #     lambdaIC = regularisation_params.get('lambdaIC')
@@ -61,7 +78,7 @@ def init_regularisation(regularisation_params):
 
     elif regularisation_params['regIC'] == 'group_lasso':
         if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
-            raise ValueError('Number of groups and weights do not match')
+            logger.error('Number of groups and weights do not match')
 
         lambda_group_IC = regularisation_params['lambdaIC']
 
@@ -76,7 +93,6 @@ def init_regularisation(regularisation_params):
             pos += g.size
 
         omegaIC = lambda x: omega_group_lasso( x, groupIdxIC, groupSizeIC, dictIC_params['group_weights'], lambda_group_IC )
-        #TODO: verify if COMMIT2 results are better than before
         if regularisation_params.get('nnIC'):
             proxIC = lambda x, scaling: non_negativity(prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC),startIC,sizeIC)
         else:
@@ -84,7 +100,7 @@ def init_regularisation(regularisation_params):
   
     elif regularisation_params['regIC'] == 'sparse_group_lasso':
         if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
-            raise ValueError('Number of groups and weights do not match')
+            logger.error('Number of groups and weights do not match')
 
         lambdaIC = regularisation_params['lambdaIC'][0]
         lambda_group_IC = regularisation_params['lambdaIC'][1]
@@ -99,14 +115,14 @@ def init_regularisation(regularisation_params):
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
 
-        if "weightsIC" in dictIC_params.keys():
-            w = dictIC_params["weightsIC"]
-            omegaIC = lambda x: omega_w_sparse_group_lasso( x, w, groupIdxIC, groupSizeIC, dictIC_params['group_weights'], lambdaIC, lambda_group_IC)
+        if "coeff_weights" in dictIC_params.keys():
+            # w = dictIC_params["coeff_weights"]
+            omegaIC = lambda x: omega_w_sparse_group_lasso( x, all_coeff_weights, groupIdxIC, groupSizeIC, dictIC_params['group_weights'], lambdaIC, lambda_group_IC)
 
             if regularisation_params.get('nnIC'):
-                proxIC = lambda x, scaling: non_negativity(prox_group_lasso(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC), startIC,sizeIC)
+                proxIC = lambda x, scaling: non_negativity(prox_group_lasso(w_soft_thresholding(x,all_coeff_weights,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC), startIC,sizeIC)
             else:
-                proxIC = lambda x, scaling: prox_group_lasso(w_soft_thresholding(x,w,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
+                proxIC = lambda x, scaling: prox_group_lasso(w_soft_thresholding(x,all_coeff_weights,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
         else:
             omegaIC = lambda x: omega_sparse_group_lasso( x, groupIdxIC, groupSizeIC, dictIC_params['group_weights'], lambdaIC, lambda_group_IC)
 
@@ -120,8 +136,7 @@ def init_regularisation(regularisation_params):
     # EXTRCELLULAR COMPARTMENT#
     ###########################
 
-    startEC = regularisation_params.get('startEC')
-    sizeEC  = regularisation_params.get('sizeEC')
+    dictEC_params = regularisation_params.get('dictEC_params')
 
     if regularisation_params['regEC'] is None:
         omegaEC = lambda x: 0.0
@@ -132,23 +147,31 @@ def init_regularisation(regularisation_params):
 
     elif regularisation_params['regEC'] == 'lasso':
         lambdaEC = regularisation_params.get('lambdaEC')
-        omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)],1)
-        if regularisation_params.get('nnEC'):
-            proxEC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC),startEC,sizeEC)
+        # check if weights are provided
+        if dictEC_params is not None and "coeff_weights" in dictEC_params.keys():
+            omegaEC = lambda x: lambdaEC * np.linalg.norm(all_coeff_weights[startEC:sizeEC]*x[startEC:sizeEC],1)
+            if regularisation_params.get('nnEC'):
+                proxEC = lambda x, scaling: non_negativity(w_soft_thresholding(x,all_coeff_weights,scaling*lambdaEC,startEC,sizeEC),startEC,sizeEC)
+            else:
+                proxEC = lambda x, scaling: w_soft_thresholding(x,all_coeff_weights,scaling*lambdaEC,startEC,sizeEC)
         else:
-            proxEC = lambda x, scaling: soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC)
+            omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)],1)
+            if regularisation_params.get('nnEC'):
+                proxEC = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC),startEC,sizeEC)
+            else:
+                proxEC = lambda x, scaling: soft_thresholding(x,scaling*lambdaEC,startEC,sizeEC)
 
     # elif regularisation_params['regIC'] == 'smoothness':
     #     lambdaEC = regularisation_params.get('lambdaEC')
     #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
 
+
     ########################
     # ISOTROPIC COMPARTMENT#
     ########################
 
-    startISO = regularisation_params.get('startISO')
-    sizeISO  = regularisation_params.get('sizeISO')
+    dictISO_params = regularisation_params.get('dictISO_params')
 
     if regularisation_params['regISO'] is None:
         omegaISO = lambda x: 0.0
@@ -159,11 +182,19 @@ def init_regularisation(regularisation_params):
 
     elif regularisation_params['regISO'] == 'lasso':
         lambdaISO = regularisation_params.get('lambdaISO')
-        omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)],1)
-        if regularisation_params.get('nnISO'):
-            proxISO  = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO),startISO,sizeISO)
+        # check if weights are provided
+        if dictISO_params is not None and "coeff_weights" in dictISO_params.keys():
+            omegaISO = lambda x: lambdaISO * np.linalg.norm(all_coeff_weights[startISO:sizeISO]*x[startISO:sizeISO],1)
+            if regularisation_params.get('nnISO'):
+                proxISO = lambda x, scaling: non_negativity(w_soft_thresholding(x,all_coeff_weights,scaling*lambdaISO,startISO,sizeISO),startISO,sizeISO)
+            else:
+                proxISO = lambda x, scaling: w_soft_thresholding(x,all_coeff_weights,scaling*lambdaISO,startISO,sizeISO)
         else:
-            proxISO  = lambda x, scaling: soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO)
+            omegaISO = lambda x: lambdaISO * np.linalg.norm(x[startISO:(startISO+sizeISO)],1)
+            if regularisation_params.get('nnISO'):
+                proxISO  = lambda x, scaling: non_negativity(soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO),startISO,sizeISO)
+            else:
+                proxISO  = lambda x, scaling: soft_thresholding(x,scaling*lambdaISO,startISO,sizeISO)
 
     # elif regularisation_params['regISO'] == 'group_lasso':
     #     lambdaISO = regularisation_params.get('lambdaISO')
@@ -188,7 +219,7 @@ def evaluate_model(y, A, x, regularisation=None):
     return 0.5*np.linalg.norm(A.dot(x)-y)**2 + omega(x)
 
 
-def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0=None, regularisation=None, confidence_array=None):
+def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0  =None, regularisation=None, confidence_array=None):
     """
     Solve the regularised least squares problem
 
@@ -258,13 +289,13 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     step_size = 1.9 / L
     # Main loop
-    if verbose :
+    if verbose==4 :
         print()
         print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
         print( "------|--------------------------------|-----------------------------------------------|------------------------------" )
     iter = 1
     while True :
-        if verbose :
+        if verbose==4 :
             print( "%4d  |" % iter, end="" )
             sys.stdout.flush()
 
@@ -309,7 +340,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
-        if verbose :
+        if verbose==4 :
             print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
 
         if abs_obj < eps :
@@ -347,7 +378,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         told = t
         qfval = 0.5 * np.linalg.norm(res)**2
 
-    if verbose :
+    if verbose==4 :
         print( "< Stopping criterion: %s >" % criterion )
 
     opt_details = {}
@@ -357,7 +388,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
     opt_details['abs_cost'] = abs_obj
     opt_details['rel_cost'] = rel_obj
     opt_details['abs_x'] = abs_x
-    opt_details['rel _x'] = rel_x
+    opt_details['rel_x'] = rel_x
     opt_details['iterations'] = iter
     opt_details['stopping_criterion'] = criterion
 

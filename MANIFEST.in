@@ -1,7 +1,4 @@
-include README.md
-include LICENSE
-
-recursive-include commit *.h
-recursive-include commit *.cpp
-recursive-include commit *.pyx
 recursive-include commit *.c
+recursive-include commit *.cpp
+recursive-include commit *.h
+recursive-include commit *pyx
