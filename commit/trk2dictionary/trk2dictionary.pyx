@@ -12,6 +12,8 @@ import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
 from os import makedirs, remove
 
+import amico
+
 from dicelib.clustering import run_clustering
 from dicelib.ui import _in_notebook
 from dicelib.ui import ProgressBar, setup_logger
@@ -26,11 +28,7 @@ import shutil
 
 import time
 
-import amico
-
  
-
-
 logger = setup_logger('trk2dictionary')
 
 # Interface to actual C code
