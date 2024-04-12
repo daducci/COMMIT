@@ -1,0 +1,64 @@
+[build-system]
+requires = [
+    "cython>=3.0.10",
+    "numpy>=1.24.4",
+    "setuptools>=69.2.0"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dmri-commit"
+version = "2.2.0"
+dependencies = [
+    "dmri-amico>=2.0.1",
+    "dmri-dicelib>=1.1.0",
+    "numpy>=1.24.4",
+    "scipy>=1.10.1"
+]
+requires-python = ">=3.8"
+authors = [
+    {name = "Alessandro Daducci", email = "alessandro.daducci@univr.it"}
+]
+maintainers = [
+    {name = "DICE lab", email = "DICE_lab@strutture.univr.it"}
+]
+description = "Convex Optimization Modeling for Microstructure Informed Tractography (COMMIT)"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = [
+    "Neuroimaging"
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: Other/Proprietary License",
+    "Programming Language :: C++",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"
+]
+
+[project.urls]
+Homepage = "https://github.com/daducci/COMMIT.git"
+Documentation = "https://github.com/daducci/COMMIT/wiki"
+Repository = "https://github.com/daducci/COMMIT.git"
+Issues = "https://github.com/daducci/COMMIT/issues"
+Changelog = "https://github.com/daducci/COMMIT/blob/master/CHANGELOG.md"
+
+[tools.setuptools]
+packages = [
+    "commit",
+    "commit.operator"
+]
+include-package-data = false
+
+[tool.setuptools.package-data]
+commit.operator = [
+    "*.c",
+    "*.pyx",
+    "*.pxxbld"
+]
