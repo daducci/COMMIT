@@ -613,15 +613,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         dict_list += [ path_temp + f'/dictionary_IC_pos_{j}.dict' ]
     cat_function( dict_list, fileout )
 
-        # save TDI and MASK maps
-        if TCK_ref_image is not None:
-            TDI_affine = _get_affine( niiREF )
-        elif filename_mask is not None :
-            TDI_affine = _get_affine( niiMASK )
-        elif filename_peaks is not None :
-            TDI_affine = _get_affine( niiPEAKS )
-        else :
-            TDI_affine = np.diag( [Px, Py, Pz, 1] )
+    # save TDI and MASK maps
+    if TCK_ref_image is not None:
+        TDI_affine = _get_affine( niiREF )
+    elif filename_mask is not None :
+        TDI_affine = _get_affine( niiMASK )
+    elif filename_peaks is not None :
+        TDI_affine = _get_affine( niiPEAKS )
+    else :
+        TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
     # save TDI and MASK maps
     logger.subinfo( 'Saving TDI and MASK maps', indent_char='*', indent_lvl=1 )

@@ -1377,7 +1377,7 @@ cdef class Evaluation :
             yield lst[i:i + n]
 
     
-    cpdef compute_contribution(self, x, norm_fib, metric, verbose):
+    cpdef compute_contribution(self, x, norm_fib, metric):
         cdef double[:] tmp = np.zeros( x.size, dtype=np.float64 )
         cdef double[:] x_mem = x.astype(np.float64)
         cdef double[:] norm_fib_mem = norm_fib.astype(np.float64)
@@ -1386,7 +1386,7 @@ cdef class Evaluation :
         cdef int offset = self.KERNELS['wmc'].shape[0]
         niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
 
-        with ui.ProgressBar( total=self.DICTIONARY['IC']['nF'], disable=(verbose in [0,1,3]), hide_on_exit=True) as pbar:
+        with ui.ProgressBar( total=self.DICTIONARY['IC']['nF'], disable=(self.verbose in [0,1,3]), hide_on_exit=True) as pbar:
             if metric=='mean':
                 for i in range(0, x.size, offset):
                     for j in range(offset):
@@ -1602,35 +1602,35 @@ cdef class Evaluation :
             xic_kept = self.DICTIONARY['TRK']['kept']
             if stat_coeffs == 'sum' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "mean", verbose)
+                    xic = self.compute_contribution(x, norm_fib, "mean")
                     xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.sum( xic, axis=0 )
             elif stat_coeffs == 'mean' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "mean", verbose)
+                    xic = self.compute_contribution(x, norm_fib, "mean")
                     xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.mean( xic, axis=0 )
             elif stat_coeffs == 'median' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "median", verbose)
+                    xic = self.compute_contribution(x, norm_fib, "median")
                     xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.median( xic, axis=0 )
             elif stat_coeffs == 'min' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "min", verbose)
+                    xic = self.compute_contribution(x, norm_fib, "min")
                     xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                     xic = np.min( xic, axis=0 )
             elif stat_coeffs == 'max' :
                 if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "max", verbose)
+                    xic = self.compute_contribution(x, norm_fib, "max")
                     xic_kept[xic_kept==1] = xic
                 else:
                     xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
