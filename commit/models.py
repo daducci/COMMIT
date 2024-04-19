@@ -1,13 +1,19 @@
-import sys
-from os import environ
-import os
-import pyximport
-from setuptools import Extension
 from Cython.Build.Inline import _get_build_extension
 from Cython.Build import cythonize
+from os import environ
+import os
+from setuptools import Extension
+import sys
+
 import numpy as np
+
 from amico.models import BaseModel, StickZeppelinBall as _StickZeppelinBall, CylinderZeppelinBall as _CylinderZeppelinBall
-from amico.util import ERROR
+import amico.util as util
+
+from dicelib.ui import setup_logger
+
+
+logger = setup_logger('models')
 
 try:
     sys.path.append(environ["WIP_MODEL"])
@@ -44,14 +50,19 @@ class StickZeppelinBall(_StickZeppelinBall):
     """Simulate the response functions according to the Stick-Zeppelin-Ball model.
     See the AMICO.model module for details.
     """
-    pass
+    def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
+        util.set_verbose(2)
+        return super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
+
 
 
 class CylinderZeppelinBall(_CylinderZeppelinBall):
     """Simulate the response functions according to the Cylinder-Zeppelin-Ball model.
     See the AMICO.model module for details.
     """
-    pass
+    def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
+        util.set_verbose(2)
+        return super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
 
 
 class VolumeFractions(BaseModel):

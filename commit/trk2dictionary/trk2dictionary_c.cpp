@@ -76,10 +76,10 @@ float           minSegLen, minFiberLen, maxFiberLen;
 
 // Threads variables
 vector<thread>  threads;
-vector<unsigned int>    totICSegments; 
-vector<unsigned int>    totFibers;
-unsigned int            totECVoxels = 0;
-unsigned int            totECSegments = 0;
+vector<unsigned long int>   totICSegments; 
+vector<unsigned int>        totFibers;
+unsigned int                totECVoxels = 0;
+unsigned int                totECSegments = 0;
 
 // progressbar verbosity
 int verbosity = 0;
@@ -233,10 +233,10 @@ int trk2dictionary(
     //          Parallel IC compartments
     // ==========================================
 
-    printf( "\n   \033[0;32m* Exporting IC compartments:\033[0m\n" );
+    printf( "   * Exporting IC compartments:\033[0m\n" );
     // unsigned int width = 25;
     // PROGRESS = new ProgressBar( (unsigned int) n_count, (unsigned int) width);
-        if (verbosity > 0)
+    if (verbosity > 2)
     {
         PROGRESS->reset((unsigned int) n_count);
         PROGRESS->setPrefix("     ");
@@ -253,10 +253,10 @@ int trk2dictionary(
         threads[i].join();
     }
 
-    if (verbosity > 0)
+    if (verbosity > 2)
         PROGRESS->close();
-    
-    printf( "     [ %d streamlines kept, %d segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
+
+    printf( "      [ %d streamlines kept, %ld segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
     totFibers.clear();
     threads.clear();
 
@@ -264,20 +264,20 @@ int trk2dictionary(
     //          Parallel EC compartments
     // ==========================================
 
-    printf( "\n   \033[0;32m* Exporting EC compartments:\033[0m\n" );
+    printf( "   * Exporting EC compartments:\033[0m\n" );
 
     int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
 
-    printf("     [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
+    printf("      [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 
     /*=========================*/
     /*     Restricted ISO compartments     */
     /*=========================*/
-    printf( "\n   \033[0;32m* Exporting ISO compartments:\033[0m\n" );
+    printf( "   * Exporting ISO compartments:\033[0m\n" );
 
     int totISO = ISOcompartments(ptrTDI, path_out, threads_count);
 
-    printf("     [ %d voxels ]\n", totISO );
+    printf("      [ %d voxels ]\n", totISO );
 
     return 1;
 
@@ -457,15 +457,16 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 {
 
     // Variables definition
-    float           fiber[3][MAX_FIB_LEN] = {0} ;
-    float           fiberNorm;   // normalization
+    float               fiber[3][MAX_FIB_LEN] = {0} ;
+    float               fiberNorm;   // normalization
     unsigned int    pos=0;
     float           float_pos=0.0;
-    unsigned int    N, v, tempTotFibers, temp_totICSegments;
-    unsigned short  o;
-    unsigned char   kept;
-    string          filename;
-    string          OUTPUT_path(path_out);
+    unsigned int        N, v, tempTotFibers;
+    unsigned long int   temp_totICSegments;
+    unsigned short      o;
+    unsigned char       kept;
+    string              filename;
+    string              OUTPUT_path(path_out);
 
     unsigned int sumFibers = startpos;
 
@@ -530,7 +531,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                 // add segments to files
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 {
-                    // NB: plese note inverted ordering for 'v'
+                    // NB: please note inverted ordering for 'v'
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;
 
@@ -571,7 +572,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
         totFibers[idx] = tempTotFibers;
         totICSegments[idx] = temp_totICSegments;
 
-        if (verbosity > 0)
+        if (verbosity > 2)
         {
             if (idx == 0)
             {

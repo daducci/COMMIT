@@ -1,8 +1,13 @@
-import numpy as np
-from math import sqrt
 import sys
-eps = np.finfo(float).eps
 
+from math import sqrt
+
+import numpy as np
+
+from dicelib.ui import setup_logger
+
+logger = setup_logger('solvers')
+eps = np.finfo(float).eps
 list_regularizers = [None, 'lasso', 'group_lasso', 'sparse_group_lasso']
 from commit.proximals import non_negativity, omega_group_lasso, prox_group_lasso, soft_thresholding, w_soft_thresholding, omega_sparse_group_lasso, omega_w_sparse_group_lasso
 # removed, for now, projection_onto_l2_ball
@@ -18,7 +23,7 @@ def init_regularisation(regularisation_params):
 
     # check if regularisations are in the list
     if regularisation_params['regIC'] not in list_regularizers or regularisation_params['regEC'] not in list_regularizers or regularisation_params['regISO'] not in list_regularizers:
-        raise ValueError('Regularisation not in the list')
+        logger.error('Regularisation not in the list')
     
     startIC  = regularisation_params.get('startIC')
     sizeIC   = regularisation_params.get('sizeIC')
@@ -73,7 +78,7 @@ def init_regularisation(regularisation_params):
 
     elif regularisation_params['regIC'] == 'group_lasso':
         if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
-            raise ValueError('Number of groups and weights do not match')
+            logger.error('Number of groups and weights do not match')
 
         lambda_group_IC = regularisation_params['lambdaIC']
 
@@ -95,7 +100,7 @@ def init_regularisation(regularisation_params):
   
     elif regularisation_params['regIC'] == 'sparse_group_lasso':
         if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
-            raise ValueError('Number of groups and weights do not match')
+            logger.error('Number of groups and weights do not match')
 
         lambdaIC = regularisation_params['lambdaIC'][0]
         lambda_group_IC = regularisation_params['lambdaIC'][1]
@@ -160,6 +165,7 @@ def init_regularisation(regularisation_params):
     #     lambdaEC = regularisation_params.get('lambdaEC')
     #     omegaEC = lambda x: lambdaEC * np.linalg.norm(x[startEC:(startEC+sizeEC)])
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
+
 
     ########################
     # ISOTROPIC COMPARTMENT#
@@ -284,13 +290,13 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
     step_size = 1.9 / L
     # Main loop
-    if verbose :
+    if verbose==4 :
         print()
         print( "      |  1/2||Ax-y||^2      Omega      |  Cost function    Abs error      Rel error    |      Abs x          Rel x    " )
         print( "------|--------------------------------|-----------------------------------------------|------------------------------" )
     iter = 1
     while True :
-        if verbose :
+        if verbose==4 :
             print( "%4d  |" % iter, end="" )
             sys.stdout.flush()
 
@@ -335,7 +341,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
-        if verbose :
+        if verbose==4 :
             print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
 
         if abs_obj < eps :
@@ -373,7 +379,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         told = t
         qfval = 0.5 * np.linalg.norm(res)**2
 
-    if verbose :
+    if verbose==4 :
         print( "< Stopping criterion: %s >" % criterion )
 
     opt_details = {}
@@ -383,7 +389,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
     opt_details['abs_cost'] = abs_obj
     opt_details['rel_cost'] = rel_obj
     opt_details['abs_x'] = abs_x
-    opt_details['rel _x'] = rel_x
+    opt_details['rel_x'] = rel_x
     opt_details['iterations'] = iter
     opt_details['stopping_criterion'] = criterion
 
