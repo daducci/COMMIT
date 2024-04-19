@@ -1597,46 +1597,45 @@ cdef class Evaluation :
         logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             xic, _, _ = self.get_coeffs()
-    
-        if stat_coeffs != 'all' and xic.size > 0 :
-            xic_kept = self.DICTIONARY['TRK']['kept']
-            if stat_coeffs == 'sum' :
-                if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "mean")
-                    xic_kept[xic_kept==1] = xic
-                else:
-                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
-                    xic = np.sum( xic, axis=0 )
-            elif stat_coeffs == 'mean' :
-                if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "mean")
-                    xic_kept[xic_kept==1] = xic
-                else:
-                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
-                    xic = np.mean( xic, axis=0 )
-            elif stat_coeffs == 'median' :
-                if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "median")
-                    xic_kept[xic_kept==1] = xic
-                else:
-                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
-                    xic = np.median( xic, axis=0 )
-            elif stat_coeffs == 'min' :
-                if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "min")
-                    xic_kept[xic_kept==1] = xic
-                else:
-                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
-                    xic = np.min( xic, axis=0 )
-            elif stat_coeffs == 'max' :
-                if self.KERNELS['wmc'].shape[0] > 1:
-                    xic = self.compute_contribution(x, norm_fib, "max")
-                    xic_kept[xic_kept==1] = xic
-                else:
-                    xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
-                    xic = np.max( xic, axis=0 )
-            else :
-                logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all' )
+            if stat_coeffs != 'all' and xic.size > 0 :
+                xic_kept = self.DICTIONARY['TRK']['kept']
+                if stat_coeffs == 'sum' :
+                    if self.KERNELS['wmc'].shape[0] > 1:
+                        xic = self.compute_contribution(x, norm_fib, "mean")
+                        xic_kept[xic_kept==1] = xic
+                    else:
+                        xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
+                        xic = np.sum( xic, axis=0 )
+                elif stat_coeffs == 'mean' :
+                    if self.KERNELS['wmc'].shape[0] > 1:
+                        xic = self.compute_contribution(x, norm_fib, "mean")
+                        xic_kept[xic_kept==1] = xic
+                    else:
+                        xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
+                        xic = np.mean( xic, axis=0 )
+                elif stat_coeffs == 'median' :
+                    if self.KERNELS['wmc'].shape[0] > 1:
+                        xic = self.compute_contribution(x, norm_fib, "median")
+                        xic_kept[xic_kept==1] = xic
+                    else:
+                        xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
+                        xic = np.median( xic, axis=0 )
+                elif stat_coeffs == 'min' :
+                    if self.KERNELS['wmc'].shape[0] > 1:
+                        xic = self.compute_contribution(x, norm_fib, "min")
+                        xic_kept[xic_kept==1] = xic
+                    else:
+                        xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
+                        xic = np.min( xic, axis=0 )
+                elif stat_coeffs == 'max' :
+                    if self.KERNELS['wmc'].shape[0] > 1:
+                        xic = self.compute_contribution(x, norm_fib, "max")
+                        xic_kept[xic_kept==1] = xic
+                    else:
+                        xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
+                        xic = np.max( xic, axis=0 )
+                else :
+                    logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all' )
 
             # scale output weights if blur was used
             dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
@@ -1661,7 +1660,7 @@ cdef class Evaluation :
                 if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
-            
+        
             self.temp_data['DICTIONARY'] = self.DICTIONARY
             self.temp_data['niiIC_img'] = niiIC_img
             self.temp_data['niiEC_img'] = niiEC_img
