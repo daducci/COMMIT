@@ -9,7 +9,7 @@ from dicelib.ui import setup_logger
 cdef extern void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -20,7 +20,7 @@ cdef extern void COMMIT_A(
 cdef extern void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -31,7 +31,7 @@ cdef extern void COMMIT_At(
 cdef extern void COMMIT_A_nolut(
     int _nF, int _n, int _nSf,
     double* _vIN, double* _vOUT,
-    unsigned int *_ICf, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
+    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
     unsigned int *_ISOv,
     double *_ICmod,
     unsigned int* _ICthreads, unsigned int* _ISOthreads,
@@ -41,7 +41,7 @@ cdef extern void COMMIT_A_nolut(
 cdef extern void COMMIT_At_nolut(
     int _nF, int _n, int _nSf,
     double *_vIN, double *_vOUT,
-    unsigned int *_ICf, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
+    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
     unsigned int *_ISOv,
     double *_ICmod,
     unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
@@ -65,6 +65,7 @@ cdef class LinearOperator :
     cdef nolut
 
     cdef unsigned int*   ICf
+    cdef unsigned int*   ICeval
     cdef float*          ICl
     cdef unsigned int*   ICp
     cdef unsigned int*   ICv
@@ -126,10 +127,13 @@ cdef class LinearOperator :
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
 
+        cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['idx']
+        self.ICeval = &ICeval[0]
+
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
 
-        cdef unsigned int [::1]          ICp  = DICTIONARY['IC']['p']
+        cdef unsigned int [::1]   ICp  = DICTIONARY['IC']['p']
         self.ICp = &ICp[0]
 
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
@@ -232,7 +236,7 @@ cdef class LinearOperator :
                     COMMIT_A_nolut(
                         self.nF, self.n, self.nSf,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICv, self.ICl, self.ICp,
+                        self.ICf, self.ICeval,self.ICv, self.ICl, self.ICp,
                         self.ISOv,
                         self.LUT_IC_modulation,
                         self.ICthreads, self.ISOthreads,
@@ -245,7 +249,7 @@ cdef class LinearOperator :
                     COMMIT_At_nolut(
                         self.nF, self.n, self.nSf,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICv, self.ICl, self.ICp,
+                        self.ICf, self.ICeval, self.ICv, self.ICl, self.ICp,
                         self.ISOv,
                         self.LUT_IC_modulation,
                         self.ICthreadsT, self.ISOthreadsT,
@@ -259,7 +263,7 @@ cdef class LinearOperator :
                     COMMIT_A(
                         self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICv, self.ICo, self.ICl,
+                        self.ICf, self.ICeval, self.ICv, self.ICo, self.ICl,
                         self.ECv, self.ECo,
                         self.ISOv,
                         self.LUT_IC, self.LUT_EC, self.LUT_ISO,
@@ -273,7 +277,7 @@ cdef class LinearOperator :
                     COMMIT_At(
                         self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICv, self.ICo, self.ICl,
+                        self.ICf, self.ICeval, self.ICv, self.ICo, self.ICl,
                         self.ECv, self.ECo,
                         self.ISOv,
                         self.LUT_IC, self.LUT_EC, self.LUT_ISO,

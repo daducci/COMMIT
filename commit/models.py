@@ -108,13 +108,12 @@ class VolumeFractions(BaseModel):
                     dct_functions[i, n] *= np.sqrt(0.5 / num_samples)
         return dct_functions
 
-    def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs, nprofiles, nsamples):
+    def resample(self, doMergeB0, ndirs, nprofiles, nsamples):
         if doMergeB0:
             nS = 1 + self.scheme.dwi_count
-            merge_idx = np.hstack((self.scheme.b0_idx[0], self.scheme.dwi_idx))
         else:
             nS = self.scheme.nS
-            merge_idx = np.arange(nS)
+
         KERNELS = {}
         KERNELS['model'] = self.id
         KERNELS['wmr'] = np.ones((1, ndirs, nS), dtype=np.float32)

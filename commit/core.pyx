@@ -359,18 +359,19 @@ cdef class Evaluation :
 
         # Dispatch to the right handler for each model
         if self.get_config('doMergeB0') :
-            print( '\t* Merging multiple b0 volume(s)...' )
+            logger.subinfo( 'Merging multiple b0 volume(s)', indent_char='-', indent_lvl=2 )
         else :
-            print( '\t* Keeping all b0 volume(s)...' )
+            logger.subinfo( 'Keeping all b0 volume(s)', indent_char='-', indent_lvl=2 )
         
         if self.model.id == "VolumeFractions":
-            self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
+            self.KERNELS = self.model.resample( self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
         else:
             self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
+
+        
         nIC  = self.KERNELS['wmr'].shape[0]
         nEC  = self.KERNELS['wmh'].shape[0]
         nISO = self.KERNELS['iso'].shape[0]
-        print( '\t  [ OK ]' )
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )
@@ -725,6 +726,10 @@ cdef class Evaluation :
             logger.error( 'No streamline found in the dictionary; check your data' )
         if self.DICTIONARY['EC']['nE'] <= 0 and self.KERNELS['wmh'].shape[0] > 0 :
             logger.error( 'The selected model has EC compartments, but no peaks have been provided; check your data' )
+
+        nprof = self.KERNELS['wmc'].shape[0]
+        self.DICTIONARY['IC']['idx'] = np.ones(self.DICTIONARY['IC']['nF']*nprof, dtype=np.uint32)
+        self.DICTIONARY['IC']['idx'] = np.ascontiguousarray( self.DICTIONARY['IC']['idx'] )
 
         tic = time.time()
         logger.subinfo('')
@@ -1204,7 +1209,7 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tr)} ]' )
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=False ):
         """Fit the model to the data.
 
         Parameters
@@ -1327,6 +1332,14 @@ cdef class Evaluation :
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
+
+        if debias:
+            from commit.operator import operator
+            mask = np.zeros(self.x.shape[0], dtype=np.uint32)
+            mask[self.x!=0] = 1
+            self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(mask, dtype=np.uint32)
+            self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
+            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=self.x, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
