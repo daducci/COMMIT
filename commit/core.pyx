@@ -1337,9 +1337,12 @@ cdef class Evaluation :
             from commit.operator import operator
             mask = np.zeros(self.x.shape[0], dtype=np.uint32)
             mask[self.x!=0] = 1
+            print(f"number of non-zero coefficients: {np.sum(mask)}")
             self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(mask, dtype=np.uint32)
             self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
+            self.set_regularisation()
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=self.x, regularisation=self.regularisation_params, confidence_array=confidence_array)
+            print(f"number of non-zero coefficients: {np.sum(mask)}")
 
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
