@@ -130,6 +130,7 @@ cdef class LinearOperator :
         cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['idx']
         self.ICeval = &ICeval[0]
 
+
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
 
@@ -179,7 +180,6 @@ cdef class LinearOperator :
         self.ECthreadsT  = &ECthreadsT[0]
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
-
 
 
     @property

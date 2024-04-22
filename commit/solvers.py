@@ -241,6 +241,7 @@ def solve(y, A, At, tol_fun=1e-4, tol_x=1e-6, max_iter=1000, verbose=True, x0  =
 
     if confidence_array is not None:
         confidence_array = np.sqrt(confidence_array)
+    
 
     return fista(y, A, At, omega, prox, confidence_array, tol_fun, tol_x, max_iter, verbose, x0)
 
@@ -313,6 +314,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
             res = sqrt_W * ( A.dot(x) - y )
         else:
             res = A.dot(x) - y
+
         res_norm = np.linalg.norm(res)
         curr_obj = 0.5 * res_norm**2 + reg_term_x
 
@@ -333,6 +335,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
                 res = sqrt_W * ( A.dot(x) - y )
             else:
                 res = A.dot(x) - y
+
             res_norm = np.linalg.norm(res)
             curr_obj = 0.5 * res_norm**2 + reg_term_x
 

@@ -53,7 +53,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         while (YPtr != YPtrEnd)
@@ -77,7 +77,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -105,7 +105,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -136,7 +136,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -170,7 +170,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -207,7 +207,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -247,7 +247,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -290,7 +290,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -336,7 +336,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -385,7 +385,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -437,7 +437,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -492,7 +492,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -550,7 +550,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -611,7 +611,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -675,7 +675,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -742,7 +742,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -812,7 +812,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -885,7 +885,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -961,7 +961,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -1040,7 +1040,7 @@ void* COMMIT_A__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         SFP0ptr = wmrSFP0 + offset;
                         SFP0ptr = wmrSFP0 + offset;
@@ -2888,7 +2888,7 @@ void* COMMIT_A__block( void *ptr )
 void COMMIT_A(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICeval,uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -3730,7 +3730,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
@@ -3758,7 +3758,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
@@ -3790,7 +3790,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
@@ -3826,7 +3826,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
@@ -3854,7 +3854,6 @@ void* COMMIT_At__block( void *ptr )
                     t_v++;
                     t_o++;
                     t_l++;
-                    
                     t_t++;
                 }
                 break;
@@ -3866,7 +3865,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
@@ -3898,7 +3897,6 @@ void* COMMIT_At__block( void *ptr )
                     t_v++;
                     t_o++;
                     t_l++;
-                    
                     t_t++;
                 }
                 break;
@@ -3910,7 +3908,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
@@ -3946,7 +3944,6 @@ void* COMMIT_At__block( void *ptr )
                     t_v++;
                     t_o++;
                     t_l++;
-                    
                     t_t++;
                 }
                 break;
@@ -3958,7 +3955,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
@@ -4010,7 +4007,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
@@ -4066,7 +4063,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4126,7 +4123,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4190,7 +4187,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4258,7 +4255,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4330,7 +4327,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4406,7 +4403,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4486,7 +4483,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4570,7 +4567,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4658,7 +4655,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4750,7 +4747,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4846,7 +4843,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -4946,7 +4943,7 @@ void* COMMIT_At__block( void *ptr )
                     {
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = nS * (*t_o);
                         YTmp = *YPtr;
                         SFP0ptr  = wmrSFP0  + offset;
@@ -7733,7 +7730,7 @@ void* COMMIT_At__block( void *ptr )
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t _ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -8570,7 +8567,6 @@ void* COMMIT_A__block_nolut( void *ptr )
         t_vEnd = ICv + ICthreads[id+1];
         t_l = ICl + ICthreads[id];
         t_f = ICf + ICthreads[id];
-        
         t_p = ICp + ICthreads[id];
         switch (nICs)
         {
@@ -8583,7 +8579,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         x0 *= (*SFP0ptr);
@@ -8608,7 +8604,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -8638,7 +8634,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -8673,7 +8669,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -8713,7 +8709,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -8758,7 +8754,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -8808,7 +8804,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -8863,7 +8859,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -8923,7 +8919,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -8988,7 +8984,7 @@ void* COMMIT_A__block_nolut( void *ptr )
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
                         Yptr = Y + (*t_v);
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
@@ -9200,7 +9196,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
                         x0 = (*SFP0ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                     }
                     t_f++;
@@ -9223,7 +9219,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         SFP1ptr = icSFB1 + offset;
                         x0 = (*SFP0ptr) * Y_tmp;
                         x1 = (*SFP1ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                     }
@@ -9249,7 +9245,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x0 = (*SFP0ptr) * Y_tmp;
                         x1 = (*SFP1ptr) * Y_tmp;
                         x2 = (*SFP2ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -9278,7 +9274,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x1 = (*SFP1ptr) * Y_tmp;
                         x2 = (*SFP2ptr) * Y_tmp;
                         x3 = (*SFP3ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -9310,7 +9306,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x2 = (*SFP2ptr) * Y_tmp;
                         x3 = (*SFP3ptr) * Y_tmp;
                         x4 = (*SFP4ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -9345,7 +9341,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x3 = (*SFP3ptr) * Y_tmp;
                         x4 = (*SFP4ptr) * Y_tmp;
                         x5 = (*SFP5ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -9383,7 +9379,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x4 = (*SFP4ptr) * Y_tmp;
                         x5 = (*SFP5ptr) * Y_tmp;
                         x6 = (*SFP6ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -9424,7 +9420,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x5 = (*SFP5ptr) * Y_tmp;
                         x6 = (*SFP6ptr) * Y_tmp;
                         x7 = (*SFP7ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -9468,7 +9464,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x6 = (*SFP6ptr) * Y_tmp;
                         x7 = (*SFP7ptr) * Y_tmp;
                         x8 = (*SFP8ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;
@@ -9515,7 +9511,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x7 = (*SFP7ptr) * Y_tmp;
                         x8 = (*SFP8ptr) * Y_tmp;
                         x9 = (*SFP9ptr) * Y_tmp;
-                        w = (double)(*t_l * (ICeval[*t_f]));
+                        w = (double)(*t_l) * (double)(ICeval[*t_f]);
                         x[*t_f] += w * x0;
                         x[*t_f+nF] += w * x1;
                         x[*t_f+2*nF] += w * x2;

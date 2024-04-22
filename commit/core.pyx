@@ -492,6 +492,9 @@ cdef class Evaluation :
         self.DICTIONARY['IC']['p']     = self.DICTIONARY['IC']['p'][ idx ]
         del idx
 
+        # add array of indices to evaluate
+        self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(np.ones( self.DICTIONARY['IC']['nF']*self.KERNELS['wmc'].shape[0], dtype=np.uint32 ))
+
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
         cdef :
@@ -726,11 +729,7 @@ cdef class Evaluation :
             logger.error( 'No streamline found in the dictionary; check your data' )
         if self.DICTIONARY['EC']['nE'] <= 0 and self.KERNELS['wmh'].shape[0] > 0 :
             logger.error( 'The selected model has EC compartments, but no peaks have been provided; check your data' )
-
-        nprof = self.KERNELS['wmc'].shape[0]
-        self.DICTIONARY['IC']['idx'] = np.ones(self.DICTIONARY['IC']['nF']*nprof, dtype=np.uint32)
-        self.DICTIONARY['IC']['idx'] = np.ascontiguousarray( self.DICTIONARY['IC']['idx'] )
-
+        
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
@@ -1327,6 +1326,7 @@ cdef class Evaluation :
 
         # run solver
         t = time.time()
+
         with ProgressBar(disable=self.verbose!=3, hide_on_exit=True) as pb:
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
@@ -1335,12 +1335,16 @@ cdef class Evaluation :
 
         if debias:
             from commit.operator import operator
-            mask = np.zeros(self.x.shape[0], dtype=np.uint32)
-            mask[self.x!=0] = 1
+            mask = np.zeros(self.DICTIONARY['IC']['nF']*self.KERNELS['wmc'].shape[0], dtype=np.uint32)
+            mask[self.x>0] = 1
             print(f"number of non-zero coefficients: {np.sum(mask)}")
             self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(mask, dtype=np.uint32)
             self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
-            self.set_regularisation()
+            if self.KERNELS['wmc'].shape[0] > 1:
+                self.set_regularisation(is_nonnegative = (False, True, True))
+            else:
+                self.set_regularisation()
+                
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=self.x, regularisation=self.regularisation_params, confidence_array=confidence_array)
             print(f"number of non-zero coefficients: {np.sum(mask)}")
 
