@@ -960,7 +960,7 @@ cdef class Evaluation :
                 logger.error('Regularisation parameters for the IC compartment ara not exactly two')
             elif lambdas[0][0] < 0 or lambdas[0][1] < 0:
                 logger.error('Regularisation parameters for the IC compartment must be greater than 0')
-            elif lambdas[0][0] == 0 or lambdas[0][1] == 0:
+            elif lambdas[0][0] == 0 and lambdas[0][1] == 0:
                 logger.warning('Regularisation parameters for the IC compartment are both 0, the solution will be the same as the one without regularisation')
                 regularisation['lambdaIC_perc'] = lambdas[0]
             else:
@@ -1058,24 +1058,25 @@ cdef class Evaluation :
                         newweightsIC_group.append(weightsIC_group[count])
 
                 newweightsIC_group = np.array(newweightsIC_group, dtype=np.float64)
-                dictIC_params['group_idx'] = np.array(newICgroup_idx, dtype=np.object_)
+                dictIC_params['group_idx_kept'] = np.array(newICgroup_idx, dtype=np.object_)
                 if weightsIC_group.size != newweightsIC_group.size:
                     logger.warning(f"""\
                     Not all the original groups are kept. 
                     {weightsIC_group.size - newweightsIC_group.size} groups have been removed because their streamlines didn't satify the criteria set in trk2dictionary.""")
             else:
                 newweightsIC_group = weightsIC_group
+                dictIC_params['group_idx_kept'] = dictIC_params['group_idx']
 
             # compute group weights
             if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
                 if dictIC_params['group_weights_cardinality']:
-                    group_size = np.array([g.size for g in dictIC_params['group_idx']], dtype=np.int32)
+                    group_size = np.array([g.size for g in dictIC_params['group_idx_kept']], dtype=np.int32)
                     newweightsIC_group *= np.sqrt(group_size)
                 if dictIC_params['group_weights_adaptive']:
                     if self.x is None or self.regularisation_params['regIC'] is not None:
                         logger.error('Group weights cannot be computed if the fit without regularisation has not been performed before')
                     x_nnls, _, _ = self.get_coeffs(get_normalized=False)
-                    group_x_norm = np.array([np.linalg.norm(x_nnls[g])+1e-12 for g in dictIC_params['group_idx']], dtype=np.float64)
+                    group_x_norm = np.array([np.linalg.norm(x_nnls[g])+1e-12 for g in dictIC_params['group_idx_kept']], dtype=np.float64)
                     newweightsIC_group /= group_x_norm
                 dictIC_params['group_weights'] = newweightsIC_group
 
@@ -1089,13 +1090,13 @@ cdef class Evaluation :
                 regularisation['lambdaIC_max'] = compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], np.ones(regularisation['sizeIC'], dtype=np.float64))
             regularisation['lambdaIC'] = regularisation['lambdaIC_perc'] * regularisation['lambdaIC_max']
         if regularisation['regIC'] == 'group_lasso':
-            regularisation['lambdaIC_max'] = compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx'])
+            regularisation['lambdaIC_max'] = compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx_kept'])
             regularisation['lambdaIC'] = regularisation['lambdaIC_perc'] * regularisation['lambdaIC_max']
         if regularisation['regIC'] == 'sparse_group_lasso':
             if 'coeff_weights' in dictIC_params:
-                regularisation['lambdaIC_max'] = ( compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], dictIC_params['coeff_weights']), compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx']) )
+                regularisation['lambdaIC_max'] = ( compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], dictIC_params['coeff_weights']), compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx_kept']) )
             else:
-                regularisation['lambdaIC_max'] = ( compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], np.ones(regularisation['sizeIC'], dtype=np.float64)), compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx']) )
+                regularisation['lambdaIC_max'] = ( compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], np.ones(regularisation['sizeIC'], dtype=np.float64)), compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx_kept']) )
             regularisation['lambdaIC'] = ( regularisation['lambdaIC_perc'][0] * regularisation['lambdaIC_max'][0], regularisation['lambdaIC_perc'][1] * regularisation['lambdaIC_max'][1] )
 
         # print
@@ -1111,7 +1112,7 @@ cdef class Evaluation :
             logger.debug( f'% lambda: {regularisation["lambdaIC_perc"]}' )
             logger.debug( f'Lambda used: {regularisation["lambdaIC"]}' )
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
-            logger.debug( f'Number of groups: {len(dictIC_params["group_idx"])}' )
+            logger.debug( f'Number of groups: {len(dictIC_params["group_idx_kept"])}' )
             if dictIC_params['group_weights_cardinality']==False and dictIC_params['group_weights_adaptive']==False and dictIC_params['group_weights_extra'] is None:
                 logger.debug( 'Group weights are not considered (all ones)' )
             else:

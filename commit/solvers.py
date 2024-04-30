@@ -77,17 +77,17 @@ def init_regularisation(regularisation_params):
     #     proxIC  = lambda x: projection_onto_l2_ball(x, lambdaIC, startIC, sizeIC)
 
     elif regularisation_params['regIC'] == 'group_lasso':
-        if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
+        if not len(dictIC_params['group_idx_kept']) == len(dictIC_params['group_weights']):
             logger.error('Number of groups and weights do not match')
 
         lambda_group_IC = regularisation_params['lambdaIC']
 
         # convert to new data structure (needed for faster access)
-        N = np.sum([g.size for g in dictIC_params["group_idx"]])
+        N = np.sum([g.size for g in dictIC_params['group_idx_kept']])
         groupIdxIC = np.zeros( (N,), dtype=np.int32 )
-        groupSizeIC = np.zeros( (dictIC_params["group_idx"].size,), dtype=np.int32 )
+        groupSizeIC = np.zeros( (dictIC_params['group_idx_kept'].size,), dtype=np.int32 )
         pos = 0
-        for i, g in enumerate(dictIC_params["group_idx"]) :
+        for i, g in enumerate(dictIC_params['group_idx_kept']) :
             groupSizeIC[i] = g.size
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
@@ -99,18 +99,18 @@ def init_regularisation(regularisation_params):
             proxIC = lambda x, scaling: prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
   
     elif regularisation_params['regIC'] == 'sparse_group_lasso':
-        if not len(dictIC_params["group_idx"]) == len(dictIC_params['group_weights']):
+        if not len(dictIC_params['group_idx_kept']) == len(dictIC_params['group_weights']):
             logger.error('Number of groups and weights do not match')
 
         lambdaIC = regularisation_params['lambdaIC'][0]
         lambda_group_IC = regularisation_params['lambdaIC'][1]
 
         # convert to new data structure (needed for faster access)
-        N = np.sum([g.size for g in dictIC_params["group_idx"]])
+        N = np.sum([g.size for g in dictIC_params['group_idx_kept']])
         groupIdxIC  = np.zeros( (N,), dtype=np.int32 )
-        groupSizeIC = np.zeros( (dictIC_params["group_idx"].size,), dtype=np.int32 )
+        groupSizeIC = np.zeros( (dictIC_params['group_idx_kept'].size,), dtype=np.int32 )
         pos = 0
-        for i, g in enumerate(dictIC_params["group_idx"]) :
+        for i, g in enumerate(dictIC_params['group_idx_kept']) :
             groupSizeIC[i] = g.size
             groupIdxIC[pos:(pos+g.size)] = g[:]
             pos += g.size
