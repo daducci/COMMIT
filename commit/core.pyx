@@ -1332,11 +1332,11 @@ cdef class Evaluation :
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
-
         if debias:
             from commit.operator import operator
             mask = np.zeros(self.DICTIONARY['IC']['nF']*self.KERNELS['wmc'].shape[0], dtype=np.uint32)
             mask[self.x>0] = 1
+            mask[self.x<0] = 1
             self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(mask, dtype=np.uint32)
             self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
             if self.KERNELS['wmc'].shape[0] > 1:
@@ -1345,7 +1345,6 @@ cdef class Evaluation :
                 self.set_regularisation()
                 
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=self.x, regularisation=self.regularisation_params, confidence_array=confidence_array)
-
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
 
