@@ -459,8 +459,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     // Variables definition
     float               fiber[3][MAX_FIB_LEN] = {0} ;
     float               fiberNorm;   // normalization
-    unsigned int    pos=0;
-    float           float_pos=0.0;
+    unsigned int        pos=0;
+    float               float_pos=0.0;
     unsigned int        N, v, tempTotFibers;
     unsigned long int   temp_totICSegments;
     unsigned short      o;
