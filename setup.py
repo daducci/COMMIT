@@ -3,7 +3,6 @@ import sys
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-from setup_operator import write_operator_c_file
 
 # name of the package
 package_name = 'commit'
