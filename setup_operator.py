@@ -771,7 +771,7 @@ void COMMIT_A_nolut(
     pthread_t threads[MAX_THREADS];
     int t;
     for(t=0; t<_nThreads ; t++)
-        pthread_create( &threads[t], NULL, COMMIT_A__block, (void *) (long int)t );
+        pthread_create( &threads[t], NULL, COMMIT_A__block_nolut, (void *) (long int)t );
     for(t=0; t<_nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
@@ -869,7 +869,7 @@ void COMMIT_At_nolut(
     pthread_t threads[MAX_THREADS];
     int t;
     for(t=0; t<_nThreads ; t++)
-        pthread_create( &threads[t], NULL, COMMIT_At__block, (void *) (long int)t );
+        pthread_create( &threads[t], NULL, COMMIT_At__block_nolut, (void *) (long int)t );
     for(t=0; t<_nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
