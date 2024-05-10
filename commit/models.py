@@ -74,6 +74,7 @@ class VolumeFractions(BaseModel):
         self.name = 'Volume fractions'
         self.maps_name = []
         self.maps_descr = []
+        self.nolut = True
 
     def set(self):
         return
