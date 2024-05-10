@@ -2,6 +2,7 @@ import os
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
+from setup_operator import write_operator_c_file
 
 # name of the package
 package_name = 'commit'
@@ -22,6 +23,10 @@ def get_extensions():
                      sources=[f'{package_name}/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
+    operator = Extension(name=f'{package_name}.operator.operator',
+                    sources=[f'{package_name}/operator/operator.pyx', f'{package_name}/operator/operator_c.c'],
+                    extra_compile_args=['-w'],
+                    language='c')
                  
     return [trk2dictionary, core, proximals]
 
@@ -47,6 +52,9 @@ class CustomBuildExtCommand(build_ext):
         # Call original build_ext command
         build_ext.finalize_options(self)
         build_ext.run(self)
+
+# generate the operator_c.c file
+write_operator_c_file()
 
 # create the 'build' directory
 if not os.path.exists('build'):
