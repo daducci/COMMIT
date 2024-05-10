@@ -197,16 +197,17 @@ cdef class LinearOperator :
         if not self.adjoint :
             # DIRECT PRODUCT A*x
             if self.nolut:
-                COMMIT_A_nolut(
-                    self.nF,
-                    &v_in[0], &v_out[0],
-                    self.ICf, self.ICv, self.ICl,
-                    self.ISOv,
-                    self.ICthreads, self.ISOthreads,
-                    nISO, nthreads
-                )
+                with nogil:
+                    COMMIT_A_nolut(
+                        self.nF,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICl,
+                        self.ISOv,
+                        self.ICthreads, self.ISOthreads,
+                        nISO, nthreads
+                    )
             else:
-                with nogil :
+                with nogil:
                     COMMIT_A(
                         self.nF, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
@@ -220,16 +221,17 @@ cdef class LinearOperator :
         else :
             # INVERSE PRODUCT A'*y
             if self.nolut:
-                COMMIT_At_nolut(
-                    self.nF, self.n,
-                    &v_in[0], &v_out[0],
-                    self.ICf, self.ICv, self.ICl,
-                    self.ISOv,
-                    self.ICthreadsT, self.ISOthreadsT,
-                    nISO, nthreads
-                )
+                with nogil:
+                    COMMIT_At_nolut(
+                        self.nF, self.n,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICl,
+                        self.ISOv,
+                        self.ICthreadsT, self.ISOthreadsT,
+                        nISO, nthreads
+                    )
             else:
-                with nogil :
+                with nogil:
                     COMMIT_At(
                         self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
