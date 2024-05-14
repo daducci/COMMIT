@@ -10,6 +10,7 @@ cdef extern void COMMIT_A(
     int _nF, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
     unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -116,12 +117,8 @@ cdef class LinearOperator :
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
-        cdef unsigned int [::1]   ICeval = DICTIONARY["IC"]["eval"]
+        cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['idx']
         self.ICeval = &ICeval[0]
-
-        # for i in range(self.n2):
-        #     print(f"ICeval after assignment: {self.ICeval[i]}")
-
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']

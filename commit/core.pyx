@@ -499,6 +499,9 @@ cdef class Evaluation :
             self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
             del idx
 
+            # create the index array for the streamlines that will be considered in the fit
+            self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(np.ones( self.DICTIONARY['IC']['nF'], dtype=np.uint32 ))
+
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
         cdef :
@@ -1255,7 +1258,7 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tr)} ]' )
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=True ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=False ) :
         """Fit the model to the data.
 
         Parameters

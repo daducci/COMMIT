@@ -756,6 +756,7 @@ def add_commit_a_block_nolut() -> str:
 void* COMMIT_A__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
+    uint32_t *eval0;
     double   x0;
     double   *xPtr;
     uint32_t *t_v, *t_vEnd, *t_f;
@@ -856,6 +857,7 @@ void* COMMIT_At__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
     double   *xPtr;
+    uint32_t *eval0;
     uint32_t *t_v, *t_vEnd, *t_f;
     float    *t_l;
     uint8_t  *t_t;\n\n'''
