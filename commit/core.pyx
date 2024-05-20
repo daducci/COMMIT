@@ -1327,7 +1327,7 @@ cdef class Evaluation :
 
         if debias:
             from commit.operator import operator
-            mask = np.zeros(self.DICTIONARY['IC']['nF']*self.KERNELS['wmc'].shape[0], dtype=np.uint32)
+            mask = np.zeros(self.DICTIONARY['IC']['nF'], dtype=np.uint32)
             mask[self.x>0] = 1
             mask[self.x<0] = 1
             self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(mask, dtype=np.uint32)
