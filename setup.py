@@ -25,7 +25,7 @@ def get_extensions():
                      language='c++')
     operator = Extension(name=f'{package_name}.operator.operator',
                     sources=[f'{package_name}/operator/operator.pyx', f'{package_name}/operator/operator_c.c'],
-                    extra_compile_args=['-w', '-Ofast'],
+                    extra_compile_args=['-w', '-O3', '-Ofast'],
                     language='c')
                  
     return [trk2dictionary, core, proximals, operator]
