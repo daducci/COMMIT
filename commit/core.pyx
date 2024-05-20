@@ -1328,8 +1328,8 @@ cdef class Evaluation :
         if debias:
             from commit.operator import operator
             mask = np.zeros(self.DICTIONARY['IC']['nF'], dtype=np.uint32)
-            mask[self.x>0] = 1
-            mask[self.x<0] = 1
+            mask[self.x[:self.DICTIONARY['IC']['nF']]>0] = 1
+            mask[self.x[:self.DICTIONARY['IC']['nF']]<0] = 1
             self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(mask, dtype=np.uint32)
             self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
             self.set_regularisation()
