@@ -236,7 +236,7 @@ cdef class LinearOperator :
                     COMMIT_A_nolut(
                         self.nF, self.n, self.nSf,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval,self.ICv, self.ICl, self.ICp,
+                        self.ICf, self.ICeval, self.ICv, self.ICl, self.ICp,
                         self.ISOv,
                         self.LUT_IC_modulation,
                         self.ICthreads, self.ISOthreads,
