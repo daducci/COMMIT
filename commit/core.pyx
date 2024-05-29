@@ -88,7 +88,8 @@ cdef class Evaluation :
     cdef public temp_data
     cdef public confidence_array
     cdef public confidence_map_img
-    cdef public debias_mask
+    cdef public contribution_mask
+    cdef public contribution_voxels
     cdef public verbose
 
     def __init__( self, study_path='.', subject='.' ) :
@@ -112,7 +113,8 @@ cdef class Evaluation :
         self.x                      = None # set by "fit" method
         self.confidence_array       = None # set by "fit" method
         self.confidence_map_img     = None # set by "fit" method
-        self.debias_mask            = None # set by "fit" method
+        self.contribution_mask      = None # set by "fit" method
+        self.contribution_voxels    = None # set by "fit" method
         self.x_nnls                 = None # set by "fit" method (coefficients of IC compartment estimated without regularization)
         self.verbose                = 3
 
@@ -499,9 +501,6 @@ cdef class Evaluation :
             self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
             del idx
 
-            # create the index array for the streamlines that will be considered in the fit
-            self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(np.ones( self.DICTIONARY['IC']['nF'], dtype=np.uint32 ))
-
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
         cdef :
@@ -736,48 +735,16 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
 
-        # need to pass these parameters at runtime for compiling the C code
-        from commit.operator import config
+        nF         = self.DICTIONARY['IC']['nF']    # number of FIBERS
+        nR         = self.KERNELS['wmr'].shape[0]   # number of FIBER RADII
+        nE         = self.DICTIONARY['EC']['nE']    # number of EC segments
+        nT         = self.KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
+        nV         = self.DICTIONARY['nV']          # number of VOXELS
+        nI         = self.KERNELS['iso'].shape[0]   # number of ISO contributions
+        n2 = nR * nF + nT * nE + nI * nV 
+        self.DICTIONARY["IC"]["eval"] = np.ones( int(n2), dtype=np.uint32)
 
-        compilation_is_needed = False
-
-        if config.nTHREADS is None or config.nTHREADS != self.THREADS['n']:
-            compilation_is_needed = True
-        if config.nIC is None or config.nIC != self.KERNELS['wmr'].shape[0]:
-            compilation_is_needed = True
-        if config.model is None or config.model != self.model.id:
-            compilation_is_needed = True
-        if config.nEC is None or config.nEC != self.KERNELS['wmh'].shape[0]:
-            compilation_is_needed = True
-        if config.nISO is None or config.nISO != self.KERNELS['iso'].shape[0]:
-            compilation_is_needed = True
-        if config.build_dir != build_dir:
-            compilation_is_needed = True
-
-        if compilation_is_needed or not 'commit.operator.operator' in sys.modules :
-            if build_dir is not None:
-                if isdir(build_dir) and not len(listdir(build_dir)) == 0:
-                    logger.error( '\nbuild_dir is not empty, unsafe build option.' )
-                elif config.nTHREADS is not None:
-                    logger.error( '\nThe parameter build_dir has changed, unsafe build option.' )
-                else:
-                    logger.warning( '\nUsing build_dir, always quit your python console between COMMIT Evaluation.' )
-
-            config.nTHREADS   = self.THREADS['n']
-            config.model      = self.model.id
-            config.nIC        = self.KERNELS['wmr'].shape[0]
-            config.nEC        = self.KERNELS['wmh'].shape[0]
-            config.nISO       = self.KERNELS['iso'].shape[0]
-            config.build_dir  = build_dir
-
-            sys.dont_write_bytecode = True
-            pyximport.install( reload_support=True, language_level=3, build_dir=build_dir, build_in_temp=True, inplace=False )
-
-        if 'commit.operator.operator' in sys.modules :
-            del sys.modules['commit.operator.operator']
-        import commit.operator.operator
-
-        self.A = commit.operator.operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
 
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
@@ -793,9 +760,31 @@ cdef class Evaluation :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+        
+        if self.contribution_mask is not None :
 
-        if self.debias_mask is not None :
-            y *= self.debias_mask
+            # find the voxels traversed by the tracts with zero contribution in the mask
+            zero_fibs = np.where(self.contribution_mask == 0)[0]
+            fibs = np.where(self.contribution_mask > 0)[0]
+            vox_zero = []
+            for f in zero_fibs :
+                vox_zero.extend(self.DICTIONARY['IC']['v'][self.DICTIONARY['IC']['fiber'] == f])
+
+            # find voxel not in the mask
+            vox_in = []
+            for f in fibs :
+                vox_in.extend(self.DICTIONARY['IC']['v'][self.DICTIONARY['IC']['fiber'] == f])
+
+            # find voxel in vox_zero but not in vox_in
+            vox_zero = np.array(vox_zero)
+            vox_in = np.array(vox_in)
+            vox_not_in = np.setdiff1d(vox_zero, vox_in)
+
+            vox_sub = np.setdiff1d(vox_in, vox_not_in)
+            self.contribution_voxels = vox_sub
+
+            # set the y values of the voxels not in the mask to zero
+            y[vox_not_in] = 0            
 
         return y
 
@@ -1379,12 +1368,23 @@ cdef class Evaluation :
         t = time.time()
         with ProgressBar(disable=self.verbose!=3, hide_on_exit=True):
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
-
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
-        if self.regularisation_params['regIC'] is None and self.x_nnls is None:
-            self.x_nnls, _, _ = self.get_coeffs(get_normalized=False)
 
+        if debias:
+            from commit.operator import operator
+            mask = np.ones(self.x.size, dtype=np.uint32)
+            mask[self.x[:self.DICTIONARY['IC']['nF']]<0.000000000000001] = 0
+            self.contribution_mask = mask
+
+            print(f"Number of non-zero IC coefficients: {np.sum(mask)}")
+            self.DICTIONARY["IC"]["eval"] = mask[:self.DICTIONARY['IC']['nF']]
+
+            self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
+            print(f"A shape test debias: {self.A.shape}")
+            self.set_regularisation()
+            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+            print("Indices of zero coefficients: ", np.where(mask==0)[0])
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
 
@@ -1491,59 +1491,22 @@ cdef class Evaluation :
         niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
         niiMAP_hdr['db_name'] = ''
 
-        if self.debias_mask is not None:
-            nV = int(np.sum(self.debias_mask)/self.niiDWI_img.shape[3])
-            ind_mask = np.where(self.debias_mask>0)[0]
-            vox_mask = np.reshape( self.debias_mask[ind_mask], (nV,-1) )
-
-            y_mea = np.reshape( self.get_y()[ind_mask], (nV,-1) )
-
-            y_est_ = np.asarray(self.A.dot(self.x))
-            y_est = np.reshape( y_est_[ind_mask], (nV,-1) )
-
-            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-
-            logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-
-            tmp = np.sum(y_mea**2,axis=1)
-            idx = np.where( tmp < 1E-12 )
-            tmp[ idx ] = 1
-            tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
-            tmp[ idx ] = 0
-            logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-
-            y_mea = np.reshape( self.get_y(), (self.DICTIONARY['nV'],-1) )
-
-            y_est_ = np.asarray(self.A.dot(self.x))
-            y_est = np.reshape( y_est_, (self.DICTIONARY['nV'],-1) )
-            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-
-            niiMAP_img[self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz']] = tmp
-            niiMAP_hdr['cal_min'] = 0
-            niiMAP_hdr['cal_max'] = tmp.max()
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
-
-            tmp = np.sum(y_mea**2,axis=1)
-            idx = np.where( tmp < 1E-12 )
-            tmp[ idx ] = 1
-            tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
-            tmp[ idx ] = 0
-
-            niiMAP_img[self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz']] = tmp
-            niiMAP_hdr['cal_min'] = 0
-            niiMAP_hdr['cal_max'] = 1
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
-
-        else:
+        if self.contribution_mask is None:
             y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
-            y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
-            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-            
-            logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-            niiMAP_hdr['cal_min'] = 0
-            niiMAP_hdr['cal_max'] = tmp.max()
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
+        else:
+            y_vals = self.get_y()[self.contribution_voxels]
+            nV = np.sum(self.contribution_mask[:self.DICTIONARY['IC']['nF']])
+            y_mea = np.reshape( y_vals[self.contribution_voxels], (nV,-1) )
+        y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
+        print(f"y_mea: {y_mea}")
+        print(f"y_est: {y_est}")
+
+        tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+        logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+        niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+        niiMAP_hdr['cal_min'] = 0
+        niiMAP_hdr['cal_max'] = tmp.max()
+        nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
 
             tmp = np.sum(y_mea**2,axis=1)
             idx = np.where( tmp < 1E-12 )

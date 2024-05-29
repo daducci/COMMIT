@@ -117,8 +117,12 @@ cdef class LinearOperator :
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
-        cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['idx']
+        cdef unsigned int [::1]   ICeval = DICTIONARY["IC"]["eval"]
         self.ICeval = &ICeval[0]
+
+        # for i in range(self.n2):
+        #     print(f"ICeval after assignment: {self.ICeval[i]}")
+
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
