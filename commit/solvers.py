@@ -266,12 +266,17 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         x0 = np.zeros(A.shape[1])
     xhat = x0.copy()
     x = np.zeros_like(xhat)
+
     if sqrt_W is not None:
         res = sqrt_W * (A.dot(xhat) - y)
         grad = np.asarray(At.dot(sqrt_W * res))
     else:
         res = A.dot(xhat) - y
         grad = np.asarray(At.dot(res))
+    
+    print(f"y: {y}")
+    print(f"res before: {res}")
+    print(f"grad before: {grad}")
 
     prox( xhat, 1.0 )
     reg_term = omega( xhat )
@@ -281,6 +286,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
     beta = 0.9
     prev_x = xhat.copy()
     qfval = prev_obj
+
 
     # Step size computation
     if sqrt_W is not None:

@@ -85,6 +85,7 @@ cdef class LinearOperator :
 
     def __init__( self, DICTIONARY, KERNELS, THREADS, nolut=False ) :
         """Set the pointers to the data structures used by the C code."""
+
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
         self.THREADS    = THREADS
@@ -99,6 +100,7 @@ cdef class LinearOperator :
         self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
         self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
 
+ 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
         elif KERNELS['wmh'].size > 0 :
@@ -109,13 +111,17 @@ cdef class LinearOperator :
         self.adjoint    = 0                         # direct of inverse product
 
         self.n1 = self.nV*self.nS
-        self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
+        self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV      
 
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
-        cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['idx']
+        cdef unsigned int [::1]   ICeval = DICTIONARY["IC"]["eval"]
         self.ICeval = &ICeval[0]
+
+        # for i in range(self.n2):
+        #     print(f"ICeval after assignment: {self.ICeval[i]}")
+
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
@@ -156,7 +162,7 @@ cdef class LinearOperator :
     @property
     def T( self ) :
         """Transpose of the explicit matrix."""
-        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.nolut )
+        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=self.nolut )
         C.adjoint = 1 - C.adjoint
         return C
 

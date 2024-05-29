@@ -10,7 +10,7 @@ double      *x, *Y;
 uint32_t    *ICthreads, *ECthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ECthreadsT, *ISOthreadsT;
-uint32_t    *ICf, *ICeval, *ICv, *ECv, *ISOv;
+uint32_t    *ICf, *ICv, *ECv, *ISOv, *ICeval;
 uint16_t    *ICo, *ECo;
 float       *ICl;
 float       *wmrSFP0, *wmrSFP1, *wmrSFP2, *wmrSFP3, *wmrSFP4, *wmrSFP5, *wmrSFP6, *wmrSFP7, *wmrSFP8, *wmrSFP9, *wmrSFP10, *wmrSFP11, *wmrSFP12, *wmrSFP13, *wmrSFP14, *wmrSFP15, *wmrSFP16, *wmrSFP17, *wmrSFP18, *wmrSFP19;
@@ -8060,7 +8060,7 @@ void* COMMIT_At__block( void *ptr )
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
+    uint32_t *_ICf, unsigned int *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -8873,10 +8873,9 @@ void COMMIT_At(
 void* COMMIT_A__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
-    uint32_t *eval0;
     double   x0;
     double   *xPtr;
-    uint32_t *t_v, *t_vEnd, *t_f;
+    uint32_t *t_v, *t_vEnd, *t_f;//, eval0;
     float    *t_l;
 
     // intra-cellular compartments
@@ -8887,8 +8886,9 @@ void* COMMIT_A__block_nolut( void *ptr )
 
     while( t_v != t_vEnd )
     {
-        eval0 = ICeval[*t_f];
-        x0 = x[*t_f]* (double)(*eval0);
+        // if ( ICeval[*t_f] == 0 )
+        //     printf("fiber with zero contribition: %d\n", *t_f);
+        x0 = x[*t_f] * (double)(ICeval[*t_f]);
         if ( x0 != 0 )
             Y[*t_v] += (double)(*t_l) * x0;
         t_f++;
@@ -8960,8 +8960,7 @@ void* COMMIT_At__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
     double   *xPtr;
-    uint32_t *eval0;
-    uint32_t *t_v, *t_vEnd, *t_f;
+    uint32_t *t_v, *t_vEnd, *t_f;//, eval0;
     float    *t_l;
     uint8_t  *t_t;
 
@@ -8976,8 +8975,7 @@ void* COMMIT_At__block_nolut( void *ptr )
     {
         // in this case, I need to walk throug because the segments are ordered in "voxel order"
         if ( *t_t == id )
-            eval0 = ICeval + *t_f;
-            x[*t_f] += (double)(*t_l) * Y[*t_v]* (double)(*eval0);
+            x[*t_f] += (double)(*t_l) * Y[*t_v] * (double)(ICeval[*t_f]);
         t_t++;
         t_f++;
         t_v++;

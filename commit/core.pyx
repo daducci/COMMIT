@@ -82,6 +82,8 @@ cdef class Evaluation :
     cdef public CONFIG
     cdef public temp_data
     cdef public confidence_map_img
+    cdef public contribution_mask
+    cdef public contribution_voxels
     cdef public verbose
 
     def __init__( self, study_path='.', subject='.' ) :
@@ -104,6 +106,8 @@ cdef class Evaluation :
         self.regularisation_params  = None # set by "set_regularisation" method
         self.x                      = None # set by "fit" method
         self.confidence_map_img     = None # set by "fit" method
+        self.contribution_mask      = None # set by "fit" method
+        self.contribution_voxels    = None # set by "fit" method
         self.verbose                = 3
 
         # store all the parameters of an evaluation with COMMIT
@@ -484,9 +488,6 @@ cdef class Evaluation :
             self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
             del idx
 
-            # create the index array for the streamlines that will be considered in the fit
-            self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(np.ones( self.DICTIONARY['IC']['nF'], dtype=np.uint32 ))
-
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
         # NB: it works in conjunction with the normalization of the kernels
         cdef :
@@ -726,7 +727,16 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
 
-        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
+        nF         = self.DICTIONARY['IC']['nF']    # number of FIBERS
+        nR         = self.KERNELS['wmr'].shape[0]   # number of FIBER RADII
+        nE         = self.DICTIONARY['EC']['nE']    # number of EC segments
+        nT         = self.KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
+        nV         = self.DICTIONARY['nV']          # number of VOXELS
+        nI         = self.KERNELS['iso'].shape[0]   # number of ISO contributions
+        n2 = nR * nF + nT * nE + nI * nV 
+        self.DICTIONARY["IC"]["eval"] = np.ones( int(n2), dtype=np.uint32)
+
+        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
 
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
@@ -742,7 +752,32 @@ cdef class Evaluation :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        # y[y < 0] = 0
+        
+        if self.contribution_mask is not None :
+
+            # find the voxels traversed by the tracts with zero contribution in the mask
+            zero_fibs = np.where(self.contribution_mask == 0)[0]
+            fibs = np.where(self.contribution_mask > 0)[0]
+            vox_zero = []
+            for f in zero_fibs :
+                vox_zero.extend(self.DICTIONARY['IC']['v'][self.DICTIONARY['IC']['fiber'] == f])
+
+            # find voxel not in the mask
+            vox_in = []
+            for f in fibs :
+                vox_in.extend(self.DICTIONARY['IC']['v'][self.DICTIONARY['IC']['fiber'] == f])
+
+            # find voxel in vox_zero but not in vox_in
+            vox_zero = np.array(vox_zero)
+            vox_in = np.array(vox_in)
+            vox_not_in = np.setdiff1d(vox_zero, vox_in)
+
+            vox_sub = np.setdiff1d(vox_in, vox_not_in)
+            self.contribution_voxels = vox_sub
+
+            # set the y values of the voxels not in the mask to zero
+            y[vox_not_in] = 0            
+
         return y
 
 
@@ -1321,20 +1356,23 @@ cdef class Evaluation :
         t = time.time()
         with ProgressBar(disable=self.verbose!=3, hide_on_exit=True) as pb:
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
-
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
 
         if debias:
             from commit.operator import operator
-            mask = np.zeros(self.DICTIONARY['IC']['nF'], dtype=np.uint32)
-            mask[self.x[:self.DICTIONARY['IC']['nF']]>0] = 1
-            mask[self.x[:self.DICTIONARY['IC']['nF']]<0] = 1
-            self.DICTIONARY['IC']['idx'] = np.ascontiguousarray(mask, dtype=np.uint32)
-            self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
-            self.set_regularisation()
-            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=self.x, regularisation=self.regularisation_params, confidence_array=confidence_array)
+            mask = np.ones(self.x.size, dtype=np.uint32)
+            mask[self.x[:self.DICTIONARY['IC']['nF']]<0.000000000000001] = 0
+            self.contribution_mask = mask
 
+            print(f"Number of non-zero IC coefficients: {np.sum(mask)}")
+            self.DICTIONARY["IC"]["eval"] = mask[:self.DICTIONARY['IC']['nF']]
+
+            self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
+            print(f"A shape test debias: {self.A.shape}")
+            self.set_regularisation()
+            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+            print("Indices of zero coefficients: ", np.where(mask==0)[0])
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
 
@@ -1441,8 +1479,15 @@ cdef class Evaluation :
         niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
         niiMAP_hdr['db_name'] = ''
 
-        y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
+        if self.contribution_mask is None:
+            y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
+        else:
+            y_vals = self.get_y()[self.contribution_voxels]
+            nV = np.sum(self.contribution_mask[:self.DICTIONARY['IC']['nF']])
+            y_mea = np.reshape( y_vals[self.contribution_voxels], (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
+        print(f"y_mea: {y_mea}")
+        print(f"y_est: {y_est}")
 
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
         logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
