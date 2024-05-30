@@ -357,7 +357,7 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the kernels' )
-        logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', indent_lvl=1, with_progress=True ) # TODO: check why not printed
+        logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
@@ -776,7 +776,7 @@ cdef class Evaluation :
             self.contribution_voxels = vox_sub
 
             # set the y values of the voxels not in the mask to zero
-            y[vox_not_in] = 0            
+            y[vox_not_in] = 0
 
         return y
 
@@ -1365,14 +1365,11 @@ cdef class Evaluation :
             mask[self.x[:self.DICTIONARY['IC']['nF']]<0.000000000000001] = 0
             self.contribution_mask = mask
 
-            print(f"Number of non-zero IC coefficients: {np.sum(mask)}")
             self.DICTIONARY["IC"]["eval"] = mask[:self.DICTIONARY['IC']['nF']]
 
             self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
-            print(f"A shape test debias: {self.A.shape}")
             self.set_regularisation()
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
-            print("Indices of zero coefficients: ", np.where(mask==0)[0])
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
 
@@ -1481,13 +1478,17 @@ cdef class Evaluation :
 
         if self.contribution_mask is None:
             y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
+            y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
         else:
-            y_vals = self.get_y()[self.contribution_voxels]
-            nV = np.sum(self.contribution_mask[:self.DICTIONARY['IC']['nF']])
-            y_mea = np.reshape( y_vals[self.contribution_voxels], (nV,-1) )
-        y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
-        print(f"y_mea: {y_mea}")
-        print(f"y_est: {y_est}")
+            nV = self.contribution_voxels.shape[0]
+            y_mea = np.reshape( self.get_y()[self.contribution_voxels], (nV,-1) )
+            y_est = np.asarray(self.A.dot(self.x))
+            y_est = np.reshape( y_est[self.contribution_voxels], (nV,-1) ).astype(np.float32)
+            self.DICTIONARY['MASK_ix'] = self.DICTIONARY['MASK_ix'][self.contribution_voxels]
+            self.DICTIONARY['MASK_iy'] = self.DICTIONARY['MASK_iy'][self.contribution_voxels]
+            self.DICTIONARY['MASK_iz'] = self.DICTIONARY['MASK_iz'][self.contribution_voxels]
+
+
 
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
         logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
@@ -1545,8 +1546,11 @@ cdef class Evaluation :
                 xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
                     weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
                 ).astype(np.float32)
-                niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
-
+                if self.contribution_mask is not None:    
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv[self.contribution_voxels]
+                else:
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
+    
         logger.subinfo('Extra-axonal', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
             niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
@@ -1554,7 +1558,10 @@ cdef class Evaluation :
                 offset = nF * self.KERNELS['wmr'].shape[0]
                 tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
                 xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
-                niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
+                if self.contribution_mask is not None:
+                    niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv[self.contribution_voxels]
+                else:
+                    niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
         logger.subinfo('Isotropic   ', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
@@ -1564,7 +1571,10 @@ cdef class Evaluation :
                 offset_iso = offset + self.DICTIONARY['ISO']['nV']
                 tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['nV']) ).sum( axis=0 )
                 xv = np.bincount( self.DICTIONARY['ISO']['v'], weights=tmp, minlength=nV ).astype(np.float32)
-                niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
+                if self.contribution_mask is not None:
+                    niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv[self.contribution_voxels]
+                else:
+                    niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
         if self.get_config('doNormalizeMaps') :
             niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine, header=niiMAP_hdr )
