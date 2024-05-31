@@ -2,6 +2,7 @@
 #cython: language_level=3, boundscheck=False, wraparound=False, nonecheck=False, cdivision=True, initializedcheck=False, binding=False
 
 cimport numpy as np
+cimport cython
 
 import glob
 from os import makedirs, remove, listdir
@@ -741,43 +742,52 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    def get_y( self ):
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cpdef get_y( self ):
         """
         Returns a numpy array that corresponds to the 'y' vector of the optimisation problem.
         NB: this can be run only after having loaded the dictionary and the data.
         """
+
+        cdef int i = 0
+
         if self.DICTIONARY is None :
             logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.niiDWI is None :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
         
         if self.contribution_mask is not None :
 
-            # find the voxels traversed by the tracts with zero contribution in the mask
+            # find the voxels traversed by the tracts with zero contribution
             zero_fibs = np.where(self.contribution_mask == 0)[0]
-            fibs = np.where(self.contribution_mask > 0)[0]
-            vox_zero = []
-            for f in zero_fibs :
-                vox_zero.extend(self.DICTIONARY['IC']['v'][self.DICTIONARY['IC']['fiber'] == f])
 
-            # find voxel not in the mask
-            vox_in = []
-            for f in fibs :
-                vox_in.extend(self.DICTIONARY['IC']['v'][self.DICTIONARY['IC']['fiber'] == f])
+            # compute number of tract passing through each voxel
+            n_tracts = np.bincount(self.DICTIONARY['IC']['v'], minlength=self.DICTIONARY['nV'])
 
-            # find voxel in vox_zero but not in vox_in
-            vox_zero = np.array(vox_zero)
-            vox_in = np.array(vox_in)
-            vox_not_in = np.setdiff1d(vox_zero, vox_in)
+            # extract the voxels traversed by at most one tract
+            vox_single = np.where(n_tracts < zero_fibs.size)[0]
 
-            vox_sub = np.setdiff1d(vox_in, vox_not_in)
-            self.contribution_voxels = vox_sub
+            contrib_voxels = y.copy()
+            contrib_voxels = contrib_voxels.astype(np.uint32)
+            contrib_voxels[contrib_voxels > 0] = 1
+            contrib_voxels
 
-            # set the y values of the voxels not in the mask to zero
-            y[vox_not_in] = 0
+            # iterate over vox_single and set the y values of the voxels traverse ONLY by the tracts with zero contribution to zero
+            with ProgressBar(total=vox_single.size, disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
+                for i in vox_single:
+                    if n_tracts[i] == 1:
+                        if self.contribution_mask[self.DICTIONARY['IC']['fiber'][self.DICTIONARY['IC']['v'] == i]] == 0:
+                            y[i] = 0
+                    else:
+                        if np.all(self.contribution_mask[self.DICTIONARY['IC']['fiber'][self.DICTIONARY['IC']['v'] == i]] == 0):
+                            y[i] = 0
+                    pbar.update()
 
+            self.contribution_voxels = contrib_voxels[y != 0]
         return y
 
 
@@ -1362,7 +1372,8 @@ cdef class Evaluation :
         if debias:
             from commit.operator import operator
             mask = np.ones(self.x.size, dtype=np.uint32)
-            mask[self.x[:self.DICTIONARY['IC']['nF']]<0.000000000000001] = 0
+            # mask[self.x[:self.DICTIONARY['IC']['nF']]<0.000000000000001] = 0
+            mask[:self.DICTIONARY['IC']['nF']][self.x[:self.DICTIONARY['IC']['nF']]<0.000000000000001] = 0
             self.contribution_mask = mask
 
             self.DICTIONARY["IC"]["eval"] = mask[:self.DICTIONARY['IC']['nF']]

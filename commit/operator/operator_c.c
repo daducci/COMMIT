@@ -49,8 +49,8 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    // eval0 = ICeval + *t_f;
+                    x0 = *xPtr0 * (double)(ICeval[*t_f]);
                     if (x0 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -3907,14 +3907,14 @@ void* COMMIT_At__block( void *ptr )
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
+                        // eval0 = ICeval + *t_f;    
 
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
                             x0 += (*SFP0ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
+                        x[*t_f] += w * x0 * (double)(ICeval[*t_f]);
                     }
                     t_f++;
                     t_v++;
@@ -8875,7 +8875,7 @@ void* COMMIT_A__block_nolut( void *ptr )
     int      id = (long)ptr;
     double   x0;
     double   *xPtr;
-    uint32_t *t_v, *t_vEnd, *t_f;//, eval0;
+    uint32_t *t_v, *t_vEnd, *t_f;
     float    *t_l;
 
     // intra-cellular compartments
@@ -8886,8 +8886,6 @@ void* COMMIT_A__block_nolut( void *ptr )
 
     while( t_v != t_vEnd )
     {
-        // if ( ICeval[*t_f] == 0 )
-        //     printf("fiber with zero contribition: %d\n", *t_f);
         x0 = x[*t_f] * (double)(ICeval[*t_f]);
         if ( x0 != 0 )
             Y[*t_v] += (double)(*t_l) * x0;
@@ -8960,7 +8958,7 @@ void* COMMIT_At__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
     double   *xPtr;
-    uint32_t *t_v, *t_vEnd, *t_f;//, eval0;
+    uint32_t *t_v, *t_vEnd, *t_f;
     float    *t_l;
     uint8_t  *t_t;
 
