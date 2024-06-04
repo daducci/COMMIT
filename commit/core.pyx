@@ -851,7 +851,7 @@ cdef class Evaluation :
                     This field can be specified only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
                     NB: this array must have the same size as the number of groups in the IC compartment and contain only non-negative values.
                 'coeff_weights' - np.array(np.float64) :
-                    weights associated to each individual element of the compartment (implemented for all compartments).
+                    weights associated to each individual element of the compartment (for the moment implemented only for IC compartment).
                     This field can be specified only if the chosen regulariser is 'lasso' or 'sparse_group_lasso'.
                     NB: this array must have the same size as the number of elements in the compartment and contain only non-negative values.
 
@@ -954,7 +954,7 @@ cdef class Evaluation :
 
         # check if coeff_weights is consistent with the regularisation
         if regularisation['regIC'] not in ['lasso', 'sparse_group_lasso'] and dictIC_params is not None and 'coeff_weights' in dictIC_params:
-            logger.warning('Coefficients weights are allowed only for lasso and sparse_group_lasso regularisation')
+            logger.warning('Coefficients weights are allowed only for lasso and sparse_group_lasso regularisations. Ignoring "coeff_weights"')
 
         # check if coeff_weights is consistent with the compartment size
         if regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso':
@@ -963,7 +963,7 @@ cdef class Evaluation :
                     logger.error('All coefficients weights must be non-negative')
                 if dictIC_params['coeff_weights'].size != len(self.DICTIONARY['TRK']['kept']):
                     logger.error(f'"coeff_weights" must have the same size as the number of elements in the IC compartment (got {dictIC_params["coeff_weights"].size} but {len(self.DICTIONARY["TRK"]["kept"])} expected)')
-                dictIC_params['coeff_weights'] = dictIC_params['coeff_weights'][self.DICTIONARY['TRK']['kept']==1]
+                dictIC_params['coeff_weights_kept'] = dictIC_params['coeff_weights'][self.DICTIONARY['TRK']['kept']==1]
 
         # check if group parameters are consistent with the regularisation
         if regularisation['regIC'] not in ['group_lasso', 'sparse_group_lasso'] and dictIC_params is not None:
@@ -1066,8 +1066,8 @@ cdef class Evaluation :
 
         # update lambdas using lambda_max
         if regularisation['regIC'] == 'lasso':
-            if dictIC_params is not None and 'coeff_weights' in dictIC_params:
-                regularisation['lambdaIC_max'] = compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], dictIC_params['coeff_weights'])
+            if dictIC_params is not None and 'coeff_weights_kept' in dictIC_params:
+                regularisation['lambdaIC_max'] = compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], dictIC_params['coeff_weights_kept'])
             else:
                 regularisation['lambdaIC_max'] = compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], np.ones(regularisation['sizeIC'], dtype=np.float64))
             regularisation['lambdaIC'] = regularisation['lambdaIC_perc'] * regularisation['lambdaIC_max']
@@ -1075,15 +1075,15 @@ cdef class Evaluation :
             regularisation['lambdaIC_max'] = compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx_kept'])
             regularisation['lambdaIC'] = regularisation['lambdaIC_perc'] * regularisation['lambdaIC_max']
         if regularisation['regIC'] == 'sparse_group_lasso':
-            if 'coeff_weights' in dictIC_params:
-                regularisation['lambdaIC_max'] = ( compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], dictIC_params['coeff_weights']), compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx_kept']) )
+            if 'coeff_weights_kept' in dictIC_params:
+                regularisation['lambdaIC_max'] = ( compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], dictIC_params['coeff_weights_kept']), compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx_kept']) )
             else:
                 regularisation['lambdaIC_max'] = ( compute_lambda_max_lasso(regularisation['startIC'], regularisation['sizeIC'], np.ones(regularisation['sizeIC'], dtype=np.float64)), compute_lambda_max_group(dictIC_params['group_weights'], dictIC_params['group_idx_kept']) )
             regularisation['lambdaIC'] = ( regularisation['lambdaIC_perc'][0] * regularisation['lambdaIC_max'][0], regularisation['lambdaIC_perc'][1] * regularisation['lambdaIC_max'][1] )
 
         # print
         if regularisation['regIC'] is not None:
-            if (regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso') and dictIC_params is not None and 'coeff_weights' in dictIC_params:
+            if (regularisation['regIC'] == 'lasso' or regularisation['regIC'] == 'sparse_group_lasso') and dictIC_params is not None and 'coeff_weights_kept' in dictIC_params:
                 logger.subinfo( f'Regularisation type: {regularisation["regIC"]} (weighted version)', indent_lvl=2, indent_char='-' )
             else:
                 logger.subinfo( f'Regularisation type: {regularisation["regIC"]}', indent_lvl=2, indent_char='-' )
@@ -1125,9 +1125,9 @@ cdef class Evaluation :
                 regularisation['lambdaEC_perc'] = lambdas[1]
             else:
                 regularisation['lambdaEC_perc'] = lambdas[1]
-            if dictEC_params is not None and 'coeff_weights' in dictEC_params:
-                if dictEC_params['coeff_weights'].size != regularisation['sizeEC']:
-                    logger.error(f'"coeff_weights" must have the same size as the number of elements in the EC compartment (got {dictEC_params["coeff_weights"].size} but {regularisation["sizeEC"]} expected)')
+            # if dictEC_params is not None and 'coeff_weights' in dictEC_params:
+            #     if dictEC_params['coeff_weights'].size != regularisation['sizeEC']:
+            #         logger.error(f'"coeff_weights" must have the same size as the number of elements in the EC compartment (got {dictEC_params["coeff_weights"].size} but {regularisation["sizeEC"]} expected)')
         elif regularisation['regEC'] == 'smoothness':
             logger.error('Not yet implemented')
         elif regularisation['regEC'] == 'group_lasso':
@@ -1141,18 +1141,18 @@ cdef class Evaluation :
 
         # update lambdas using lambda_max
         if regularisation['regEC'] == 'lasso':
-            if dictEC_params is not None and 'coeff_weights' in dictEC_params:
-                regularisation['lambdaEC_max'] = compute_lambda_max_lasso(regularisation['startEC'], regularisation['sizeEC'], dictEC_params['coeff_weights'])
-            else:
-                regularisation['lambdaEC_max'] = compute_lambda_max_lasso(regularisation['startEC'], regularisation['sizeEC'], np.ones(regularisation['sizeEC'], dtype=np.float64))
+            # if dictEC_params is not None and 'coeff_weights' in dictEC_params:
+            #     regularisation['lambdaEC_max'] = compute_lambda_max_lasso(regularisation['startEC'], regularisation['sizeEC'], dictEC_params['coeff_weights'])
+            # else:
+            regularisation['lambdaEC_max'] = compute_lambda_max_lasso(regularisation['startEC'], regularisation['sizeEC'], np.ones(regularisation['sizeEC'], dtype=np.float64))
             regularisation['lambdaEC'] = regularisation['lambdaEC_perc'] * regularisation['lambdaEC_max']
 
         # print
         if regularisation['regEC'] is not None:
-            if regularisation['regEC'] == 'lasso' and dictEC_params is not None and 'coeff_weights' in dictEC_params:
-                logger.subinfo( f'Regularisation type: {regularisation["regEC"]} (weighted version)', indent_lvl=2, indent_char='-' )
-            else:
-                logger.subinfo( f'Regularisation type: {regularisation["regEC"]}', indent_lvl=2, indent_char='-' )
+            # if regularisation['regEC'] == 'lasso' and dictEC_params is not None and 'coeff_weights' in dictEC_params:
+            #     logger.subinfo( f'Regularisation type: {regularisation["regEC"]} (weighted version)', indent_lvl=2, indent_char='-' )
+            # else:
+            logger.subinfo( f'Regularisation type: {regularisation["regEC"]}', indent_lvl=2, indent_char='-' )
 
         logger.subinfo( f'Non-negativity constraint: {regularisation["nnEC"]}', indent_char='-', indent_lvl=2 )
 
@@ -1180,9 +1180,9 @@ cdef class Evaluation :
                 regularisation['lambdaISO_perc'] = lambdas[2]
             else:
                 regularisation['lambdaISO_perc'] = lambdas[2]
-            if dictISO_params is not None and 'coeff_weights' in dictISO_params:
-                if dictISO_params['coeff_weights'].size != regularisation['sizeISO']:
-                    logger.error(f'"coeff_weights" must have the same size as the number of elements in the ISO compartment (got {dictISO_params["coeff_weights"].size} but {regularisation["sizeISO"]} expected)')
+            # if dictISO_params is not None and 'coeff_weights' in dictISO_params:
+            #     if dictISO_params['coeff_weights'].size != regularisation['sizeISO']:
+            #         logger.error(f'"coeff_weights" must have the same size as the number of elements in the ISO compartment (got {dictISO_params["coeff_weights"].size} but {regularisation["sizeISO"]} expected)')
         elif regularisation['regISO'] == 'smoothness':
             logger.error('Not yet implemented')
         elif regularisation['regISO'] == 'group_lasso':
@@ -1196,18 +1196,18 @@ cdef class Evaluation :
 
         # update lambdas using lambda_max
         if regularisation['regISO'] == 'lasso':
-            if dictISO_params is not None and 'coeff_weights' in dictISO_params:
-                regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], dictISO_params['coeff_weights'])
-            else:
-                regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], np.ones(regularisation['sizeISO'], dtype=np.float64))
+            # if dictISO_params is not None and 'coeff_weights' in dictISO_params:
+            #     regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], dictISO_params['coeff_weights'])
+            # else:
+            regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], np.ones(regularisation['sizeISO'], dtype=np.float64))
             regularisation['lambdaISO'] = regularisation['lambdaISO_perc'] * regularisation['lambdaISO_max']
 
         # print
         if regularisation['regISO'] is not None:
-            if regularisation['regISO'] == 'lasso' and dictISO_params is not None and 'coeff_weights' in dictISO_params:
-                logger.subinfo( f'Regularisation type: {regularisation["regISO"]} (weighted version)', indent_lvl=2, indent_char='-' )
-            else:
-                logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=2, indent_char='-' )
+            # if regularisation['regISO'] == 'lasso' and dictISO_params is not None and 'coeff_weights' in dictISO_params:
+            #     logger.subinfo( f'Regularisation type: {regularisation["regISO"]} (weighted version)', indent_lvl=2, indent_char='-' )
+            # else:
+            logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=2, indent_char='-' )
 
         logger.subinfo( f'Non-negativity constraint: {regularisation["nnISO"]}', indent_char='-', indent_lvl=2 )
         if regularisation['regISO'] is not None: 
