@@ -83,6 +83,7 @@ cdef class Evaluation :
     cdef public A
     cdef public regularisation_params
     cdef public x
+    cdef public x_nnls
     cdef public CONFIG
     cdef public temp_data
     cdef public confidence_array
@@ -112,6 +113,7 @@ cdef class Evaluation :
         self.confidence_array       = None # set by "fit" method
         self.confidence_map_img     = None # set by "fit" method
         self.debias_mask            = None # set by "fit" method
+        self.x_nnls                 = None # set by "fit" method (coefficients of IC compartment estimated without regularization)
         self.verbose                = 3
 
         # store all the parameters of an evaluation with COMMIT
@@ -1042,7 +1044,7 @@ cdef class Evaluation :
                 if weightsIC_group.size != newweightsIC_group.size:
                     logger.warning(f"""\
                     Not all the original groups are kept. 
-                    {weightsIC_group.size - newweightsIC_group.size} groups have been removed because their streamlines didn't satify the criteria set in trk2dictionary.""")
+                    {weightsIC_group.size - newweightsIC_group.size} groups have been removed because their streamlines didn't satisfy the criteria set in trk2dictionary.""")
             else:
                 newweightsIC_group = weightsIC_group
                 dictIC_params['group_idx_kept'] = dictIC_params['group_idx']
@@ -1053,10 +1055,10 @@ cdef class Evaluation :
                     group_size = np.array([g.size for g in dictIC_params['group_idx_kept']], dtype=np.int32)
                     newweightsIC_group *= np.sqrt(group_size)
                 if dictIC_params['group_weights_adaptive']:
-                    if self.x is None or self.regularisation_params['regIC'] is not None:
+                    if self.x_nnls is None: #or self.regularisation_params['regIC'] is not None:
                         logger.error('Group weights cannot be computed if the fit without regularisation has not been performed before')
-                    x_nnls, _, _ = self.get_coeffs(get_normalized=False)
-                    group_x_norm = np.array([np.linalg.norm(x_nnls[g])+1e-12 for g in dictIC_params['group_idx_kept']], dtype=np.float64)
+                    # x_nnls, _, _ = self.get_coeffs(get_normalized=False)
+                    group_x_norm = np.array([np.linalg.norm(self.x_nnls[g])+1e-12 for g in dictIC_params['group_idx_kept']], dtype=np.float64)
                     newweightsIC_group /= group_x_norm
                 dictIC_params['group_weights'] = newweightsIC_group
 
@@ -1382,6 +1384,9 @@ cdef class Evaluation :
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
+        if self.regularisation_params['regIC'] is None and self.x_nnls is None:
+            self.x_nnls, _, _ = self.get_coeffs(get_normalized=False)
+
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
 
