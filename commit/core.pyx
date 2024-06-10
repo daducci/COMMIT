@@ -5,6 +5,7 @@ cimport numpy as np
 cimport cython
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import glob
 from os import makedirs, remove, listdir
 from os.path import exists, join as pjoin, isfile, isdir
@@ -29,6 +30,7 @@ from dicelib import ui
 from dicelib.utils import format_time
 from dicelib.tractogram import filter
 
+from commit import trk2dictionary
 import commit.models
 import commit.solvers
 from commit.operator import operator
@@ -89,7 +91,9 @@ cdef class Evaluation :
     cdef public confidence_array
     cdef public confidence_map_img
     cdef public contribution_mask
+    cdef public contribution_fibs
     cdef public contribution_voxels
+    cdef public debias
     cdef public verbose
 
     def __init__( self, study_path='.', subject='.' ) :
@@ -116,6 +120,8 @@ cdef class Evaluation :
         self.contribution_mask      = None # set by "fit" method
         self.contribution_voxels    = None # set by "fit" method
         self.x_nnls                 = None # set by "fit" method (coefficients of IC compartment estimated without regularization)
+        self.contribution_fibs      = None
+        self.debias                 = False
         self.verbose                = 3
 
         # store all the parameters of an evaluation with COMMIT
@@ -1364,6 +1370,12 @@ cdef class Evaluation :
         self.CONFIG['optimization']['max_iter']       = max_iter
         self.CONFIG['optimization']['regularisation'] = self.regularisation_params
 
+        if debias:
+            self.debias = True
+            self.CONFIG['optimization']['x0'] = x0
+            self.confidence_array = confidence_array
+
+
         # run solver
         t = time.time()
         with ProgressBar(disable=self.verbose!=3, hide_on_exit=True):
@@ -1381,7 +1393,12 @@ cdef class Evaluation :
 
             self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
             self.set_regularisation()
-            self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+
+            with ProgressBar(disable=self.verbose!=3, hide_on_exit=True) as pb:
+                self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=self.CONFIG['optimization']['tol_fun'], tol_x=self.CONFIG['optimization']['tol_x'], max_iter=self.CONFIG['optimization']['max_iter'], verbose=self.verbose, x0=self.CONFIG['optimization']['x0'], regularisation=self.regularisation_params, confidence_array=self.confidence_array)
+
+        self.CONFIG['optimization']['fit_details'] = opt_details
+        self.CONFIG['optimization']['fit_time'] = time.time()-t
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
 
@@ -1426,7 +1443,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, do_reweighting=True ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, do_reweighting=True, debias=False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -1488,19 +1505,8 @@ cdef class Evaluation :
         niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
         niiMAP_hdr['db_name'] = ''
 
-        if self.contribution_mask is None:
-            y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
-            y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
-        else:
-            nV = self.contribution_voxels.shape[0]
-            y_mea = np.reshape( self.get_y()[self.contribution_voxels], (nV,-1) )
-            y_est = np.asarray(self.A.dot(self.x))
-            y_est = np.reshape( y_est[self.contribution_voxels], (nV,-1) ).astype(np.float32)
-            self.DICTIONARY['MASK_ix'] = self.DICTIONARY['MASK_ix'][self.contribution_voxels]
-            self.DICTIONARY['MASK_iy'] = self.DICTIONARY['MASK_iy'][self.contribution_voxels]
-            self.DICTIONARY['MASK_iz'] = self.DICTIONARY['MASK_iz'][self.contribution_voxels]
-
-
+        y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
+        y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
 
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
         logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
@@ -1569,10 +1575,7 @@ cdef class Evaluation :
                 offset = nF * self.KERNELS['wmr'].shape[0]
                 tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
                 xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
-                if self.contribution_mask is not None:
-                    niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv[self.contribution_voxels]
-                else:
-                    niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
+                niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
         log_list = []
         ret_subinfo = logger.subinfo('Isotropic   ', indent_lvl=2, indent_char='-', with_progress=True)
@@ -1583,10 +1586,7 @@ cdef class Evaluation :
                 offset_iso = offset + self.DICTIONARY['ISO']['nV']
                 tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['nV']) ).sum( axis=0 )
                 xv = np.bincount( self.DICTIONARY['ISO']['v'], weights=tmp, minlength=nV ).astype(np.float32)
-                if self.contribution_mask is not None:
-                    niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv[self.contribution_voxels]
-                else:
-                    niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
+                niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
         if self.get_config('doNormalizeMaps') :
             niiIC = nibabel.Nifti1Image(  niiIC_img  / ( niiIC_img + niiEC_img + niiISO_img + 1e-16), affine, header=niiMAP_hdr )
