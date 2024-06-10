@@ -10,7 +10,7 @@ double      *x, *Y;
 uint32_t    *ICthreads, *ECthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ECthreadsT, *ISOthreadsT;
-uint32_t    *ICf, *ICv, *ECv, *ISOv, *ICeval;
+uint32_t    *ICf, *ICv, *ECv, *ISOv;
 uint16_t    *ICo, *ECo;
 float       *ICl;
 float       *wmrSFP0, *wmrSFP1, *wmrSFP2, *wmrSFP3, *wmrSFP4, *wmrSFP5, *wmrSFP6, *wmrSFP7, *wmrSFP8, *wmrSFP9, *wmrSFP10, *wmrSFP11, *wmrSFP12, *wmrSFP13, *wmrSFP14, *wmrSFP15, *wmrSFP16, *wmrSFP17, *wmrSFP18, *wmrSFP19;
@@ -26,7 +26,6 @@ void* COMMIT_A__block( void *ptr )
 {
     int      id = (long)ptr;
     int      offset;
-    uint32_t *eval0, *eval1, *eval2, *eval3, *eval4, *eval5, *eval6, *eval7, *eval8, *eval9, *eval10, *eval11, *eval12, *eval13, *eval14, *eval15, *eval16, *eval17, *eval18, *eval19;
     double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, w;
     double   *xPtr0, *xPtr1, *xPtr2, *xPtr3, *xPtr4, *xPtr5, *xPtr6, *xPtr7, *xPtr8, *xPtr9, *xPtr10, *xPtr11, *xPtr12, *xPtr13, *xPtr14, *xPtr15, *xPtr16, *xPtr17, *xPtr18, *xPtr19;
     double   *YPtr, *YPtrEnd;
@@ -49,8 +48,7 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    // eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(ICeval[*t_f]);
+                    x0 = *xPtr0;
                     if (x0 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -71,11 +69,9 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     if (x0 != 0 || x1 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -97,14 +93,11 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -127,17 +120,13 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -161,20 +150,15 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -199,23 +183,17 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -241,26 +219,19 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -287,29 +258,21 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -337,32 +300,23 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -391,35 +345,25 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -449,38 +393,27 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -511,41 +444,29 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -577,44 +498,31 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     xPtr12 = xPtr11 + nF;
-                    eval12 = eval11 + nF;
-                    x12 = *xPtr12 * (double)(*eval12);
+                    x12 = *xPtr12;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -647,47 +555,33 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     xPtr12 = xPtr11 + nF;
-                    eval12 = eval11 + nF;
-                    x12 = *xPtr12 * (double)(*eval12);
+                    x12 = *xPtr12;
                     xPtr13 = xPtr12 + nF;
-                    eval13 = eval12 + nF;
-                    x13 = *xPtr13 * (double)(*eval13);
+                    x13 = *xPtr13;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -721,50 +615,35 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     xPtr12 = xPtr11 + nF;
-                    eval12 = eval11 + nF;
-                    x12 = *xPtr12 * (double)(*eval12);
+                    x12 = *xPtr12;
                     xPtr13 = xPtr12 + nF;
-                    eval13 = eval12 + nF;
-                    x13 = *xPtr13 * (double)(*eval13);
+                    x13 = *xPtr13;
                     xPtr14 = xPtr13 + nF;
-                    eval14 = eval13 + nF;
-                    x14 = *xPtr14 * (double)(*eval14);
+                    x14 = *xPtr14;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -799,53 +678,37 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     xPtr12 = xPtr11 + nF;
-                    eval12 = eval11 + nF;
-                    x12 = *xPtr12 * (double)(*eval12);
+                    x12 = *xPtr12;
                     xPtr13 = xPtr12 + nF;
-                    eval13 = eval12 + nF;
-                    x13 = *xPtr13 * (double)(*eval13);
+                    x13 = *xPtr13;
                     xPtr14 = xPtr13 + nF;
-                    eval14 = eval13 + nF;
-                    x14 = *xPtr14 * (double)(*eval14);
+                    x14 = *xPtr14;
                     xPtr15 = xPtr14 + nF;
-                    eval15 = eval14 + nF;
-                    x15 = *xPtr15 * (double)(*eval15);
+                    x15 = *xPtr15;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -881,56 +744,39 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     xPtr12 = xPtr11 + nF;
-                    eval12 = eval11 + nF;
-                    x12 = *xPtr12 * (double)(*eval12);
+                    x12 = *xPtr12;
                     xPtr13 = xPtr12 + nF;
-                    eval13 = eval12 + nF;
-                    x13 = *xPtr13 * (double)(*eval13);
+                    x13 = *xPtr13;
                     xPtr14 = xPtr13 + nF;
-                    eval14 = eval13 + nF;
-                    x14 = *xPtr14 * (double)(*eval14);
+                    x14 = *xPtr14;
                     xPtr15 = xPtr14 + nF;
-                    eval15 = eval14 + nF;
-                    x15 = *xPtr15 * (double)(*eval15);
+                    x15 = *xPtr15;
                     xPtr16 = xPtr15 + nF;
-                    eval16 = eval15 + nF;
-                    x16 = *xPtr16 * (double)(*eval16);
+                    x16 = *xPtr16;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -967,59 +813,41 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     xPtr12 = xPtr11 + nF;
-                    eval12 = eval11 + nF;
-                    x12 = *xPtr12 * (double)(*eval12);
+                    x12 = *xPtr12;
                     xPtr13 = xPtr12 + nF;
-                    eval13 = eval12 + nF;
-                    x13 = *xPtr13 * (double)(*eval13);
+                    x13 = *xPtr13;
                     xPtr14 = xPtr13 + nF;
-                    eval14 = eval13 + nF;
-                    x14 = *xPtr14 * (double)(*eval14);
+                    x14 = *xPtr14;
                     xPtr15 = xPtr14 + nF;
-                    eval15 = eval14 + nF;
-                    x15 = *xPtr15 * (double)(*eval15);
+                    x15 = *xPtr15;
                     xPtr16 = xPtr15 + nF;
-                    eval16 = eval15 + nF;
-                    x16 = *xPtr16 * (double)(*eval16);
+                    x16 = *xPtr16;
                     xPtr17 = xPtr16 + nF;
-                    eval17 = eval16 + nF;
-                    x17 = *xPtr17 * (double)(*eval17);
+                    x17 = *xPtr17;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -1057,62 +885,43 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     xPtr12 = xPtr11 + nF;
-                    eval12 = eval11 + nF;
-                    x12 = *xPtr12 * (double)(*eval12);
+                    x12 = *xPtr12;
                     xPtr13 = xPtr12 + nF;
-                    eval13 = eval12 + nF;
-                    x13 = *xPtr13 * (double)(*eval13);
+                    x13 = *xPtr13;
                     xPtr14 = xPtr13 + nF;
-                    eval14 = eval13 + nF;
-                    x14 = *xPtr14 * (double)(*eval14);
+                    x14 = *xPtr14;
                     xPtr15 = xPtr14 + nF;
-                    eval15 = eval14 + nF;
-                    x15 = *xPtr15 * (double)(*eval15);
+                    x15 = *xPtr15;
                     xPtr16 = xPtr15 + nF;
-                    eval16 = eval15 + nF;
-                    x16 = *xPtr16 * (double)(*eval16);
+                    x16 = *xPtr16;
                     xPtr17 = xPtr16 + nF;
-                    eval17 = eval16 + nF;
-                    x17 = *xPtr17 * (double)(*eval17);
+                    x17 = *xPtr17;
                     xPtr18 = xPtr17 + nF;
-                    eval18 = eval17 + nF;
-                    x18 = *xPtr18 * (double)(*eval18);
+                    x18 = *xPtr18;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -1151,65 +960,45 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);
+                    x0 = *xPtr0;
                     xPtr1 = xPtr0 + nF;
-                    eval1 = eval0 + nF;
-                    x1 = *xPtr1 * (double)(*eval1);
+                    x1 = *xPtr1;
                     xPtr2 = xPtr1 + nF;
-                    eval2 = eval1 + nF;
-                    x2 = *xPtr2 * (double)(*eval2);
+                    x2 = *xPtr2;
                     xPtr3 = xPtr2 + nF;
-                    eval3 = eval2 + nF;
-                    x3 = *xPtr3 * (double)(*eval3);
+                    x3 = *xPtr3;
                     xPtr4 = xPtr3 + nF;
-                    eval4 = eval3 + nF;
-                    x4 = *xPtr4 * (double)(*eval4);
+                    x4 = *xPtr4;
                     xPtr5 = xPtr4 + nF;
-                    eval5 = eval4 + nF;
-                    x5 = *xPtr5 * (double)(*eval5);
+                    x5 = *xPtr5;
                     xPtr6 = xPtr5 + nF;
-                    eval6 = eval5 + nF;
-                    x6 = *xPtr6 * (double)(*eval6);
+                    x6 = *xPtr6;
                     xPtr7 = xPtr6 + nF;
-                    eval7 = eval6 + nF;
-                    x7 = *xPtr7 * (double)(*eval7);
+                    x7 = *xPtr7;
                     xPtr8 = xPtr7 + nF;
-                    eval8 = eval7 + nF;
-                    x8 = *xPtr8 * (double)(*eval8);
+                    x8 = *xPtr8;
                     xPtr9 = xPtr8 + nF;
-                    eval9 = eval8 + nF;
-                    x9 = *xPtr9 * (double)(*eval9);
+                    x9 = *xPtr9;
                     xPtr10 = xPtr9 + nF;
-                    eval10 = eval9 + nF;
-                    x10 = *xPtr10 * (double)(*eval10);
+                    x10 = *xPtr10;
                     xPtr11 = xPtr10 + nF;
-                    eval11 = eval10 + nF;
-                    x11 = *xPtr11 * (double)(*eval11);
+                    x11 = *xPtr11;
                     xPtr12 = xPtr11 + nF;
-                    eval12 = eval11 + nF;
-                    x12 = *xPtr12 * (double)(*eval12);
+                    x12 = *xPtr12;
                     xPtr13 = xPtr12 + nF;
-                    eval13 = eval12 + nF;
-                    x13 = *xPtr13 * (double)(*eval13);
+                    x13 = *xPtr13;
                     xPtr14 = xPtr13 + nF;
-                    eval14 = eval13 + nF;
-                    x14 = *xPtr14 * (double)(*eval14);
+                    x14 = *xPtr14;
                     xPtr15 = xPtr14 + nF;
-                    eval15 = eval14 + nF;
-                    x15 = *xPtr15 * (double)(*eval15);
+                    x15 = *xPtr15;
                     xPtr16 = xPtr15 + nF;
-                    eval16 = eval15 + nF;
-                    x16 = *xPtr16 * (double)(*eval16);
+                    x16 = *xPtr16;
                     xPtr17 = xPtr16 + nF;
-                    eval17 = eval16 + nF;
-                    x17 = *xPtr17 * (double)(*eval17);
+                    x17 = *xPtr17;
                     xPtr18 = xPtr17 + nF;
-                    eval18 = eval17 + nF;
-                    x18 = *xPtr18 * (double)(*eval18);
+                    x18 = *xPtr18;
                     xPtr19 = xPtr18 + nF;
-                    eval19 = eval18 + nF;
-                    x19 = *xPtr19 * (double)(*eval19);
+                    x19 = *xPtr19;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0 || x10 != 0 || x11 != 0 || x12 != 0 || x13 != 0 || x14 != 0 || x15 != 0 || x16 != 0 || x17 != 0 || x18 != 0 || x19 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -3060,7 +2849,7 @@ void* COMMIT_A__block( void *ptr )
 void COMMIT_A(
     int _nF, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -3078,7 +2867,6 @@ void COMMIT_A(
     Y = _vOUT;
 
     ICf  = _ICf;
-    ICeval = _ICeval;
     ICv  = _ICv;
     ICo  = _ICo;
     ICl  = _ICl;
@@ -3874,7 +3662,6 @@ void* COMMIT_At__block( void *ptr )
 {
     int      id = (long)ptr;
     int      offset;
-    uint32_t *eval0, *eval1, *eval2, *eval3, *eval4, *eval5, *eval6, *eval7, *eval8, *eval9, *eval10, *eval11, *eval12, *eval13, *eval14, *eval15, *eval16, *eval17, *eval18, *eval19;
     double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, w, YTmp;
     double   *xPtr0, *xPtr1, *xPtr2, *xPtr3, *xPtr4, *xPtr5, *xPtr6, *xPtr7, *xPtr8, *xPtr9, *xPtr10, *xPtr11, *xPtr12, *xPtr13, *xPtr14, *xPtr15, *xPtr16, *xPtr17, *xPtr18, *xPtr19;
     double   *YPtr, *YPtrEnd;
@@ -3907,14 +3694,12 @@ void* COMMIT_At__block( void *ptr )
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        // eval0 = ICeval + *t_f;    
-
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
                             x0 += (*SFP0ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(ICeval[*t_f]);
+                        x[*t_f] += w * x0;
                     }
                     t_f++;
                     t_v++;
@@ -3936,18 +3721,15 @@ void* COMMIT_At__block( void *ptr )
                         SFP0ptr = wmrSFP0 + offset;
                         SFP1ptr = wmrSFP1 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
                             x0 += (*SFP0ptr++) * YTmp;
                         x1 += (*SFP1ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
                     }
                     t_f++;
                     t_v++;
@@ -3970,12 +3752,8 @@ void* COMMIT_At__block( void *ptr )
                         SFP1ptr = wmrSFP1 + offset;
                         SFP2ptr = wmrSFP2 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -3983,9 +3761,9 @@ void* COMMIT_At__block( void *ptr )
                         x1 += (*SFP1ptr++) * YTmp;
                         x2 += (*SFP2ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
                     }
                     t_f++;
                     t_v++;
@@ -4009,14 +3787,9 @@ void* COMMIT_At__block( void *ptr )
                         SFP2ptr = wmrSFP2 + offset;
                         SFP3ptr = wmrSFP3 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4025,10 +3798,10 @@ void* COMMIT_At__block( void *ptr )
                         x2 += (*SFP2ptr++) * YTmp;
                         x3 += (*SFP3ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
                     }
                     t_f++;
                     t_v++;
@@ -4053,16 +3826,10 @@ void* COMMIT_At__block( void *ptr )
                         SFP3ptr = wmrSFP3 + offset;
                         SFP4ptr = wmrSFP4 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4072,11 +3839,11 @@ void* COMMIT_At__block( void *ptr )
                         x3 += (*SFP3ptr++) * YTmp;
                         x4 += (*SFP4ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
                     }
                     t_f++;
                     t_v++;
@@ -4102,18 +3869,11 @@ void* COMMIT_At__block( void *ptr )
                         SFP4ptr = wmrSFP4 + offset;
                         SFP5ptr = wmrSFP5 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4124,12 +3884,12 @@ void* COMMIT_At__block( void *ptr )
                         x4 += (*SFP4ptr++) * YTmp;
                         x5 += (*SFP5ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
                     }
                     t_f++;
                     t_v++;
@@ -4156,20 +3916,12 @@ void* COMMIT_At__block( void *ptr )
                         SFP5ptr = wmrSFP5 + offset;
                         SFP6ptr = wmrSFP6 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4181,13 +3933,13 @@ void* COMMIT_At__block( void *ptr )
                         x5 += (*SFP5ptr++) * YTmp;
                         x6 += (*SFP6ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
                     }
                     t_f++;
                     t_v++;
@@ -4215,22 +3967,13 @@ void* COMMIT_At__block( void *ptr )
                         SFP6ptr = wmrSFP6 + offset;
                         SFP7ptr = wmrSFP7 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4243,14 +3986,14 @@ void* COMMIT_At__block( void *ptr )
                         x6 += (*SFP6ptr++) * YTmp;
                         x7 += (*SFP7ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
                     }
                     t_f++;
                     t_v++;
@@ -4279,24 +4022,14 @@ void* COMMIT_At__block( void *ptr )
                         SFP7ptr = wmrSFP7 + offset;
                         SFP8ptr = wmrSFP8 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4310,15 +4043,15 @@ void* COMMIT_At__block( void *ptr )
                         x7 += (*SFP7ptr++) * YTmp;
                         x8 += (*SFP8ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
                     }
                     t_f++;
                     t_v++;
@@ -4348,26 +4081,15 @@ void* COMMIT_At__block( void *ptr )
                         SFP8ptr = wmrSFP8 + offset;
                         SFP9ptr = wmrSFP9 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4382,16 +4104,16 @@ void* COMMIT_At__block( void *ptr )
                         x8 += (*SFP8ptr++) * YTmp;
                         x9 += (*SFP9ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
                     }
                     t_f++;
                     t_v++;
@@ -4422,28 +4144,16 @@ void* COMMIT_At__block( void *ptr )
                         SFP9ptr = wmrSFP9 + offset;
                         SFP10ptr = wmrSFP10 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4459,17 +4169,17 @@ void* COMMIT_At__block( void *ptr )
                         x9 += (*SFP9ptr++) * YTmp;
                         x10 += (*SFP10ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
                     }
                     t_f++;
                     t_v++;
@@ -4501,30 +4211,17 @@ void* COMMIT_At__block( void *ptr )
                         SFP10ptr = wmrSFP10 + offset;
                         SFP11ptr = wmrSFP11 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4541,18 +4238,18 @@ void* COMMIT_At__block( void *ptr )
                         x10 += (*SFP10ptr++) * YTmp;
                         x11 += (*SFP11ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
                     }
                     t_f++;
                     t_v++;
@@ -4585,32 +4282,18 @@ void* COMMIT_At__block( void *ptr )
                         SFP11ptr = wmrSFP11 + offset;
                         SFP12ptr = wmrSFP12 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         x12 = (*SFP12ptr++) * YTmp;
-                        eval12 = eval11 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4628,19 +4311,19 @@ void* COMMIT_At__block( void *ptr )
                         x11 += (*SFP11ptr++) * YTmp;
                         x12 += (*SFP12ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
-                        x[*t_f+12*nF] += w * x12 * (double)(*eval12);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
+                        x[*t_f+12*nF] += w * x12;
                     }
                     t_f++;
                     t_v++;
@@ -4674,34 +4357,19 @@ void* COMMIT_At__block( void *ptr )
                         SFP12ptr = wmrSFP12 + offset;
                         SFP13ptr = wmrSFP13 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         x12 = (*SFP12ptr++) * YTmp;
-                        eval12 = eval11 + nF;
                         x13 = (*SFP13ptr++) * YTmp;
-                        eval13 = eval12 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4720,20 +4388,20 @@ void* COMMIT_At__block( void *ptr )
                         x12 += (*SFP12ptr++) * YTmp;
                         x13 += (*SFP13ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
-                        x[*t_f+12*nF] += w * x12 * (double)(*eval12);
-                        x[*t_f+13*nF] += w * x13 * (double)(*eval13);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
+                        x[*t_f+12*nF] += w * x12;
+                        x[*t_f+13*nF] += w * x13;
                     }
                     t_f++;
                     t_v++;
@@ -4768,36 +4436,20 @@ void* COMMIT_At__block( void *ptr )
                         SFP13ptr = wmrSFP13 + offset;
                         SFP14ptr = wmrSFP14 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         x12 = (*SFP12ptr++) * YTmp;
-                        eval12 = eval11 + nF;
                         x13 = (*SFP13ptr++) * YTmp;
-                        eval13 = eval12 + nF;
                         x14 = (*SFP14ptr++) * YTmp;
-                        eval14 = eval13 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4817,21 +4469,21 @@ void* COMMIT_At__block( void *ptr )
                         x13 += (*SFP13ptr++) * YTmp;
                         x14 += (*SFP14ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
-                        x[*t_f+12*nF] += w * x12 * (double)(*eval12);
-                        x[*t_f+13*nF] += w * x13 * (double)(*eval13);
-                        x[*t_f+14*nF] += w * x14 * (double)(*eval14);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
+                        x[*t_f+12*nF] += w * x12;
+                        x[*t_f+13*nF] += w * x13;
+                        x[*t_f+14*nF] += w * x14;
                     }
                     t_f++;
                     t_v++;
@@ -4867,38 +4519,21 @@ void* COMMIT_At__block( void *ptr )
                         SFP14ptr = wmrSFP14 + offset;
                         SFP15ptr = wmrSFP15 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         x12 = (*SFP12ptr++) * YTmp;
-                        eval12 = eval11 + nF;
                         x13 = (*SFP13ptr++) * YTmp;
-                        eval13 = eval12 + nF;
                         x14 = (*SFP14ptr++) * YTmp;
-                        eval14 = eval13 + nF;
                         x15 = (*SFP15ptr++) * YTmp;
-                        eval15 = eval14 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -4919,22 +4554,22 @@ void* COMMIT_At__block( void *ptr )
                         x14 += (*SFP14ptr++) * YTmp;
                         x15 += (*SFP15ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
-                        x[*t_f+12*nF] += w * x12 * (double)(*eval12);
-                        x[*t_f+13*nF] += w * x13 * (double)(*eval13);
-                        x[*t_f+14*nF] += w * x14 * (double)(*eval14);
-                        x[*t_f+15*nF] += w * x15 * (double)(*eval15);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
+                        x[*t_f+12*nF] += w * x12;
+                        x[*t_f+13*nF] += w * x13;
+                        x[*t_f+14*nF] += w * x14;
+                        x[*t_f+15*nF] += w * x15;
                     }
                     t_f++;
                     t_v++;
@@ -4971,40 +4606,22 @@ void* COMMIT_At__block( void *ptr )
                         SFP15ptr = wmrSFP15 + offset;
                         SFP16ptr = wmrSFP16 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         x12 = (*SFP12ptr++) * YTmp;
-                        eval12 = eval11 + nF;
                         x13 = (*SFP13ptr++) * YTmp;
-                        eval13 = eval12 + nF;
                         x14 = (*SFP14ptr++) * YTmp;
-                        eval14 = eval13 + nF;
                         x15 = (*SFP15ptr++) * YTmp;
-                        eval15 = eval14 + nF;
                         x16 = (*SFP16ptr++) * YTmp;
-                        eval16 = eval15 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -5026,23 +4643,23 @@ void* COMMIT_At__block( void *ptr )
                         x15 += (*SFP15ptr++) * YTmp;
                         x16 += (*SFP16ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
-                        x[*t_f+12*nF] += w * x12 * (double)(*eval12);
-                        x[*t_f+13*nF] += w * x13 * (double)(*eval13);
-                        x[*t_f+14*nF] += w * x14 * (double)(*eval14);
-                        x[*t_f+15*nF] += w * x15 * (double)(*eval15);
-                        x[*t_f+16*nF] += w * x16 * (double)(*eval16);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
+                        x[*t_f+12*nF] += w * x12;
+                        x[*t_f+13*nF] += w * x13;
+                        x[*t_f+14*nF] += w * x14;
+                        x[*t_f+15*nF] += w * x15;
+                        x[*t_f+16*nF] += w * x16;
                     }
                     t_f++;
                     t_v++;
@@ -5080,42 +4697,23 @@ void* COMMIT_At__block( void *ptr )
                         SFP16ptr = wmrSFP16 + offset;
                         SFP17ptr = wmrSFP17 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         x12 = (*SFP12ptr++) * YTmp;
-                        eval12 = eval11 + nF;
                         x13 = (*SFP13ptr++) * YTmp;
-                        eval13 = eval12 + nF;
                         x14 = (*SFP14ptr++) * YTmp;
-                        eval14 = eval13 + nF;
                         x15 = (*SFP15ptr++) * YTmp;
-                        eval15 = eval14 + nF;
                         x16 = (*SFP16ptr++) * YTmp;
-                        eval16 = eval15 + nF;
                         x17 = (*SFP17ptr++) * YTmp;
-                        eval17 = eval16 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -5138,24 +4736,24 @@ void* COMMIT_At__block( void *ptr )
                         x16 += (*SFP16ptr++) * YTmp;
                         x17 += (*SFP17ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
-                        x[*t_f+12*nF] += w * x12 * (double)(*eval12);
-                        x[*t_f+13*nF] += w * x13 * (double)(*eval13);
-                        x[*t_f+14*nF] += w * x14 * (double)(*eval14);
-                        x[*t_f+15*nF] += w * x15 * (double)(*eval15);
-                        x[*t_f+16*nF] += w * x16 * (double)(*eval16);
-                        x[*t_f+17*nF] += w * x17 * (double)(*eval17);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
+                        x[*t_f+12*nF] += w * x12;
+                        x[*t_f+13*nF] += w * x13;
+                        x[*t_f+14*nF] += w * x14;
+                        x[*t_f+15*nF] += w * x15;
+                        x[*t_f+16*nF] += w * x16;
+                        x[*t_f+17*nF] += w * x17;
                     }
                     t_f++;
                     t_v++;
@@ -5194,44 +4792,24 @@ void* COMMIT_At__block( void *ptr )
                         SFP17ptr = wmrSFP17 + offset;
                         SFP18ptr = wmrSFP18 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         x12 = (*SFP12ptr++) * YTmp;
-                        eval12 = eval11 + nF;
                         x13 = (*SFP13ptr++) * YTmp;
-                        eval13 = eval12 + nF;
                         x14 = (*SFP14ptr++) * YTmp;
-                        eval14 = eval13 + nF;
                         x15 = (*SFP15ptr++) * YTmp;
-                        eval15 = eval14 + nF;
                         x16 = (*SFP16ptr++) * YTmp;
-                        eval16 = eval15 + nF;
                         x17 = (*SFP17ptr++) * YTmp;
-                        eval17 = eval16 + nF;
                         x18 = (*SFP18ptr++) * YTmp;
-                        eval18 = eval17 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -5255,25 +4833,25 @@ void* COMMIT_At__block( void *ptr )
                         x17 += (*SFP17ptr++) * YTmp;
                         x18 += (*SFP18ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
-                        x[*t_f+12*nF] += w * x12 * (double)(*eval12);
-                        x[*t_f+13*nF] += w * x13 * (double)(*eval13);
-                        x[*t_f+14*nF] += w * x14 * (double)(*eval14);
-                        x[*t_f+15*nF] += w * x15 * (double)(*eval15);
-                        x[*t_f+16*nF] += w * x16 * (double)(*eval16);
-                        x[*t_f+17*nF] += w * x17 * (double)(*eval17);
-                        x[*t_f+18*nF] += w * x18 * (double)(*eval18);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
+                        x[*t_f+12*nF] += w * x12;
+                        x[*t_f+13*nF] += w * x13;
+                        x[*t_f+14*nF] += w * x14;
+                        x[*t_f+15*nF] += w * x15;
+                        x[*t_f+16*nF] += w * x16;
+                        x[*t_f+17*nF] += w * x17;
+                        x[*t_f+18*nF] += w * x18;
                     }
                     t_f++;
                     t_v++;
@@ -5313,46 +4891,25 @@ void* COMMIT_At__block( void *ptr )
                         SFP18ptr = wmrSFP18 + offset;
                         SFP19ptr = wmrSFP19 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
-
                         x1 = (*SFP1ptr++) * YTmp;
-                        eval1 = eval0 + nF;
                         x2 = (*SFP2ptr++) * YTmp;
-                        eval2 = eval1 + nF;
                         x3 = (*SFP3ptr++) * YTmp;
-                        eval3 = eval2 + nF;
                         x4 = (*SFP4ptr++) * YTmp;
-                        eval4 = eval3 + nF;
                         x5 = (*SFP5ptr++) * YTmp;
-                        eval5 = eval4 + nF;
                         x6 = (*SFP6ptr++) * YTmp;
-                        eval6 = eval5 + nF;
                         x7 = (*SFP7ptr++) * YTmp;
-                        eval7 = eval6 + nF;
                         x8 = (*SFP8ptr++) * YTmp;
-                        eval8 = eval7 + nF;
                         x9 = (*SFP9ptr++) * YTmp;
-                        eval9 = eval8 + nF;
                         x10 = (*SFP10ptr++) * YTmp;
-                        eval10 = eval9 + nF;
                         x11 = (*SFP11ptr++) * YTmp;
-                        eval11 = eval10 + nF;
                         x12 = (*SFP12ptr++) * YTmp;
-                        eval12 = eval11 + nF;
                         x13 = (*SFP13ptr++) * YTmp;
-                        eval13 = eval12 + nF;
                         x14 = (*SFP14ptr++) * YTmp;
-                        eval14 = eval13 + nF;
                         x15 = (*SFP15ptr++) * YTmp;
-                        eval15 = eval14 + nF;
                         x16 = (*SFP16ptr++) * YTmp;
-                        eval16 = eval15 + nF;
                         x17 = (*SFP17ptr++) * YTmp;
-                        eval17 = eval16 + nF;
                         x18 = (*SFP18ptr++) * YTmp;
-                        eval18 = eval17 + nF;
                         x19 = (*SFP19ptr++) * YTmp;
-                        eval19 = eval18 + nF;
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
@@ -5377,26 +4934,26 @@ void* COMMIT_At__block( void *ptr )
                         x18 += (*SFP18ptr++) * YTmp;
                         x19 += (*SFP19ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(*eval0);
-                        x[*t_f+nF] += w * x1 * (double)(*eval1);
-                        x[*t_f+2*nF] += w * x2 * (double)(*eval2);
-                        x[*t_f+3*nF] += w * x3 * (double)(*eval3);
-                        x[*t_f+4*nF] += w * x4 * (double)(*eval4);
-                        x[*t_f+5*nF] += w * x5 * (double)(*eval5);
-                        x[*t_f+6*nF] += w * x6 * (double)(*eval6);
-                        x[*t_f+7*nF] += w * x7 * (double)(*eval7);
-                        x[*t_f+8*nF] += w * x8 * (double)(*eval8);
-                        x[*t_f+9*nF] += w * x9 * (double)(*eval9);
-                        x[*t_f+10*nF] += w * x10 * (double)(*eval10);
-                        x[*t_f+11*nF] += w * x11 * (double)(*eval11);
-                        x[*t_f+12*nF] += w * x12 * (double)(*eval12);
-                        x[*t_f+13*nF] += w * x13 * (double)(*eval13);
-                        x[*t_f+14*nF] += w * x14 * (double)(*eval14);
-                        x[*t_f+15*nF] += w * x15 * (double)(*eval15);
-                        x[*t_f+16*nF] += w * x16 * (double)(*eval16);
-                        x[*t_f+17*nF] += w * x17 * (double)(*eval17);
-                        x[*t_f+18*nF] += w * x18 * (double)(*eval18);
-                        x[*t_f+19*nF] += w * x19 * (double)(*eval19);
+                        x[*t_f] += w * x0;
+                        x[*t_f+nF] += w * x1;
+                        x[*t_f+2*nF] += w * x2;
+                        x[*t_f+3*nF] += w * x3;
+                        x[*t_f+4*nF] += w * x4;
+                        x[*t_f+5*nF] += w * x5;
+                        x[*t_f+6*nF] += w * x6;
+                        x[*t_f+7*nF] += w * x7;
+                        x[*t_f+8*nF] += w * x8;
+                        x[*t_f+9*nF] += w * x9;
+                        x[*t_f+10*nF] += w * x10;
+                        x[*t_f+11*nF] += w * x11;
+                        x[*t_f+12*nF] += w * x12;
+                        x[*t_f+13*nF] += w * x13;
+                        x[*t_f+14*nF] += w * x14;
+                        x[*t_f+15*nF] += w * x15;
+                        x[*t_f+16*nF] += w * x16;
+                        x[*t_f+17*nF] += w * x17;
+                        x[*t_f+18*nF] += w * x18;
+                        x[*t_f+19*nF] += w * x19;
                     }
                     t_f++;
                     t_v++;
@@ -8060,7 +7617,7 @@ void* COMMIT_At__block( void *ptr )
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, unsigned int *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -8079,7 +7636,6 @@ void COMMIT_At(
     Y = _vIN;
 
     ICf  = _ICf;
-    ICeval = _ICeval;
     ICv  = _ICv;
     ICo  = _ICo;
     ICl  = _ICl;
@@ -8886,7 +8442,7 @@ void* COMMIT_A__block_nolut( void *ptr )
 
     while( t_v != t_vEnd )
     {
-        x0 = x[*t_f] * (double)(ICeval[*t_f]);
+        x0 = x[*t_f];
         if ( x0 != 0 )
             Y[*t_v] += (double)(*t_l) * x0;
         t_f++;
@@ -8919,7 +8475,7 @@ void* COMMIT_A__block_nolut( void *ptr )
 void COMMIT_A_nolut(
     int _nF,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl,
     uint32_t *_ISOv,
     uint32_t* _ICthreads, uint32_t* _ISOthreads,
     uint32_t _nISO, uint32_t _nThreads
@@ -8931,7 +8487,6 @@ void COMMIT_A_nolut(
     Y = _vOUT;
 
     ICf  = _ICf;
-    ICeval = _ICeval;
     ICv  = _ICv;
     ICl  = _ICl;
     ISOv = _ISOv;
@@ -8973,7 +8528,7 @@ void* COMMIT_At__block_nolut( void *ptr )
     {
         // in this case, I need to walk throug because the segments are ordered in "voxel order"
         if ( *t_t == id )
-            x[*t_f] += (double)(*t_l) * Y[*t_v] * (double)(ICeval[*t_f]);
+            x[*t_f] += (double)(*t_l) * Y[*t_v];
         t_t++;
         t_f++;
         t_v++;
@@ -9001,7 +8556,7 @@ void* COMMIT_At__block_nolut( void *ptr )
 void COMMIT_At_nolut(
     int _nF, int _n,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICv, float *_ICl,
     uint32_t *_ISOv,
     uint8_t* _ICthreadsT, uint32_t* _ISOthreadsT,
     uint32_t _nISO, uint32_t _nThreads
@@ -9014,7 +8569,6 @@ void COMMIT_At_nolut(
     Y = _vIN;
 
     ICf  = _ICf;
-    ICeval = _ICeval;
     ICv  = _ICv;
     ICl  = _ICl;
     ISOv = _ISOv;

@@ -232,7 +232,7 @@ int trk2dictionary(
     // ==========================================
     //          Parallel IC compartments
     // ==========================================
-
+    if (verbosity > 2)
     printf( "   * Exporting IC compartments:\033[0m\n" );
     // unsigned int width = 25;
     // PROGRESS = new ProgressBar( (unsigned int) n_count, (unsigned int) width);
@@ -256,6 +256,7 @@ int trk2dictionary(
     if (verbosity > 2)
         PROGRESS->close();
 
+    if (verbosity > 2)
     printf( "      [ %d streamlines kept, %ld segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
     totFibers.clear();
     threads.clear();
@@ -263,20 +264,23 @@ int trk2dictionary(
     // ==========================================
     //          Parallel EC compartments
     // ==========================================
-
+    if (verbosity > 2)
     printf( "   * Exporting EC compartments:\033[0m\n" );
 
     int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
 
+    if (verbosity > 2)
     printf("      [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
 
     /*=========================*/
     /*     Restricted ISO compartments     */
     /*=========================*/
+    if (verbosity > 2)
     printf( "   * Exporting ISO compartments:\033[0m\n" );
 
     int totISO = ISOcompartments(ptrTDI, path_out, threads_count);
 
+    if (verbosity > 2)
     printf("      [ %d voxels ]\n", totISO );
 
     return 1;

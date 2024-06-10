@@ -9,7 +9,7 @@ from dicelib.ui import setup_logger
 cdef extern void COMMIT_A(
     int _nF, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -20,7 +20,7 @@ cdef extern void COMMIT_A(
 cdef extern void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -31,7 +31,7 @@ cdef extern void COMMIT_At(
 cdef extern void COMMIT_A_nolut(
     int _nF,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf,  unsigned int *_ICeval, unsigned int *_ICv, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICv, float *_ICl,
     unsigned int *_ISOv,
     unsigned int* _ICthreads, unsigned int* _ISOthreads,
     unsigned int _nISO, unsigned int _nThreads
@@ -40,7 +40,7 @@ cdef extern void COMMIT_A_nolut(
 cdef extern void COMMIT_At_nolut(
     int _nF, int _n,
     double *_v_in, double *_v_out,
-    unsigned int *_ICf,  unsigned int *_ICeval, unsigned int *_ICv, float *_ICl,
+    unsigned int *_ICf, unsigned int *_ICv, float *_ICl,
     unsigned int *_ISOv,
     unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
     unsigned int _nISO, unsigned int _nThreads
@@ -62,7 +62,6 @@ cdef class LinearOperator :
     cdef nolut
 
     cdef unsigned int*   ICf
-    cdef unsigned int*   ICeval
     cdef float*          ICl
     cdef unsigned int*   ICv
     cdef unsigned short* ICo
@@ -85,7 +84,6 @@ cdef class LinearOperator :
 
     def __init__( self, DICTIONARY, KERNELS, THREADS, nolut=False ) :
         """Set the pointers to the data structures used by the C code."""
-
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
         self.THREADS    = THREADS
@@ -100,7 +98,6 @@ cdef class LinearOperator :
         self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
         self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
 
- 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
         elif KERNELS['wmh'].size > 0 :
@@ -111,17 +108,11 @@ cdef class LinearOperator :
         self.adjoint    = 0                         # direct of inverse product
 
         self.n1 = self.nV*self.nS
-        self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV      
+        self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
 
         # get C pointers to arrays in DICTIONARY
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
-        cdef unsigned int [::1]   ICeval = DICTIONARY["IC"]["eval"]
-        self.ICeval = &ICeval[0]
-
-        # for i in range(self.n2):
-        #     print(f"ICeval after assignment: {self.ICeval[i]}")
-
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
         cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
@@ -162,7 +153,7 @@ cdef class LinearOperator :
     @property
     def T( self ) :
         """Transpose of the explicit matrix."""
-        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=self.nolut )
+        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.nolut )
         C.adjoint = 1 - C.adjoint
         return C
 
@@ -210,7 +201,7 @@ cdef class LinearOperator :
                     COMMIT_A_nolut(
                         self.nF,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval, self.ICv, self.ICl,
+                        self.ICf, self.ICv, self.ICl,
                         self.ISOv,
                         self.ICthreads, self.ISOthreads,
                         nISO, nthreads
@@ -220,7 +211,7 @@ cdef class LinearOperator :
                     COMMIT_A(
                         self.nF, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval, self.ICv, self.ICo, self.ICl,
+                        self.ICf, self.ICv, self.ICo, self.ICl,
                         self.ECv, self.ECo,
                         self.ISOv,
                         self.LUT_IC, self.LUT_EC, self.LUT_ISO,
@@ -234,7 +225,7 @@ cdef class LinearOperator :
                     COMMIT_At_nolut(
                         self.nF, self.n,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval, self.ICv, self.ICl,
+                        self.ICf, self.ICv, self.ICl,
                         self.ISOv,
                         self.ICthreadsT, self.ISOthreadsT,
                         nISO, nthreads
@@ -244,7 +235,7 @@ cdef class LinearOperator :
                     COMMIT_At(
                         self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval, self.ICv, self.ICo, self.ICl,
+                        self.ICf, self.ICv, self.ICo, self.ICl,
                         self.ECv, self.ECo,
                         self.ISOv,
                         self.LUT_IC, self.LUT_EC, self.LUT_ISO,
