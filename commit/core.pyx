@@ -88,9 +88,7 @@ cdef class Evaluation :
     cdef public temp_data
     cdef public confidence_array
     cdef public confidence_map_img
-    cdef public contribution_mask
-    cdef public contribution_fibs
-    cdef public contribution_voxels
+    cdef public debias_mask
     cdef public verbose
 
     def __init__( self, study_path='.', subject='.' ) :
@@ -114,9 +112,7 @@ cdef class Evaluation :
         self.x                      = None # set by "fit" method
         self.confidence_array       = None # set by "fit" method
         self.confidence_map_img     = None # set by "fit" method
-        self.contribution_mask      = None # set by "fit" method
-        self.contribution_voxels    = None # set by "fit" method
-        self.contribution_fibs      = None
+        self.debias_mask            = None # set by "fit" method
         self.verbose                = 3
 
         # store all the parameters of an evaluation with COMMIT
@@ -761,6 +757,9 @@ cdef class Evaluation :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
+
+        if self.debias_mask is not None :
+            y *= self.debias_mask
         return y
 
 
@@ -1342,54 +1341,58 @@ cdef class Evaluation :
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         if (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and debias:
+
+            from commit.operator import operator
             temp_verb = self.verbose
             logger.info( 'Running debias' )
             self.set_verbose(0)
-            xic, _, _ = self.get_coeffs() 
-            weights_in = pjoin( self.get_config('TRACKING_path'), 'streamline_weights.txt' )
-            np.savetxt(weights_in, xic)
 
-            dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-            tractogram = dictionary_info['filename_tractogram']
-            tractogram_filtered = tractogram.replace('.tck', '_filtered.tck')
+            nF = self.DICTIONARY['IC']['nF']
+            nE = self.DICTIONARY['EC']['nE']
+            nV = self.DICTIONARY['nV']
 
-            filter(dictionary_info['filename_tractogram'], tractogram_filtered, minweight=0.000000000000001, weights_in=weights_in, force=True, verbose=0)
+            offset1 = nF * self.KERNELS['wmr'].shape[0]
+            xic = self.x[:offset1]
 
-            trk2dictionary.run(
-                filename_tractogram = tractogram_filtered,
-                TCK_ref_image = dictionary_info['TCK_ref_image'],
-                path_out = dictionary_info['path_out'],
-                filename_peaks = dictionary_info['filename_peaks'],
-                filename_mask = dictionary_info['filename_mask'],
-                do_intersect = dictionary_info['do_intersect'],
-                fiber_shift = dictionary_info['fiber_shift'],
-                min_seg_len = dictionary_info['min_seg_len'],
-                min_fiber_len = dictionary_info['min_fiber_len'],
-                max_fiber_len = dictionary_info['max_fiber_len'],
-                vf_THR = dictionary_info['vf_THR'],
-                peaks_use_affine = dictionary_info['peaks_use_affine'],
-                flip_peaks = dictionary_info['flip_peaks'],
-                blur_core_extent = dictionary_info['blur_core_extent'],
-                blur_gauss_extent = dictionary_info['blur_gauss_extent'],
-                blur_gauss_min = dictionary_info['blur_gauss_min'],
-                blur_spacing = dictionary_info['blur_spacing'],
-                ndirs = dictionary_info['ndirs'],
-                n_threads = dictionary_info['n_threads'],
-                verbose = 0
-            )
+            mask = np.ones(nF, dtype=np.uint32)
+            mask[xic<0.000000000000001] = 0
 
-            self.load_dictionary(dictionary_info['path_out'])
-
-            self.set_threads()
-            self.build_operator()
+            self.DICTIONARY["IC"]["eval"] = mask
 
             self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
+
             self.set_regularisation()
+
             self.set_verbose(temp_verb)
 
             logger.subinfo('Recomputing coefficients', indent_lvl=1, indent_char='*', with_progress=True)
-            with ProgressBar(disable=self.verbose< 3, hide_on_exit=True, subinfo=True) as pbar:
-                self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=0, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+
+            x_debias = self.x.copy()
+
+            logger.debug( f'positive values of x before debias: {np.sum(x_debias>0)}' )
+            logger.debug( f'positive values of mask: {np.sum(mask>0)}' )
+
+            x_debias[:nF] *= mask
+            x_debias[offset1:] = 0
+
+            logger.debug( f"positive values of masked x: {np.sum(x_debias[:nF]>0)}" )
+
+            logger.debug( f'Shape of y: {self.get_y().size} Number of non zero values in y before: {np.sum(self.get_y()>0)}' )
+
+            y_mask = np.asarray(self.A.dot(x_debias))
+            print(f"number of non zero values in y_mask before bin: {np.sum(y_mask>0)}")
+            # binarize y_debias
+            y_mask[y_mask<0] = 0
+            y_mask[y_mask>0] = 1
+            print(f"number of non zero values in y_mask after bin: {np.sum(y_mask>0)}")
+
+            self.debias_mask = y_mask
+            logger.debug( f'Shape of y: {self.get_y().size} Number of non zero values in y after: {np.sum(self.get_y()>0)}' )
+
+            # print the first 10 non zero values of y_debias
+            logger.debug( f'First 10 non zero values of y_debias: {self.get_y()[:10]}' )
+            with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
+                self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
@@ -1501,8 +1504,17 @@ cdef class Evaluation :
 
         y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
         y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
-
         tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+
+        if self.debias_mask is not None:
+            y_mask = np.reshape(self.debias_mask, (nV,-1))
+            # compute tmp only for the voxels of y_mea and y_est that are non zero in y_mask
+            idx = np.where(y_mask.flatten()>0)
+            tmp = np.sqrt( np.mean((y_mea.flatten()[idx]-y_est.flatten()[idx])**2) )
+
+
+
+
         logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
         niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
         niiMAP_hdr['cal_min'] = 0
