@@ -10,7 +10,7 @@ double      *x, *Y;
 uint32_t    *ICthreads, *ECthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ECthreadsT, *ISOthreadsT;
-uint32_t    *ICf, *ICv, *ECv, *ISOv, *ICeval;
+uint32_t    *ICf, *ICeval, *ICv, *ECv, *ISOv;
 uint16_t    *ICo, *ECo;
 float       *ICl;
 float       *wmrSFP0, *wmrSFP1, *wmrSFP2, *wmrSFP3, *wmrSFP4, *wmrSFP5, *wmrSFP6, *wmrSFP7, *wmrSFP8, *wmrSFP9, *wmrSFP10, *wmrSFP11, *wmrSFP12, *wmrSFP13, *wmrSFP14, *wmrSFP15, *wmrSFP16, *wmrSFP17, *wmrSFP18, *wmrSFP19;
@@ -49,8 +49,8 @@ void* COMMIT_A__block( void *ptr )
                 while (t_v != t_vEnd)
                 {
                     xPtr0 = x + (*t_f);
-                    // eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(ICeval[*t_f]);
+                    eval0 = ICeval + *t_f;
+                    x0 = *xPtr0 * (double)(*eval0);
                     if (x0 != 0)
                     {
                         YPtr = Y + nS * (*t_v);
@@ -3907,14 +3907,14 @@ void* COMMIT_At__block( void *ptr )
                         YTmp = *YPtr;
                         SFP0ptr = wmrSFP0 + offset;
                         x0 = (*SFP0ptr++) * YTmp;
-                        // eval0 = ICeval + *t_f;    
+                        eval0 = ICeval + *t_f;    
 
                         while (++YPtr != YPtrEnd)
                         {
                             YTmp = *YPtr;
                             x0 += (*SFP0ptr++) * YTmp;
                         }
-                        x[*t_f] += w * x0 * (double)(ICeval[*t_f]);
+                        x[*t_f] += w * x0 * (double)(*eval0);
                     }
                     t_f++;
                     t_v++;
@@ -8060,7 +8060,7 @@ void* COMMIT_At__block( void *ptr )
 void COMMIT_At(
     int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
-    uint32_t *_ICf, unsigned int *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,

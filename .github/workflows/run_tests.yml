@@ -47,6 +47,8 @@ jobs:
           python-version: ${{ matrix.config.py }}
       - name: Install dmri-commit
         run: pip install . --no-cache-dir
+      - name: Force numpy version
+        run: pip install numpy==1.26.4
       - name: Run test
         id: run_test
         working-directory: tests

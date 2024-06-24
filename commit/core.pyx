@@ -1368,28 +1368,16 @@ cdef class Evaluation :
             logger.subinfo('Recomputing coefficients', indent_lvl=1, indent_char='*', with_progress=True)
 
             x_debias = self.x.copy()
-
-            logger.debug( f'positive values of x before debias: {np.sum(x_debias>0)}' )
-            logger.debug( f'positive values of mask: {np.sum(mask>0)}' )
-
             x_debias[:offset1] *= mask
             x_debias[offset1:] = 0
 
-            logger.debug( f"positive values of masked x: {np.sum(x_debias[:offset1]>0)}" )
-
-            logger.debug( f'Shape of y: {self.get_y().size} Number of non zero values in y before: {np.sum(self.get_y()>0)}' )
-
             y_mask = np.asarray(self.A.dot(x_debias))
-            print(f"number of non zero values in y_mask before bin: {np.sum(y_mask>0)}")
             # binarize y_debias
             y_mask[y_mask<0] = 0
             y_mask[y_mask>0] = 1
-            print(f"number of non zero values in y_mask after bin: {np.sum(y_mask>0)}")
 
             self.debias_mask = y_mask
-            logger.debug( f'Shape of y: {self.get_y().size} Number of non zero values in y after: {np.sum(self.get_y()>0)}' )
 
-            # print the first 10 non zero values of y_debias
             with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
                 self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
@@ -1506,18 +1494,13 @@ cdef class Evaluation :
             ind_mask = np.where(self.debias_mask>0)[0]
             vox_mask = np.reshape( self.debias_mask[ind_mask], (nV,-1) )
 
-            print(f'number of voxels in debias mask: {nV}')
-            print(f'ind_mask shape: {ind_mask.shape}')
             y_mea = np.reshape( self.get_y()[ind_mask], (nV,-1) )
 
             y_est_ = np.asarray(self.A.dot(self.x))
             y_est = np.reshape( y_est_[ind_mask], (nV,-1) )
 
-            print(f"y_mea shape: {y_mea.shape}, y_est shape: {y_est.shape}")
             tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-            print(f'tmp shape: {tmp.shape}')
 
-            print(f'number of non-zero elements in tmp: {np.count_nonzero(tmp)}')
             logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
 
             tmp = np.sum(y_mea**2,axis=1)

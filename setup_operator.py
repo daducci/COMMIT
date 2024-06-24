@@ -701,8 +701,7 @@ def add_commit_a_block_nolut() -> str:
 
     while( t_v != t_vEnd )
     {
-        eval0 = ICeval[*t_f];
-        x0 = x[*t_f]* (double)(*eval0);
+        x0 = x[*t_f] * (double)(ICeval[*t_f]);
         if ( x0 != 0 )
             Y[*t_v] += (double)(*t_l) * x0;
         t_f++;
@@ -737,7 +736,6 @@ def add_commit_a_block_nolut() -> str:
 void* COMMIT_A__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
-    uint32_t *eval0;
     double   x0;
     double   *xPtr;
     uint32_t *t_v, *t_vEnd, *t_f;
@@ -806,8 +804,7 @@ def add_commit_at_block_nolut() -> str:
     {
         // in this case, I need to walk throug because the segments are ordered in "voxel order"
         if ( *t_t == id )
-            eval0 = ICeval + *t_f;
-            x[*t_f] += (double)(*t_l) * Y[*t_v]* (double)(*eval0);
+            x[*t_f] += (double)(*t_l) * Y[*t_v] * (double)(ICeval[*t_f]);
         t_t++;
         t_f++;
         t_v++;
@@ -837,7 +834,6 @@ void* COMMIT_At__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
     double   *xPtr;
-    uint32_t *eval0;
     uint32_t *t_v, *t_vEnd, *t_f;
     float    *t_l;
     uint8_t  *t_t;\n\n'''
