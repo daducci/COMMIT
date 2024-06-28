@@ -489,7 +489,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     filename = OUTPUT_path+"/dictionary_TRK_norm_" + std::to_string(idx) + ".dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");
     if ( !pDict_TRK_norm )
     {
-        printf( "\n[trk2dictionary] Unable to create output files" );
+        std::cout << "\n[trk2dictionary] Unable to create output files";
     }
     filename = OUTPUT_path+"/dictionary_IC_f_" + std::to_string(idx) + ".dict";        FILE* pDict_IC_f       = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_v_" + std::to_string(idx) + ".dict";        FILE* pDict_IC_v       = fopen(filename.c_str(),"wb");
