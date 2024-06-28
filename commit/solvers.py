@@ -343,7 +343,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
         if verbose==4 :
-            print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ) )
+            print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ), flush=True )
 
         if abs_obj < eps :
             criterion = "Absolute tolerance on the objective"
