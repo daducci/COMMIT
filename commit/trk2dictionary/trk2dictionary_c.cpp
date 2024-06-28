@@ -461,6 +461,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     float               fiberNorm;   // normalization
     unsigned int        pos=0;
     float               float_pos=0.0;
+    float               temp_pos=0.0;
     unsigned int        N, v, tempTotFibers;
     unsigned long int   temp_totICSegments;
     unsigned short      o;
@@ -526,6 +527,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
             if ( FiberLen > minFiberLen && FiberLen < maxFiberLen )
             {
                 float_pos = 0.0;
+                pos_count = 0;
+                temp_pos = 0.0;
                 // pos = (int)round(float_pos*256.0);
                 // fwrite( &pos, 4, 1, pDict_IC_pos ); // first position is always 0
                 // add segments to files
@@ -535,7 +538,19 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;
 
-                    float_pos += (it->second)/FiberLenTot;                    
+                    // check if it's the first segment
+                    if (pos_count < 1){
+                        temp_pos += (it->second / FiberLenTot);
+                    } else {
+                        float_pos += temp_pos + it->second / FiberLenTot;
+                        temp_pos = 0.0;
+                    }
+
+                    // check if it's the last segment
+                    if (std::next(it) == FiberSegments.end()){
+                        float_pos = 1.0;
+                    }
+
                     pos = (int)round(float_pos*256.0);
 
                     fwrite( &pos,            4, 1, pDict_IC_pos );
