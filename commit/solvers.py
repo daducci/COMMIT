@@ -381,7 +381,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         qfval = 0.5 * np.linalg.norm(res)**2
 
     if verbose==4 :
-        print( "< Stopping criterion: %s >" % criterion )
+        print( "< Stopping criterion: %s >" % criterion, flush=True )
 
     opt_details = {}
     opt_details['residual'] = 0.5*res_norm**2
