@@ -551,7 +551,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
                         float_pos = 1.0;
                     }
 
-                    pos = (int)round(float_pos*256.0);
+                    pos = (int)round(float_pos*255.0);
 
                     fwrite( &pos,            4, 1, pDict_IC_pos );
                     fwrite( &sumFibers,      4, 1, pDict_IC_f );
