@@ -543,10 +543,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         logger.warning( 'DICTIONARY not generated' )
         return None
 
+    # NOTE: this is to ensure flushing all the output from the cpp code
+    print(end='', flush=True)
+    time.sleep(0.5)
+
     # Concatenate files together
-    logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=True )
+    log_list = []
+    ret_subinfo = logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=verbose>2 )
     cdef int discarded = 0
-    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
+    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
         for j in range(n_threads-1):
             path_IC_f = path_temp + f'/dictionary_IC_f_{j+1}.dict'
             kept = np.fromfile( path_temp + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
@@ -619,29 +624,31 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
     # save TDI and MASK maps
-    logger.subinfo( 'Saving TDI and MASK maps', indent_char='*', indent_lvl=1 )
-    v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
-    l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
-
     cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
-    niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose )
-    niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
+    log_list = []
+    ret_subinfo = logger.subinfo( 'Saving TDI and MASK maps', indent_char='*', indent_lvl=1, with_progress=verbose>2)
+    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
+        l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
+        
+        niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose )
+        niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
 
-    niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
-    niiTDI_hdr = _get_header( niiTDI )
-    niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
-    nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
+        niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
+        niiTDI_hdr = _get_header( niiTDI )
+        niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
+        nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
 
-    if filename_mask is not None :
-        niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
-    else :
-        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img_save)>0).astype(np.float32), TDI_affine )
+        if filename_mask is not None :
+            niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
+        else :
+            niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img_save)>0).astype(np.float32), TDI_affine )
 
-    niiMASK_hdr = _get_header( niiMASK )
-    niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
-    nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
+        niiMASK_hdr = _get_header( niiMASK )
+        niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
+        nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    if not keep_temp:
-        shutil.rmtree(path_temp)
+        if not keep_temp:
+            shutil.rmtree(path_temp)
 
     logger.info( f'[ {format_time(time.time() - tic)} ]' )
