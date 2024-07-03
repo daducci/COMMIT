@@ -1,8 +1,22 @@
+'''
+This script writes the operator_c.c file.
+The main functions are:
+    COMMIT_A__block
+    COMMIT_A
+    COMMIT_At__block
+    COMMIT_At
+    COMMIT_A__block_nolut
+    COMMIT_A_nolut
+    COMMIT_At__block_nolut
+    COMMIT_At_nolut
+'''
+
 from typing import NoReturn
 from os.path import join as path_join
 
 
 def add_imports() -> str:
+    '''Adds the imports to the operator_c.c file.'''
     s: str = '''\
 #include <pthread.h>
 #include <stdint.h>
@@ -13,6 +27,7 @@ def add_imports() -> str:
 
 
 def add_global_variables() -> str:
+    '''Adds the global variables to the operator_c.c file.'''
     s: str = '''\
 // global variables
 int         nF, n, nE, nV, nS, ndirs;
@@ -31,6 +46,7 @@ uint32_t    nIC, nEC, nISO;\n\n\n'''
 
 
 def add_commit_a_block() -> str:
+    '''Adds the COMMIT_A__block function to the operator_c.c file.'''
     def add_intracellular_compartments() -> str:
         s: str = '''\
     // intra-cellular compartments
@@ -227,6 +243,7 @@ void* COMMIT_A__block( void *ptr )
 
 
 def add_commit_a() -> str:
+    '''Adds the COMMIT_A function to the operator_c.c file.'''
     def add_intracellular_compartments() -> str:
         s: str = '''\
     switch (nIC)
@@ -348,6 +365,7 @@ void COMMIT_A(
 
 
 def add_commit_at_block() -> str:
+    '''Adds the COMMIT_At__block function to the operator_c.c file.'''
     def add_intracellular_compartments() -> str:
         s: str = '''\
     // intra-cellular compartments
@@ -570,6 +588,7 @@ void* COMMIT_At__block( void *ptr )
 
 
 def add_commit_at() -> str:
+    '''Adds the COMMIT_At function to the operator_c.c file.'''
     def add_intracellular_compartments() -> str:
         s: str = '''\
     switch (nIC)
@@ -691,6 +710,7 @@ void COMMIT_At(
 
 
 def add_commit_a_block_nolut() -> str:
+    '''Adds the COMMIT_A__block_nolut function to the operator_c.c file.'''
     def add_intracellular_compartments() -> str:
         s: str = '''\
     // intra-cellular compartments
@@ -749,6 +769,7 @@ void* COMMIT_A__block_nolut( void *ptr )
 
 
 def add_commit_a_nolut() -> str:
+    '''Adds the COMMIT_A_nolut function to the operator_c.c file.'''
     s: str = '''\
 //
 // Function called by Cython
@@ -791,6 +812,7 @@ void COMMIT_A_nolut(
 
 
 def add_commit_at_block_nolut() -> str:
+    '''Adds the COMMIT_At__block_nolut function to the operator_c.c file.'''
     def add_intracellular_compartments() -> str:
         s: str = '''\
     // intra-cellular compartments
@@ -847,6 +869,7 @@ void* COMMIT_At__block_nolut( void *ptr )
 
 
 def add_commit_at_nolut() -> str:
+    '''Adds the COMMIT_At_nolut function to the operator_c.c file.'''
     s: str = '''\
 //
 // Function called by Cython
@@ -890,6 +913,7 @@ void COMMIT_At_nolut(
 
 
 def add_commit() -> str:
+    '''Merge all the COMMIT functions.'''
     s: str = ''
     s += add_commit_a_block()
     s += add_commit_a()
@@ -899,6 +923,7 @@ def add_commit() -> str:
 
 
 def add_commit_nolut() -> str:
+    '''Merge all the COMMIT_nolut functions.'''
     s: str = ''
     s += add_commit_a_block_nolut()
     s += add_commit_a_nolut()
@@ -908,6 +933,7 @@ def add_commit_nolut() -> str:
 
 
 def write_operator_c_file() -> NoReturn:
+    '''Merge the COMMIT and COMMIT_nolut functions and write them to the operator_c.c file.'''
     s: str = ''
     s += add_imports()
     s += add_global_variables()
