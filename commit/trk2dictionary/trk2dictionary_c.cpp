@@ -178,9 +178,9 @@ int trk2dictionary(
     // Open tractogram file and compute the offset for each thread
     // -----------------------------------------------------------------
     unsigned long long int current;
-    unsigned long long int OffsetArr[threads_count];
+    unsigned long long int *OffsetArr = new unsigned long long int[threads_count]();
     int f = 0;
-    float Buff[3];
+    float *Buff = new float[3]();
     int N;
 
     FILE* fpTractogram = fopen(str_filename,"rb");
@@ -283,6 +283,11 @@ int trk2dictionary(
     if (verbosity > 2)
     printf("      [ %d voxels ]\n", totISO );
 
+    delete[] batch_size;
+    delete[] Pos;
+    delete[] OffsetArr;
+    delete[] Buff;
+
     return 1;
 
 }
@@ -312,7 +317,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         segKey         ec_seg;
         int            ix, iy, iz, id, atLeastOne;
         float          peakMax;
-        float          norms[ Np ];
+        float          *norms = new float[Np]();
         float          *ptr;
         int            ox, oy;
         int            skip = 0;
@@ -391,6 +396,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                     }
                 }
         }
+        delete[] norms;
     }
     totECSegments = temp_totECSegments;
     totECVoxels = temp_totECVoxels;
