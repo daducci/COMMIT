@@ -1,13 +1,13 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
-## `v2.2.1rc1`<br>_2024-##-##_
+## `v2.3.0`<br>_2024-07-01_
+### ✨Added
+
 ### 🛠️Changed
 - `operator.pyx` no more compiled at runtime
 
 ### 🐛Fixed
-
-### ✨Added
 
 ---
 ---
