@@ -585,7 +585,7 @@ cdef class Evaluation :
         self.THREADS['n'] = n
 
         cdef :
-            long [:] C
+            long long [:] C
             long t, tot, i1, i2, N, c
             int i
 
