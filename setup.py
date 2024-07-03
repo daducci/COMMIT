@@ -1,4 +1,5 @@
 import os
+import sys
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -22,8 +23,12 @@ def get_extensions():
                      sources=[f'{package_name}/proximals.pyx'],
                      extra_compile_args=['-w'],
                      language='c++')
+    operator = Extension(name=f'{package_name}.operator.operator',
+                    sources=[f'{package_name}/operator/operator.pyx', f'{package_name}/operator/operator_c.c'],
+                    extra_compile_args=['-w', '-O3', '-Ofast'],
+                    language='c')
                  
-    return [trk2dictionary, core, proximals]
+    return [trk2dictionary, core, proximals, operator]
 
 class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """
@@ -47,6 +52,11 @@ class CustomBuildExtCommand(build_ext):
         # Call original build_ext command
         build_ext.finalize_options(self)
         build_ext.run(self)
+
+# generate the operator_c.c file
+sys.path.insert(0, os.path.dirname(__file__))
+from setup_operator import write_operator_c_file
+write_operator_c_file()
 
 # create the 'build' directory
 if not os.path.exists('build'):
