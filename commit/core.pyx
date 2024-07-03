@@ -695,19 +695,9 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    def build_operator( self, build_dir=None ) :
-        """Compile/build the operator for computing the matrix-vector multiplications by A and A'
+    def build_operator( self ) :
+        """Build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
-        NB: needs to call this function to update pointers to data structures in case
-            the data is changed in self.DICTIONARY, self.KERNELS or self.THREADS.
-
-        Parameters
-        ----------
-        build_dir : string
-            The folder in which to store the compiled files.
-            If None (default), they will end up in the .pyxbld directory in the user’s home directory.
-            If using this option, it is recommended to use a temporary directory, quit your python
-                console between each build, and delete the content of the temporary directory.
         """
         if self.DICTIONARY is None :
             logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
