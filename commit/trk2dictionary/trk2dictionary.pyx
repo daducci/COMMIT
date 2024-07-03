@@ -54,7 +54,7 @@ cpdef cat_function( infilename, outfilename ):
         for fname in infilename:
             with open( fname, 'rb' ) as inFile:
                 shutil.copyfileobj( inFile, outfile )
-                remove( fname )
+            remove( fname )
 
 cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz, int verbose):
     cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
@@ -543,14 +543,17 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         logger.warning( 'DICTIONARY not generated' )
         return None
 
+    # free memory
+    free(ptrTDI)
+
     # Concatenate files together
     logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=True )
     cdef int discarded = 0
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
         for j in range(n_threads-1):
-            path_IC_f = path_temp + f'/dictionary_IC_f_{j+1}.dict'
-            kept = np.fromfile( path_temp + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
-            IC_f = np.fromfile( path_temp + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
+            path_IC_f = join(path_temp, f'dictionary_IC_f_{j+1}.dict')
+            kept = np.fromfile( join(path_temp, f'dictionary_TRK_kept_{j}.dict'), dtype=np.uint8 )
+            IC_f = np.fromfile( join(path_temp, f'dictionary_IC_f_{j+1}.dict'), dtype=np.uint32 )
             discarded += np.count_nonzero(kept==0)
             IC_f -= discarded
             IC_f_save = np.memmap( path_IC_f, dtype="uint32", mode='w+', shape=IC_f.shape )
@@ -559,52 +562,52 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             del IC_f_save
             # np.save( path_out + f'/dictionary_IC_f_{j+1}.dict', IC_f, allow_pickle=True)
 
-        fileout = path_out + '/dictionary_TRK_kept.dict'
+        fileout = join(path_out, 'dictionary_TRK_kept.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_kept_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_kept_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_norm.dict'
+        fileout = join(path_out, 'dictionary_TRK_norm.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_norm_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_norm_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_len.dict'
+        fileout = join(path_out, 'dictionary_TRK_len.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_len_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_len_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_lenTot.dict'
+        fileout = join(path_out, 'dictionary_TRK_lenTot.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_lenTot_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_lenTot_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_f.dict'
+        fileout = join(path_out, 'dictionary_IC_f.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_f_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_f_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_v.dict'
+        fileout = join(path_out, 'dictionary_IC_v.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_v_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_v_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_o.dict'
+        fileout = join(path_out, 'dictionary_IC_o.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_o_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_len.dict'
+        fileout = join(path_out, 'dictionary_IC_len.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_len_{j}.dict') ]
         cat_function( dict_list, fileout )
 
 
