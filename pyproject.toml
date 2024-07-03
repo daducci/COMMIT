@@ -62,3 +62,6 @@ include-package-data = false
     "*.pyx",
     "*.pyxbld"
 ]
+
+[tool.cibuildwheel]
+build-verbosity = 3
