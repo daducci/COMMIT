@@ -635,7 +635,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
         l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
         
-        niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose )
+        niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose=0 )
         niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
 
         niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
