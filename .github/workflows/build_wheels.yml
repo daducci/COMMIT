@@ -35,8 +35,8 @@ jobs:
           cp C:\pthread-win32\pthread.h C:\pthread-win32_static_lib\include
           cp C:\pthread-win32\sched.h C:\pthread-win32_static_lib\include
           cp C:\pthread-win32\semaphore.h C:\pthread-win32_static_lib\include
-          ls -la C:\pthread-win32_static_lib\lib
-          ls -la C:\pthread-win32_static_lib\include
+          ls C:\pthread-win32_static_lib\lib
+          ls C:\pthread-win32_static_lib\include
 
       - name: Build wheel ${{ matrix.py }}-${{ matrix.arch[1] }}
         uses: pypa/cibuildwheel@v2.19.1
