@@ -7,13 +7,14 @@ from dicelib.ui import setup_logger
 
 # Interfaces to actual C code performing the multiplications
 cdef extern void COMMIT_A(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
+    int _nF, int _nE, int _nV, int _nS, int _ndirs,
     double *_v_in, double *_v_out,
     unsigned int *_ICf, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads
+    unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads,
+    unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
 ) nogil
 
 cdef extern void COMMIT_At(
@@ -23,7 +24,26 @@ cdef extern void COMMIT_At(
     unsigned int *_ECv, unsigned short *_ECo,
     unsigned int *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT
+    unsigned char* _ICthreadsT, unsigned int* _ECthreadsT, unsigned int* _ISOthreadsT,
+    unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
+) nogil
+
+cdef extern void COMMIT_A_nolut(
+    int _nF,
+    double *_v_in, double *_v_out,
+    unsigned int *_ICf, unsigned int *_ICv, float *_ICl,
+    unsigned int *_ISOv,
+    unsigned int* _ICthreads, unsigned int* _ISOthreads,
+    unsigned int _nISO, unsigned int _nThreads
+) nogil
+
+cdef extern void COMMIT_At_nolut(
+    int _nF, int _n,
+    double *_v_in, double *_v_out,
+    unsigned int *_ICf, unsigned int *_ICv, float *_ICl,
+    unsigned int *_ISOv,
+    unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
+    unsigned int _nISO, unsigned int _nThreads
 ) nogil
 
 logger = setup_logger('operator')
@@ -39,6 +59,7 @@ cdef class LinearOperator :
     cdef DICTIONARY
     cdef KERNELS
     cdef THREADS
+    cdef nolut
 
     cdef unsigned int*   ICf
     cdef float*          ICl
@@ -61,11 +82,12 @@ cdef class LinearOperator :
     cdef unsigned int*   ISOthreadsT
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, nolut=False ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
         self.THREADS    = THREADS
+        self.nolut      = nolut
 
         self.nF         = DICTIONARY['IC']['nF']    # number of FIBERS
         self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
@@ -131,7 +153,7 @@ cdef class LinearOperator :
     @property
     def T( self ) :
         """Transpose of the explicit matrix."""
-        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS )
+        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.nolut )
         C.adjoint = 1 - C.adjoint
         return C
 
@@ -166,27 +188,59 @@ cdef class LinearOperator :
         # Create output array
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
 
+        cdef unsigned int nthreads = self.THREADS['n']
+        cdef unsigned int nIC = self.KERNELS['wmr'].shape[0]
+        cdef unsigned int nEC = self.KERNELS['wmh'].shape[0]
+        cdef unsigned int nISO = self.KERNELS['iso'].shape[0]
+
         # Call the cython function to read the memory pointers
         if not self.adjoint :
             # DIRECT PRODUCT A*x
-
-            with nogil :
-                COMMIT_A(
-                    self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
-                    &v_in[0], &v_out[0],
-                    self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
-                    self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                    self.ICthreads, self.ECthreads, self.ISOthreads
-                )
+            if self.nolut:
+                with nogil:
+                    COMMIT_A_nolut(
+                        self.nF,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICl,
+                        self.ISOv,
+                        self.ICthreads, self.ISOthreads,
+                        nISO, nthreads
+                    )
+            else:
+                with nogil:
+                    COMMIT_A(
+                        self.nF, self.nE, self.nV, self.nS, self.ndirs,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICo, self.ICl,
+                        self.ECv, self.ECo,
+                        self.ISOv,
+                        self.LUT_IC, self.LUT_EC, self.LUT_ISO,
+                        self.ICthreads, self.ECthreads, self.ISOthreads,
+                        nIC, nEC, nISO, nthreads
+                    )
         else :
             # INVERSE PRODUCT A'*y
-            with nogil :
-                COMMIT_At(
-                    self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
-                    &v_in[0], &v_out[0],
-                    self.ICf, self.ICv, self.ICo, self.ICl, self.ECv, self.ECo, self.ISOv,
-                    self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                    self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT
-                )
+            if self.nolut:
+                with nogil:
+                    COMMIT_At_nolut(
+                        self.nF, self.n,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICl,
+                        self.ISOv,
+                        self.ICthreadsT, self.ISOthreadsT,
+                        nISO, nthreads
+                    )
+            else:
+                with nogil:
+                    COMMIT_At(
+                        self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
+                        &v_in[0], &v_out[0],
+                        self.ICf, self.ICv, self.ICo, self.ICl,
+                        self.ECv, self.ECo,
+                        self.ISOv,
+                        self.LUT_IC, self.LUT_EC, self.LUT_ISO,
+                        self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
+                        nIC, nEC, nISO, nthreads
+                    )
 
         return v_out

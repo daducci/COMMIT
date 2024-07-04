@@ -1,6 +1,20 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.3.0`<br>_2024-07-04_
+### ✨Added
+- Added support for Windows (requires the `pthread-win32` library) 
+- Precompiled wheels for Windows, MacOS, and Linux are now available on PyPI
+
+### 🛠️Changed
+- `operator.pyx` no more compiled at runtime
+- Restict the `numpy` version to `<2.0.0`
+
+### 🐛Fixed
+- Improved output when running from Jupyter notebooks
+
+---
+---
 
 ## `v2.2.0`<br>_2024-04-12_
 ### 🐛Fixed

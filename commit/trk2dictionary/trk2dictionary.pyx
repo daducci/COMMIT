@@ -54,12 +54,12 @@ cpdef cat_function( infilename, outfilename ):
         for fname in infilename:
             with open( fname, 'rb' ) as inFile:
                 shutil.copyfileobj( inFile, outfile )
-                remove( fname )
+            remove( fname )
 
 cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz, int verbose):
     cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
     cdef unsigned long long i=0
-    with ProgressBar(total=v.size, disable=(verbose in [0, 1, 3]), hide_on_exit=True) as pbar:
+    with ProgressBar(total=v.size, disable=verbose<3, hide_on_exit=True) as pbar:
 
         for i in range(v.size):
             tdi[ v[i] ] += l[i]
@@ -322,14 +322,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
             temp_idx = np.arange(int(hdr['count']))
             log_list = []
-            subinfo = logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
-            with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=subinfo, log_list=log_list) as pbar:
+            ret_subinfo = logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
+            with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
                 idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                             temp_folder=path_temp, atlas=blur_clust_groupby, clust_thr=blur_clust_thr[0],
                                             n_threads=n_threads, keep_temp_files=True, force=True, verbose=1, log_list=log_list)
         else:
-            logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
-            with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
+            log_list = []
+            ret_subinfo = logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
+            with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
                 idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                             temp_folder=path_temp, clust_thr=blur_clust_thr[0],
                                             keep_temp_files=True, force=True, verbose=1)
@@ -543,14 +544,22 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         logger.warning( 'DICTIONARY not generated' )
         return None
 
+    # free memory
+    free(ptrTDI)
+    
+    # NOTE: this is to ensure flushing all the output from the cpp code
+    print(end='', flush=True)
+    time.sleep(0.5)
+
     # Concatenate files together
-    logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=True )
+    log_list = []
+    ret_subinfo = logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=verbose>2 )
     cdef int discarded = 0
-    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
+    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
         for j in range(n_threads-1):
-            path_IC_f = path_temp + f'/dictionary_IC_f_{j+1}.dict'
-            kept = np.fromfile( path_temp + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
-            IC_f = np.fromfile( path_temp + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
+            path_IC_f = join(path_temp, f'dictionary_IC_f_{j+1}.dict')
+            kept = np.fromfile( join(path_temp, f'dictionary_TRK_kept_{j}.dict'), dtype=np.uint8 )
+            IC_f = np.fromfile( join(path_temp, f'dictionary_IC_f_{j+1}.dict'), dtype=np.uint32 )
             discarded += np.count_nonzero(kept==0)
             IC_f -= discarded
             IC_f_save = np.memmap( path_IC_f, dtype="uint32", mode='w+', shape=IC_f.shape )
@@ -559,52 +568,52 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             del IC_f_save
             # np.save( path_out + f'/dictionary_IC_f_{j+1}.dict', IC_f, allow_pickle=True)
 
-        fileout = path_out + '/dictionary_TRK_kept.dict'
+        fileout = join(path_out, 'dictionary_TRK_kept.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_kept_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_kept_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_norm.dict'
+        fileout = join(path_out, 'dictionary_TRK_norm.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_norm_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_norm_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_len.dict'
+        fileout = join(path_out, 'dictionary_TRK_len.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_len_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_len_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_lenTot.dict'
+        fileout = join(path_out, 'dictionary_TRK_lenTot.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_lenTot_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_lenTot_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_f.dict'
+        fileout = join(path_out, 'dictionary_IC_f.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_f_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_f_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_v.dict'
+        fileout = join(path_out, 'dictionary_IC_v.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_v_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_v_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_o.dict'
+        fileout = join(path_out, 'dictionary_IC_o.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_o_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_len.dict'
+        fileout = join(path_out, 'dictionary_IC_len.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_len_{j}.dict') ]
         cat_function( dict_list, fileout )
 
 
@@ -619,29 +628,31 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
     # save TDI and MASK maps
-    logger.subinfo( 'Saving TDI and MASK maps', indent_char='*', indent_lvl=1 )
-    v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
-    l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
-
     cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
-    niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose )
-    niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
+    log_list = []
+    ret_subinfo = logger.subinfo( 'Saving TDI and MASK maps', indent_char='*', indent_lvl=1, with_progress=verbose>2)
+    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
+        l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
+        
+        niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose=0 )
+        niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
 
-    niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
-    niiTDI_hdr = _get_header( niiTDI )
-    niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
-    nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
+        niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
+        niiTDI_hdr = _get_header( niiTDI )
+        niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
+        nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
 
-    if filename_mask is not None :
-        niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
-    else :
-        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img_save)>0).astype(np.float32), TDI_affine )
+        if filename_mask is not None :
+            niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
+        else :
+            niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img_save)>0).astype(np.float32), TDI_affine )
 
-    niiMASK_hdr = _get_header( niiMASK )
-    niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
-    nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
+        niiMASK_hdr = _get_header( niiMASK )
+        niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
+        nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
 
-    if not keep_temp:
-        shutil.rmtree(path_temp)
+        if not keep_temp:
+            shutil.rmtree(path_temp)
 
     logger.info( f'[ {format_time(time.time() - tic)} ]' )
