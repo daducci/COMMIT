@@ -232,8 +232,8 @@ int trk2dictionary(
     // ==========================================
     //          Parallel IC compartments
     // ==========================================
-
-    printf( "   * Exporting IC compartments:\033[0m\n" );
+    
+    std::cout << "   * Exporting IC compartments:" << std::endl;
     // unsigned int width = 25;
     // PROGRESS = new ProgressBar( (unsigned int) n_count, (unsigned int) width);
     if (verbosity > 2)
@@ -256,7 +256,7 @@ int trk2dictionary(
     if (verbosity > 2)
         PROGRESS->close();
 
-    printf( "      [ %d streamlines kept, %ld segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
+    std::cout << "      [ " << std::accumulate(totFibers.begin(), totFibers.end(), 0) << " streamlines kept, " << std::accumulate( totICSegments.begin(), totICSegments.end(), 0) << " segments in total ]" << std::endl;
     totFibers.clear();
     threads.clear();
 
@@ -264,20 +264,18 @@ int trk2dictionary(
     //          Parallel EC compartments
     // ==========================================
 
-    printf( "   * Exporting EC compartments:\033[0m\n" );
-
+    std::cout << "   * Exporting EC compartments:" << std::endl;
     int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
 
-    printf("      [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
+    std::cout << "      [ " << totECVoxels << " voxels, " << totECSegments << " segments ]" << std::endl;
 
     /*=========================*/
     /*     Restricted ISO compartments     */
     /*=========================*/
-    printf( "   * Exporting ISO compartments:\033[0m\n" );
-
+    std::cout << "   * Exporting ISO compartments:" << std::endl;
     int totISO = ISOcompartments(ptrTDI, path_out, threads_count);
 
-    printf("      [ %d voxels ]\n", totISO );
+    std::cout << "      [ " << totISO << " voxels ]" << std::endl;
 
     delete[] batch_size;
     delete[] Pos;
@@ -485,7 +483,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     filename = OUTPUT_path+"/dictionary_TRK_norm_" + std::to_string(idx) + ".dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");
     if ( !pDict_TRK_norm )
     {
-        printf( "\n[trk2dictionary] Unable to create output files" );
+        std::cout << "\n[trk2dictionary] Unable to create output files";
     }
     filename = OUTPUT_path+"/dictionary_IC_f_" + std::to_string(idx) + ".dict";        FILE* pDict_IC_f       = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_v_" + std::to_string(idx) + ".dict";        FILE* pDict_IC_v       = fopen(filename.c_str(),"wb");
