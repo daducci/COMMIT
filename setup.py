@@ -37,7 +37,7 @@ def get_extensions():
                     include_dirs=[pthread_win_include] if sys.platform == 'win32' else [],
                     libraries=['pthread'] if sys.platform == 'win32' else [],
                     library_dirs=[pthread_win_lib] if sys.platform == 'win32' else [],
-                    extra_compile_args=['/fp:fast', '/DHAVE_STRUCT_TIMESPEC'] if sys.platform == 'win32' else ['-w', '-std=c++11', '-O3', '-Ofast'],
+                    extra_compile_args=['/fp:fast', '/DHAVE_STRUCT_TIMESPEC'] if sys.platform == 'win32' else ['-w', '-O3', '-Ofast'],
                     language='c')
                  
     return [trk2dictionary, core, proximals, operator]
