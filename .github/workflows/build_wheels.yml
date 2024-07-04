@@ -11,8 +11,8 @@ jobs:
       matrix:
         py: [cp38, cp39, cp310, cp311, cp312]
         arch:
-          - [AMD64, win_amd64, x64]
-          - [x86, win32, x86]
+          - [AMD64, win_amd64, x64, x64, 64bit]
+          - [x86, win32, x86, Win32, 32bit]
     name: ${{ matrix.py }}-${{ matrix.arch[1] }}
     runs-on: windows-latest
     steps:
@@ -25,12 +25,12 @@ jobs:
           Enter-VsDevShell -VsInstallPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' -DevCmdArguments '-arch=x64' -StartInPath 'C:\'
           git clone https://github.com/GerHobbelt/pthread-win32.git
           cd C:\pthread-win32\windows\VS2022
-          msbuild .\pthread.2022.sln -t:pthread_static_lib -p:Configuration=Release,Platform=x64
+          msbuild .\pthread.2022.sln -t:pthread_static_lib -p:Configuration=Release,Platform=${{ matrix.arch[3] }}
           cd C:\
           mkdir C:\pthread-win32_static_lib
           mkdir C:\pthread-win32_static_lib\include
           mkdir C:\pthread-win32_static_lib\lib
-          cp C:\pthread-win32\windows\VS2022\bin\Release-Unicode-64bit-x64\pthread_static_lib.lib C:\pthread-win32_static_lib\lib\pthread.lib
+          cp C:\pthread-win32\windows\VS2022\bin\Release-Unicode-${{ matrix.arch[4] }}-${{ matrix.arch[2] }}\pthread_static_lib.lib C:\pthread-win32_static_lib\lib\pthread.lib
           cp C:\pthread-win32\_ptw32.h C:\pthread-win32_static_lib\include
           cp C:\pthread-win32\pthread.h C:\pthread-win32_static_lib\include
           cp C:\pthread-win32\sched.h C:\pthread-win32_static_lib\include
