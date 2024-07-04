@@ -26,11 +26,12 @@ def get_extensions():
     # NOTE: Windows requires the pthread-win32 static library to compile the operator extension
     #       The library can be downloaded from https://github.com/GerHobbelt/pthread-win32
     #       The PTHREAD_WIN_INCLUDE and PTHREAD_WIN_LIB environment variables must be set to the include and lib directories
-    try:
-        pthread_win_include = os.environ['PTHREAD_WIN_INCLUDE']
-        pthread_win_lib = os.environ['PTHREAD_WIN_LIB']
-    except KeyError:
-        raise RuntimeError('PTHREAD_WIN_INCLUDE and PTHREAD_WIN_LIB must be set')
+    if sys.platform == 'win32':
+        try:
+            pthread_win_include = os.environ['PTHREAD_WIN_INCLUDE']
+            pthread_win_lib = os.environ['PTHREAD_WIN_LIB']
+        except KeyError:
+            raise RuntimeError('PTHREAD_WIN_INCLUDE and PTHREAD_WIN_LIB must be set')
     operator = Extension(name=f'{package_name}.operator.operator',
                     sources=[f'{package_name}/operator/operator.pyx', f'{package_name}/operator/operator_c.c'],
                     include_dirs=[pthread_win_include] if sys.platform == 'win32' else [],
