@@ -41,9 +41,8 @@ jobs:
       - name: Build wheel ${{ matrix.py }}-${{ matrix.arch[1] }}
         uses: pypa/cibuildwheel@v2.19.1
         env:
-          CIBW_ENVIRONMENT_WINDOWS: >
-            PTHREAD_WIN_INCLUDE=C:\pthread-win32_static_lib\include
-            PTHREAD_WIN_LIB=C:\pthread-win32_static_lib\lib
+          PTHREAD_WIN_INCLUDE: C:\pthread-win32_static_lib\include
+          PTHREAD_WIN_LIB: C:\pthread-win32_static_lib\lib
           CIBW_PLATFORM: windows
           CIBW_BUILD: ${{ matrix.py }}-${{ matrix.arch[1] }}
           CIBW_ARCHS_WINDOWS: ${{ matrix.arch[0] }}
