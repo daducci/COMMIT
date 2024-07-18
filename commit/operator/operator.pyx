@@ -127,7 +127,7 @@ cdef class LinearOperator :
         cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
         self.ICf = &ICf[0]
 
-        cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['idx']
+        cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['eval']
         self.ICeval = &ICeval[0]
 
 
