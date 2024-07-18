@@ -29,7 +29,6 @@ from dicelib import ui
 from dicelib.utils import format_time
 from dicelib.tractogram import filter
 
-from commit import trk2dictionary
 import commit.models
 import commit.solvers
 from commit.operator import operator
@@ -733,12 +732,13 @@ cdef class Evaluation :
         logger.info( 'Building linear operator A' )
 
         nF         = self.DICTIONARY['IC']['nF']    # number of FIBERS
-        nR         = self.KERNELS['wmr'].shape[0]   # number of FIBER RADII
-        nE         = self.DICTIONARY['EC']['nE']    # number of EC segments
-        nT         = self.KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
-        nV         = self.DICTIONARY['nV']          # number of VOXELS
-        nI         = self.KERNELS['iso'].shape[0]   # number of ISO contributions
-        n2 = nR * nF + nT * nE + nI * nV 
+        # nR         = self.KERNELS['wmr'].shape[0]   # number of FIBER RADII
+        # nE         = self.DICTIONARY['EC']['nE']    # number of EC segments
+        # nT         = self.KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
+        # nV         = self.DICTIONARY['nV']          # number of VOXELS
+        # nI         = self.KERNELS['iso'].shape[0]   # number of ISO contributions
+        # n2 = nR * nF + nT * nE + nI * nV
+        n2 = nF * self.KERNELS['wmr'].shape[0]
         self.DICTIONARY["IC"]["eval"] = np.ones( int(n2), dtype=np.uint32)
 
         self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
@@ -760,6 +760,7 @@ cdef class Evaluation :
 
         if self.debias_mask is not None :
             y *= self.debias_mask
+
         return y
 
 
@@ -1348,13 +1349,11 @@ cdef class Evaluation :
             self.set_verbose(0)
 
             nF = self.DICTIONARY['IC']['nF']
-            nE = self.DICTIONARY['EC']['nE']
-            nV = self.DICTIONARY['nV']
 
             offset1 = nF * self.KERNELS['wmr'].shape[0]
             xic = self.x[:offset1]
 
-            mask = np.ones(nF, dtype=np.uint32)
+            mask = np.ones(offset1, dtype=np.uint32)
             mask[xic<0.000000000000001] = 0
 
             self.DICTIONARY["IC"]["eval"] = mask
