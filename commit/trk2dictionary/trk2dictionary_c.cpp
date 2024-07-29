@@ -25,14 +25,16 @@ class segKey
     public:
     unsigned short x, y, z;
     unsigned short o;
+    float cum_len;
     segKey(){}
 
-    void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned short _o)
+    void set(unsigned short _x, unsigned short _y, unsigned short _z, unsigned short _o, float _len)
     {
         x  = _x;
         y  = _y;
         z  = _z;
         o = _o;
+        cum_len = _len;
     }
 
     bool const operator <(const segKey& seg) const
@@ -461,7 +463,6 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     float               fiberNorm;   // normalization
     unsigned int        pos=0;
     float               float_pos=0.0;
-    float               temp_pos=0.0;
     unsigned int        N, v, tempTotFibers;
     unsigned long int   temp_totICSegments;
     unsigned short      o;
@@ -506,7 +507,6 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     temp_totICSegments = 0;
     int incr_new = 0;
     int incr_old = 0;
-    unsigned int pos_count = 1;
     // Iterate over streamlines
 
     for(int f=startpos; f<endpos; f++) 
@@ -527,30 +527,14 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
             if ( FiberLen > minFiberLen && FiberLen < maxFiberLen )
             {
                 float_pos = 0.0;
-                pos_count = 0;
-                temp_pos = 0.0;
-                // pos = (int)round(float_pos*256.0);
-                // fwrite( &pos, 4, 1, pDict_IC_pos ); // first position is always 0
-                // add segments to files
+
                 for (it=FiberSegments.begin(); it!=FiberSegments.end(); it++)
                 {
                     // NB: please note inverted ordering for 'v'
                     v = it->first.x + dim.x * ( it->first.y + dim.y * it->first.z );
                     o = it->first.o;
 
-                    // check if it's the first segment
-                    if (pos_count < 1){
-                        temp_pos += (it->second / FiberLenTot);
-                    } else {
-                        float_pos += temp_pos + it->second / FiberLenTot;
-                        temp_pos = 0.0;
-                    }
-
-                    // check if it's the last segment
-                    if (std::next(it) == FiberSegments.end()){
-                        float_pos = 1.0;
-                    }
-
+                    float_pos = it->first.cum_len/FiberLen;
                     pos = (int)round(float_pos*255.0);
 
                     fwrite( &pos,            4, 1, pDict_IC_pos );
@@ -563,7 +547,6 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
                     inVoxKey.set( it->first.x, it->first.y, it->first.z );
                     FiberNorm[inVoxKey] += it->second;
-                    pos_count += 1;
                 }
 
                 for (fiberNorm=0, itNorm=FiberNorm.begin(); itNorm!=FiberNorm.end(); itNorm++)
@@ -835,11 +818,13 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
     ox = (int)round(colatitude/M_PI*180.0); // theta // i1
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
-    key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy] );
+
+    if ( k==0 ) { // fiber length computed only from original segments
+        FiberLen += len;
+    key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy], FiberLen );
     FiberSegments[key] += w*len;
     FiberLenTot += w*len;
-    if ( k==0 ) // fiber length computed only from original segments
-        FiberLen += len;
+
 }
 
 
