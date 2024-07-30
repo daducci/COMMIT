@@ -819,13 +819,15 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     ox = (int)round(colatitude/M_PI*180.0); // theta // i1
     oy = (int)round(longitude/M_PI*180.0);  // phi   // i2
 
-    if ( k==0 ) { // fiber length computed only from original segments
+    if ( k==0 ) // fiber length computed only from original segments
         FiberLen += len;
     key.set( vox.x, vox.y, vox.z, (unsigned short) ptrHashTable[ox*181 + oy], FiberLen );
     FiberSegments[key] += w*len;
     FiberLenTot += w*len;
 
 }
+
+
 
 
 /********************************************************************************************************************/
