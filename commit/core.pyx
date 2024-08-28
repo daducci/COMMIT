@@ -1832,8 +1832,16 @@ cdef class Evaluation :
                             bf = self.KERNELS['wmc'][bf_idx]
                             bundle_prof += bf * fib_w[streamline_idx][bf_idx]
                         streamline_profs.append(bundle_prof)
+                    
+                    for i in range(nF):
+                        streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
 
-                    xic[ self.DICTIONARY['TRK']['kept']==1 ] = streamline_profs * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+                    idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
+                    xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
+                    st_i = 0
+                    for idx in idx_kept:
+                        xic[idx] = streamline_profs[st_i]
+                        st_i += 1
                 
                 else:
                     num_prof = self.KERNELS['wmc'].shape[0]
@@ -1855,8 +1863,12 @@ cdef class Evaluation :
                             bundle_prof += bf * fib_w[streamline_idx][bf_idx]
                         streamline_profs.append(bundle_prof)
 
+                    idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
                     xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
-                    xic[ self.DICTIONARY['TRK']['kept']==1 ] = streamline_profs 
+                    st_i = 0
+                    for idx in idx_kept:
+                        xic[idx] = streamline_profs[st_i]
+                        st_i += 1
 
         
             self.temp_data['DICTIONARY'] = self.DICTIONARY
