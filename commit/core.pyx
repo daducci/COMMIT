@@ -1814,7 +1814,6 @@ cdef class Evaluation :
 
                 elif "tractogram_centr_idx" not in dictionary_info.keys() and ( dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0):
 
-                    xic = np.zeros(self.DICTIONARY['TRK']['kept'].size)
                     num_prof = self.KERNELS['wmc'].shape[0]
                     fib_w = []
                     for i in range(nF):
