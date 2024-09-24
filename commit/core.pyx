@@ -1691,14 +1691,10 @@ cdef class Evaluation :
         log_list = []
         ret_subinfo = logger.subinfo('results.pickle', indent_char='-', indent_lvl=2, with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
-            xic, xec, xiso = self.get_coeffs()
-            x = self.x
-            if self.get_config('doNormalizeKernels') :
-                x = x * np.hstack( (norm1*norm_fib,norm2,norm3) )
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
                 self.CONFIG['optimization']['regularisation'].pop('omega', None)
                 self.CONFIG['optimization']['regularisation'].pop('prox', None)
-                pickle.dump( [self.CONFIG, x, self.x], fid, protocol=2 )
+                pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
 
         if save_est_dwi:
             log_list = []
