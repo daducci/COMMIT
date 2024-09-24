@@ -4,6 +4,7 @@
 ## `v2.3.1`<br>_2024-09-24_
 ### 🐛Fixed
 - Revert changes when save results in `results.pickle`
+- Add checks on `group_weights_extra`
 
 ---
 ---
