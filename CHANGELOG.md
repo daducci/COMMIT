@@ -1,6 +1,14 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.3.1`<br>_2024-09-24_
+### 🐛Fixed
+- Revert changes when save results in `results.pickle`
+- Add checks on `group_weights_extra`
+
+---
+---
+
 ## `v2.3.0`<br>_2024-07-04_
 ### ✨Added
 - Added support for Windows (requires the `pthread-win32` library) 
