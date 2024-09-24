@@ -324,14 +324,14 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             log_list = []
             ret_subinfo = logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
             with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
-                idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
+                idx_centroids, _ = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                             temp_folder=path_temp, atlas=blur_clust_groupby, clust_thr=blur_clust_thr[0],
                                             n_threads=n_threads, keep_temp_files=True, force=True, verbose=1, log_list=log_list)
         else:
             log_list = []
             ret_subinfo = logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
             with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
-                idx_centroids = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
+                idx_centroids, _ = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                             temp_folder=path_temp, clust_thr=blur_clust_thr[0],
                                             keep_temp_files=True, force=True, verbose=1)
         filename_tractogram = filename_out
