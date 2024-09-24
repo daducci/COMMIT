@@ -986,6 +986,9 @@ cdef class Evaluation :
 
         # check if group_weights_extra is consistent with the number of groups
         if (regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso') and 'group_weights_extra' in dictIC_params:
+            if type(dictIC_params['group_weights_extra']) not in [list, np.ndarray]:
+                logger.error('"group_weights_extra" must be a list or a numpy array')
+            dictIC_params['group_weights_extra'] = np.array(dictIC_params['group_weights_extra'], dtype=np.float64)
             if np.any(dictIC_params['group_weights_extra'] < 0):
                 logger.error('All group weights must be non-negative')
             if dictIC_params['group_weights_extra'].size != dictIC_params['group_idx'].size:
@@ -1074,7 +1077,7 @@ cdef class Evaluation :
             logger.debug( f'Lambda used: {regularisation["lambdaIC"]}' )
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
             logger.debug( f'Number of groups: {len(dictIC_params["group_idx_kept"])}' )
-            if dictIC_params['group_weights_cardinality']==False and dictIC_params['group_weights_adaptive']==False and dictIC_params['group_weights_extra'] is None:
+            if dictIC_params['group_weights_cardinality']==False and dictIC_params['group_weights_adaptive']==False and not ('group_weights_extra' in dictIC_params):
                 logger.debug( 'Group weights are not considered (all ones)' )
             else:
                 str_weights = 'Group weights computed using '
