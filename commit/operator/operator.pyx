@@ -28,6 +28,46 @@ cdef extern void COMMIT_At(
     unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
 ) nogil
 
+cdef extern void Tikhonov_L1(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_v_in, double *_v_out
+) nogil
+
+cdef extern void Tikhonov_L2(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_v_in, double *_v_out
+) nogil
+
+cdef extern void Tikhonov_L1z(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_v_in, double *_v_out
+) nogil
+
+cdef extern void Tikhonov_L2z(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_v_in, double *_v_out
+) nogil
+
+cdef extern void Tikhonov_L1t(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_v_in, double *_v_out
+) nogil
+
+cdef extern void Tikhonov_L2t(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_v_in, double *_v_out
+) nogil
+
+cdef extern void Tikhonov_L1zt(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_v_in, double *_v_out
+) nogil
+
+cdef extern void Tikhonov_L2zt(
+    int _nF, int _nIC, int _nV, int _nS, double _lambda,
+    double *_v_in, double *_v_out
+) nogil
+
 cdef extern void COMMIT_A_nolut(
     int _nF,
     double *_v_in, double *_v_out,
@@ -55,6 +95,8 @@ cdef class LinearOperator :
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
+    cdef public float tikhonov_lambda
+    cdef public tikhonov_matrix
 
     cdef DICTIONARY
     cdef KERNELS
@@ -82,21 +124,23 @@ cdef class LinearOperator :
     cdef unsigned int*   ISOthreadsT
 
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS, nolut=False ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, tikhonov_lambda=0, tikhonov_matrix=None, nolut=False ) :
         """Set the pointers to the data structures used by the C code."""
-        self.DICTIONARY = DICTIONARY
-        self.KERNELS    = KERNELS
-        self.THREADS    = THREADS
-        self.nolut      = nolut
+        self.DICTIONARY         = DICTIONARY
+        self.KERNELS            = KERNELS
+        self.THREADS            = THREADS
+        self.nolut              = nolut
 
-        self.nF         = DICTIONARY['IC']['nF']    # number of FIBERS
-        self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
-        self.nE         = DICTIONARY['EC']['nE']    # number of EC segments
-        self.nT         = KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
-        self.nV         = DICTIONARY['nV']          # number of VOXELS
-        self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
-        self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
-        self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
+        self.nF                 = DICTIONARY['IC']['nF']    # number of FIBERS
+        self.nR                 = KERNELS['wmr'].shape[0]   # number of FIBER RADII
+        self.nE                 = DICTIONARY['EC']['nE']    # number of EC segments
+        self.nT                 = KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
+        self.nV                 = DICTIONARY['nV']          # number of VOXELS
+        self.nI                 = KERNELS['iso'].shape[0]   # number of ISO contributions
+        self.n                  = DICTIONARY['IC']['n']     # numbner of IC segments
+        self.ndirs              = KERNELS['wmr'].shape[1]   # number of directions
+        self.tikhonov_lambda    = tikhonov_lambda           # equalizer parameter of the Tikhonov regularization term
+        self.tikhonov_matrix    = tikhonov_matrix           # derivative matrix of the Tikhonov regularization term
 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
@@ -107,7 +151,19 @@ cdef class LinearOperator :
 
         self.adjoint    = 0                         # direct of inverse product
 
-        self.n1 = self.nV*self.nS
+        # set shape of the operator according to tikhonov_matrix
+        if self.tikhonov_lambda > 0:
+            if self.tikhonov_matrix == 'L1':
+                self.n1 = self.nV*self.nS + (self.nR-1)
+            elif self.tikhonov_matrix == 'L2':
+                self.n1 = self.nV*self.nS + (self.nR-2)
+            elif self.tikhonov_matrix == 'L1z':
+                self.n1 = self.nV*self.nS + (self.nR+1)
+            elif self.tikhonov_matrix == 'L2z':
+                self.n1 = self.nV*self.nS + (self.nR)
+        else:
+            self.n1 = self.nV*self.nS
+
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
 
         # get C pointers to arrays in DICTIONARY
@@ -153,7 +209,7 @@ cdef class LinearOperator :
     @property
     def T( self ) :
         """Transpose of the explicit matrix."""
-        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.nolut )
+        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.tikhonov_lambda, self.tikhonov_matrix, self.nolut )
         C.adjoint = 1 - C.adjoint
         return C
 
@@ -242,5 +298,59 @@ cdef class LinearOperator :
                         self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
                         nIC, nEC, nISO, nthreads
                     )
+
+        # if self.tikhonov_lambda > 0:
+        #     if not self.adjoint:
+        #         # DIRECT PRODUCT lambda*L*x
+        #         if self.tikhonov_matrix == 'L1':
+        #             with nogil:
+        #                 Tikhonov_L1(
+        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
+        #                     &v_in[0], &v_out[0]
+        #                 )
+        #         elif self.tikhonov_matrix == 'L2':
+        #             with nogil:
+        #                 Tikhonov_L2(
+        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
+        #                     &v_in[0], &v_out[0]
+        #                 )
+        #         elif self.tikhonov_matrix == 'L1z':
+        #             with nogil:
+        #                 Tikhonov_L1z(
+        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
+        #                     &v_in[0], &v_out[0]
+        #                 )
+        #         elif self.tikhonov_matrix == 'L2z':
+        #             with nogil:
+        #                 Tikhonov_L2z(
+        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
+        #                     &v_in[0], &v_out[0]
+        #                 )
+        #     else:
+        #         # INVERSE PRODUCT lambda*L'*y
+        #         if self.tikhonov_matrix == 'L1':
+        #             with nogil:
+        #                 Tikhonov_L1t(
+        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
+        #                     &v_in[0], &v_out[0]
+        #                 )
+        #         elif self.tikhonov_matrix == 'L2':
+        #             with nogil:
+        #                 Tikhonov_L2t(
+        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
+        #                     &v_in[0], &v_out[0]
+        #                 )
+        #         elif self.tikhonov_matrix == 'L1z':
+        #             with nogil:
+        #                 Tikhonov_L1zt(
+        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
+        #                     &v_in[0], &v_out[0]
+        #                 )
+        #         elif self.tikhonov_matrix == 'L2z':
+        #             with nogil:
+        #                 Tikhonov_L2zt(
+        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
+        #                     &v_in[0], &v_out[0]
+        #                 )
 
         return v_out

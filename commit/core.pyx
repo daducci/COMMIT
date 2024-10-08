@@ -705,9 +705,17 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    def build_operator( self ) :
+    def build_operator( self,  tikhonov_lambda=0, tikhonov_matrix=None ) :
         """Build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
+
+        Parameters
+        ----------
+        tikhonov_lambda: float
+            Tikhonov lambda
+            If a positive value is given, tikhonov_matrix must not be None
+        tikhonov_matrix: string
+            Tikhonov matrix to use
         """
         if self.DICTIONARY is None :
             logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
@@ -715,6 +723,13 @@ cdef class Evaluation :
             logger.error( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
             logger.error( 'Threads not set; call "set_threads()" first' )
+
+        if tikhonov_lambda < 0:
+            logger.error( 'Invalid lambda for Tikhonov regularization; value must be positive or zero' )
+        if tikhonov_lambda > 0 and tikhonov_matrix == None:
+            logger.error( 'Tikhonov lambda given but Tikhonov matrix was not selected; add "tikhonov_matrix" parameter in "build_operator()"' )
+        if tikhonov_lambda > 0 and tikhonov_matrix!='L1' and tikhonov_matrix!='L2' and tikhonov_matrix!='L1z' and tikhonov_matrix!='L2z':
+            logger.error( 'Invalid matrix selection for Tikhonov regularization term; check "tikhonov_matrix" parameter in "build_operator()"' )
 
         if self.DICTIONARY['IC']['nF'] <= 0 :
             logger.error( 'No streamline found in the dictionary; check your data' )
@@ -725,7 +740,7 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
 
-        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
+        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, tikhonov_lambda, tikhonov_matrix, True if hasattr(self.model, 'nolut') else False )
 
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
@@ -741,8 +756,20 @@ cdef class Evaluation :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        # y[y < 0] = 0
-        return y
+        # extend y for the tikhonov regularization term
+        if self.A.tikhonov_lambda > 0:
+            if self.A.tikhonov_matrix == 'L1':
+                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-1, dtype=np.float64)
+            elif self.A.tikhonov_matrix == 'L2':
+                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-2, dtype=np.float64)
+            elif self.A.tikhonov_matrix == 'L1z':
+                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]+1, dtype=np.float64)
+            elif self.A.tikhonov_matrix == 'L2z':
+                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]  , dtype=np.float64)
+
+            yL[:y.shape[0]] = y        
+
+        return yL
 
 
     def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
