@@ -1560,8 +1560,7 @@ cdef class Evaluation :
             nV = int(np.sum(self.debias_mask)/self.niiDWI_img.shape[3])
 
             if nV == 0:
-                logger.warning("Streamlines contributions are all zero.")
-                return 0
+                logger.error("Streamlines contributions are all zero.")
             ind_mask = np.where(self.debias_mask>0)[0]
             vox_mask = np.reshape( self.debias_mask[ind_mask], (nV,-1) )
 
@@ -1571,7 +1570,6 @@ cdef class Evaluation :
             y_est = np.reshape( y_est_[ind_mask], (nV,-1) )
 
             tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-            rmse = tmp.mean()
             logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
 
             tmp = np.sum(y_mea**2,axis=1)
@@ -1607,7 +1605,7 @@ cdef class Evaluation :
             y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
             y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
             tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-            
+
             logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
             niiMAP_hdr['cal_min'] = 0
@@ -1908,7 +1906,7 @@ cdef class Evaluation :
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
                 self.CONFIG['optimization']['regularisation'].pop('omega', None)
                 self.CONFIG['optimization']['regularisation'].pop('prox', None)
-                pickle.dump( [self.CONFIG, self.x, x, rmse], fid, protocol=2 )
+                pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
 
         if save_est_dwi :
             logger.subinfo('Estimated signal:', indent_char='-', indent_lvl=2, with_progress=True)
