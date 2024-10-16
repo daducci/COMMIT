@@ -31,7 +31,7 @@ def add_global_variables() -> str:
     s: str = '''\
 // global variables
 int         nF, n, nE, nV, nS, ndirs;
-double      *x, *Y;
+double      *x, *Y, lambda;
 uint32_t    *ICthreads, *ECthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ECthreadsT, *ISOthreadsT;
@@ -900,6 +900,187 @@ void COMMIT_At_nolut(
     return s
 
 
+def add_tikhonov_block_nolut() -> str:
+    '''Adds the Tikhnov_block_nolut function to the operator_c.c file.'''
+    def add_isotropic_compartments() -> str:
+        s: str = '''\
+    // isotropic compartments
+
+    if (nISO > 0)
+    {
+        t_v    = ISOv + ISOthreads[id];
+        t_vEnd = ISOv + ISOthreads[id+1];
+        xPtr   = x + nF + ISOthreads[id];
+        nISO_iter = t_vEnd - t_v;
+
+        if (nISO_iter > 2)
+        {
+            for (int i = 0; i < nISO_iter-2; i++)
+            {
+                x0 = xPtr[i];
+                x1 = xPtr[i+1];
+                x2 = xPtr[i+2];
+                Y[t_v[i]] += lambda*( x0 - 2*x1 + x2 );
+            }
+            // for the last two elements use Backward Difference
+            x0 = xPtr[nISO_iter-2];
+            x1 = xPtr[nISO_iter-1];
+            Y[t_v[nISO_iter-2]] += lambda*( x0 - x1 );
+        }
+        else if (nISO_iter == 2)
+        {
+            x0 = xPtr[0];
+            x1 = xPtr[1];
+            Y[t_v[0]] += lambda*( x0 - x1 );
+        }
+    }\n\n'''
+        return s
+
+    s: str = '''\
+//
+
+void* Tikhonov_block_nolut( void *ptr )
+{
+    int      id = (long)ptr;
+    double   x0, x1, x2;
+    double   *xPtr;
+    uint32_t *t_v, *t_vEnd;
+    uint32_t nISO_iter;\n\n'''
+    s += add_isotropic_compartments()
+    s += '''\
+    pthread_exit( 0 );
+}\n\n'''
+    return s
+
+
+def add_tikhonov_nolut() -> str:
+    '''Adds the Tikhnov_nolut function to the operator_c.c file.'''
+    s: str = '''\
+//
+// Function called by Cython
+//
+void Tikhonov_nolut(
+    int _nF,
+    double *_vIN, double *_vOUT,
+    uint32_t *_ISOv,
+    double _lambda,
+    uint32_t* _ISOthreads,
+    uint32_t _nISO, uint32_t _nThreads
+)
+{
+    nF = _nF;
+    lambda = _lambda;
+    x = _vIN;
+    Y = _vOUT;
+
+    ISOv = _ISOv;
+    nISO = _nISO;
+
+    ISOthreads = _ISOthreads;
+
+    // Run SEPARATE THREADS to perform the multiplication
+    pthread_t threads[MAX_THREADS];
+    int t;
+    for(t=0; t<_nThreads ; t++)
+        pthread_create( &threads[t], NULL, Tikhonov_block_nolut, (void *) (long int)t );
+    for(t=0; t<_nThreads ; t++)
+        pthread_join( threads[t], NULL );
+    return;
+}\n\n'''
+    return s
+
+
+def add_tikhonov_t_block_nolut() -> str:
+    '''Adds the Tikhnov_T_block_nolut function to the operator_c.c file.'''
+    def add_isotropic_compartments() -> str:
+        s: str = '''\
+    // isotropic compartments
+    if (nISO > 0)
+    {
+        t_v    = ISOv + ISOthreadsT[id];
+        t_vEnd = ISOv + ISOthreadsT[id+1];
+        xPtr   = x + nF + ISOthreadsT[id];
+        nISO_iter = t_vEnd - t_v;
+
+        if (nISO_iter > 2)
+        {
+            // for the first two elements use Finite Difference
+            for (int i = 0; i < nISO_iter-2; i++)
+            {
+                y0 = Y[t_v[i]];
+                y1 = Y[t_v[i+1]];
+                y2 = Y[t_v[i+2]];
+                (*xPtr++) += lambda*( y0 - 2*y1 + y2 );
+            }
+            y0 = Y[t_v[nISO_iter-2]];
+            y1 = Y[t_v[nISO_iter-1]];
+            (*xPtr++) += lambda*( y0 - y1 );
+        }
+        else {
+            y0 = Y[t_v[0]];
+            y1 = Y[t_v[1]];
+            (*xPtr++) += lambda*( y0 - y1 );
+            }
+    }\n\n'''
+        return s
+
+    s: str = '''\
+//
+
+void* Tikhonov_t_block_nolut( void *ptr )
+{
+    int      id = (long)ptr;
+    double   y0, y1, y2;
+    double   *xPtr;
+    uint32_t *t_v, *t_vEnd;
+    uint32_t nISO_iter;\n\n'''
+    s += add_isotropic_compartments()
+    s += '''\
+    pthread_exit( 0 );
+}\n\n'''
+    return s
+
+
+def add_tikhonov_t_nolut() -> str:
+    '''Adds the Tikhnov_t_nolut function to the operator_c.c file.'''
+    s: str = '''\
+//
+// Function called by Cython
+//
+void Tikhonov_t_nolut(
+    int _nF, int _n,
+    double *_vIN, double *_vOUT,
+    uint32_t *_ISOv,
+    double _lambda,
+    uint32_t* _ISOthreadsT,
+    uint32_t _nISO, uint32_t _nThreads
+)
+{
+    nF = _nF;
+    n  = _n;
+    lambda = _lambda;
+
+    x = _vOUT;
+    Y = _vIN;
+
+    ISOv = _ISOv;
+    nISO = _nISO;
+
+    ISOthreadsT = _ISOthreadsT;
+
+    // Run SEPARATE THREADS to perform the multiplication
+    pthread_t threads[MAX_THREADS];
+    int t;
+    for(t=0; t<_nThreads ; t++)
+        pthread_create( &threads[t], NULL, Tikhonov_t_block_nolut, (void *) (long int)t );
+    for(t=0; t<_nThreads ; t++)
+        pthread_join( threads[t], NULL );
+    return;
+}\n\n'''
+    return s
+
+
+
 def add_commit() -> str:
     '''Merge all the COMMIT functions.'''
     s: str = ''
@@ -907,6 +1088,8 @@ def add_commit() -> str:
     s += add_commit_a()
     s += add_commit_at_block()
     s += add_commit_at()
+    # s += add_tikhonov_block()
+    # s += add_tikhonov_t_block()
     return s
 
 
@@ -917,7 +1100,13 @@ def add_commit_nolut() -> str:
     s += add_commit_a_nolut()
     s += add_commit_at_block_nolut()
     s += add_commit_at_nolut()
+    s += add_tikhonov_block_nolut()
+    s += add_tikhonov_nolut()
+    s += add_tikhonov_t_block_nolut()
+    s += add_tikhonov_t_nolut()
+
     return s
+
 
 
 def write_operator_c_file() -> NoReturn:
@@ -930,196 +1119,3 @@ def write_operator_c_file() -> NoReturn:
 
     with open(path_join('commit', 'operator', 'operator_c.c'), 'w') as f:
         f.write(s)
-
-
-# NO LUT
-void COMMIT_L(
-    int nF, int nIC, int nV, int nS, double regterm,
-    double *vIN, double *vOUT)
-{
-    /*for(int r = 0; r < nIC-1; r++){
-        for(int f = 0; f < nF; f++){
-            vOUT[nV*nS + r] += regterm*( -vIN[r*nF + f] + vIN[(r+1)*nF + f] );
-        }
-    }//*/
-}
-
-void COMMIT_Lt(
-    int nF, int nIC, int nV, int nS, double regterm,
-    double *vIN, double *vOUT)
-{
-    /*for(int f = 0; f < nF; f++){
-        vOUT[f] = -vIN[nV*nS];
-        vOUT[nF*(nIC-1) + f] = vIN[nV*nS + nIC-2];
-    }
-    for(int r = 0; r < nIC-2; r++){
-        for(int f = 0; f < nF; f++){
-            vOUT[nF*(r+1) + f] = vIN[nV*nS + r] + vIN[nV*nS + r+1];
-        }
-    }//*/
-}
-
-
-/*void COMMIT_L(
-    int nF, int nIC, int nV, int nS, double regterm,
-    double *vIN, double *vOUT)
-{
-    for(int f = 0; f < nF; f++){
-        vOUT[nV*nS] += regterm*( -2*vIN[f] + x[nF + f] );
-        for(int r = 1; r < nIC-1; r++){
-            vOUT[nV*nS + r] += regterm*( vIN[(r-1)*nF + f] -2*vIN[r*nF + f] + vIN[(r+1)*nF + f] );
-        }
-        vOUT[nV*nS + nIC - 1] += regterm*( vIN[(nIC-2)*nF + f] - 2*vIN[(nIC-1)*nF + f] );
-    }
-}
-void COMMIT_Lt(
-    int nF, int nIC, int nV, int nS, double regterm,
-    double *vIN, double *vOUT)
-{
-    for(int f = 0; f < nF; f++){
-        vOUT[f] += regterm*( -2*vIN[nV*nS] + vIN[nV*nS + 1] );
-        for (int r = 0; r < nIC; r++){
-            vOUT[r*nF + f] += regterm*( vIN[nV*nS + (r-1)] - 2*vIN[nV*nS + r] + vIN[nV*nS + (r+1)] );
-        }
-        
-        vOUT[(nIC-1)*nF + f] += regterm*( vIN[nV*nS + (nIC-2)] - 2*vIN[nV*nS + (nIC-1)] );
-    }
-}//*/
-
-
-# LUT
-# // ===============================================================================================
-# // Compute L*x MATRIX-VECTOR product (L is first order derivative with free boundary conditions)
-# // ===============================================================================================
-# void Tikhonov_L1(
-#     int _nF, int _nIC, int _nV, int _nS, double _lambda,
-#     double *_vIN, double *_vOUT)
-# {
-#     for(int r = 0; r < _nIC-1; r++){
-#         for(int f = 0; f < _nF; f++){
-#             _vOUT[_nV*_nS + r] += _lambda*( -_vIN[r*_nF + f] + _vIN[(r+1)*_nF + f] );
-#         }
-#     }
-# }
-
-# // ==========================================================================================================
-# // Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is first order derivative with free boundary conditions)
-# // ==========================================================================================================
-# void Tikhonov_L1t(
-#     int _nF, int _nIC, int _nV, int _nS, double _lambda,
-#     double *_vIN, double *_vOUT)
-# {
-#     for(int f = 0; f < _nF; f++){
-#         _vOUT[f] += _lambda*( -_vIN[_nV*_nS] );
-
-#         for(int r = 1; r < _nIC-1; r++)
-#             _vOUT[_nF*r + f] += _lambda*( _vIN[_nV*_nS + r-1] - _vIN[_nV*_nS + r] );
-
-#         _vOUT[_nF*(_nIC-1) + f] += _lambda*( _vIN[_nV*_nS + _nIC-2] );
-#     }
-# }
-
-# // ===============================================================================================
-# // Compute L*x MATRIX-VECTOR product (L is second order derivative with free boundary conditions)
-# // ===============================================================================================
-# void Tikhonov_L2(
-#     int _nF, int _nIC, int _nV, int _nS, double _lambda,
-#     double *_vIN, double *_vOUT)
-# {
-#     for(int r = 0; r < _nIC-2; r++){
-#         for(int f = 0; f < _nF; f++){
-#             _vOUT[_nV*_nS + r] += _lambda*( _vIN[r*_nF + f] -2*_vIN[(r+1)*_nF + f] + _vIN[(r+2)*_nF + f] );
-#         }
-#     }
-# }
-
-# // ==========================================================================================================
-# // Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is second order derivative with free boundary conditions)
-# // ==========================================================================================================
-# void Tikhonov_L2t(
-#     int _nF, int _nIC, int _nV, int _nS, double _lambda,
-#     double *_vIN, double *_vOUT)
-# {
-#     for(int f = 0; f < _nF; f++){
-#         _vOUT[f] += _lambda*( _vIN[_nV*_nS] );
-
-#         _vOUT[_nF + f] += _lambda*( -2*_vIN[_nV*_nS] + _vIN[_nV*_nS + 1] );
-
-#         for (int r = 2; r < _nIC-2; r++){
-#             _vOUT[r*_nF + f] += _lambda*( _vIN[_nV*_nS + (r-2)] -2*_vIN[_nV*_nS + (r-1)] + _vIN[_nV*_nS + r] );
-#         }
-        
-#         _vOUT[(_nIC-2)*_nF + f] += _lambda*( _vIN[_nV*_nS + _nIC-4] -2*_vIN[_nV*_nS + _nIC-3] );
-
-#         _vOUT[(_nIC-1)*_nF + f] += _lambda*( _vIN[_nV*_nS + (_nIC-3)] );
-#     }
-# }
-
-# // ===============================================================================================
-# // Compute L*x MATRIX-VECTOR product (L is first order derivative with zero boundary conditions)
-# // ===============================================================================================
-# void Tikhonov_L1z(
-#     int _nF, int _nIC, int _nV, int _nS, double _lambda,
-#     double *_vIN, double *_vOUT)
-# {
-#     for(int f = 0; f < _nF; f++){
-#         _vOUT[_nV*_nS] += _lambda*( _vIN[f] );
-
-#         for(int r = 1; r < _nIC; r++){
-#             _vOUT[_nV*_nS + r] += _lambda*( -_vIN[(r-1)*_nF + f] + _vIN[r*_nF + f] );
-#         }
-
-#         _vOUT[_nV*_nS + _nIC] += _lambda*( -_vIN[(_nIC-1)*_nF + f] );
-#     }
-# }
-
-# // ==========================================================================================================
-# // Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is first order derivative with zero boundary conditions)
-# // ==========================================================================================================
-# void Tikhonov_L1zt(
-#         int _nF, int _nIC, int _nV, int _nS, double _lambda,
-#     double *_vIN, double *_vOUT)
-# {
-#     for(int f = 0; f < _nF; f++){
-#         for(int r = 0; r < _nIC; r++){
-#             _vOUT[r*_nF + f] += _lambda*( _vIN[_nV*_nS + r] - _vIN[_nV*_nS + r + 1]);
-#         }
-#     }
-# }
-
-# // ===============================================================================================
-# // Compute L*x MATRIX-VECTOR product (L is second order derivative with zero boundary conditions)
-# // ===============================================================================================
-# void Tikhonov_L2z(
-#     int _nF, int _nIC, int _nV, int _nS, double _lambda,
-#     double *_vIN, double *_vOUT)
-# {
-#     for(int f = 0; f < _nF; f++){
-
-#         _vOUT[_nV*_nS] += _lambda*( -2*_vIN[f] + x[_nF + f] );
-
-#         for(int r = 1; r < _nIC-1; r++){
-#             _vOUT[_nV*_nS + r] += _lambda*( _vIN[(r-1)*_nF + f] -2*_vIN[r*_nF + f] + _vIN[(r+1)*_nF + f] );
-#         }
-
-#         _vOUT[_nV*_nS + _nIC - 1] += _lambda*( _vIN[(_nIC-2)*_nF + f] - 2*_vIN[(_nIC-1)*_nF + f] );
-#     }
-# }
-
-# // ==========================================================================================================
-# // Compute Lt*y TRANSPOSE-MATRIX-VECTOR product (L is second order derivative with zero boundary conditions)
-# // ==========================================================================================================
-# void Tikhonov_L2zt(
-#     int _nF, int _nIC, int _nV, int _nS, double _lambda,
-#     double *_vIN, double *_vOUT)
-# {
-#     for(int f = 0; f < _nF; f++){
-#         _vOUT[f] += _lambda*( -2*_vIN[_nV*_nS] + _vIN[_nV*_nS + 1] );
-
-#         for (int r = 0; r < _nIC-1; r++){
-#             _vOUT[r*_nF + f] += _lambda*( _vIN[_nV*_nS + (r-1)] - 2*_vIN[_nV*_nS + r] + _vIN[_nV*_nS + (r+1)] );
-#         }
-        
-#         _vOUT[(_nIC-1)*_nF + f] += _lambda*( _vIN[_nV*_nS + (_nIC-2)] - 2*_vIN[_nV*_nS + (_nIC-1)] );
-#     }
-# }

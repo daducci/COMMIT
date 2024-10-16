@@ -705,7 +705,7 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    def build_operator( self,  tikhonov_lambda=0, tikhonov_matrix=None ) :
+    def build_operator( self,  tikhonov_lambda=0 ): #, tikhonov_matrix=None ) :
         """Build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
 
@@ -726,10 +726,10 @@ cdef class Evaluation :
 
         if tikhonov_lambda < 0:
             logger.error( 'Invalid lambda for Tikhonov regularization; value must be positive or zero' )
-        if tikhonov_lambda > 0 and tikhonov_matrix == None:
-            logger.error( 'Tikhonov lambda given but Tikhonov matrix was not selected; add "tikhonov_matrix" parameter in "build_operator()"' )
-        if tikhonov_lambda > 0 and tikhonov_matrix!='L1' and tikhonov_matrix!='L2' and tikhonov_matrix!='L1z' and tikhonov_matrix!='L2z':
-            logger.error( 'Invalid matrix selection for Tikhonov regularization term; check "tikhonov_matrix" parameter in "build_operator()"' )
+        # if tikhonov_lambda > 0 and tikhonov_matrix == None:
+        #     logger.error( 'Tikhonov lambda given but Tikhonov matrix was not selected; add "tikhonov_matrix" parameter in "build_operator()"' )
+        # if tikhonov_lambda > 0 and tikhonov_matrix!='L1' and tikhonov_matrix!='L2' and tikhonov_matrix!='L1z' and tikhonov_matrix!='L2z':
+        #     logger.error( 'Invalid matrix selection for Tikhonov regularization term; check "tikhonov_matrix" parameter in "build_operator()"' )
 
         if self.DICTIONARY['IC']['nF'] <= 0 :
             logger.error( 'No streamline found in the dictionary; check your data' )
@@ -740,7 +740,7 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
 
-        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, tikhonov_lambda, tikhonov_matrix, True if hasattr(self.model, 'nolut') else False )
+        self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, tikhonov_lambda, True if hasattr(self.model, 'nolut') else False )
 
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
@@ -758,18 +758,14 @@ cdef class Evaluation :
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
         # extend y for the tikhonov regularization term
         if self.A.tikhonov_lambda > 0:
-            if self.A.tikhonov_matrix == 'L1':
-                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-1, dtype=np.float64)
-            elif self.A.tikhonov_matrix == 'L2':
-                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-2, dtype=np.float64)
-            elif self.A.tikhonov_matrix == 'L1z':
-                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]+1, dtype=np.float64)
-            elif self.A.tikhonov_matrix == 'L2z':
-                yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]  , dtype=np.float64)
-
-            yL[:y.shape[0]] = y        
-
-        return yL
+            yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-1, dtype=np.float64)
+            print( f'yl shape: {yL.shape}' )
+            print( f'y shape: {y.shape}' )
+            print( f'wmr shape: {self.KERNELS["wmr"].shape}' )
+            yL[:y.shape[0]] = y
+            return yL
+        else:
+            return y
 
 
     def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
@@ -875,7 +871,7 @@ cdef class Evaluation :
             # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
             At = self.A.T
             y  = self.get_y()
-            Aty = np.asarray(At.dot(y))
+            Aty = At.dot(y)
             return np.max(np.abs(Aty[start:start+size]) / w_coeff)
 
         def compute_lambda_max_group(w_group, idx_group): 
@@ -1208,8 +1204,12 @@ cdef class Evaluation :
             # if dictISO_params is not None and 'coeff_weights' in dictISO_params:
             #     regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], dictISO_params['coeff_weights'])
             # else:
+            print('before compute_lambda_max_lasso')
             regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], np.ones(regularisation['sizeISO'], dtype=np.float64))
+            print('here AAAAAAAAAA')
+            print('lambdaISO_max', regularisation['lambdaISO_max'])
             regularisation['lambdaISO'] = regularisation['lambdaISO_perc'] * regularisation['lambdaISO_max']
+            print('here')
 
         # print
         if regularisation['regISO'] is not None:

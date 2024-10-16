@@ -301,7 +301,6 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
 
         # Smooth step
         x = xhat - step_size*grad
-
         # Non-smooth step
         prox( x, step_size )
         reg_term_x = omega( x )
@@ -320,7 +319,6 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
             # Smooth step
             step_size = beta*step_size
             x = xhat - step_size*grad
-
             # Non-smooth step
             prox( x, step_size )
             reg_term_x = omega( x )
@@ -340,6 +338,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         rel_obj = abs_obj / curr_obj
         abs_x   = np.linalg.norm(x - prev_x)
         rel_x   = abs_x / ( np.linalg.norm(x) + eps )
+        
         if verbose==4 :
             print( "  %13.7e  %13.7e  |  %13.7e  %13.7e  %13.7e  |  %13.7e  %13.7e" % ( 0.5 * res_norm**2, reg_term_x, curr_obj, abs_obj, rel_obj, abs_x, rel_x ), flush=True )
 

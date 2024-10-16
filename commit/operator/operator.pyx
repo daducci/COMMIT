@@ -28,44 +28,22 @@ cdef extern void COMMIT_At(
     unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
 ) nogil
 
-cdef extern void Tikhonov_L1(
-    int _nF, int _nIC, int _nV, int _nS, double _lambda,
-    double *_v_in, double *_v_out
+cdef extern void Tikhonov(
+    int _nF,
+    double *_v_in, double *_v_out,
+    unsigned int *_ISOv,
+    double _lambda,
+    unsigned int *_ISOthreads, unsigned int _nISO, unsigned int _nThreads,
+    unsigned int *_neighbors, unsigned int *_indptr
 ) nogil
 
-cdef extern void Tikhonov_L2(
-    int _nF, int _nIC, int _nV, int _nS, double _lambda,
-    double *_v_in, double *_v_out
-) nogil
-
-cdef extern void Tikhonov_L1z(
-    int _nF, int _nIC, int _nV, int _nS, double _lambda,
-    double *_v_in, double *_v_out
-) nogil
-
-cdef extern void Tikhonov_L2z(
-    int _nF, int _nIC, int _nV, int _nS, double _lambda,
-    double *_v_in, double *_v_out
-) nogil
-
-cdef extern void Tikhonov_L1t(
-    int _nF, int _nIC, int _nV, int _nS, double _lambda,
-    double *_v_in, double *_v_out
-) nogil
-
-cdef extern void Tikhonov_L2t(
-    int _nF, int _nIC, int _nV, int _nS, double _lambda,
-    double *_v_in, double *_v_out
-) nogil
-
-cdef extern void Tikhonov_L1zt(
-    int _nF, int _nIC, int _nV, int _nS, double _lambda,
-    double *_v_in, double *_v_out
-) nogil
-
-cdef extern void Tikhonov_L2zt(
-    int _nF, int _nIC, int _nV, int _nS, double _lambda,
-    double *_v_in, double *_v_out
+cdef extern void Tikhonov_t(
+    int _nF,
+    double *_v_in, double *_v_out,
+    unsigned int *_ISOv,
+    double _lambda,
+    unsigned int *_ISOthreadsT, unsigned int _nISO, unsigned int _nThreads,
+    unsigned int *_neighbors, unsigned int *_indptr
 ) nogil
 
 cdef extern void COMMIT_A_nolut(
@@ -88,6 +66,87 @@ cdef extern void COMMIT_At_nolut(
 
 logger = setup_logger('operator')
 
+
+def precompute_neighbours(mask, mask_ix, mask_iy, mask_iz):
+    idx = mask.ravel(order='F').nonzero()[0]
+    N = idx.size  # Number of voxels in the mask
+
+    # Create the lookup table (lut)
+    lut = np.full(mask.size, -1, dtype=np.int32)
+    lut[idx] = np.arange(N)
+
+    # Define neighbour offsets (6-connectivity)
+    neighbor_offsets = np.array([
+        [-1, 0, 0],  # Left
+        [1, 0, 0],   # Right
+        [0, -1, 0],  # Down
+        [0, 1, 0],   # Up
+        [0, 0, -1],  # Back
+        [0, 0, 1]    # Front
+    ], dtype=np.int32)
+
+    # Prepare voxel coordinates
+    x_i = mask_ix[:, np.newaxis]
+    y_i = mask_iy[:, np.newaxis]
+    z_i = mask_iz[:, np.newaxis]
+
+    # Compute neighbour coordinates
+    x_n = x_i + neighbor_offsets[:, 0]
+    y_n = y_i + neighbor_offsets[:, 1]
+    z_n = z_i + neighbor_offsets[:, 2]
+
+    # Check boundaries
+    valid = (
+        (x_n >= 0) & (x_n < mask.shape[0]) &
+        (y_n >= 0) & (y_n < mask.shape[1]) &
+        (z_n >= 0) & (z_n < mask.shape[2])
+    )
+
+    # Flatten the valid mask and coordinates
+    valid_flat = valid.ravel()
+    x_n_flat = x_n.ravel()[valid_flat]
+    y_n_flat = y_n.ravel()[valid_flat]
+    z_n_flat = z_n.ravel()[valid_flat]
+
+    # Original voxel indices repeated for each neighbour
+    voxel_indices = np.repeat(np.arange(N), neighbor_offsets.shape[0])[valid_flat]
+
+    # Convert neighbour coordinates to flat indices
+    idx_n = np.ravel_multi_index(
+        (x_n_flat, y_n_flat, z_n_flat),
+        mask.shape,
+        order='F'
+    )
+
+    # Map to local indices
+    neighbor_local_indices = lut[idx_n]
+
+    # Filter out neighbours not in the mask
+    valid_neighbors = neighbor_local_indices >= 0
+    voxel_indices = voxel_indices[valid_neighbors]
+    neighbor_local_indices = neighbor_local_indices[valid_neighbors]
+
+    # Sort voxel_indices and neighbor_local_indices based on voxel_indices
+    sort_order = np.argsort(voxel_indices)
+    voxel_indices = voxel_indices[sort_order]
+    neighbor_local_indices = neighbor_local_indices[sort_order]
+
+    # Build the indptr array
+    counts = np.bincount(voxel_indices, minlength=N)
+    indptr = np.zeros(N + 1, dtype=np.uint32)
+    indptr[1:] = np.cumsum(counts)
+
+    # The neighbour indices array
+    neighbours = neighbor_local_indices.astype(np.uint32)
+
+    print(f"neighbours: {neighbours[:10]}")
+    print(f"indptr: {indptr[:10]}")
+
+    return neighbours, indptr
+
+
+
+
 cdef class LinearOperator :
     """This class is a wrapper to the C code for performing marix-vector multiplications
     with the COMMIT linear operator A. The multiplications are done using C code
@@ -95,8 +154,7 @@ cdef class LinearOperator :
     """
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
-    cdef public float tikhonov_lambda
-    cdef public tikhonov_matrix
+    cdef public double tikhonov_lambda
 
     cdef DICTIONARY
     cdef KERNELS
@@ -123,8 +181,10 @@ cdef class LinearOperator :
     cdef unsigned int*   ECthreadsT
     cdef unsigned int*   ISOthreadsT
 
+    cdef unsigned int*   neighbours
+    cdef unsigned int*   indptr
 
-    def __init__( self, DICTIONARY, KERNELS, THREADS, tikhonov_lambda=0, tikhonov_matrix=None, nolut=False ) :
+    def __init__( self, DICTIONARY, KERNELS, THREADS, tikhonov_lambda=0, nolut=False ) :
         """Set the pointers to the data structures used by the C code."""
         self.DICTIONARY         = DICTIONARY
         self.KERNELS            = KERNELS
@@ -140,7 +200,6 @@ cdef class LinearOperator :
         self.n                  = DICTIONARY['IC']['n']     # numbner of IC segments
         self.ndirs              = KERNELS['wmr'].shape[1]   # number of directions
         self.tikhonov_lambda    = tikhonov_lambda           # equalizer parameter of the Tikhonov regularization term
-        self.tikhonov_matrix    = tikhonov_matrix           # derivative matrix of the Tikhonov regularization term
 
         if KERNELS['wmr'].size > 0 :
             self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
@@ -153,14 +212,7 @@ cdef class LinearOperator :
 
         # set shape of the operator according to tikhonov_matrix
         if self.tikhonov_lambda > 0:
-            if self.tikhonov_matrix == 'L1':
-                self.n1 = self.nV*self.nS + (self.nR-1)
-            elif self.tikhonov_matrix == 'L2':
-                self.n1 = self.nV*self.nS + (self.nR-2)
-            elif self.tikhonov_matrix == 'L1z':
-                self.n1 = self.nV*self.nS + (self.nR+1)
-            elif self.tikhonov_matrix == 'L2z':
-                self.n1 = self.nV*self.nS + (self.nR)
+            self.n1 = self.nV*self.nS + (self.nR-1)
         else:
             self.n1 = self.nV*self.nS
 
@@ -185,6 +237,7 @@ cdef class LinearOperator :
         # get C pointers to arrays in KERNELS
         cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
         self.LUT_IC  = &wmrSFP[0,0,0]
+
         cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
         self.LUT_EC  = &wmhSFP[0,0,0]
         cdef float [:, ::1] isoSFP = KERNELS['iso']
@@ -205,11 +258,25 @@ cdef class LinearOperator :
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
 
+        # precompute neighbours
+        print(f"nV: {DICTIONARY['nV']}")
+        n, np = precompute_neighbours(DICTIONARY['MASK'], DICTIONARY['MASK_ix'], DICTIONARY['MASK_iy'], DICTIONARY['MASK_iz'])
+        cdef unsigned int [::1] neighbours = n
+        self.neighbours = &neighbours[0]
+        cdef unsigned int [::1] indptr = np
+        self.indptr = &indptr[0]
+
+        # print neigbours and indptr as memoryview
+        for i in range(10):
+            print(f"neighbours: {self.neighbours[i]}")
+        for i in range(10):
+            print(f"indptr: {self.indptr[i]}")
+
 
     @property
     def T( self ) :
         """Transpose of the explicit matrix."""
-        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.tikhonov_lambda, self.tikhonov_matrix, self.nolut )
+        C = LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, self.tikhonov_lambda, self.nolut )
         C.adjoint = 1 - C.adjoint
         return C
 
@@ -274,6 +341,16 @@ cdef class LinearOperator :
                         self.ICthreads, self.ECthreads, self.ISOthreads,
                         nIC, nEC, nISO, nthreads
                     )
+                if self.tikhonov_lambda > 0:
+                    with nogil:
+                        Tikhonov(
+                            self.nF,
+                            &v_in[0], &v_out[0],
+                            self.ISOv,
+                            self.tikhonov_lambda,
+                            self.ISOthreads, nISO, nthreads,
+                            self.neighbours, self.indptr
+                        )
         else :
             # INVERSE PRODUCT A'*y
             if self.nolut:
@@ -298,59 +375,15 @@ cdef class LinearOperator :
                         self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
                         nIC, nEC, nISO, nthreads
                     )
-
-        # if self.tikhonov_lambda > 0:
-        #     if not self.adjoint:
-        #         # DIRECT PRODUCT lambda*L*x
-        #         if self.tikhonov_matrix == 'L1':
-        #             with nogil:
-        #                 Tikhonov_L1(
-        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
-        #                     &v_in[0], &v_out[0]
-        #                 )
-        #         elif self.tikhonov_matrix == 'L2':
-        #             with nogil:
-        #                 Tikhonov_L2(
-        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
-        #                     &v_in[0], &v_out[0]
-        #                 )
-        #         elif self.tikhonov_matrix == 'L1z':
-        #             with nogil:
-        #                 Tikhonov_L1z(
-        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
-        #                     &v_in[0], &v_out[0]
-        #                 )
-        #         elif self.tikhonov_matrix == 'L2z':
-        #             with nogil:
-        #                 Tikhonov_L2z(
-        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
-        #                     &v_in[0], &v_out[0]
-        #                 )
-        #     else:
-        #         # INVERSE PRODUCT lambda*L'*y
-        #         if self.tikhonov_matrix == 'L1':
-        #             with nogil:
-        #                 Tikhonov_L1t(
-        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
-        #                     &v_in[0], &v_out[0]
-        #                 )
-        #         elif self.tikhonov_matrix == 'L2':
-        #             with nogil:
-        #                 Tikhonov_L2t(
-        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
-        #                     &v_in[0], &v_out[0]
-        #                 )
-        #         elif self.tikhonov_matrix == 'L1z':
-        #             with nogil:
-        #                 Tikhonov_L1zt(
-        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
-        #                     &v_in[0], &v_out[0]
-        #                 )
-        #         elif self.tikhonov_matrix == 'L2z':
-        #             with nogil:
-        #                 Tikhonov_L2zt(
-        #                     self.nF, self.nR, self.nV, self.nS, self.tikhonov_lambda,
-        #                     &v_in[0], &v_out[0]
-        #                 )
+                if self.tikhonov_lambda > 0:
+                    with nogil:
+                        Tikhonov_t(
+                            self.nF,
+                            &v_in[0], &v_out[0],
+                            self.ISOv,
+                            self.tikhonov_lambda,
+                            self.ISOthreads, nISO, nthreads,
+                            self.neighbours, self.indptr
+                        )
 
         return v_out
