@@ -805,7 +805,7 @@ cdef class Evaluation :
             logger.error('"prof_weights" must be a list or a numpy array')
         prof_weights = np.array(prof_weights, dtype=np.float64)
         if np.any(prof_weights < 1):
-            logger.error('All group weights must be greater or equal to 1')
+            logger.error('All profiles\' weights must be greater or equal to 1')
         if prof_weights.size != self.KERNELS['wmc'].shape[0]:
             logger.error( f'The number of profiles\' weights in the provided array does not match the number of profiles set in "load_kernels()" (got {prof_weights.size} but {self.KERNELS["wmc"].shape[0]} expected)' )
 
