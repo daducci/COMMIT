@@ -8604,7 +8604,6 @@ void* Tikhonov_block(void *ptr)
     // Isotropic compartments
     if (nISO > 0)
     {
-        printf("Tikhonov_block\n");
         t_v    = ISOv + ISOthreads[id];
         t_vEnd = ISOv + ISOthreads[id + 1];
         xPtr   = x + nF + ISOthreads[id];  // Pointer to x values for the thread
@@ -8614,16 +8613,13 @@ void* Tikhonov_block(void *ptr)
             voxel_index = *t_v++;
             neigh_s = neighbour_ptr[voxel_index];
             neigh_e = neighbour_ptr[voxel_index + 1];
-            printf("voxel_index: %d\n", voxel_index);
-            printf("neigh_s: %d\n", neigh_s);
-            printf("neigh_e: %d\n", neigh_e);
             for (int j = neigh_s; j < neigh_e; j++)
             {
                 // printf("j: %d\n", j);
                 // printf("neighbours[j]: %d\n", neighbours[j]);
                 neighbor_index = neighbours[j];
                 // printf("x[voxel_index]: %f\n", x[voxel_index]);
-                diff = x[voxel_index] - x[neighbor_index];
+                diff = xPtr[voxel_index] - xPtr[neighbor_index];
 
                 // Update the gradient with respect to x_i
                 Y[voxel_index] += 2.0 * lambda * diff;
@@ -8684,7 +8680,6 @@ void* Tikhonov_t_block(void *ptr)
     // Isotropic compartments
     if (nISO > 0)
     {
-        printf("Tikhonov_t_block\n");
         t_v    = ISOv + ISOthreadsT[id];
         t_vEnd = ISOv + ISOthreadsT[id + 1];
         xPtr   = x + nF + ISOthreadsT[id];  // Pointer to x values for the thread
@@ -8695,11 +8690,10 @@ void* Tikhonov_t_block(void *ptr)
             voxel_index = t_v[i];
             neigh_s = neighbour_ptr[voxel_index];
             neigh_e = neighbour_ptr[voxel_index + 1];
-            // printf("voxel_index: %d\n", voxel_index);
-            // printf("neigh_s: %d\n", neigh_s);
-            // printf("neigh_e: %d\n", neigh_e);
+
             for (int j = neigh_s; j < neigh_e; j++)
             {
+
                 (*xPtr) += 2.0 * lambda * (Y[voxel_index] - Y[neighbours[j]]);
             }
             xPtr++;

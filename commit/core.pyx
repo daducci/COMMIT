@@ -757,15 +757,8 @@ cdef class Evaluation :
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
         # extend y for the tikhonov regularization term
-        if self.A.tikhonov_lambda > 0:
-            yL = np.zeros(y.shape[0] + self.KERNELS['wmr'].shape[0]-1, dtype=np.float64)
-            print( f'yl shape: {yL.shape}' )
-            print( f'y shape: {y.shape}' )
-            print( f'wmr shape: {self.KERNELS["wmr"].shape}' )
-            yL[:y.shape[0]] = y
-            return yL
-        else:
-            return y
+
+        return y
 
 
     def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
@@ -1204,12 +1197,8 @@ cdef class Evaluation :
             # if dictISO_params is not None and 'coeff_weights' in dictISO_params:
             #     regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], dictISO_params['coeff_weights'])
             # else:
-            print('before compute_lambda_max_lasso')
             regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], np.ones(regularisation['sizeISO'], dtype=np.float64))
-            print('here AAAAAAAAAA')
-            print('lambdaISO_max', regularisation['lambdaISO_max'])
             regularisation['lambdaISO'] = regularisation['lambdaISO_perc'] * regularisation['lambdaISO_max']
-            print('here')
 
         # print
         if regularisation['regISO'] is not None:

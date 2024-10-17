@@ -139,8 +139,6 @@ def precompute_neighbours(mask, mask_ix, mask_iy, mask_iz):
     # The neighbour indices array
     neighbours = neighbor_local_indices.astype(np.uint32)
 
-    print(f"neighbours: {neighbours[:10]}")
-    print(f"indptr: {indptr[:10]}")
 
     return neighbours, indptr
 
@@ -173,16 +171,19 @@ cdef class LinearOperator :
     cdef float* LUT_EC
     cdef float* LUT_ISO
 
-    cdef unsigned int*   ICthreads
-    cdef unsigned int*   ECthreads
-    cdef unsigned int*   ISOthreads
+    cdef unsigned int*  ICthreads
+    cdef unsigned int*  ECthreads
+    cdef unsigned int*  ISOthreads
 
-    cdef unsigned char*  ICthreadsT
-    cdef unsigned int*   ECthreadsT
-    cdef unsigned int*   ISOthreadsT
+    cdef unsigned char* ICthreadsT
+    cdef unsigned int*  ECthreadsT
+    cdef unsigned int*  ISOthreadsT
 
-    cdef unsigned int*   neighbours
-    cdef unsigned int*   indptr
+    cdef unsigned int*  neighbours
+    cdef unsigned int*  indptr
+
+    cdef public         neigh
+    cdef public         neigh_nptr
 
     def __init__( self, DICTIONARY, KERNELS, THREADS, tikhonov_lambda=0, nolut=False ) :
         """Set the pointers to the data structures used by the C code."""
@@ -210,12 +211,7 @@ cdef class LinearOperator :
 
         self.adjoint    = 0                         # direct of inverse product
 
-        # set shape of the operator according to tikhonov_matrix
-        if self.tikhonov_lambda > 0:
-            self.n1 = self.nV*self.nS + (self.nR-1)
-        else:
-            self.n1 = self.nV*self.nS
-
+        self.n1 = self.nV*self.nS
         self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
 
         # get C pointers to arrays in DICTIONARY
@@ -258,19 +254,18 @@ cdef class LinearOperator :
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
 
-        # precompute neighbours
-        print(f"nV: {DICTIONARY['nV']}")
-        n, np = precompute_neighbours(DICTIONARY['MASK'], DICTIONARY['MASK_ix'], DICTIONARY['MASK_iy'], DICTIONARY['MASK_iz'])
-        cdef unsigned int [::1] neighbours = n
-        self.neighbours = &neighbours[0]
-        cdef unsigned int [::1] indptr = np
-        self.indptr = &indptr[0]
+        cdef unsigned int [::1] neighbours
+        cdef unsigned int [::1] indptr
 
-        # print neigbours and indptr as memoryview
-        for i in range(10):
-            print(f"neighbours: {self.neighbours[i]}")
-        for i in range(10):
-            print(f"indptr: {self.indptr[i]}")
+        if tikhonov_lambda > 0:
+            # precompute neighbours
+            self.neigh, self.neigh_nptr = precompute_neighbours(DICTIONARY['MASK'], DICTIONARY['MASK_ix'], DICTIONARY['MASK_iy'], DICTIONARY['MASK_iz'])
+
+            neighbours = self.neigh
+            self.neighbours = &neighbours[0]
+
+            indptr = self.neigh_nptr
+            self.indptr = &indptr[0]
 
 
     @property
