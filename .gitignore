@@ -16,3 +16,4 @@ __pycache__/
 dist/
 
 trk2dictionary.c
+commit/operator/operator_c.c
