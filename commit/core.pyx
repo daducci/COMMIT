@@ -865,6 +865,7 @@ cdef class Evaluation :
             At = self.A.T
             y  = self.get_y()
             Aty = At.dot(y)
+
             return np.max(np.abs(Aty[start:start+size]) / w_coeff)
 
         def compute_lambda_max_group(w_group, idx_group): 

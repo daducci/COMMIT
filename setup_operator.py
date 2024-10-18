@@ -918,12 +918,14 @@ def add_tikhonov_block() -> str:
             voxel_index = *t_v++;
             neigh_s = neighbour_ptr[voxel_index];
             neigh_e = neighbour_ptr[voxel_index + 1];
+            reg_sum = 0.0;
             for (int j = neigh_s; j < neigh_e; j++)
             {
                 neighbor_index = neighbours[j];
                 diff = xPtr[voxel_index] - xPtr[neighbor_index];
-                Y[voxel_index] += 2.0 * lambda * diff;
+                reg_sum += diff * diff;
             }
+            Y[voxel_index] += lambda * reg_sum;
         }
     }\n\n'''
         return s
@@ -939,6 +941,7 @@ void* Tikhonov_block( void *ptr )
     uint32_t    *t_v, *t_vEnd;
     uint32_t    neigh_s, neigh_e, neighbor_index;
     double      diff;
+    double      reg_sum;
     int         voxel_index;\n\n'''
     s += add_isotropic_compartments()
     s += '''\
@@ -999,17 +1002,18 @@ def add_tikhonov_t_block() -> str:
         t_vEnd = ISOv + ISOthreadsT[id+1];
         xPtr   = x + nF + ISOthreadsT[id];  // Pointer to x values for the thread
         nISO_iter = t_vEnd - t_v;
-
         for (int i = 0; i < nISO_iter; i++)
         {
             voxel_index = t_v[i];
             neigh_s = neighbour_ptr[voxel_index];
             neigh_e = neighbour_ptr[voxel_index + 1];
-
+            reg_sum = 0.0;
             for (int j = neigh_s; j < neigh_e; j++)
             {
-                (*xPtr) += 2.0 * lambda * (Y[voxel_index] - Y[neighbours[j]]);
+                diff = (Y[voxel_index] - Y[neighbours[j]]);
+                reg_sum += diff * diff;
             }
+            (*xPtr++) += lambda * reg_sum;
         }
     }\n\n'''
         return s
@@ -1024,7 +1028,8 @@ void* Tikhonov_t_block( void *ptr )
     double   *xPtr;
     uint32_t *t_v, *t_vEnd;
     uint32_t nISO_iter;
-    uint32_t neigh_s, neigh_e, voxel_index, neighbor_index;\n\n'''
+    uint32_t neigh_s, neigh_e, voxel_index, neighbor_index;
+    double   reg_sum, diff;\n\n'''
     s += add_isotropic_compartments()
     s += '''\
     pthread_exit( 0 );
@@ -1050,8 +1055,8 @@ void Tikhonov_t(
 {
     nF = _nF;
     lambda = _lambda;
-    x = _vIN;
-    Y = _vOUT;
+    x = _vOUT;
+    Y = _vIN;
 
     ISOv = _ISOv;
     nISO = _nISO;

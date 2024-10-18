@@ -287,6 +287,7 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         L = ( np.linalg.norm( sqrt_W * A.dot(grad) ) / np.linalg.norm(grad) )**2
     else:
         L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
+
     step_size = 1.9 / L
     # Main loop
     if verbose==4 :

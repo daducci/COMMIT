@@ -380,5 +380,4 @@ cdef class LinearOperator :
                             self.ISOthreads, nISO, nthreads,
                             self.neighbours, self.indptr
                         )
-
         return v_out
