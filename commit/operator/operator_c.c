@@ -1,6 +1,5 @@
 #include <pthread.h>
 #include <stdint.h>
-#include <inttypes.h>
 
 // max number of threads
 #define MAX_THREADS 255
@@ -1967,7 +1966,6 @@ void* COMMIT_A__block( void *ptr )
         t_v = ISOv + ISOthreads[id];
         t_vEnd = ISOv + ISOthreads[id+1];
         xPtr0 = x + nIC*nF + nEC*nE + ISOthreads[id];
-
         switch (nISO)
         {
             case 1:
@@ -1979,7 +1977,6 @@ void* COMMIT_A__block( void *ptr )
                         YPtr = Y + nS * (*t_v);
                         YPtrEnd = YPtr + nS;
                         SFP0ptr = isoSFP0;
-
                         while (YPtr != YPtrEnd)
                             (*YPtr++) += (x0 * (*SFP0ptr++));
                     }
@@ -8428,6 +8425,148 @@ void COMMIT_At(
 }
 
 //
+// Compute a sub-block of the Tikhonov MATRIX-VECTOR product
+//
+void* Tikhonov_block( void *ptr )
+{
+    int         id = (long)ptr;
+    double      *xPtr;
+    uint32_t    *t_v, *t_vEnd;
+    uint32_t    neigh_s, neigh_e, neighbor_index;
+    double      diff;
+    int         voxel_index;
+
+    // Isotropic compartments
+    if (nISO > 0)
+    {
+        t_v    = ISOv + ISOthreads[id];
+        t_vEnd = ISOv + ISOthreads[id+1];
+        xPtr   = x + nF + ISOthreads[id];  // Pointer to x values for the thread
+
+        while (t_v != t_vEnd)
+        {
+            voxel_index = *t_v++;
+            neigh_s = neighbour_ptr[voxel_index];
+            neigh_e = neighbour_ptr[voxel_index + 1];
+            for (int j = neigh_s; j < neigh_e; j++)
+            {
+                neighbor_index = neighbours[j];
+                diff = xPtr[voxel_index] - xPtr[neighbor_index];
+                Y[voxel_index] += 2.0 * lambda * diff;
+            }
+        }
+    }
+
+    pthread_exit( 0 );
+}
+
+//
+// Function called by Cython
+//
+void Tikhonov(
+    int _nF,
+    double *_vIN, double *_vOUT,
+    uint32_t *_ISOv,
+    double _lambda,
+    uint32_t* _ISOthreads,
+    uint32_t _nISO, uint32_t _nThreads,
+    uint32_t *_neighbours, uint32_t *_neighbour_ptr
+)
+{
+    nF = _nF;
+    lambda = _lambda;
+    x = _vIN;
+    Y = _vOUT;
+
+    ISOv = _ISOv;
+    nISO = _nISO;
+
+    ISOthreads = _ISOthreads;
+
+    neighbours = _neighbours;
+    neighbour_ptr = _neighbour_ptr;
+
+    // Run SEPARATE THREADS to perform the multiplication
+    pthread_t threads[MAX_THREADS];
+    int t;
+    for(t=0; t<_nThreads ; t++)
+        pthread_create( &threads[t], NULL, Tikhonov_block, (void *) (long int)t );
+    for(t=0; t<_nThreads ; t++)
+        pthread_join( threads[t], NULL );
+    return;
+}
+
+//
+// Compute a sub-block of the Tikhonov^T MATRIX-VECTOR product
+//
+void* Tikhonov_t_block( void *ptr )
+{
+    int      id = (long)ptr;
+    double   *xPtr;
+    uint32_t *t_v, *t_vEnd;
+    uint32_t nISO_iter;
+    uint32_t neigh_s, neigh_e, voxel_index, neighbor_index;
+
+    // Isotropic compartments
+    if (nISO > 0)
+    {
+        t_v    = ISOv + ISOthreadsT[id];
+        t_vEnd = ISOv + ISOthreadsT[id+1];
+        xPtr   = x + nF + ISOthreadsT[id];  // Pointer to x values for the thread
+        nISO_iter = t_vEnd - t_v;
+
+        for (int i = 0; i < nISO_iter; i++)
+        {
+            voxel_index = t_v[i];
+            neigh_s = neighbour_ptr[voxel_index];
+            neigh_e = neighbour_ptr[voxel_index + 1];
+
+            for (int j = neigh_s; j < neigh_e; j++)
+            {
+                (*xPtr) += 2.0 * lambda * (Y[voxel_index] - Y[neighbours[j]]);
+            }
+        }
+    }
+
+    pthread_exit( 0 );
+}
+
+//
+// Function called by Cython
+//
+void Tikhonov_t(
+    int _nF,
+    double *_vIN, double *_vOUT,
+    uint32_t *_ISOv,
+    double _lambda,
+    uint32_t* _ISOthreadsT,
+    uint32_t _nISO, uint32_t _nThreads,
+    uint32_t *_neighbours, uint32_t *_neighbour_ptr
+)
+{
+    nF = _nF;
+    lambda = _lambda;
+    x = _vIN;
+    Y = _vOUT;
+
+    ISOv = _ISOv;
+    nISO = _nISO;
+
+    ISOthreadsT = _ISOthreadsT;
+
+    neighbours = _neighbours;
+    neighbour_ptr = _neighbour_ptr;
+
+    // Run SEPARATE THREADS to perform the multiplication
+    pthread_t threads[MAX_THREADS];
+    int t;
+    for(t=0; t<_nThreads ; t++)
+        pthread_create( &threads[t], NULL, Tikhonov_t_block, (void *) (long int)t );
+    for(t=0; t<_nThreads ; t++)
+        pthread_join( threads[t], NULL );
+    return;
+}
+//
 // Compute a sub-block of the A*x MATRIX-VECTOR product
 //
 void* COMMIT_A__block_nolut( void *ptr )
@@ -8460,6 +8599,7 @@ void* COMMIT_A__block_nolut( void *ptr )
         t_v    = ISOv + ISOthreads[id];
         t_vEnd = ISOv + ISOthreads[id+1];
         xPtr   = x + nF + ISOthreads[id];
+
         while( t_v != t_vEnd )
         {
             x0 = *xPtr++;
@@ -8544,6 +8684,7 @@ void* COMMIT_At__block_nolut( void *ptr )
         t_v    = ISOv + ISOthreadsT[id];
         t_vEnd = ISOv + ISOthreadsT[id+1];
         xPtr   = x + nF + ISOthreadsT[id];
+
         while( t_v != t_vEnd )
             (*xPtr++) += Y[*t_v++];
     }
@@ -8589,154 +8730,3 @@ void COMMIT_At_nolut(
         pthread_join( threads[t], NULL );
     return;
 }
-//
-
-void* Tikhonov_block(void *ptr)
-{
-    int         id = (long)ptr;
-    double      *xPtr;
-    uint32_t    *t_v, *t_vEnd;
-    uint32_t    nISO_iter;
-    uint32_t    neigh_s, neigh_e, neighbor_index;
-    double      diff;
-    int         voxel_index;
-
-    // Isotropic compartments
-    if (nISO > 0)
-    {
-        t_v    = ISOv + ISOthreads[id];
-        t_vEnd = ISOv + ISOthreads[id + 1];
-        xPtr   = x + nF + ISOthreads[id];  // Pointer to x values for the thread
-
-        while (t_v != t_vEnd)
-        {
-            voxel_index = *t_v++;
-            neigh_s = neighbour_ptr[voxel_index];
-            neigh_e = neighbour_ptr[voxel_index + 1];
-            for (int j = neigh_s; j < neigh_e; j++)
-            {
-                // printf("j: %d\n", j);
-                // printf("neighbours[j]: %d\n", neighbours[j]);
-                neighbor_index = neighbours[j];
-                // printf("x[voxel_index]: %f\n", x[voxel_index]);
-                diff = xPtr[voxel_index] - xPtr[neighbor_index];
-
-                // Update the gradient with respect to x_i
-                Y[voxel_index] += 2.0 * lambda * diff;
-            }
-        }
-    }
-    pthread_exit(0);
-}
-
-
-
-//
-// Function called by Cython
-//
-void Tikhonov(
-    int _nF,
-    double *_vIN, double *_vOUT,
-    uint32_t *_ISOv,
-    double _lambda,
-    uint32_t* _ISOthreads,
-    uint32_t _nISO, uint32_t _nThreads,
-    uint32_t *_neighbours, uint32_t *_neighbour_ptr
-)
-{
-    nF = _nF;
-    lambda = _lambda;
-    x = _vIN;
-    Y = _vOUT;
-
-    ISOv = _ISOv;
-    nISO = _nISO;
-
-    ISOthreads = _ISOthreads;
-
-    neighbours = _neighbours;
-    neighbour_ptr = _neighbour_ptr;
-
-    // Run SEPARATE THREADS to perform the multiplication
-    pthread_t threads[MAX_THREADS];
-    int t;
-    for(t=0; t<_nThreads ; t++)
-        pthread_create( &threads[t], NULL, Tikhonov_block, (void *) (long int)t );
-    for(t=0; t<_nThreads ; t++)
-        pthread_join( threads[t], NULL );
-    return;
-}
-
-//
-
-void* Tikhonov_t_block(void *ptr)
-{
-    int      id = (long)ptr;
-    double   *xPtr;
-    uint32_t *t_v, *t_vEnd;
-    uint32_t nISO_iter;
-    uint32_t neigh_s, neigh_e, voxel_index, neighbor_index;
-
-    // Isotropic compartments
-    if (nISO > 0)
-    {
-        t_v    = ISOv + ISOthreadsT[id];
-        t_vEnd = ISOv + ISOthreadsT[id + 1];
-        xPtr   = x + nF + ISOthreadsT[id];  // Pointer to x values for the thread
-        nISO_iter = t_vEnd - t_v;
-
-        for (int i = 0; i < nISO_iter; i++)
-        {
-            voxel_index = t_v[i];
-            neigh_s = neighbour_ptr[voxel_index];
-            neigh_e = neighbour_ptr[voxel_index + 1];
-
-            for (int j = neigh_s; j < neigh_e; j++)
-            {
-
-                (*xPtr) += 2.0 * lambda * (Y[voxel_index] - Y[neighbours[j]]);
-            }
-            xPtr++;
-        }
-    }
-    pthread_exit(0);
-}
-
-
-//
-// Function called by Cython
-//
-void Tikhonov_t(
-    int _nF,
-    double *_vIN, double *_vOUT,
-    uint32_t *_ISOv,
-    double _lambda,
-    uint32_t* _ISOthreadsT,
-    uint32_t _nISO, uint32_t _nThreads,
-    uint32_t *_neighbours, uint32_t *_neighbour_ptr
-)
-{
-    nF = _nF;
-    lambda = _lambda;
-
-    x = _vOUT;
-    Y = _vIN;
-
-    ISOv = _ISOv;
-    nISO = _nISO;
-
-    ISOthreadsT = _ISOthreadsT;
-
-    neighbours = _neighbours;
-    neighbour_ptr = _neighbour_ptr;
-
-    // Run SEPARATE THREADS to perform the multiplication
-    pthread_t threads[MAX_THREADS];
-    int t;
-    for(t=0; t<_nThreads ; t++)
-        pthread_create( &threads[t], NULL, Tikhonov_t_block, (void *) (long int)t );
-    for(t=0; t<_nThreads ; t++)
-        pthread_join( threads[t], NULL );
-    return;
-}
-

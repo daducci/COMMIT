@@ -41,7 +41,8 @@ float       *ICl;
 float       *wmrSFP0, *wmrSFP1, *wmrSFP2, *wmrSFP3, *wmrSFP4, *wmrSFP5, *wmrSFP6, *wmrSFP7, *wmrSFP8, *wmrSFP9, *wmrSFP10, *wmrSFP11, *wmrSFP12, *wmrSFP13, *wmrSFP14, *wmrSFP15, *wmrSFP16, *wmrSFP17, *wmrSFP18, *wmrSFP19;
 float       *wmhSFP0, *wmhSFP1, *wmhSFP2, *wmhSFP3, *wmhSFP4, *wmhSFP5, *wmhSFP6, *wmhSFP7, *wmhSFP8, *wmhSFP9, *wmhSFP10, *wmhSFP11, *wmhSFP12, *wmhSFP13, *wmhSFP14, *wmhSFP15, *wmhSFP16, *wmhSFP17, *wmhSFP18, *wmhSFP19;
 float       *isoSFP0, *isoSFP1, *isoSFP2, *isoSFP3, *isoSFP4, *isoSFP5, *isoSFP6, *isoSFP7, *isoSFP8, *isoSFP9, *isoSFP10, *isoSFP11, *isoSFP12, *isoSFP13, *isoSFP14, *isoSFP15, *isoSFP16, *isoSFP17, *isoSFP18, *isoSFP19;
-uint32_t    nIC, nEC, nISO;\n\n\n'''
+uint32_t    nIC, nEC, nISO;
+uint32_t    *neighbours, *neighbour_ptr;\n\n\n'''
     return s
 
 
@@ -900,52 +901,45 @@ void COMMIT_At_nolut(
     return s
 
 
-def add_tikhonov_block_nolut() -> str:
-    '''Adds the Tikhnov_block_nolut function to the operator_c.c file.'''
+
+def add_tikhonov_block() -> str:
+    '''Adds the Tikhonov_block function to the operator_c.c file.'''
     def add_isotropic_compartments() -> str:
         s: str = '''\
-    // isotropic compartments
-
+    // Isotropic compartments
     if (nISO > 0)
     {
         t_v    = ISOv + ISOthreads[id];
         t_vEnd = ISOv + ISOthreads[id+1];
-        xPtr   = x + nF + ISOthreads[id];
-        nISO_iter = t_vEnd - t_v;
+        xPtr   = x + nF + ISOthreads[id];  // Pointer to x values for the thread
 
-        if (nISO_iter > 2)
+        while (t_v != t_vEnd)
         {
-            for (int i = 0; i < nISO_iter-2; i++)
+            voxel_index = *t_v++;
+            neigh_s = neighbour_ptr[voxel_index];
+            neigh_e = neighbour_ptr[voxel_index + 1];
+            for (int j = neigh_s; j < neigh_e; j++)
             {
-                x0 = xPtr[i];
-                x1 = xPtr[i+1];
-                x2 = xPtr[i+2];
-                Y[t_v[i]] += lambda*( x0 - 2*x1 + x2 );
+                neighbor_index = neighbours[j];
+                diff = xPtr[voxel_index] - xPtr[neighbor_index];
+                Y[voxel_index] += 2.0 * lambda * diff;
             }
-            // for the last two elements use Backward Difference
-            x0 = xPtr[nISO_iter-2];
-            x1 = xPtr[nISO_iter-1];
-            Y[t_v[nISO_iter-2]] += lambda*( x0 - x1 );
-        }
-        else if (nISO_iter == 2)
-        {
-            x0 = xPtr[0];
-            x1 = xPtr[1];
-            Y[t_v[0]] += lambda*( x0 - x1 );
         }
     }\n\n'''
         return s
 
     s: str = '''\
 //
-
-void* Tikhonov_block_nolut( void *ptr )
+// Compute a sub-block of the Tikhonov MATRIX-VECTOR product
+//
+void* Tikhonov_block( void *ptr )
 {
-    int      id = (long)ptr;
-    double   x0, x1, x2;
-    double   *xPtr;
-    uint32_t *t_v, *t_vEnd;
-    uint32_t nISO_iter;\n\n'''
+    int         id = (long)ptr;
+    double      *xPtr;
+    uint32_t    *t_v, *t_vEnd;
+    uint32_t    neigh_s, neigh_e, neighbor_index;
+    double      diff;
+    int         voxel_index;\n\n'''
     s += add_isotropic_compartments()
     s += '''\
     pthread_exit( 0 );
@@ -953,19 +947,20 @@ void* Tikhonov_block_nolut( void *ptr )
     return s
 
 
-def add_tikhonov_nolut() -> str:
-    '''Adds the Tikhnov_nolut function to the operator_c.c file.'''
+def add_tikhonov() -> str:
+    '''Adds the Tikhonov function to the operator_c.c file.'''
     s: str = '''\
 //
 // Function called by Cython
 //
-void Tikhonov_nolut(
+void Tikhonov(
     int _nF,
     double *_vIN, double *_vOUT,
     uint32_t *_ISOv,
     double _lambda,
     uint32_t* _ISOthreads,
-    uint32_t _nISO, uint32_t _nThreads
+    uint32_t _nISO, uint32_t _nThreads,
+    uint32_t *_neighbours, uint32_t *_neighbour_ptr
 )
 {
     nF = _nF;
@@ -978,11 +973,14 @@ void Tikhonov_nolut(
 
     ISOthreads = _ISOthreads;
 
+    neighbours = _neighbours;
+    neighbour_ptr = _neighbour_ptr;
+
     // Run SEPARATE THREADS to perform the multiplication
     pthread_t threads[MAX_THREADS];
     int t;
     for(t=0; t<_nThreads ; t++)
-        pthread_create( &threads[t], NULL, Tikhonov_block_nolut, (void *) (long int)t );
+        pthread_create( &threads[t], NULL, Tikhonov_block, (void *) (long int)t );
     for(t=0; t<_nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
@@ -990,50 +988,43 @@ void Tikhonov_nolut(
     return s
 
 
-def add_tikhonov_t_block_nolut() -> str:
-    '''Adds the Tikhnov_T_block_nolut function to the operator_c.c file.'''
+def add_tikhonov_t_block() -> str:
+    '''Adds the Tikhonov_t_block function to the operator_c.c file.'''
     def add_isotropic_compartments() -> str:
         s: str = '''\
-    // isotropic compartments
+    // Isotropic compartments
     if (nISO > 0)
     {
         t_v    = ISOv + ISOthreadsT[id];
         t_vEnd = ISOv + ISOthreadsT[id+1];
-        xPtr   = x + nF + ISOthreadsT[id];
+        xPtr   = x + nF + ISOthreadsT[id];  // Pointer to x values for the thread
         nISO_iter = t_vEnd - t_v;
 
-        if (nISO_iter > 2)
+        for (int i = 0; i < nISO_iter; i++)
         {
-            // for the first two elements use Finite Difference
-            for (int i = 0; i < nISO_iter-2; i++)
+            voxel_index = t_v[i];
+            neigh_s = neighbour_ptr[voxel_index];
+            neigh_e = neighbour_ptr[voxel_index + 1];
+
+            for (int j = neigh_s; j < neigh_e; j++)
             {
-                y0 = Y[t_v[i]];
-                y1 = Y[t_v[i+1]];
-                y2 = Y[t_v[i+2]];
-                (*xPtr++) += lambda*( y0 - 2*y1 + y2 );
+                (*xPtr) += 2.0 * lambda * (Y[voxel_index] - Y[neighbours[j]]);
             }
-            y0 = Y[t_v[nISO_iter-2]];
-            y1 = Y[t_v[nISO_iter-1]];
-            (*xPtr++) += lambda*( y0 - y1 );
         }
-        else {
-            y0 = Y[t_v[0]];
-            y1 = Y[t_v[1]];
-            (*xPtr++) += lambda*( y0 - y1 );
-            }
     }\n\n'''
         return s
 
     s: str = '''\
 //
-
-void* Tikhonov_t_block_nolut( void *ptr )
+// Compute a sub-block of the Tikhonov^T MATRIX-VECTOR product
+//
+void* Tikhonov_t_block( void *ptr )
 {
     int      id = (long)ptr;
-    double   y0, y1, y2;
     double   *xPtr;
     uint32_t *t_v, *t_vEnd;
-    uint32_t nISO_iter;\n\n'''
+    uint32_t nISO_iter;
+    uint32_t neigh_s, neigh_e, voxel_index, neighbor_index;\n\n'''
     s += add_isotropic_compartments()
     s += '''\
     pthread_exit( 0 );
@@ -1041,42 +1032,44 @@ void* Tikhonov_t_block_nolut( void *ptr )
     return s
 
 
-def add_tikhonov_t_nolut() -> str:
-    '''Adds the Tikhnov_t_nolut function to the operator_c.c file.'''
+def add_tikhonov_t() -> str:
+    '''Adds the Tikhonov_t function to the operator_c.c file.'''
     s: str = '''\
 //
 // Function called by Cython
 //
-void Tikhonov_t_nolut(
-    int _nF, int _n,
+void Tikhonov_t(
+    int _nF,
     double *_vIN, double *_vOUT,
     uint32_t *_ISOv,
     double _lambda,
     uint32_t* _ISOthreadsT,
-    uint32_t _nISO, uint32_t _nThreads
+    uint32_t _nISO, uint32_t _nThreads,
+    uint32_t *_neighbours, uint32_t *_neighbour_ptr
 )
 {
     nF = _nF;
-    n  = _n;
     lambda = _lambda;
-
-    x = _vOUT;
-    Y = _vIN;
+    x = _vIN;
+    Y = _vOUT;
 
     ISOv = _ISOv;
     nISO = _nISO;
 
     ISOthreadsT = _ISOthreadsT;
 
+    neighbours = _neighbours;
+    neighbour_ptr = _neighbour_ptr;
+
     // Run SEPARATE THREADS to perform the multiplication
     pthread_t threads[MAX_THREADS];
     int t;
     for(t=0; t<_nThreads ; t++)
-        pthread_create( &threads[t], NULL, Tikhonov_t_block_nolut, (void *) (long int)t );
+        pthread_create( &threads[t], NULL, Tikhonov_t_block, (void *) (long int)t );
     for(t=0; t<_nThreads ; t++)
         pthread_join( threads[t], NULL );
     return;
-}\n\n'''
+}\n'''
     return s
 
 
@@ -1088,8 +1081,10 @@ def add_commit() -> str:
     s += add_commit_a()
     s += add_commit_at_block()
     s += add_commit_at()
-    # s += add_tikhonov_block()
-    # s += add_tikhonov_t_block()
+    s += add_tikhonov_block()
+    s += add_tikhonov()
+    s += add_tikhonov_t_block()
+    s += add_tikhonov_t()
     return s
 
 
@@ -1100,11 +1095,6 @@ def add_commit_nolut() -> str:
     s += add_commit_a_nolut()
     s += add_commit_at_block_nolut()
     s += add_commit_at_nolut()
-    s += add_tikhonov_block_nolut()
-    s += add_tikhonov_nolut()
-    s += add_tikhonov_t_block_nolut()
-    s += add_tikhonov_t_nolut()
-
     return s
 
 
