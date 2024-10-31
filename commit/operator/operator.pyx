@@ -67,80 +67,42 @@ cdef extern void COMMIT_At_nolut(
 logger = setup_logger('operator')
 
 
-def precompute_neighbours(mask, mask_ix, mask_iy, mask_iz):
-    idx = mask.ravel(order='F').nonzero()[0]
-    N = idx.size  # Number of voxels in the mask
+def precompute_neighbours(mask_ix, mask_iy, mask_iz, dim):
+    # Combine the mask indices into a list and create a mapping to indices
+    mask_voxels = list(zip(mask_ix, mask_iy, mask_iz))
+    voxel_indices = {voxel: idx for idx, voxel in enumerate(mask_voxels)}
+    num_voxels = len(mask_voxels)
 
-    # Create the lookup table (lut)
-    lut = np.full(mask.size, -1, dtype=np.int32)
-    lut[idx] = np.arange(N)
+    neighbor_indices = []
+    neighbor_ptr = [0]  # Start pointer at 0
 
-    # Define neighbour offsets (6-connectivity)
-    neighbor_offsets = np.array([
-        [-1, 0, 0],  # Left
-        [1, 0, 0],   # Right
-        [0, -1, 0],  # Down
-        [0, 1, 0],   # Up
-        [0, 0, -1],  # Back
-        [0, 0, 1]    # Front
-    ], dtype=np.int32)
+    # Define neighbor offsets excluding (0, 0, 0)
+    offsets = [
+        (dx, dy, dz)
+        for dx in [-1, 0, 1]
+        for dy in [-1, 0, 1]
+        for dz in [-1, 0, 1]
+        if not (dx == 0 and dy == 0 and dz == 0)
+    ]
 
-    # Prepare voxel coordinates
-    x_i = mask_ix[:, np.newaxis]
-    y_i = mask_iy[:, np.newaxis]
-    z_i = mask_iz[:, np.newaxis]
+    for voxel in mask_voxels:
+        x, y, z = voxel
+        neighbours = []
+        for dx, dy, dz in offsets:
+            nx, ny, nz = x + dx, y + dy, z + dz
+            # Check if neighbor is within volume bounds
+            if 0 <= nx < dim[0] and 0 <= ny < dim[1] and 0 <= nz < dim[2]:
+                neighbour_voxel = (nx, ny, nz)
+                if neighbour_voxel in voxel_indices:
+                    neighbour_idx = voxel_indices[neighbour_voxel]
+                    neighbours.append(neighbour_idx)
+        neighbor_indices.extend(neighbours)
+        neighbor_ptr.append(len(neighbor_indices))
 
-    # Compute neighbour coordinates
-    x_n = x_i + neighbor_offsets[:, 0]
-    y_n = y_i + neighbor_offsets[:, 1]
-    z_n = z_i + neighbor_offsets[:, 2]
+    neighbor_indices = np.array(neighbor_indices, dtype=np.uint32)
+    neighbor_ptr = np.array(neighbor_ptr, dtype=np.uint32)
 
-    # Check boundaries
-    valid = (
-        (x_n >= 0) & (x_n < mask.shape[0]) &
-        (y_n >= 0) & (y_n < mask.shape[1]) &
-        (z_n >= 0) & (z_n < mask.shape[2])
-    )
-
-    # Flatten the valid mask and coordinates
-    valid_flat = valid.ravel()
-    x_n_flat = x_n.ravel()[valid_flat]
-    y_n_flat = y_n.ravel()[valid_flat]
-    z_n_flat = z_n.ravel()[valid_flat]
-
-    # Original voxel indices repeated for each neighbour
-    voxel_indices = np.repeat(np.arange(N), neighbor_offsets.shape[0])[valid_flat]
-
-    # Convert neighbour coordinates to flat indices
-    idx_n = np.ravel_multi_index(
-        (x_n_flat, y_n_flat, z_n_flat),
-        mask.shape,
-        order='F'
-    )
-
-    # Map to local indices
-    neighbor_local_indices = lut[idx_n]
-
-    # Filter out neighbours not in the mask
-    valid_neighbors = neighbor_local_indices >= 0
-    voxel_indices = voxel_indices[valid_neighbors]
-    neighbor_local_indices = neighbor_local_indices[valid_neighbors]
-
-    # Sort voxel_indices and neighbor_local_indices based on voxel_indices
-    sort_order = np.argsort(voxel_indices)
-    voxel_indices = voxel_indices[sort_order]
-    neighbor_local_indices = neighbor_local_indices[sort_order]
-
-    # Build the indptr array
-    counts = np.bincount(voxel_indices, minlength=N)
-    indptr = np.zeros(N + 1, dtype=np.uint32)
-    indptr[1:] = np.cumsum(counts)
-
-    # The neighbour indices array
-    neighbours = neighbor_local_indices.astype(np.uint32)
-
-
-    return neighbours, indptr
+    return neighbor_indices, neighbor_ptr
 
 
 
@@ -153,6 +115,7 @@ cdef class LinearOperator :
     cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
     cdef public int adjoint, n1, n2
     cdef public double tikhonov_lambda
+    cdef public dim
 
     cdef DICTIONARY
     cdef KERNELS
@@ -200,6 +163,7 @@ cdef class LinearOperator :
         self.nI                 = KERNELS['iso'].shape[0]   # number of ISO contributions
         self.n                  = DICTIONARY['IC']['n']     # numbner of IC segments
         self.ndirs              = KERNELS['wmr'].shape[1]   # number of directions
+        self.dim                = DICTIONARY['dims']                       # dimensions of the volume
         self.tikhonov_lambda    = tikhonov_lambda           # equalizer parameter of the Tikhonov regularization term
 
         if KERNELS['wmr'].size > 0 :
@@ -257,15 +221,15 @@ cdef class LinearOperator :
         cdef unsigned int [::1] neighbours
         cdef unsigned int [::1] indptr
 
-        if tikhonov_lambda > 0:
-            # precompute neighbours
-            self.neigh, self.neigh_nptr = precompute_neighbours(DICTIONARY['MASK'], DICTIONARY['MASK_ix'], DICTIONARY['MASK_iy'], DICTIONARY['MASK_iz'])
+        # if tikhonov_lambda > 0:
+        # precompute neighbours
+        self.neigh, self.neigh_nptr = precompute_neighbours(DICTIONARY['MASK_ix'], DICTIONARY['MASK_iy'], DICTIONARY['MASK_iz'], self.dim)
 
-            neighbours = self.neigh
-            self.neighbours = &neighbours[0]
+        neighbours = self.neigh
+        self.neighbours = &neighbours[0]
 
-            indptr = self.neigh_nptr
-            self.indptr = &indptr[0]
+        indptr = self.neigh_nptr
+        self.indptr = &indptr[0]
 
 
     @property
