@@ -66,9 +66,9 @@ class CustomBuildExtCommand(build_ext):
         build_ext.run(self)
 
 # # generate the operator_c.c file
-# sys.path.insert(0, os.path.dirname(__file__))
-# from setup_operator import write_operator_c_file
-# write_operator_c_file()
+sys.path.insert(0, os.path.dirname(__file__))
+from setup_operator import write_operator_c_file
+write_operator_c_file()
 
 # create the 'build' directory
 if not os.path.exists('build'):
