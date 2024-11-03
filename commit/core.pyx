@@ -735,6 +735,11 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
 
+        nF          = self.DICTIONARY['IC']['nF']    # number of FIBERS
+        n2          = nF * self.KERNELS['wmr'].shape[0]
+
+        self.DICTIONARY["IC"]["eval"] = np.ones( int(n2), dtype=np.uint32)
+
         self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
 
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
@@ -1216,7 +1221,7 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tr)} ]' )
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=True ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=False ) :
         """Fit the model to the data.
 
         Parameters

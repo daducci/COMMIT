@@ -273,9 +273,6 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
     else:
         res = A.dot(xhat) - y
         grad = np.asarray(At.dot(res))
-    
-    print("grad", grad[grad!=0][:50])
-    print("res", res[res!=0][:50])
 
     prox( xhat, 1.0 )
     reg_term = omega( xhat )
