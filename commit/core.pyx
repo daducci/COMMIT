@@ -1381,9 +1381,13 @@ cdef class Evaluation :
 
             with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
                 self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
-
+        
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
+
+        if self.regularisation_params['regIC'] is None and self.x_nnls is None:
+            self.x_nnls, _, _ = self.get_coeffs(get_normalized=False)
+
         logger.info( f'[ {format_time(self.CONFIG["optimization"]["fit_time"])} ]' )
 
 
