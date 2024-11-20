@@ -851,7 +851,7 @@ cdef class Evaluation :
             Aty = np.asarray(At.dot(y))
             return np.max(np.abs(Aty[start:start+size]) / w_coeff)
 
-        def compute_lambda_max_group(w_group, idx_group): 
+        def compute_lambda_max_group(w_group, idx_group):
             # Ref. Yuan, Lin - 'Model selection and estimation in regression with grouped variables'
             At = self.A.T
             y  = self.get_y()
@@ -997,7 +997,7 @@ cdef class Evaluation :
         # In case of 'group_lasso' or 'sparse_group_lasso' update the group indices and compute group weights
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
             if 'group_weights_extra' in dictIC_params:
-                weightsIC_group = dictIC_params['group_weights_extra']
+                weightsIC_group = dictIC_params['group_weights_extra'].copy()
             else:
                 weightsIC_group = np.ones(dictIC_params['group_idx'].size, dtype=np.float64)
             # update the group indices considering only the kept elements
