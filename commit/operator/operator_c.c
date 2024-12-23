@@ -8601,8 +8601,8 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x0_tmp = 0;
@@ -8618,11 +8618,11 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x1_tmp += x1 * (*SFP1ptr);
                         (*Yptr++) += w * (x0 + x1_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    // increment pointers by 2
+                    t_f += 2;
+                    t_v += 2;
+                    t_l += 2;
+                    t_p += 2;
                 }
                 break;
             case 3:
@@ -8630,10 +8630,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    eval2 = eval1 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
+                    x_Ptr2 = x_Ptr1++;
+                    eval2 = eval1++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x2 = *x_Ptr2 * (double)(*eval2);
@@ -8653,11 +8653,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x2_tmp += x2 * (*SFP2ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    t_f += 3;
+                    t_v += 3;
+                    t_l += 3;
+                    t_p += 3;
                 }
                 break;
             case 4:
@@ -8665,12 +8664,12 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    eval2 = eval1 + nF;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    eval3 = eval2 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
+                    x_Ptr2 = x_Ptr1++;
+                    eval2 = eval1++;
+                    x_Ptr3 = x_Ptr2++;
+                    eval3 = eval2++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x2 = *x_Ptr2 * (double)(*eval2);
@@ -8694,11 +8693,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x3_tmp += x3 * (*SFP3ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    t_f += 4;
+                    t_v += 4;
+                    t_l += 4;
+                    t_p += 4;
                 }
                 break;
             case 5:
@@ -8706,14 +8704,14 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    eval2 = eval1 + nF;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    eval3 = eval2 + nF;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    eval4 = eval3 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
+                    x_Ptr2 = x_Ptr1++;
+                    eval2 = eval1++;
+                    x_Ptr3 = x_Ptr2++;
+                    eval3 = eval2++;
+                    x_Ptr4 = x_Ptr3++;
+                    eval4 = eval3++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x2 = *x_Ptr2 * (double)(*eval2);
@@ -8741,11 +8739,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x4_tmp += x4 * (*SFP4ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    t_f += 5;
+                    t_v += 5;
+                    t_l += 5;
+                    t_p += 5;
                 }
                 break;
             case 6:
@@ -8753,16 +8750,16 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    eval2 = eval1 + nF;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    eval3 = eval2 + nF;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    eval4 = eval3 + nF;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    eval5 = eval4 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
+                    x_Ptr2 = x_Ptr1++;
+                    eval2 = eval1++;
+                    x_Ptr3 = x_Ptr2++;
+                    eval3 = eval2++;
+                    x_Ptr4 = x_Ptr3++;
+                    eval4 = eval3++;
+                    x_Ptr5 = x_Ptr4++;
+                    eval5 = eval4++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x2 = *x_Ptr2 * (double)(*eval2);
@@ -8794,11 +8791,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x5_tmp += x5 * (*SFP5ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    t_f += 6;
+                    t_v += 6;
+                    t_l += 6;
+                    t_p += 6;
                 }
                 break;
             case 7:
@@ -8806,18 +8802,18 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    eval2 = eval1 + nF;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    eval3 = eval2 + nF;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    eval4 = eval3 + nF;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    eval5 = eval4 + nF;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    eval6 = eval5 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
+                    x_Ptr2 = x_Ptr1++;
+                    eval2 = eval1++;
+                    x_Ptr3 = x_Ptr2++;
+                    eval3 = eval2++;
+                    x_Ptr4 = x_Ptr3++;
+                    eval4 = eval3++;
+                    x_Ptr5 = x_Ptr4++;
+                    eval5 = eval4++;
+                    x_Ptr6 = x_Ptr5++;
+                    eval6 = eval5++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x2 = *x_Ptr2 * (double)(*eval2);
@@ -8853,11 +8849,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x6_tmp += x6 * (*SFP6ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    t_f += 7;
+                    t_v += 7;
+                    t_l += 7;
+                    t_p += 7;
                 }
                 break;
             case 8:
@@ -8865,20 +8860,20 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    eval2 = eval1 + nF;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    eval3 = eval2 + nF;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    eval4 = eval3 + nF;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    eval5 = eval4 + nF;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    eval6 = eval5 + nF;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    eval7 = eval6 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
+                    x_Ptr2 = x_Ptr1++;
+                    eval2 = eval1++;
+                    x_Ptr3 = x_Ptr2++;
+                    eval3 = eval2++;
+                    x_Ptr4 = x_Ptr3++;
+                    eval4 = eval3++;
+                    x_Ptr5 = x_Ptr4++;
+                    eval5 = eval4++;
+                    x_Ptr6 = x_Ptr5++;
+                    eval6 = eval5++;
+                    x_Ptr7 = x_Ptr6++;
+                    eval7 = eval6++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x2 = *x_Ptr2 * (double)(*eval2);
@@ -8918,11 +8913,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x7_tmp += x7 * (*SFP7ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    t_f += 8;
+                    t_v += 8;
+                    t_l += 8;
+                    t_p += 8;
                 }
                 break;
             case 9:
@@ -8930,22 +8924,22 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    eval2 = eval1 + nF;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    eval3 = eval2 + nF;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    eval4 = eval3 + nF;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    eval5 = eval4 + nF;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    eval6 = eval5 + nF;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    eval7 = eval6 + nF;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    eval8 = eval7 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
+                    x_Ptr2 = x_Ptr1++;
+                    eval2 = eval1++;
+                    x_Ptr3 = x_Ptr2++;
+                    eval3 = eval2++;
+                    x_Ptr4 = x_Ptr3++;
+                    eval4 = eval3++;
+                    x_Ptr5 = x_Ptr4++;
+                    eval5 = eval4++;
+                    x_Ptr6 = x_Ptr5++;
+                    eval6 = eval5++;
+                    x_Ptr7 = x_Ptr6++;
+                    eval7 = eval6++;
+                    x_Ptr8 = x_Ptr7++;
+                    eval8 = eval7++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x2 = *x_Ptr2 * (double)(*eval2);
@@ -8989,11 +8983,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x8_tmp += x8 * (*SFP8ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp + x8_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    t_f += 9;
+                    t_v += 9;
+                    t_l += 9;
+                    t_p += 9;
                 }
                 break;
             case 10:
@@ -9001,24 +8994,24 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0 + nF;
-                    eval1 = eval0 + nF;
-                    x_Ptr2 = x_Ptr1 + nF;
-                    eval2 = eval1 + nF;
-                    x_Ptr3 = x_Ptr2 + nF;
-                    eval3 = eval2 + nF;
-                    x_Ptr4 = x_Ptr3 + nF;
-                    eval4 = eval3 + nF;
-                    x_Ptr5 = x_Ptr4 + nF;
-                    eval5 = eval4 + nF;
-                    x_Ptr6 = x_Ptr5 + nF;
-                    eval6 = eval5 + nF;
-                    x_Ptr7 = x_Ptr6 + nF;
-                    eval7 = eval6 + nF;
-                    x_Ptr8 = x_Ptr7 + nF;
-                    eval8 = eval7 + nF;
-                    x_Ptr9 = x_Ptr8 + nF;
-                    eval9 = eval8 + nF;
+                    x_Ptr1 = x_Ptr0++;
+                    eval1 = eval0++;
+                    x_Ptr2 = x_Ptr1++;
+                    eval2 = eval1++;
+                    x_Ptr3 = x_Ptr2++;
+                    eval3 = eval2++;
+                    x_Ptr4 = x_Ptr3++;
+                    eval4 = eval3++;
+                    x_Ptr5 = x_Ptr4++;
+                    eval5 = eval4++;
+                    x_Ptr6 = x_Ptr5++;
+                    eval6 = eval5++;
+                    x_Ptr7 = x_Ptr6++;
+                    eval7 = eval6++;
+                    x_Ptr8 = x_Ptr7++;
+                    eval8 = eval7++;
+                    x_Ptr9 = x_Ptr8++;
+                    eval9 = eval8++;
                     x0 = *x_Ptr0 * (double)(*eval0);
                     x1 = *x_Ptr1 * (double)(*eval1);
                     x2 = *x_Ptr2 * (double)(*eval2);
@@ -9066,14 +9059,14 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x9_tmp += x9 * (*SFP9ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp + x8_tmp + x9_tmp);
                     }
-                    t_f++;
-                    t_v++;
-                    t_l++;
-                    
-                    t_p++;
+                    t_f += 10;
+                    t_v += 10;
+                    t_l += 10;
+                    t_p += 10;
                 }
                 break;
         }
+
     }
 
     // isotropic compartments
@@ -9262,7 +9255,6 @@ void* COMMIT_At__block_nolut( void *ptr )
                     t_f++;
                     t_v++;
                     t_l++;
-                    
                     t_p++;
                     t_t++;
                 }
@@ -9317,7 +9309,6 @@ void* COMMIT_At__block_nolut( void *ptr )
                     t_f++;
                     t_v++;
                     t_l++;
-                    
                     t_p++;
                     t_t++;
                 }
@@ -9351,7 +9342,6 @@ void* COMMIT_At__block_nolut( void *ptr )
                     t_f++;
                     t_v++;
                     t_l++;
-                    
                     t_p++;
                     t_t++;
                 }
@@ -9430,7 +9420,6 @@ void* COMMIT_At__block_nolut( void *ptr )
                     t_f++;
                     t_v++;
                     t_l++;
-                    
                     t_p++;
                     t_t++;
                 }
@@ -9476,7 +9465,6 @@ void* COMMIT_At__block_nolut( void *ptr )
                     t_f++;
                     t_v++;
                     t_l++;
-                    
                     t_p++;
                     t_t++;
                 }
@@ -9526,7 +9514,6 @@ void* COMMIT_At__block_nolut( void *ptr )
                     t_f++;
                     t_v++;
                     t_l++;
-                    
                     t_p++;
                     t_t++;
                 }
@@ -9580,7 +9567,6 @@ void* COMMIT_At__block_nolut( void *ptr )
                     t_f++;
                     t_v++;
                     t_l++;
-                    
                     t_p++;
                     t_t++;
                 }
@@ -9638,7 +9624,6 @@ void* COMMIT_At__block_nolut( void *ptr )
                     t_f++;
                     t_v++;
                     t_l++;
-                    
                     t_p++;
                     t_t++;
                 }
