@@ -1807,9 +1807,9 @@ cdef class Evaluation :
             dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
 
             if self.KERNELS['wmc'].shape[0] == 1 :
-                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
-                    if stat_coeffs == 'all' :
-                        logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
+                # if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
+                    # if stat_coeffs == 'all' :
+                    #     logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
                 if "tractogram_centr_idx" in dictionary_info.keys():
                     ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
                     unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
