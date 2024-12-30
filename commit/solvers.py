@@ -272,7 +272,6 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
     else:
         res = A.dot(xhat) - y
         grad = np.asarray(At.dot(res))
-
     prox( xhat, 1.0 )
     reg_term = omega( xhat )
     prev_obj = 0.5 * np.linalg.norm(res)**2 + reg_term
@@ -287,6 +286,8 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         L = ( np.linalg.norm( sqrt_W * A.dot(grad) ) / np.linalg.norm(grad) )**2
     else:
         L = ( np.linalg.norm( A.dot(grad) ) / np.linalg.norm(grad) )**2
+    
+
     step_size = 1.9 / L
     # Main loop
     if verbose==4 :
@@ -311,7 +312,9 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         if sqrt_W is not None:
             res = sqrt_W * ( A.dot(x) - y )
         else:
+            t = A.dot(x)
             res = A.dot(x) - y
+        
         res_norm = np.linalg.norm(res)
         curr_obj = 0.5 * res_norm**2 + reg_term_x
 

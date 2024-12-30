@@ -8597,18 +8597,20 @@ void* COMMIT_A__block_nolut( void *ptr )
                 }
                 break;
             case 2:
-                // printf("nICs = 2\n");
                 // printf("t_v = %d, t_vEnd = %d\n", *t_v, *t_vEnd);
                 while (t_v != t_vEnd)
                 {
-                    // printf("inside while loop\n");
-                    x_Ptr0 = x + *t_f;
-                    eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
+                    // printf("x= %f, t_f= %d\n", (float)*x, *t_f);
+                    x_Ptr0 = x + 2 * (*t_f);
+                    // printf("x_Ptr0= %f\n", (float)*x_Ptr0);
+                    eval0 = ICeval + 2 * (*t_f);
+                    // printf("eval0= %d\n", *eval0);
                     x0 = *x_Ptr0 * (double)(*eval0);
-                    // x1 = *x_Ptr1 * (double)(*eval1);
-                    // printf("x0 = %f, x1 = %f\n", x0, x1);
+                    x_Ptr1 = ++x_Ptr0;
+                    // printf("x_Ptr1= %f\n", (float)*x_Ptr1);
+                    eval1 = ++eval0;
+                    x1 = *x_Ptr1 * (double)(*eval1);
+                    // printf("x0 = %f, x1 = %f\n", (float)x0, (float)x1);
                     // printf("t_v = %d,t_f = %d, t_p = %d, eval0 = %d, eval1 = %d, t_l = %f\n", *t_v, *t_f, *t_p, *eval0, *eval1, *t_l);
                     x1_tmp = 0;
                     if (x0 != 0 || x1 != 0)
@@ -8622,7 +8624,6 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x1_tmp += x1 * (*SFP1ptr);
                         (*Yptr++) += w * (x0 + x1_tmp);
                     }
-                    // increment pointers by 2
                     t_f++;
                     t_v++;
                     t_l++;
@@ -8632,14 +8633,14 @@ void* COMMIT_A__block_nolut( void *ptr )
             case 3:
                 while (t_v != t_vEnd)
                 {
-                    x_Ptr0 = x + *t_f;
-                    eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
-                    x_Ptr2 = x_Ptr1++;
-                    eval2 = eval1++;
+                    x_Ptr0 = x + 2 * (*t_f);
+                    eval0 = ICeval + 2 * (*t_f);
                     x0 = *x_Ptr0 * (double)(*eval0);
+                    x_Ptr1 = ++x_Ptr0;
+                    eval1 = ++eval0;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x_Ptr2 = ++x_Ptr1;
+                    eval2 = ++eval1;
                     x2 = *x_Ptr2 * (double)(*eval2);
                     
                     x1_tmp = 0;
@@ -8657,10 +8658,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x2_tmp += x2 * (*SFP2ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp);
                     }
-                    t_f += 3;
-                    t_v += 3;
-                    t_l += 3;
-                    t_p += 3;
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_p++;
                 }
                 break;
             case 4:
@@ -8668,17 +8669,17 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
-                    x_Ptr2 = x_Ptr1++;
-                    eval2 = eval1++;
-                    x_Ptr3 = x_Ptr2++;
-                    eval3 = eval2++;
                     x0 = *x_Ptr0 * (double)(*eval0);
+                    x_Ptr1 = ++x_Ptr0;
+                    eval1 = ++eval0;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x_Ptr2 = ++x_Ptr1;
+                    eval2 = ++eval1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x_Ptr3 = ++x_Ptr2;
+                    eval3 = ++eval2;
                     x3 = *x_Ptr3 * (double)(*eval3);
-                    
+
                     x1_tmp = 0;
                     x2_tmp = 0;
                     x3_tmp = 0;
@@ -8697,10 +8698,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x3_tmp += x3 * (*SFP3ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp);
                     }
-                    t_f += 4;
-                    t_v += 4;
-                    t_l += 4;
-                    t_p += 4;
+                    t_f ++;
+                    t_v ++;
+                    t_l ++;
+                    t_p ++;
                 }
                 break;
             case 5:
@@ -8708,18 +8709,18 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
-                    x_Ptr2 = x_Ptr1++;
-                    eval2 = eval1++;
-                    x_Ptr3 = x_Ptr2++;
-                    eval3 = eval2++;
-                    x_Ptr4 = x_Ptr3++;
-                    eval4 = eval3++;
                     x0 = *x_Ptr0 * (double)(*eval0);
+                    x_Ptr1 = ++x_Ptr0;
+                    eval1 = ++eval0;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x_Ptr2 = ++x_Ptr1;
+                    eval2 = ++eval1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x_Ptr3 = ++x_Ptr2;
+                    eval3 = ++eval2;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x_Ptr4 = ++x_Ptr3;
+                    eval4 = ++eval3;
                     x4 = *x_Ptr4 * (double)(*eval4);
                     
                     x1_tmp = 0;
@@ -8743,10 +8744,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x4_tmp += x4 * (*SFP4ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp);
                     }
-                    t_f += 5;
-                    t_v += 5;
-                    t_l += 5;
-                    t_p += 5;
+                    t_f ++;
+                    t_v ++;
+                    t_l ++;
+                    t_p ++;
                 }
                 break;
             case 6:
@@ -8754,21 +8755,21 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
-                    x_Ptr2 = x_Ptr1++;
-                    eval2 = eval1++;
-                    x_Ptr3 = x_Ptr2++;
-                    eval3 = eval2++;
-                    x_Ptr4 = x_Ptr3++;
-                    eval4 = eval3++;
-                    x_Ptr5 = x_Ptr4++;
-                    eval5 = eval4++;
                     x0 = *x_Ptr0 * (double)(*eval0);
+                    x_Ptr1 = ++x_Ptr0;
+                    eval1 = ++eval0;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x_Ptr2 = ++x_Ptr1;
+                    eval2 = ++eval1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x_Ptr3 = ++x_Ptr2;
+                    eval3 = ++eval2;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x_Ptr4 = ++x_Ptr3;
+                    eval4 = ++eval3;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x_Ptr5 = ++x_Ptr4;
+                    eval5 = ++eval4;
                     x5 = *x_Ptr5 * (double)(*eval5);
                     
                     x1_tmp = 0;
@@ -8795,10 +8796,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x5_tmp += x5 * (*SFP5ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp);
                     }
-                    t_f += 6;
-                    t_v += 6;
-                    t_l += 6;
-                    t_p += 6;
+                    t_f ++;
+                    t_v ++;
+                    t_l ++;
+                    t_p ++;
                 }
                 break;
             case 7:
@@ -8806,24 +8807,24 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
-                    x_Ptr2 = x_Ptr1++;
-                    eval2 = eval1++;
-                    x_Ptr3 = x_Ptr2++;
-                    eval3 = eval2++;
-                    x_Ptr4 = x_Ptr3++;
-                    eval4 = eval3++;
-                    x_Ptr5 = x_Ptr4++;
-                    eval5 = eval4++;
-                    x_Ptr6 = x_Ptr5++;
-                    eval6 = eval5++;
                     x0 = *x_Ptr0 * (double)(*eval0);
+                    x_Ptr1 = ++x_Ptr0;
+                    eval1 = ++eval0;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x_Ptr2 = ++x_Ptr1;
+                    eval2 = ++eval1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x_Ptr3 = ++x_Ptr2;
+                    eval3 = ++eval2;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x_Ptr4 = ++x_Ptr3;
+                    eval4 = ++eval3;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x_Ptr5 = ++x_Ptr4;
+                    eval5 = ++eval4;
                     x5 = *x_Ptr5 * (double)(*eval5);
+                    x_Ptr6 = ++x_Ptr5;
+                    eval6 = ++eval5;
                     x6 = *x_Ptr6 * (double)(*eval6);
                     
                     x1_tmp = 0;
@@ -8853,10 +8854,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x6_tmp += x6 * (*SFP6ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp);
                     }
-                    t_f += 7;
-                    t_v += 7;
-                    t_l += 7;
-                    t_p += 7;
+                    t_f ++;
+                    t_v ++;
+                    t_l ++;
+                    t_p ++;
                 }
                 break;
             case 8:
@@ -8864,27 +8865,27 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
-                    x_Ptr2 = x_Ptr1++;
-                    eval2 = eval1++;
-                    x_Ptr3 = x_Ptr2++;
-                    eval3 = eval2++;
-                    x_Ptr4 = x_Ptr3++;
-                    eval4 = eval3++;
-                    x_Ptr5 = x_Ptr4++;
-                    eval5 = eval4++;
-                    x_Ptr6 = x_Ptr5++;
-                    eval6 = eval5++;
-                    x_Ptr7 = x_Ptr6++;
-                    eval7 = eval6++;
                     x0 = *x_Ptr0 * (double)(*eval0);
+                    x_Ptr1 = ++x_Ptr0;
+                    eval1 = ++eval0;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x_Ptr2 = ++x_Ptr1;
+                    eval2 = ++eval1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x_Ptr3 = ++x_Ptr2;
+                    eval3 = ++eval2;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x_Ptr4 = ++x_Ptr3;
+                    eval4 = ++eval3;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x_Ptr5 = ++x_Ptr4;
+                    eval5 = ++eval4;
                     x5 = *x_Ptr5 * (double)(*eval5);
+                    x_Ptr6 = ++x_Ptr5;
+                    eval6 = ++eval5;
                     x6 = *x_Ptr6 * (double)(*eval6);
+                    x_Ptr7 = ++x_Ptr6;
+                    eval7 = ++eval6;
                     x7 = *x_Ptr7 * (double)(*eval7);
                     
                     x1_tmp = 0;
@@ -8917,10 +8918,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x7_tmp += x7 * (*SFP7ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp);
                     }
-                    t_f += 8;
-                    t_v += 8;
-                    t_l += 8;
-                    t_p += 8;
+                    t_f ++;
+                    t_v ++;
+                    t_l ++;
+                    t_p ++;
                 }
                 break;
             case 9:
@@ -8928,30 +8929,30 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
-                    x_Ptr2 = x_Ptr1++;
-                    eval2 = eval1++;
-                    x_Ptr3 = x_Ptr2++;
-                    eval3 = eval2++;
-                    x_Ptr4 = x_Ptr3++;
-                    eval4 = eval3++;
-                    x_Ptr5 = x_Ptr4++;
-                    eval5 = eval4++;
-                    x_Ptr6 = x_Ptr5++;
-                    eval6 = eval5++;
-                    x_Ptr7 = x_Ptr6++;
-                    eval7 = eval6++;
-                    x_Ptr8 = x_Ptr7++;
-                    eval8 = eval7++;
                     x0 = *x_Ptr0 * (double)(*eval0);
+                    x_Ptr1 = ++x_Ptr0;
+                    eval1 = ++eval0;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x_Ptr2 = ++x_Ptr1;
+                    eval2 = ++eval1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x_Ptr3 = ++x_Ptr2;
+                    eval3 = ++eval2;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x_Ptr4 = ++x_Ptr3;
+                    eval4 = ++eval3;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x_Ptr5 = ++x_Ptr4;
+                    eval5 = ++eval4;
                     x5 = *x_Ptr5 * (double)(*eval5);
+                    x_Ptr6 = ++x_Ptr5;
+                    eval6 = ++eval5;
                     x6 = *x_Ptr6 * (double)(*eval6);
+                    x_Ptr7 = ++x_Ptr6;
+                    eval7 = ++eval6;
                     x7 = *x_Ptr7 * (double)(*eval7);
+                    x_Ptr8 = ++x_Ptr7;
+                    eval8 = ++eval7;
                     x8 = *x_Ptr8 * (double)(*eval8);
                     
                     x1_tmp = 0;
@@ -8987,10 +8988,10 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x8_tmp += x8 * (*SFP8ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp + x8_tmp);
                     }
-                    t_f += 9;
-                    t_v += 9;
-                    t_l += 9;
-                    t_p += 9;
+                    t_f ++;
+                    t_v ++;
+                    t_l ++;
+                    t_p ++;
                 }
                 break;
             case 10:
@@ -8998,33 +8999,33 @@ void* COMMIT_A__block_nolut( void *ptr )
                 {
                     x_Ptr0 = x + *t_f;
                     eval0 = ICeval + *t_f;
-                    x_Ptr1 = x_Ptr0++;
-                    eval1 = eval0++;
-                    x_Ptr2 = x_Ptr1++;
-                    eval2 = eval1++;
-                    x_Ptr3 = x_Ptr2++;
-                    eval3 = eval2++;
-                    x_Ptr4 = x_Ptr3++;
-                    eval4 = eval3++;
-                    x_Ptr5 = x_Ptr4++;
-                    eval5 = eval4++;
-                    x_Ptr6 = x_Ptr5++;
-                    eval6 = eval5++;
-                    x_Ptr7 = x_Ptr6++;
-                    eval7 = eval6++;
-                    x_Ptr8 = x_Ptr7++;
-                    eval8 = eval7++;
-                    x_Ptr9 = x_Ptr8++;
-                    eval9 = eval8++;
                     x0 = *x_Ptr0 * (double)(*eval0);
+                    x_Ptr1 = ++x_Ptr0;
+                    eval1 = ++eval0;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x_Ptr2 = ++x_Ptr1;
+                    eval2 = ++eval1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x_Ptr3 = ++x_Ptr2;
+                    eval3 = ++eval2;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x_Ptr4 = ++x_Ptr3;
+                    eval4 = ++eval3;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x_Ptr5 = ++x_Ptr4;
+                    eval5 = ++eval4;
                     x5 = *x_Ptr5 * (double)(*eval5);
+                    x_Ptr6 = ++x_Ptr5;
+                    eval6 = ++eval5;
                     x6 = *x_Ptr6 * (double)(*eval6);
+                    x_Ptr7 = ++x_Ptr6;
+                    eval7 = ++eval6;
                     x7 = *x_Ptr7 * (double)(*eval7);
+                    x_Ptr8 = ++x_Ptr7;
+                    eval8 = ++eval7;
                     x8 = *x_Ptr8 * (double)(*eval8);
+                    x_Ptr9 = ++x_Ptr8;
+                    eval9 = ++eval8;
                     x9 = *x_Ptr9 * (double)(*eval9);
                     
                     x1_tmp = 0;
@@ -9063,14 +9064,13 @@ void* COMMIT_A__block_nolut( void *ptr )
                         x9_tmp += x9 * (*SFP9ptr);
                         (*Yptr++) += w * (x0 + x1_tmp + x2_tmp + x3_tmp + x4_tmp + x5_tmp + x6_tmp + x7_tmp + x8_tmp + x9_tmp);
                     }
-                    t_f += 10;
-                    t_v += 10;
-                    t_l += 10;
-                    t_p += 10;
+                    t_f ++;
+                    t_v ++;
+                    t_l ++;
+                    t_p ++;
                 }
                 break;
         }
-
     }
 
     // isotropic compartments
@@ -9266,30 +9266,29 @@ void* COMMIT_At__block_nolut( void *ptr )
                 }
                 break;
             case 2:
-                printf("t_v: %d, t_vEnd: %d\n", *t_v, *t_vEnd);
+                // printf("t_v: %d, t_vEnd: %d\n", *t_v, *t_vEnd);
                 while (t_v != t_vEnd)
                 {
+                    // printf("t_f: %d\n", *t_f);
                     if (*t_t == id)
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
-                        // printf("Y_tmp: %f, offset: %d\n", Y_tmp, offset);
-                        printf("t_f: %d\n", *t_f);
+                        // printf("Y_tmp: %f\n", Y_tmp);
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
-                        printf("ICeval[t_f]: %d, eval0: %d\n", ICeval[*t_f], *eval0);
+                        eval0 = ICeval + 2 * (*t_f);
+                        // printf("ICeval[t_f]: %d, eval0: %d\n", ICeval[*t_f], *eval0);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
-                        printf("ICeval[t_f++]: %d, eval0: %d\n", ICeval[*t_f+1], *eval1);
+                        eval1 = ++eval0;
+                        // printf("ICeval[t_f++]: %d, eval0: %d\n", ICeval[*t_f+1], *eval1);
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         // printf("x0: %f, x1: %f\n", x0, x1);
                         w = (double)(*t_l);
-                        x[*t_f] += w * x0;
-                        x[*t_f + 1] += w * x1;
-
-                        // printf("t_f: %d, x[*t_f]: %f, x[*t_f++]: %f\n", *t_f, x[*t_f], x[*t_f++]);
+                        x[2*(*t_f)] += w * x0;
+                        x[2*(*t_f)+1] += w * x1;
+                        // printf("t_f: %d, x[*t_f]: %f, x[*t_f++]: %f\n", *t_f, x[*t_f], x[*t_f+1]);
                     }
                     t_f++;
                     t_v++;
@@ -9307,18 +9306,18 @@ void* COMMIT_At__block_nolut( void *ptr )
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
+                        eval0 = ICeval + 2 * (*t_f);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
+                        eval1 = ++eval0;
                         SFP2ptr = icSFB2 + offset;
-                        eval2 = eval1++;
+                        eval2 = ++eval1;
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         x2 = (*SFP2ptr) * Y_tmp * (double)(*eval2);
                         w = (double)(*t_l);
                         x[*t_f] += w * x0;
-                        x[*t_f+1] += w * x1;
-                        x[*t_f+2] += w * x2;
+                        x[2*(*t_f)+1] += w * x1;
+                        x[2*(*t_f)+2] += w * x2;
                     }
                     t_f++;
                     t_v++;
@@ -9336,22 +9335,22 @@ void* COMMIT_At__block_nolut( void *ptr )
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
+                        eval0 = ICeval + 2 * (*t_f);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
+                        eval1 = ++eval0;
                         SFP2ptr = icSFB2 + offset;
-                        eval2 = eval1++;
+                        eval2 = ++eval1;
                         SFP3ptr = icSFB3 + offset;
-                        eval3 = eval2++;
+                        eval3 = ++eval2;
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         x2 = (*SFP2ptr) * Y_tmp * (double)(*eval2);
                         x3 = (*SFP3ptr) * Y_tmp * (double)(*eval3);
                         w = (double)(*t_l);
                         x[*t_f] += w * x0;
-                        x[*t_f+1] += w * x1;
-                        x[*t_f+2] += w * x2;
-                        x[*t_f+3] += w * x3;
+                        x[2*(*t_f)+1] += w * x1;
+                        x[2*(*t_f)+2] += w * x2;
+                        x[2*(*t_f)+3] += w * x3;
                     }
                     t_f++;
                     t_v++;
@@ -9369,15 +9368,15 @@ void* COMMIT_At__block_nolut( void *ptr )
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
+                        eval0 = ICeval + 2 * (*t_f);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
+                        eval1 = ++eval0;
                         SFP2ptr = icSFB2 + offset;
-                        eval2 = eval1++;
+                        eval2 = ++eval1;
                         SFP3ptr = icSFB3 + offset;
-                        eval3 = eval2++;
+                        eval3 = ++eval2;
                         SFP4ptr = icSFB4 + offset;
-                        eval4 = eval3++;
+                        eval4 = ++eval3;
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         x2 = (*SFP2ptr) * Y_tmp * (double)(*eval2);
@@ -9385,10 +9384,10 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x4 = (*SFP4ptr) * Y_tmp * (double)(*eval4);
                         w = (double)(*t_l);
                         x[*t_f] += w * x0;
-                        x[*t_f+1] += w * x1;
-                        x[*t_f+2] += w * x2;
-                        x[*t_f+3] += w * x3;
-                        x[*t_f+4] += w * x4;
+                        x[2*(*t_f)+1] += w * x1;
+                        x[2*(*t_f)+2] += w * x2;
+                        x[2*(*t_f)+3] += w * x3;
+                        x[2*(*t_f)+4] += w * x4;
                     }
                     t_f++;
                     t_v++;
@@ -9406,17 +9405,17 @@ void* COMMIT_At__block_nolut( void *ptr )
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
+                        eval0 = ICeval + 2 * (*t_f);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
+                        eval1 = ++eval0;
                         SFP2ptr = icSFB2 + offset;
-                        eval2 = eval1++;
+                        eval2 = ++eval1;
                         SFP3ptr = icSFB3 + offset;
-                        eval3 = eval2++;
+                        eval3 = ++eval2;
                         SFP4ptr = icSFB4 + offset;
-                        eval4 = eval3++;
+                        eval4 = ++eval3;
                         SFP5ptr = icSFB5 + offset;
-                        eval5 = eval4++;
+                        eval5 = ++eval4;
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         x2 = (*SFP2ptr) * Y_tmp * (double)(*eval2);
@@ -9425,11 +9424,11 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x5 = (*SFP5ptr) * Y_tmp * (double)(*eval5);
                         w = (double)(*t_l);
                         x[*t_f] += w * x0;
-                        x[*t_f+1] += w * x1;
-                        x[*t_f+2] += w * x2;
-                        x[*t_f+3] += w * x3;
-                        x[*t_f+4] += w * x4;
-                        x[*t_f+5] += w * x5;
+                        x[2*(*t_f)+1] += w * x1;
+                        x[2*(*t_f)+2] += w * x2;
+                        x[2*(*t_f)+3] += w * x3;
+                        x[2*(*t_f)+4] += w * x4;
+                        x[2*(*t_f)+5] += w * x5;
                     }
                     t_f++;
                     t_v++;
@@ -9447,19 +9446,19 @@ void* COMMIT_At__block_nolut( void *ptr )
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
+                        eval0 = ICeval + 2 * (*t_f);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
+                        eval1 = ++eval0;
                         SFP2ptr = icSFB2 + offset;
-                        eval2 = eval1++;
+                        eval2 = ++eval1;
                         SFP3ptr = icSFB3 + offset;
-                        eval3 = eval2++;
+                        eval3 = ++eval2;
                         SFP4ptr = icSFB4 + offset;
-                        eval4 = eval3++;
+                        eval4 = ++eval3;
                         SFP5ptr = icSFB5 + offset;
-                        eval5 = eval4++;
+                        eval5 = ++eval4;
                         SFP6ptr = icSFB6 + offset;
-                        eval6 = eval5++;
+                        eval6 = ++eval5;
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         x2 = (*SFP2ptr) * Y_tmp * (double)(*eval2);
@@ -9469,12 +9468,12 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x6 = (*SFP6ptr) * Y_tmp * (double)(*eval6);
                         w = (double)(*t_l);
                         x[*t_f] += w * x0;
-                        x[*t_f+1] += w * x1;
-                        x[*t_f+2] += w * x2;
-                        x[*t_f+3] += w * x3;
-                        x[*t_f+4] += w * x4;
-                        x[*t_f+5] += w * x5;
-                        x[*t_f+6] += w * x6;
+                        x[2*(*t_f)+1] += w * x1;
+                        x[2*(*t_f)+2] += w * x2;
+                        x[2*(*t_f)+3] += w * x3;
+                        x[2*(*t_f)+4] += w * x4;
+                        x[2*(*t_f)+5] += w * x5;
+                        x[2*(*t_f)+6] += w * x6;
                     }
                     t_f++;
                     t_v++;
@@ -9492,21 +9491,21 @@ void* COMMIT_At__block_nolut( void *ptr )
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
+                        eval0 = ICeval + 2 * (*t_f);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
+                        eval1 = ++eval0;
                         SFP2ptr = icSFB2 + offset;
-                        eval2 = eval1++;
+                        eval2 = ++eval1;
                         SFP3ptr = icSFB3 + offset;
-                        eval3 = eval2++;
+                        eval3 = ++eval2;
                         SFP4ptr = icSFB4 + offset;
-                        eval4 = eval3++;
+                        eval4 = ++eval3;
                         SFP5ptr = icSFB5 + offset;
-                        eval5 = eval4++;
+                        eval5 = ++eval4;
                         SFP6ptr = icSFB6 + offset;
-                        eval6 = eval5++;
+                        eval6 = ++eval5;
                         SFP7ptr = icSFB7 + offset;
-                        eval7 = eval6++;
+                        eval7 = ++eval6;
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         x2 = (*SFP2ptr) * Y_tmp * (double)(*eval2);
@@ -9517,13 +9516,13 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x7 = (*SFP7ptr) * Y_tmp * (double)(*eval7);
                         w = (double)(*t_l);
                         x[*t_f] += w * x0;
-                        x[*t_f+1] += w * x1;
-                        x[*t_f+2] += w * x2;
-                        x[*t_f+3] += w * x3;
-                        x[*t_f+4] += w * x4;
-                        x[*t_f+5] += w * x5;
-                        x[*t_f+6] += w * x6;
-                        x[*t_f+7] += w * x7;
+                        x[2*(*t_f)+1] += w * x1;
+                        x[2*(*t_f)+2] += w * x2;
+                        x[2*(*t_f)+3] += w * x3;
+                        x[2*(*t_f)+4] += w * x4;
+                        x[2*(*t_f)+5] += w * x5;
+                        x[2*(*t_f)+6] += w * x6;
+                        x[2*(*t_f)+7] += w * x7;
                     }
                     t_f++;
                     t_v++;
@@ -9541,23 +9540,23 @@ void* COMMIT_At__block_nolut( void *ptr )
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
+                        eval0 = ICeval + 2 * (*t_f);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
+                        eval1 = ++eval0;
                         SFP2ptr = icSFB2 + offset;
-                        eval2 = eval1++;
+                        eval2 = ++eval1;
                         SFP3ptr = icSFB3 + offset;
-                        eval3 = eval2++;
+                        eval3 = ++eval2;
                         SFP4ptr = icSFB4 + offset;
-                        eval4 = eval3++;
+                        eval4 = ++eval3;
                         SFP5ptr = icSFB5 + offset;
-                        eval5 = eval4++;
+                        eval5 = ++eval4;
                         SFP6ptr = icSFB6 + offset;
-                        eval6 = eval5++;
+                        eval6 = ++eval5;
                         SFP7ptr = icSFB7 + offset;
-                        eval7 = eval6++;
+                        eval7 = ++eval6;
                         SFP8ptr = icSFB8 + offset;
-                        eval8 = eval7++;
+                        eval8 = ++eval7;
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         x2 = (*SFP2ptr) * Y_tmp * (double)(*eval2);
@@ -9569,14 +9568,14 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x8 = (*SFP8ptr) * Y_tmp * (double)(*eval8);
                         w = (double)(*t_l);
                         x[*t_f] += w * x0;
-                        x[*t_f+1] += w * x1;
-                        x[*t_f+2] += w * x2;
-                        x[*t_f+3] += w * x3;
-                        x[*t_f+4] += w * x4;
-                        x[*t_f+5] += w * x5;
-                        x[*t_f+6] += w * x6;
-                        x[*t_f+7] += w * x7;
-                        x[*t_f+8] += w * x8;
+                        x[2*(*t_f)+1] += w * x1;
+                        x[2*(*t_f)+2] += w * x2;
+                        x[2*(*t_f)+3] += w * x3;
+                        x[2*(*t_f)+4] += w * x4;
+                        x[2*(*t_f)+5] += w * x5;
+                        x[2*(*t_f)+6] += w * x6;
+                        x[2*(*t_f)+7] += w * x7;
+                        x[2*(*t_f)+8] += w * x8;
                     }
                     t_f++;
                     t_v++;
@@ -9594,25 +9593,25 @@ void* COMMIT_At__block_nolut( void *ptr )
                         Y_tmp = *Yptr;
                         offset = (*t_p) - 1;
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + *t_f;
+                        eval0 = ICeval + 2 * (*t_f);
                         SFP1ptr = icSFB1 + offset;
-                        eval1 = eval0++;
+                        eval1 = ++eval0;
                         SFP2ptr = icSFB2 + offset;
-                        eval2 = eval1++;
+                        eval2 = ++eval1;
                         SFP3ptr = icSFB3 + offset;
-                        eval3 = eval2++;
+                        eval3 = ++eval2;
                         SFP4ptr = icSFB4 + offset;
-                        eval4 = eval3++;
+                        eval4 = ++eval3;
                         SFP5ptr = icSFB5 + offset;
-                        eval5 = eval4++;
+                        eval5 = ++eval4;
                         SFP6ptr = icSFB6 + offset;
-                        eval6 = eval5++;
+                        eval6 = ++eval5;
                         SFP7ptr = icSFB7 + offset;
-                        eval7 = eval6++;
+                        eval7 = ++eval6;
                         SFP8ptr = icSFB8 + offset;
-                        eval8 = eval7++;
+                        eval8 = ++eval7;
                         SFP9ptr = icSFB9 + offset;
-                        eval9 = eval8++;
+                        eval9 = ++eval8;
                         x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
                         x1 = (*SFP1ptr) * Y_tmp * (double)(*eval1);
                         x2 = (*SFP2ptr) * Y_tmp * (double)(*eval2);
@@ -9625,15 +9624,15 @@ void* COMMIT_At__block_nolut( void *ptr )
                         x9 = (*SFP9ptr) * Y_tmp * (double)(*eval9);
                         w = (double)(*t_l);
                         x[*t_f] += w * x0;
-                        x[*t_f+1] += w * x1;
-                        x[*t_f+2] += w * x2;
-                        x[*t_f+3] += w * x3;
-                        x[*t_f+4] += w * x4;
-                        x[*t_f+5] += w * x5;
-                        x[*t_f+6] += w * x6;
-                        x[*t_f+7] += w * x7;
-                        x[*t_f+8] += w * x8;
-                        x[*t_f+9] += w * x9;
+                        x[2*(*t_f)+1] += w * x1;
+                        x[2*(*t_f)+2] += w * x2;
+                        x[2*(*t_f)+3] += w * x3;
+                        x[2*(*t_f)+4] += w * x4;
+                        x[2*(*t_f)+5] += w * x5;
+                        x[2*(*t_f)+6] += w * x6;
+                        x[2*(*t_f)+7] += w * x7;
+                        x[2*(*t_f)+8] += w * x8;
+                        x[2*(*t_f)+9] += w * x9;
                     }
                     t_f++;
                     t_v++;
@@ -9687,7 +9686,7 @@ void COMMIT_At_nolut(
     nICs = _nICs;
     nISO = _nISO;
     // printf("At_nolut\n");
-    printf("nF: %d, n: %d, nSf: %d, nICs: %d, ICf: %d, ICeval: %d, ICv: %d, ICl: %d, ICp: %d, ISOv: %d, ICmod: %d\n", nF, n, nSf, nICs, ICf, ICeval, ICv, ICl, ICp, ISOv, _ICmod);
+    // printf("nF: %d, n: %d, nSf: %d, nICs: %d, ICf: %d, ICeval: %d, ICv: %d, ICl: %d, ICp: %d, ISOv: %d, ICmod: %d\n", nF, n, nSf, nICs, ICf, ICeval, ICv, ICl, ICp, ISOv, _ICmod);
 
     switch (nICs)
     {

@@ -130,8 +130,8 @@ cdef class LinearOperator :
         cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['eval']
         self.ICeval = &ICeval[0]
 
-        for v in range(DICTIONARY['IC']['p'].shape[0]):
-            print(f"fiber: {DICTIONARY['IC']['fiber'][v]}, pos: {DICTIONARY['IC']['p'][v]}, len: {DICTIONARY['IC']['len'][v]}, voxel: {DICTIONARY['IC']['v'][v]}")
+        # for v in range(DICTIONARY['IC']['p'].shape[0]):
+        #     print(f"fiber: {DICTIONARY['IC']['fiber'][v]}, pos: {DICTIONARY['IC']['p'][v]}, len: {DICTIONARY['IC']['len'][v]}, voxel: {DICTIONARY['IC']['v'][v]}")
 
 
 
@@ -185,7 +185,7 @@ cdef class LinearOperator :
         cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
         self.ISOthreadsT = &ISOthreadsT[0]
 
-        print(f"LinearOperator: n1={self.n1}, n2={self.n2}, nF={self.nF}, nR={self.nR}, nC={self.nC}, nV={self.nV}, nI={self.nI}, n={self.n}, ndirs={self.ndirs}, nS={self.nS}, nSf={self.nSf}")
+        # print(f"LinearOperator: n1={self.n1}, n2={self.n2}, nF={self.nF}, nR={self.nR}, nC={self.nC}, nV={self.nV}, nI={self.nI}, n={self.n}, ndirs={self.ndirs}, nS={self.nS}, nSf={self.nSf}")
 
 
     @property
@@ -234,10 +234,9 @@ cdef class LinearOperator :
         cdef unsigned int nEC = self.KERNELS['wmh'].shape[0]
         cdef unsigned int nISO = self.KERNELS['iso'].shape[0]
 
-        # print v_in
-        for i in range(10):
-            print(f"v_in[{i}]={v_in[i]}")
-
+        # # print v_in
+        # for i in range(v_in.size):
+        #     print(f"v_in[{i}]={v_in[i]}")
 
         if self.nolut:
             # Call the cython function to read the memory pointers
@@ -297,6 +296,6 @@ cdef class LinearOperator :
                     )
 
         # print v_out
-        for i in range(10):
-            print(f"v_out[{i}]={v_out[i]}")
+        # for i in range(v_out.size):
+        #     print(f"v_out[{i}]={v_out[i]}")
         return v_out
