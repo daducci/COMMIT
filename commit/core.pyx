@@ -1717,6 +1717,8 @@ cdef class Evaluation :
                 offset = nF * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
                 if self.KERNELS['wmc'].shape[0] > 1:
                     tmp = x[:offset] * norm_fib
+                    print(f"x[:offset]: {x[:offset]}")
+                    print(f"norm_fib: {norm_fib}")
                     niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
                 else:
                     tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
