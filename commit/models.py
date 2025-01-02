@@ -106,6 +106,7 @@ class VolumeFractions(BaseModel):
                     dct_functions[i, n] *= np.sqrt(0.25 / num_samples)
                 else:
                     dct_functions[i, n] *= np.sqrt(0.5 / num_samples)
+        
         return dct_functions
 
     def resample(self, doMergeB0, ndirs, nprofiles, nsamples):
