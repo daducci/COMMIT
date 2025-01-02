@@ -1900,11 +1900,13 @@ cdef class Evaluation :
                         streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
 
                     idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
-                    xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
+                    xic_prof = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
                     st_i = 0
                     for idx in idx_kept:
-                        xic[idx] = streamline_profs[st_i]
+                        xic_prof[idx] = streamline_profs[st_i]
                         st_i += 1
+
+                    xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                 
                 else:
                     num_prof = self.KERNELS['wmc'].shape[0]
@@ -1927,10 +1929,10 @@ cdef class Evaluation :
                         streamline_profs.append(bundle_prof)
 
                     idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
-                    xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
+                    xic_prof = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
                     st_i = 0
                     for idx in idx_kept:
-                        xic[idx] = streamline_profs[st_i]
+                        xic_prof[idx] = streamline_profs[st_i]
                         st_i += 1
 
         
@@ -1946,7 +1948,8 @@ cdef class Evaluation :
                 self.model._postprocess(self.temp_data, verbose=self.verbose)
 
             if self.KERNELS['wmc'].shape[0] > 1:
-                np.save( pjoin(RESULTS_path,'streamline_weights.npy'), xic )
+                np.save( pjoin(RESULTS_path,'streamline_weights.npy'), xic_prof )
+                np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
             else:
                 np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
             self.set_config('stat_coeffs', stat_coeffs)
