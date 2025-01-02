@@ -1840,11 +1840,11 @@ cdef class Evaluation :
                     # retrieve the contribution of each profile for each streamline
                     num_prof = self.KERNELS['wmc'].shape[0]
                     fib_w = []
-                    for i in range(nF):
+                    for i in range(0, nF*num_prof, num_prof):
                         start_idx = i
                         subarray = []
                         for j in range(num_prof):
-                            index = start_idx + j * nF
+                            index = start_idx + j
                             subarray.append(xic[index])
                         fib_w.append(subarray)
 
@@ -1879,11 +1879,11 @@ cdef class Evaluation :
 
                     num_prof = self.KERNELS['wmc'].shape[0]
                     fib_w = []
-                    for i in range(nF):
+                    for i in range(0, nF*num_prof, num_prof):
                         start_idx = i
                         subarray = []
                         for j in range(num_prof):
-                            index = start_idx + j * nF
+                            index = start_idx + j
                             subarray.append(xic[index])
                         fib_w.append(subarray)
 
@@ -1909,11 +1909,11 @@ cdef class Evaluation :
                 else:
                     num_prof = self.KERNELS['wmc'].shape[0]
                     fib_w = []
-                    for i in range(nF):
+                    for i in range(0, nF*num_prof, num_prof):
                         start_idx = i
                         subarray = []
                         for j in range(num_prof):
-                            index = start_idx + j * nF
+                            index = start_idx + j
                             subarray.append(xic[index])
                         fib_w.append(subarray)
 
