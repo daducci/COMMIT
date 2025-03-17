@@ -1807,9 +1807,9 @@ cdef class Evaluation :
             dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
 
             if self.KERNELS['wmc'].shape[0] == 1 :
-                # if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
-                    # if stat_coeffs == 'all' :
-                    #     logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
+                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
+                    if stat_coeffs == 'all' :
+                        logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
                 if "tractogram_centr_idx" in dictionary_info.keys():
                     ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
                     unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
@@ -1824,12 +1824,13 @@ cdef class Evaluation :
                         temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
                         unravel_weights[ordered_idx] = temp_weights
                         xic = unravel_weights
-
                 else:
                     if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                         xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
             if self.KERNELS['wmc'].shape[0] > 1:
+                commit_orig_w = []
+                                
                 if "tractogram_centr_idx" in dictionary_info.keys():
                     ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
                     unravel_weights = np.zeros( (dictionary_info['n_count'], self.KERNELS['wmc'].shape[1]), dtype=np.float64)
@@ -1851,62 +1852,55 @@ cdef class Evaluation :
                     streamline_profs = []
                     for streamline_idx in range(nF):
                         streamline_prof = np.zeros(self.KERNELS['wmc'].shape[1])
-                        bundle_prof = np.zeros(self.KERNELS['wmc'].shape[1])
                         for bf_idx in range(self.KERNELS['wmc'].shape[0]):
                             bf = self.KERNELS['wmc'][bf_idx]
-                            bundle_prof += bf * fib_w[streamline_idx][bf_idx]
-                        streamline_profs.append(bundle_prof)
+                            streamline_prof += bf * fib_w[streamline_idx][bf_idx]
+                            commit_orig_w.append(fib_w[streamline_idx][bf_idx]) # add scaling factor when blur is used?
+                        streamline_profs.append(streamline_prof)
 
                     if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
                         for i in range(nF):
                             streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
                         
-                        st_i = 0
-                        for idx in idx_temp_weights:
-                            temp_weights[idx] = streamline_profs[st_i]
-                            st_i += 1
-                        unravel_weights[ordered_idx] = temp_weights
-                        xic = unravel_weights
-                    else:
-                        st_i = 0
-                        for idx in idx_temp_weights:
-                            temp_weights[idx] = streamline_profs[st_i]
-                            st_i += 1
-                        unravel_weights[ordered_idx] = temp_weights
-                        xic = unravel_weights
+                    st_i = 0
+                    for idx in idx_temp_weights:
+                        temp_weights[idx] = streamline_profs[st_i]
+                        st_i += 1
+                    unravel_weights[ordered_idx] = temp_weights
+                    xic = unravel_weights
 
                 elif "tractogram_centr_idx" not in dictionary_info.keys() and ( dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0):
 
                     num_prof = self.KERNELS['wmc'].shape[0]
                     fib_w = []
+                    id_fib = 0
                     for i in range(0, nF*num_prof, num_prof):
                         start_idx = i
                         subarray = []
                         for j in range(num_prof):
                             index = start_idx + j
                             subarray.append(xic[index])
+                            commit_orig_w.append(xic[index] * self.DICTIONARY['TRK']['lenTot'][id_fib] / self.DICTIONARY['TRK']['len'][id_fib])
+                        id_fib += 1
                         fib_w.append(subarray)
 
                     streamline_profs = []
                     for streamline_idx in range(nF):
                         streamline_prof = np.zeros(self.KERNELS['wmc'].shape[1])
-                        bundle_prof = np.zeros(self.KERNELS['wmc'].shape[1])
                         for bf_idx in range(self.KERNELS['wmc'].shape[0]):
                             bf = self.KERNELS['wmc'][bf_idx]
-                            bundle_prof += bf * fib_w[streamline_idx][bf_idx]
-                        streamline_profs.append(bundle_prof)
+                            streamline_prof += bf * fib_w[streamline_idx][bf_idx]
+                        streamline_profs.append(streamline_prof)
                     
                     for i in range(nF):
                         streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
 
                     idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
-                    xic_prof = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
+                    xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
                     st_i = 0
                     for idx in idx_kept:
-                        xic_prof[idx] = streamline_profs[st_i]
+                        xic[idx] = streamline_profs[st_i]
                         st_i += 1
-
-                    xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                 
                 else:
                     num_prof = self.KERNELS['wmc'].shape[0]
@@ -1922,18 +1916,19 @@ cdef class Evaluation :
                     streamline_profs = []
                     for streamline_idx in range(nF):
                         streamline_prof = np.zeros(self.KERNELS['wmc'].shape[1])
-                        bundle_prof = np.zeros(self.KERNELS['wmc'].shape[1])
                         for bf_idx in range(self.KERNELS['wmc'].shape[0]):
                             bf = self.KERNELS['wmc'][bf_idx]
-                            bundle_prof += bf * fib_w[streamline_idx][bf_idx]
-                        streamline_profs.append(bundle_prof)
+                            streamline_prof += bf * fib_w[streamline_idx][bf_idx]
+                            commit_orig_w.append(fib_w[streamline_idx][bf_idx])
+                        streamline_profs.append(streamline_prof)
 
                     idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
-                    xic_prof = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
+                    xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
                     st_i = 0
                     for idx in idx_kept:
-                        xic_prof[idx] = streamline_profs[st_i]
+                        xic[idx] = streamline_profs[st_i]
                         st_i += 1
+
 
         
             self.temp_data['DICTIONARY'] = self.DICTIONARY
@@ -1948,8 +1943,8 @@ cdef class Evaluation :
                 self.model._postprocess(self.temp_data, verbose=self.verbose)
 
             if self.KERNELS['wmc'].shape[0] > 1:
-                np.save( pjoin(RESULTS_path,'streamline_weights.npy'), xic_prof )
-                np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
+                np.save( pjoin(RESULTS_path,'streamline_weights.npy'), xic )
+                np.savetxt(pjoin(RESULTS_path, 'streamline_weights.txt'), commit_orig_w, fmt=coeffs_format)
             else:
                 np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
             self.set_config('stat_coeffs', stat_coeffs)

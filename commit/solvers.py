@@ -312,7 +312,6 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
         if sqrt_W is not None:
             res = sqrt_W * ( A.dot(x) - y )
         else:
-            t = A.dot(x)
             res = A.dot(x) - y
         
         res_norm = np.linalg.norm(res)
