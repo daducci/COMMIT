@@ -1122,7 +1122,7 @@ cdef class Evaluation :
                     newweightsIC_group /= group_x_norm
                 dictIC_params['group_weights'] = newweightsIC_group
 
-        regularisation['dictIC_params']  = dictIC_params
+        regularisation['dictIC_params'] = dictIC_params
 
         # update lambdas using lambda_max
         if regularisation['regIC'] == 'lasso':
@@ -1197,7 +1197,7 @@ cdef class Evaluation :
         if regularisation['regEC'] == None and lambdas[1] is not None:
             logger.warning('No regularisation is set for the EC compartment but the corresponding lambda is provided, it will be ignored')
 
-        regularisation['dictEC_params']  = dictEC_params
+        regularisation['dictEC_params'] = dictEC_params
 
         # update lambdas using lambda_max
         if regularisation['regEC'] == 'lasso':
@@ -1456,7 +1456,7 @@ cdef class Evaluation :
 
 
 
-    def get_coeffs( self, get_normalized=True ):
+    def get_coeffs( self, get_normalized=True, blur_scaling=False ):
         """
         Returns the coefficients estimated from the tractogram passed to trk2dictionary.run(). These coefficients are divided in three
         classes (ic, ec, iso) and correspond to the 'original optimization problem', so if preconditioning was applied via the option
@@ -1467,6 +1467,9 @@ cdef class Evaluation :
         get_normalized : boolean
             If True (default), the returned coefficients correspond to the 'original' optimization problem.
             If False, the returned coefficients correspond to the 'preconditioned' optimization problem.
+        blur_scaling : boolean
+            If True, the coefficients of the IC compartment are re-scaled in the same way as in save_results().
+            If False (default), the coefficients are returned as they are.
         """
         if self.x is None :
             logger.error( 'Model not fitted to the data; call "fit()" first' )
@@ -1487,11 +1490,14 @@ cdef class Evaluation :
 
         offset1 = nF * self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
-        kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] )
+        kept = np.repeat( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] )
         xic = np.zeros( kept.size )
         xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
         xiso = x[offset2:]
+
+        if blur_scaling:
+            xic[kept==1] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
         return xic, xec, xiso
 
