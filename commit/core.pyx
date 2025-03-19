@@ -1490,14 +1490,16 @@ cdef class Evaluation :
 
         offset1 = nF * self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
-        kept = np.repeat( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] )
+        kept = np.repeat( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] ) # TODO: if VF ok, check if works also if self.KERNELS['wmr'].shape[0] > 1
         xic = np.zeros( kept.size )
         xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
         xiso = x[offset2:]
 
         if blur_scaling:
-            xic[kept==1] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
+            lenTot = np.repeat(self.DICTIONARY['TRK']['lenTot'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0])
+            len = np.repeat(self.DICTIONARY['TRK']['len'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0])
+            xic[kept==1] *= lenTot / len
 
         return xic, xec, xiso
 
@@ -1938,7 +1940,6 @@ cdef class Evaluation :
                         st_i += 1
 
 
-        
             self.temp_data['DICTIONARY'] = self.DICTIONARY
             self.temp_data['niiIC_img'] = niiIC_img
             self.temp_data['niiEC_img'] = niiEC_img
