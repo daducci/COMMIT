@@ -1961,10 +1961,6 @@ cdef class Evaluation :
         #   item 2: np.array renormalisation of coeffs in item 1
         logger.subinfo('results.pickle', indent_char='-', indent_lvl=2, with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=True) as pbar:
-            xic, xec, xiso = self.get_coeffs()
-            x = self.x
-            if self.get_config('doNormalizeKernels') :
-                x = x * np.hstack( (norm1*norm_fib,norm2,norm3) )
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
                 self.CONFIG['optimization']['regularisation'].pop('omega', None)
                 self.CONFIG['optimization']['regularisation'].pop('prox', None)
