@@ -1861,12 +1861,14 @@ cdef class Evaluation :
                         for bf_idx in range(self.KERNELS['wmc'].shape[0]):
                             bf = self.KERNELS['wmc'][bf_idx]
                             streamline_prof += bf * fib_w[streamline_idx][bf_idx]
-                            commit_orig_w.append(fib_w[streamline_idx][bf_idx]) # add scaling factor when blur is used?
+                            commit_orig_w.append(fib_w[streamline_idx][bf_idx])
                         streamline_profs.append(streamline_prof)
 
                     if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                        n_bf_dct = self.KERNELS['wmc'].shape[0]
                         for i in range(nF):
                             streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
+                            commit_orig_w[i*n_bf_dct : (i+1)*n_bf_dct] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
                         
                     st_i = 0
                     for idx in idx_temp_weights:
