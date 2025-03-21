@@ -21,13 +21,15 @@ def run_commit_StickZeppelinBall(local_path):
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
         filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
         fiber_shift=0.5,
-        peaks_use_affine=True
+        peaks_use_affine=True,
+        verbose=False
     )
 
     amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
         local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
+    mit.set_verbose(2)
     mit.load_data(os.path.join(local_path, 'DWI.nii.gz'),
                   os.path.join(local_path, 'DWI.scheme'))
 
@@ -55,13 +57,15 @@ def run_commit_BallandStick(local_path):
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
         filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
         fiber_shift=0.5,
-        peaks_use_affine=True
+        peaks_use_affine=True,
+        verbose=False
     )
 
     amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
         local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
+    mit.set_verbose(2)
     mit.load_data(os.path.join(local_path, 'DWI.nii.gz'),
                   os.path.join(local_path, 'DWI.scheme'))
 
@@ -88,13 +92,15 @@ def run_commit_VolumeFractions(local_path):
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
         filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
         fiber_shift=0.5,
-        peaks_use_affine=True
+        peaks_use_affine=True,
+        verbose=False
     )
 
     amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
         local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
+    mit.set_verbose(2)
     mit.load_data(os.path.join(local_path, 'DWI.nii.gz'),
                   os.path.join(local_path, 'DWI.scheme'))
 
@@ -124,19 +130,19 @@ def check_results(pickle_result, ref_pickle):
     result_optimization = data[0]["optimization"]
     ref_optimization = ref_data[0]["optimization"]
 
-    try:
-        assert abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4
-        assert abs(result_optimization["fit_details"]["regterm"] - ref_optimization["fit_details"]["regterm"]) < 1e-4
-        assert abs(result_optimization["fit_details"]["cost_function"] - ref_optimization["fit_details"]["cost_function"]) < 1e-4
-        assert abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4
-        assert abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4
-        assert abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4
-        assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel _x"]) < 1e-4 #NOTE: There is a space in the key name
-        assert result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]
+    # try:
+    assert abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4
+    assert abs(result_optimization["fit_details"]["regterm"] - ref_optimization["fit_details"]["regterm"]) < 1e-4
+    assert abs(result_optimization["fit_details"]["cost_function"] - ref_optimization["fit_details"]["cost_function"]) < 1e-4
+    assert abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4
+    assert abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4
+    assert abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4
+    assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel _x"]) < 1e-4 #NOTE: There is a space in the key name
+    assert result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]
 
-    except AssertionError:
-        logger.error("Results do not match")
-        sys.exit(1)
+    # except AssertionError:
+    #     logger.error("Results do not match")
+    #     sys.exit(1)
 
 
 def run_tests():
