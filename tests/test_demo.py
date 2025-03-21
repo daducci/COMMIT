@@ -131,14 +131,14 @@ def check_results(pickle_result, ref_pickle):
     ref_optimization = ref_data[0]["optimization"]
 
     # try:
-    print(f'residual: {result_optimization["fit_details"]["residual"]} vs {ref_optimization["fit_details"]["residual"]}')
-    print(f'regterm: {result_optimization["fit_details"]["regterm"]} vs {ref_optimization["fit_details"]["regterm"]}')
-    print(f'cost_function: {result_optimization["fit_details"]["cost_function"]} vs {ref_optimization["fit_details"]["cost_function"]}')
-    print(f'abs_cost: {result_optimization["fit_details"]["abs_cost"]} vs {ref_optimization["fit_details"]["abs_cost"]}')
-    print(f'rel_cost: {result_optimization["fit_details"]["rel_cost"]} vs {ref_optimization["fit_details"]["rel_cost"]}')
-    print(f'abs_x: {result_optimization["fit_details"]["abs_x"]} vs {ref_optimization["fit_details"]["abs_x"]}')
-    print(f'rel_x: {result_optimization["fit_details"]["rel_x"]} vs {ref_optimization["fit_details"]["rel_x"]}')
-    print(f'iterations: {result_optimization["fit_details"]["iterations"]} vs {ref_optimization["fit_details"]["iterations"]}')
+    print(f'residual: {result_optimization["fit_details"]["residual"]} vs {ref_optimization["fit_details"]["residual"]}, condition: {abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4}')
+    print(f'regterm: {result_optimization["fit_details"]["regterm"]} vs {ref_optimization["fit_details"]["regterm"]}, condition: {abs(result_optimization["fit_details"]["regterm"] - ref_optimization["fit_details"]["regterm"]) < 1e-4}')
+    print(f'cost_function: {result_optimization["fit_details"]["cost_function"]} vs {ref_optimization["fit_details"]["cost_function"]}, condition: {abs(result_optimization["fit_details"]["cost_function"] - ref_optimization["fit_details"]["cost_function"]) < 1e-4}')
+    print(f'abs_cost: {result_optimization["fit_details"]["abs_cost"]} vs {ref_optimization["fit_details"]["abs_cost"]}, condition: {abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4}')
+    print(f'rel_cost: {result_optimization["fit_details"]["rel_cost"]} vs {ref_optimization["fit_details"]["rel_cost"]}, condition: {abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4}')
+    print(f'abs_x: {result_optimization["fit_details"]["abs_x"]} vs {ref_optimization["fit_details"]["abs_x"]}, condition: {abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4}')
+    print(f'rel_x: {result_optimization["fit_details"]["rel_x"]} vs {ref_optimization["fit_details"]["rel _x"]}, condition: {abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel _x"]) < 1e-4}') #NOTE: There is a space in the key name
+    print(f'iterations: {result_optimization["fit_details"]["iterations"]} vs {ref_optimization["fit_details"]["iterations"]}, condition: {result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]}')
 
     assert abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4
     assert abs(result_optimization["fit_details"]["regterm"] - ref_optimization["fit_details"]["regterm"]) < 1e-4
