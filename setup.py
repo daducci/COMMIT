@@ -23,6 +23,10 @@ def get_extensions():
                      sources=[f'{package_name}/proximals.pyx'],
                      extra_compile_args=[] if sys.platform == 'win32' else ['-w', '-std=c++11'],
                      language='c++')
+    models = Extension(name=f'{package_name}.models',
+                     sources=[f'{package_name}/models.pyx'],
+                     extra_compile_args=[] if sys.platform == 'win32' else ['-w', '-std=c++11'],
+                     language='c++')    
     # NOTE: Windows requires the pthread-win32 static library to compile the operator extension
     #       The library can be downloaded from https://github.com/GerHobbelt/pthread-win32
     #       The PTHREAD_WIN_INCLUDE and PTHREAD_WIN_LIB environment variables must be set to the include and lib directories
@@ -40,7 +44,7 @@ def get_extensions():
                     extra_compile_args=['/fp:fast', '/DHAVE_STRUCT_TIMESPEC'] if sys.platform == 'win32' else ['-w', '-O3', '-Ofast'],
                     language='c')
                  
-    return [trk2dictionary, core, proximals, operator]
+    return [trk2dictionary, core, proximals, operator, models]
 
 class CustomBuildExtCommand(build_ext):
     """ build_ext command to use when numpy headers are needed. """

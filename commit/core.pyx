@@ -307,7 +307,7 @@ cdef class Evaluation :
             logger.error( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
             logger.error( 'Model not set; call "set_model()" method first' )
-        if self.model.id=='VolumeFractions' and ndirs!=1:
+        if self.model.id=='VolumeFractions' or self.model.id=='Lesion' and ndirs!=1:
             ndirs = 1
             logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
         if 'commitwipmodels' in sys.modules :
