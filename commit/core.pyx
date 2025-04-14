@@ -384,6 +384,9 @@ cdef class Evaluation :
         self.KERNELS['wmh'] = np.ascontiguousarray( self.KERNELS['wmh'] )
         self.KERNELS['iso'] = np.ascontiguousarray( self.KERNELS['iso'] )
 
+        if self.KERNELS['wmr'].shape[0] > 1 and self.KERNELS['wmc'].shape[0] > 1:
+            logger.error( 'Not yet possible to use more than one profile with a model that in the IC compartment represents each streamline with multiple columns' )
+
         # De-mean kernels
         if self.get_config('doDemean') :
             logger.subinfo('Demeaning signal', with_progress=True, indent_lvl=2, indent_char='-' )
@@ -1483,14 +1486,21 @@ cdef class Evaluation :
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF*self.KERNELS['wmc'].shape[0])
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
-            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            # norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            if self.KERNELS['wmr'].shape[0] > 1:
+                norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            if self.KERNELS['wmc'].shape[0] > 1:
+                norm_fib = np.kron(self.DICTIONARY['TRK']['norm'], np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]))
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
 
         offset1 = nF * self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
-        kept = np.repeat( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] ) # TODO: if VF ok, check if works also if self.KERNELS['wmr'].shape[0] > 1
+        if self.KERNELS['wmr'].shape[0] > 1:
+            kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] )
+        if self.KERNELS['wmc'].shape[0] > 1: # not possible to have both > 1 (see load_kernels)
+            kept = np.repeat( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] ) # TODO: if VF ok, check if works also if self.KERNELS['wmr'].shape[0] > 1
         xic = np.zeros( kept.size )
         xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
@@ -1598,7 +1608,11 @@ cdef class Evaluation :
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF*self.KERNELS['wmc'].shape[0])
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
-            norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            # norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            if self.KERNELS['wmr'].shape[0] > 1:
+                norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
+            if self.KERNELS['wmc'].shape[0] > 1: # not possible to have both > 1 (see load_kernels)
+                norm_fib = np.kron(self.DICTIONARY['TRK']['norm'], np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]))
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
