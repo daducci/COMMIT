@@ -1020,7 +1020,14 @@ cdef class Evaluation :
             if dictIC_params is not None and 'coeff_weights' in dictIC_params:
                 if np.any(dictIC_params['coeff_weights'] < 0):
                     logger.error('All coefficients weights must be non-negative')
-                dict_kept = np.tile(self.DICTIONARY['TRK']['kept'], self.KERNELS['wmc'].shape[0])
+                if self.KERNELS['wmr'].shape[0] == 1 and self.KERNELS['wmc'].shape[0] == 1:
+                    dict_kept = self.DICTIONARY['TRK']['kept'].copy()
+                elif self.KERNELS['wmr'].shape[0] > 1:
+                    dict_kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0] )
+                elif self.KERNELS['wmc'].shape[0] > 1:
+                    dict_kept = np.repeat( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmc'].shape[0] )
+                else:
+                    logger.error('Invalid kernels shape (wmr and wmc)')
                 if dictIC_params['coeff_weights'].size != dict_kept.size:
                     logger.error(f'"coeff_weights" must have the same size as the number of elements in the IC compartment (got {dictIC_params["coeff_weights"].size} but {len(self.DICTIONARY["TRK"]["kept"])} expected)')
                 dictIC_params['coeff_weights_kept'] = dictIC_params['coeff_weights'][dict_kept==1]
@@ -1487,35 +1494,52 @@ cdef class Evaluation :
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
             # norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
-            if self.KERNELS['wmr'].shape[0] > 1:
+            if self.KERNELS['wmr'].shape[0] == 1 and self.KERNELS['wmc'].shape[0] == 1:
+                norm_fib = self.DICTIONARY['TRK']['norm'].copy()
+            elif self.KERNELS['wmr'].shape[0] > 1:
                 norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
-            if self.KERNELS['wmc'].shape[0] > 1:
+            elif self.KERNELS['wmc'].shape[0] > 1:
                 norm_fib = np.kron(self.DICTIONARY['TRK']['norm'], np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]))
+            else:
+                logger.error('Invalid kernels shape (wmr and wmc)')
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
 
         offset1 = nF * self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
-        if self.KERNELS['wmr'].shape[0] > 1:
-            kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] )
-        if self.KERNELS['wmc'].shape[0] > 1: # not possible to have both > 1 (see load_kernels)
-            kept = np.repeat( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0] ) # TODO: if VF ok, check if works also if self.KERNELS['wmr'].shape[0] > 1
+        if self.KERNELS['wmr'].shape[0] == 1 and self.KERNELS['wmc'].shape[0] == 1:
+            kept = self.DICTIONARY['TRK']['kept'].copy()
+        elif self.KERNELS['wmr'].shape[0] > 1:
+            kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0] )
+        elif self.KERNELS['wmc'].shape[0] > 1:
+            kept = np.repeat( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmc'].shape[0] )
+        else:
+            logger.error('Invalid kernels shape (wmr and wmc)')
         xic = np.zeros( kept.size )
         xic[kept==1] = x[:offset1]
         xec = x[offset1:offset2]
         xiso = x[offset2:]
 
         if blur_scaling:
-            lenTot = np.repeat(self.DICTIONARY['TRK']['lenTot'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0])
-            len = np.repeat(self.DICTIONARY['TRK']['len'], self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0])
+            if self.KERNELS['wmr'].shape[0] == 1 and self.KERNELS['wmc'].shape[0] == 1:
+                lenTot = self.DICTIONARY['TRK']['lenTot'].copy()
+                len    = self.DICTIONARY['TRK']['len'].copy()
+            elif self.KERNELS['wmr'].shape[0] > 1:
+                lenTot = np.tile(self.DICTIONARY['TRK']['lenTot'], self.KERNELS['wmr'].shape[0])
+                len    = np.tile(self.DICTIONARY['TRK']['len'], self.KERNELS['wmr'].shape[0])
+            elif self.KERNELS['wmc'].shape[0] > 1:
+                lenTot = np.repeat(self.DICTIONARY['TRK']['lenTot'], self.KERNELS['wmc'].shape[0])
+                len    = np.repeat(self.DICTIONARY['TRK']['len'], self.KERNELS['wmc'].shape[0])
+            else:
+                logger.error('Invalid kernels shape (wmr and wmc)')
             xic[kept==1] *= lenTot / len
 
         return xic, xec, xiso
 
 
     
-    cpdef compute_contribution(self, x, norm_fib, metric):
+    cpdef compute_contribution(self, x, norm_fib, metric): # TODO: check if this works also for models different from VolumeFraction
         cdef double[:] tmp = np.zeros( x.size, dtype=np.float64 )
         cdef double[:] x_mem = x.astype(np.float64)
         cdef double[:] norm_fib_mem = norm_fib.astype(np.float64)
@@ -1609,10 +1633,14 @@ cdef class Evaluation :
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
             norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
             # norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
-            if self.KERNELS['wmr'].shape[0] > 1:
+            if self.KERNELS['wmr'].shape[0] == 1 and self.KERNELS['wmc'].shape[0] == 1:
+                norm_fib = self.DICTIONARY['TRK']['norm'].copy()
+            elif self.KERNELS['wmr'].shape[0] > 1:
                 norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]), self.DICTIONARY['TRK']['norm'])
-            if self.KERNELS['wmc'].shape[0] > 1: # not possible to have both > 1 (see load_kernels)
+            elif self.KERNELS['wmc'].shape[0] > 1:
                 norm_fib = np.kron(self.DICTIONARY['TRK']['norm'], np.ones(self.KERNELS['wmr'].shape[0]*self.KERNELS['wmc'].shape[0]))
+            else:
+                logger.error('Invalid kernels shape (wmr and wmc)')
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
@@ -1739,7 +1767,7 @@ cdef class Evaluation :
                 offset = nF * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
                 if self.KERNELS['wmc'].shape[0] > 1:
                     tmp = x[:offset] * norm_fib
-                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp)
+                    niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = self.A.dot(tmp) # TODO: check if this works also for models different from VolumeFraction
                 else:
                     tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
                     xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
