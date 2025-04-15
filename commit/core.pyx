@@ -1851,8 +1851,11 @@ cdef class Evaluation :
                         xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
             if self.KERNELS['wmc'].shape[0] > 1:
-                commit_orig_w = []
-                                
+                num_prof    = self.KERNELS['wmc'].shape[0]
+                num_samples = self.KERNELS['wmc'].shape[1]
+                commit_orig_w    = [] # standard streamline weights, i.e. one value fore each basis function for all KEPT streamlines
+                streamline_profs = [] # computed profiles for each streamline
+
                 if "tractogram_centr_idx" in dictionary_info.keys():
                     ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
                     unravel_weights = np.zeros( (dictionary_info['n_count'], self.KERNELS['wmc'].shape[1]), dtype=np.float64)
@@ -1861,30 +1864,19 @@ cdef class Evaluation :
                     idx_temp_weights = np.where(temp_weights>0)[0]
 
                     # retrieve the contribution of each profile for each streamline
-                    num_prof = self.KERNELS['wmc'].shape[0]
-                    fib_w = []
                     for i in range(0, nF*num_prof, num_prof):
-                        start_idx = i
-                        subarray = []
+                        str_prof = np.zeros(num_samples)
                         for j in range(num_prof):
-                            index = start_idx + j
-                            subarray.append(xic[index])
-                        fib_w.append(subarray)
-
-                    streamline_profs = []
-                    for streamline_idx in range(nF):
-                        streamline_prof = np.zeros(self.KERNELS['wmc'].shape[1])
-                        for bf_idx in range(self.KERNELS['wmc'].shape[0]):
-                            bf = self.KERNELS['wmc'][bf_idx]
-                            streamline_prof += bf * fib_w[streamline_idx][bf_idx]
-                            commit_orig_w.append(fib_w[streamline_idx][bf_idx])
-                        streamline_profs.append(streamline_prof)
+                            commit_orig_w.append(xic[i+j])
+                            bf = self.KERNELS['wmc'][j]
+                            str_prof += bf * xic[i+j]
+                        streamline_profs.append(str_prof)
 
                     if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
-                        n_bf_dct = self.KERNELS['wmc'].shape[0]
                         for i in range(nF):
                             streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
-                            commit_orig_w[i*n_bf_dct : (i+1)*n_bf_dct] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
+                            for j in range(num_prof):
+                                commit_orig_w[i*num_prof + j] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
                         
                     st_i = 0
                     for idx in idx_temp_weights:
@@ -1894,30 +1886,16 @@ cdef class Evaluation :
                     xic = unravel_weights
 
                 elif "tractogram_centr_idx" not in dictionary_info.keys() and ( dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0):
-
-                    num_prof = self.KERNELS['wmc'].shape[0]
-                    fib_w = []
                     id_fib = 0
                     for i in range(0, nF*num_prof, num_prof):
-                        start_idx = i
-                        subarray = []
+                        str_prof = np.zeros(num_samples)
                         for j in range(num_prof):
-                            index = start_idx + j
-                            subarray.append(xic[index])
-                            commit_orig_w.append(xic[index] * self.DICTIONARY['TRK']['lenTot'][id_fib] / self.DICTIONARY['TRK']['len'][id_fib])
+                            wei = xic[i+j] * self.DICTIONARY['TRK']['lenTot'][id_fib] / self.DICTIONARY['TRK']['len'][id_fib]
+                            commit_orig_w.append(wei)
+                            bf = self.KERNELS['wmc'][j]
+                            str_prof += bf * wei
                         id_fib += 1
-                        fib_w.append(subarray)
-
-                    streamline_profs = []
-                    for streamline_idx in range(nF):
-                        streamline_prof = np.zeros(self.KERNELS['wmc'].shape[1])
-                        for bf_idx in range(self.KERNELS['wmc'].shape[0]):
-                            bf = self.KERNELS['wmc'][bf_idx]
-                            streamline_prof += bf * fib_w[streamline_idx][bf_idx]
-                        streamline_profs.append(streamline_prof)
-                    
-                    for i in range(nF):
-                        streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
+                        streamline_profs.append(str_prof)
 
                     idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
                     xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
@@ -1925,26 +1903,15 @@ cdef class Evaluation :
                     for idx in idx_kept:
                         xic[idx] = streamline_profs[st_i]
                         st_i += 1
-                
-                else:
-                    num_prof = self.KERNELS['wmc'].shape[0]
-                    fib_w = []
-                    for i in range(0, nF*num_prof, num_prof):
-                        start_idx = i
-                        subarray = []
-                        for j in range(num_prof):
-                            index = start_idx + j
-                            subarray.append(xic[index])
-                        fib_w.append(subarray)
 
-                    streamline_profs = []
-                    for streamline_idx in range(nF):
-                        streamline_prof = np.zeros(self.KERNELS['wmc'].shape[1])
-                        for bf_idx in range(self.KERNELS['wmc'].shape[0]):
-                            bf = self.KERNELS['wmc'][bf_idx]
-                            streamline_prof += bf * fib_w[streamline_idx][bf_idx]
-                            commit_orig_w.append(fib_w[streamline_idx][bf_idx])
-                        streamline_profs.append(streamline_prof)
+                else:
+                    for i in range(0, nF*num_prof, num_prof):
+                        str_prof = np.zeros(num_samples)
+                        for j in range(num_prof):
+                            commit_orig_w.append(xic[i+j])
+                            bf = self.KERNELS['wmc'][j]
+                            str_prof += bf * xic[i+j]
+                        streamline_profs.append(str_prof)
 
                     idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
                     xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
