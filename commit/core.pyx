@@ -1856,6 +1856,21 @@ cdef class Evaluation :
                 commit_orig_w    = [] # standard streamline weights, i.e. one value fore each basis function for all KEPT streamlines
                 streamline_profs = [] # computed profiles for each streamline
 
+                for i in range(0, nF*num_prof, num_prof):
+                    str_prof = np.zeros(num_samples)
+                    for j in range(num_prof):
+                        commit_orig_w.append(xic[i+j])
+                        bf = self.KERNELS['wmc'][j]
+                        str_prof += bf * xic[i+j]
+                    streamline_profs.append(str_prof)
+
+                # if blur was used, scale the weights
+                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                    for i in range(nF):
+                        streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
+                        for j in range(num_prof):
+                            commit_orig_w[i*num_prof + j] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
+
                 if "tractogram_centr_idx" in dictionary_info.keys():
                     ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
                     unravel_weights = np.zeros( (dictionary_info['n_count'], self.KERNELS['wmc'].shape[1]), dtype=np.float64)
@@ -1863,21 +1878,6 @@ cdef class Evaluation :
                     temp_weights = unravel_weights[ordered_idx]
                     idx_temp_weights = np.where(temp_weights>0)[0]
 
-                    # retrieve the contribution of each profile for each streamline
-                    for i in range(0, nF*num_prof, num_prof):
-                        str_prof = np.zeros(num_samples)
-                        for j in range(num_prof):
-                            commit_orig_w.append(xic[i+j])
-                            bf = self.KERNELS['wmc'][j]
-                            str_prof += bf * xic[i+j]
-                        streamline_profs.append(str_prof)
-
-                    if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
-                        for i in range(nF):
-                            streamline_profs[i] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
-                            for j in range(num_prof):
-                                commit_orig_w[i*num_prof + j] *= self.DICTIONARY['TRK']['lenTot'][i] / self.DICTIONARY['TRK']['len'][i]
-                        
                     st_i = 0
                     for idx in idx_temp_weights:
                         temp_weights[idx] = streamline_profs[st_i]
@@ -1885,34 +1885,7 @@ cdef class Evaluation :
                     unravel_weights[ordered_idx] = temp_weights
                     xic = unravel_weights
 
-                elif "tractogram_centr_idx" not in dictionary_info.keys() and ( dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0):
-                    id_fib = 0
-                    for i in range(0, nF*num_prof, num_prof):
-                        str_prof = np.zeros(num_samples)
-                        for j in range(num_prof):
-                            wei = xic[i+j] * self.DICTIONARY['TRK']['lenTot'][id_fib] / self.DICTIONARY['TRK']['len'][id_fib]
-                            commit_orig_w.append(wei)
-                            bf = self.KERNELS['wmc'][j]
-                            str_prof += bf * wei
-                        id_fib += 1
-                        streamline_profs.append(str_prof)
-
-                    idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
-                    xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
-                    st_i = 0
-                    for idx in idx_kept:
-                        xic[idx] = streamline_profs[st_i]
-                        st_i += 1
-
                 else:
-                    for i in range(0, nF*num_prof, num_prof):
-                        str_prof = np.zeros(num_samples)
-                        for j in range(num_prof):
-                            commit_orig_w.append(xic[i+j])
-                            bf = self.KERNELS['wmc'][j]
-                            str_prof += bf * xic[i+j]
-                        streamline_profs.append(str_prof)
-
                     idx_kept = np.where(self.DICTIONARY['TRK']['kept']==1)[0]
                     xic = np.zeros( (self.DICTIONARY['TRK']['kept'].size, self.KERNELS['wmc'].shape[1]) )
                     st_i = 0
