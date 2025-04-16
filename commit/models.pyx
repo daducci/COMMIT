@@ -84,7 +84,7 @@ class VolumeFractions(BaseModel):
         logger.error('Not implemented')
 
 
-class VolumeFractions_w_Lesions( BaseModel ) :
+class Lesion( BaseModel ) :
     """Implements a simple model where each compartment contributes only with
        its own volume fraction. This model has been created to test there
        ability to remove false positive fibers with COMMIT.
