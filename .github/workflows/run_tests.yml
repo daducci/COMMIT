@@ -10,10 +10,10 @@ jobs:
         # NOTE: Python 3.12 is not supported yet
         config:
           [
-            {os: ubuntu-20.04, py: '3.8'},
-            {os: ubuntu-20.04, py: '3.9'},
-            {os: ubuntu-20.04, py: '3.10'},
-            {os: ubuntu-20.04, py: '3.11'},
+            {os: ubuntu-22.04, py: '3.8'},
+            {os: ubuntu-22.04, py: '3.9'},
+            {os: ubuntu-22.04, py: '3.10'},
+            {os: ubuntu-22.04, py: '3.11'},
             {os: ubuntu-latest, py: '3.8'},
             {os: ubuntu-latest, py: '3.9'},
             {os: ubuntu-latest, py: '3.10'},
