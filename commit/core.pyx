@@ -640,14 +640,9 @@ cdef class Evaluation :
                 for i in xrange(n) :
                     self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
                 self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
-
-                # check if some threads are not assigned any segment
-                if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
-                    self.THREADS = None
-                    logger.error( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
+                
             else :
                 self.THREADS['ISO'] = None
-
 
         # Distribute load for the computation of At*y product
         log_list = []
@@ -689,7 +684,7 @@ cdef class Evaluation :
             else :
                 self.THREADS['ECt'] = None
 
-            if self.DICTIONARY['nV'] > 0 :
+            if self.DICTIONARY['ISO']['nV'] > 0 :
                 self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
                 N = np.floor( self.DICTIONARY['ISO']['nV']/n )
                 
@@ -1628,8 +1623,8 @@ cdef class Evaluation :
         # Configuration and results
         logger.subinfo('Configuration and results:', indent_char='*', indent_lvl=1)
         log_list = []
-        ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=False if (hasattr(self.model, '_postprocess') and do_reweighting) else True)
+        with ProgressBar(disable=self.verbose < 3 or (hasattr(self.model, '_postprocess') and do_reweighting), hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             xic, _, _ = self.get_coeffs()
             if stat_coeffs != 'all' and xic.size > 0 :
                 xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )

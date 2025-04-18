@@ -68,7 +68,7 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
     return tdi
 
 
-cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_ISO=None,
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_lesion=None,
             do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
@@ -98,8 +98,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Segments outside this mask are discarded. If not specified (default),
         the mask is created from all voxels intersected by the tracts.
 
-    filename_ISO : string
-        Path to a binary mask for WIP models.
+    filename_lesion : string
+        Path to a binary mask that defines the position(s) of the lesion(s). 
 
     do_intersect : boolean
         If True then streamline segments that intersect voxel boundaries are splitted (default).
@@ -488,9 +488,9 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # ISO map for isotropic compartment
     cdef float* ptrISO
     cdef float [:, :, ::1] niiISO_img
-    if filename_ISO is not None :
+    if filename_lesion is not None :
         logger.subinfo( 'Restricted ISO map', indent_lvl=2, indent_char='-' )
-        niiISO = nibabel.load( filename_ISO )
+        niiISO = nibabel.load( filename_lesion )
         niiISO_hdr = _get_header( niiISO )
         logger.subinfo( f'{niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}', indent_lvl=3, indent_char='-' )
         logger.subinfo( f'{niiISO_hdr["pixdim"][1]:.4f} x {niiISO_hdr["pixdim"][2]:.4f} x {niiISO_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )

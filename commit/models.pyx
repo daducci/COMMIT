@@ -104,8 +104,8 @@ class Lesion( BaseModel ) :
         params["ISO"] = self.restrictedISO
         return params
 
-    def set( self, ISO_map=None ) :
-        self.restrictedISO = ISO_map
+    def set( self, lesion_map=None ) :
+        self.restrictedISO = lesion_map
 
     def set_solver( self ) :
         logger.error( 'Not implemented' )
@@ -214,8 +214,8 @@ class Lesion( BaseModel ) :
             chunks.append((ii, jj))
         if chunks[len(chunks)-1][1] != n:
             chunks[len(chunks)-1] = (chunks[len(chunks)-1][0], n)
-
-        logger.subinfo('Recomputing streamlines weights accounting for lesions', indent_lvl=2, indent_char='-', with_progress=True)
+        logger
+        logger.subinfo('Recomputing streamlines weights accounting for lesions', indent_lvl=3, indent_char='->', with_progress=True)
         with ProgressBar(multithread_progress=find_idx_progress, total=n,
                          disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
             with ThreadPoolExecutor(max_workers=cpu_count) as executor:
