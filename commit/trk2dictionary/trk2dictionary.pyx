@@ -69,7 +69,7 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
 
 
 cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_lesion=None,
-            do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
+            do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=5.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
             blur_gauss_min=0.1, blur_apply_to=None, TCK_ref_image=None, ndirs=500, n_threads=-1,
@@ -114,7 +114,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Discard segments <= than this length in mm (default : 1e-3).
 
     min_fiber_len : float
-        Discard streamlines <= than this length in mm (default : 0.0).
+        Discard streamlines <= than this length in mm (default : 5.0).
 
     max_fiber_len : float
         Discard streamlines >= than this length in mm (default : 250.0).

@@ -898,7 +898,7 @@ cdef class Evaluation :
         if dictIC_params is not None:
             keys_IC = dictIC_params.keys()
             for key in keys_IC:
-                if key not in ['group_idx', 'group_weights_cardinality', 'group_weights_adaptive', 'group_weights_extra', 'coeff_weights']:
+                if key not in ['group_idx', 'group_weights_cardinality', 'group_weights_adaptive', 'group_weights_extra', 'coeff_weights', 'group_weights', 'group_idx_kept', 'coeff_weights_kept']:
                     logger.warning(f'Unexpected key "{key}" in the dictionary of additional parameters for the IC compartment. Ignoring it.')
 
         tr = time.time()
@@ -1054,7 +1054,7 @@ cdef class Evaluation :
                     logger.debug(f"""{weightsIC_group.size - newweightsIC_group.size} groups removed because their streamlines didn't satisfy the criteria set in trk2dictionary.""")
             else:
                 newweightsIC_group = weightsIC_group
-                dictIC_params['group_idx_kept'] = dictIC_params['group_idx']
+                dictIC_params['group_idx_kept'] = dictIC_params['group_idx'].copy()
 
             # compute group weights
             if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
