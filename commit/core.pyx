@@ -281,10 +281,13 @@ cdef class Evaluation :
         # Call the specific model constructor
         if hasattr(commit.models, model_name ) :
             self.model = getattr(commit.models, model_name)()
-        else :
+        elif model_name == 'VolumeFractions' :
+            self.model = getattr(commit.models, 'ScalarMap')()
+        else:
             logger.error( 'Model "%s" not recognized' % model_name )
 
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
+
 
 
     def generate_kernels( self, regenerate=False, lmax=12, ndirs=500 ) :
@@ -309,13 +312,9 @@ cdef class Evaluation :
             logger.error( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
             logger.error( 'Model not set; call "set_model()" method first' )
-        if self.model.id=='VolumeFractions' or self.model.id=='Lesion' and ndirs!=1:
+        if self.model.id=='VolumeFractions' or self.model.id=='ScalarMap' and ndirs!=1:
             ndirs = 1
             logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
-        if 'commitwipmodels' in sys.modules :
-            if self.model.restrictedISO is not None and ndirs!=1:
-                ndirs = 1
-                logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
  
         # store some values for later use
         self.set_config('lmax', lmax)
@@ -464,6 +463,13 @@ cdef class Evaluation :
              abs(self.get_config('pixdim')[2]-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dictionary does not have the same geometry as the dataset' )
         self.DICTIONARY['MASK'] = ( np.asanyarray(niiMASK.dataobj ) > 0).astype(np.uint8)
+    
+        # load lesion mask if any
+        if dictionary_info['lesion_mask']:
+            if  self.model.id == 'ScalarMap':
+                self.model.lesion_mask = True
+            else:
+                logger.error('Lesion mask is not compatible with the selected model. Please use "ScalarMap" model.')
 
         # segments from the tracts
         # ------------------------
@@ -1368,6 +1374,10 @@ cdef class Evaluation :
             with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
                 self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
+        elif (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and not debias:
+            logger.warning('Fitting with regularisation but without debiasing. The coefficients will be biased, use "debias=True" to debias the coefficients')
+
+
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
 
@@ -1618,6 +1628,13 @@ cdef class Evaluation :
 
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
+        if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask:
+            niiLesion_img = niiISO_img.copy()
+            niiLesion = nibabel.Nifti1Image( niiLesion_img, affine, header=niiMAP_hdr )
+            nibabel.save( niiLesion , pjoin(RESULTS_path,'compartment_lesion.nii.gz') )
+            niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
+            niiISO = nibabel.Nifti1Image( niiISO_img, affine, header=niiMAP_hdr )
+
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # Configuration and results
@@ -1665,18 +1682,20 @@ cdef class Evaluation :
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
             
+            print(f"non zero in lesion mask: {np.count_nonzero(niiLesion_img)}")
             self.temp_data['DICTIONARY'] = self.DICTIONARY
             self.temp_data['niiIC_img'] = niiIC_img
             self.temp_data['niiEC_img'] = niiEC_img
-            self.temp_data['niiISO_img'] = niiISO_img
+            self.temp_data['niiISO_img'] = niiLesion_img if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask else niiISO_img
             self.temp_data['streamline_weights'] = xic
             self.temp_data['RESULTS_path'] = RESULTS_path
             self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
 
             if hasattr(self.model, '_postprocess') and do_reweighting:
                 self.model._postprocess(self.temp_data, verbose=self.verbose)
+            else:
+                np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
 
-            np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
             self.set_config('stat_coeffs', stat_coeffs)
 
         # Save to a pickle file the following items:
