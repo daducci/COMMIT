@@ -273,6 +273,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         if not isdir(path_out):
             logger.error( '"path_out" cannot be inferred from "filename_tractogram"' )
         path_out = join(path_out,'COMMIT')
+    else:
+        logger.warning( f'Remember the same path as third argument of commit.Evaluation()')
 
     # create output path
     logger.subinfo( f'Output written to "{path_out}"', indent_char='-', indent_lvl=2 )
