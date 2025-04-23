@@ -75,6 +75,7 @@ cdef class Evaluation :
     cdef public model
     cdef public KERNELS
     cdef public DICTIONARY
+    cdef public dictionary_info
     cdef public THREADS
     cdef public A
     cdef public regularisation_params
@@ -86,7 +87,7 @@ cdef class Evaluation :
     cdef public debias_mask
     cdef public verbose
 
-    def __init__( self, study_path='.', subject='.' ) :
+    def __init__( self, study_path='.', subject='.', dictionary_path='COMMIT'):
         """Setup the data structures with default values.
 
         Parameters
@@ -101,6 +102,7 @@ cdef class Evaluation :
         self.model                  = None # set by "set_model" method
         self.KERNELS                = None # set by "load_kernels" method
         self.DICTIONARY             = None # set by "load_dictionary" method
+        self.dictionary_info        = None # set by "load_dictionary" method
         self.THREADS                = None # set by "set_threads" method
         self.A                      = None # set by "build_operator" method
         self.regularisation_params  = None # set by "set_regularisation" method
@@ -117,6 +119,7 @@ cdef class Evaluation :
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
         self.set_config('DATA_path', pjoin( study_path, subject ))
+        self.set_config('TRACKING_path', pjoin( study_path, subject, dictionary_path ))
 
         self.set_config('doNormalizeSignal', True)
         self.set_config('doMergeB0', False)
@@ -173,6 +176,8 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the data' )
+
+        self.dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
 
         logger.subinfo('Acquisition scheme:', indent_char='*', indent_lvl=1 )
         if scheme_filename is not None:
@@ -281,10 +286,21 @@ cdef class Evaluation :
         # Call the specific model constructor
         if hasattr(commit.models, model_name ) :
             self.model = getattr(commit.models, model_name)()
-        else :
+        elif model_name == 'VolumeFractions' :
+            self.model = getattr(commit.models, 'ScalarMap')()
+        else:
             logger.error( 'Model "%s" not recognized' % model_name )
 
+        # Check if a lesion mask is provided and if the model supports it
+        if self.dictionary_info['lesion_mask']:
+            if  self.model.id == 'ScalarMap':
+                self.model.lesion_mask = True
+            else:
+                logger.error('Lesion mask is not compatible with the selected model. Please use "ScalarMap" model.')
+
+
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
+
 
 
     def generate_kernels( self, regenerate=False, lmax=12, ndirs=500 ) :
@@ -309,13 +325,9 @@ cdef class Evaluation :
             logger.error( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
             logger.error( 'Model not set; call "set_model()" method first' )
-        if self.model.id=='VolumeFractions' or self.model.id=='Lesion' and ndirs!=1:
+        if self.model.id=='VolumeFractions' or self.model.id=='ScalarMap' and ndirs!=1:
             ndirs = 1
             logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
-        if 'commitwipmodels' in sys.modules :
-            if self.model.restrictedISO is not None and ndirs!=1:
-                ndirs = 1
-                logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
  
         # store some values for later use
         self.set_config('lmax', lmax)
@@ -418,7 +430,7 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
+    cpdef load_dictionary( self, path=None, use_all_voxels_in_mask=False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
@@ -438,14 +450,16 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading the data structure' )
         self.DICTIONARY = {}
-        self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
+        if path is None :
+            path = self.get_config('TRACKING_path')
+        else :
+            self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
         # check that ndirs of dictionary matches with that of the kernels
-        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-        if dictionary_info['ndirs'] != self.get_config('ndirs'):
-            logger.error( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
-        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
-        self.DICTIONARY['n_threads'] = dictionary_info['n_threads']
+        if self.dictionary_info['ndirs'] != self.get_config('ndirs'):
+            logger.error( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (self.dictionary_info['ndirs'], self.get_config('ndirs')) )
+        self.DICTIONARY['ndirs'] = self.dictionary_info['ndirs']
+        self.DICTIONARY['n_threads'] = self.dictionary_info['n_threads']
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
@@ -1388,6 +1402,10 @@ cdef class Evaluation :
             with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
                 self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
+        elif (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and not debias:
+            logger.warning('Fitting with regularisation but without debiasing. The coefficients will be biased, use "debias=True" to debias the coefficients')
+
+
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
 
@@ -1638,6 +1656,14 @@ cdef class Evaluation :
 
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
+
+        if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask:
+            niiLesion_img = niiISO_img.copy()
+            niiLesion = nibabel.Nifti1Image( niiLesion_img, affine, header=niiMAP_hdr )
+            nibabel.save( niiLesion , pjoin(RESULTS_path,'compartment_lesion.nii.gz') )
+            niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
+            niiISO = nibabel.Nifti1Image( niiISO_img, affine, header=niiMAP_hdr )
+
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # Configuration and results
@@ -1662,16 +1688,15 @@ cdef class Evaluation :
                     logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all' )
 
             # scale output weights if blur was used
-            dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
+            if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
                 if stat_coeffs == 'all' :
                     logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            if "tractogram_centr_idx" in dictionary_info.keys():
-                ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
-                unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
+            if "tractogram_centr_idx" in self.dictionary_info.keys():
+                ordered_idx = self.dictionary_info["tractogram_centr_idx"].astype(np.int64)
+                unravel_weights = np.zeros( self.dictionary_info['n_count'], dtype=np.float64)
                 unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
                 temp_weights = unravel_weights[ordered_idx] 
-                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                     unravel_weights[ordered_idx] = temp_weights
                     xic = unravel_weights
@@ -1681,22 +1706,23 @@ cdef class Evaluation :
                     xic = unravel_weights
 
             else:
-                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
             
             self.temp_data['DICTIONARY'] = self.DICTIONARY
             self.temp_data['niiIC_img'] = niiIC_img
             self.temp_data['niiEC_img'] = niiEC_img
-            self.temp_data['niiISO_img'] = niiISO_img
+            self.temp_data['niiISO_img'] = niiLesion_img if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask else niiISO_img
             self.temp_data['streamline_weights'] = xic
             self.temp_data['RESULTS_path'] = RESULTS_path
             self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
 
             if hasattr(self.model, '_postprocess') and do_reweighting:
                 self.model._postprocess(self.temp_data, verbose=self.verbose)
+            else:
+                np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
 
-            np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
             self.set_config('stat_coeffs', stat_coeffs)
 
         # Save to a pickle file the following items:

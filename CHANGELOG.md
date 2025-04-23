@@ -1,6 +1,24 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.4.0`<br>_2025-04-24_
+
+### ✨Added
+- Lesion mask support using ScalarMap models.
+- Debias option in `fit()` to remove bias from the estimated coefficients when using regularization (e.g. `COMMIT2`).
+- Public `dictionary_info` attribute on `Evaluation` for reuse (e.g. lesion masks, blur settings, thread counts).
+
+### 🛠️Changed
+- `VolumeFractions` model now is called `ScalarMap` for clarity.
+- Refactored `Evaluation` to load and store `dictionary_info` once and reference it in `load_data()`, `set_model()` and `save_results()`.
+- Bumped package version to 2.4.0 in `pyproject.toml`.
+
+### 🐛Fixed
+- Logger prints
+
+---
+---
+
 ## `v2.3.1`<br>_2024-09-24_
 ### 🐛Fixed
 - Revert changes when save results in `results.pickle`
