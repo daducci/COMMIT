@@ -173,8 +173,6 @@ class ScalarMap( BaseModel ) :
         return indices_vox[:count], indices_str[:count]
     
     def _postprocess(self, preproc_dict, verbose=1):
-        print(preproc_dict['niiISO_img'].shape)
-        print(np.count_nonzero(preproc_dict['niiISO_img']))
         ISO_map = np.array(preproc_dict['niiISO_img'], dtype=np.float32)
         IC_map = np.array(preproc_dict['niiIC_img'], dtype=np.float32)
 
@@ -196,7 +194,6 @@ class ScalarMap( BaseModel ) :
         nib.save(nib.Nifti1Image(ISO_scaled_save, preproc_dict['affine']), pjoin(preproc_dict["RESULTS_path"],'compartment_IC_lesion_scaled.nii.gz'))
         
         idx_les = np.argwhere(ISO_scaled > 0)[:,0].astype(np.uint32)
-        print(idx_les.shape)
         if idx_les.shape[0] == 0:
             logger.error('No lesion found in the input image.')
             return
