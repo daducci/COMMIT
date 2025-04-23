@@ -859,24 +859,24 @@ cdef class Evaluation :
                     NB: this array must have the same size as the number of elements in the compartment and contain only non-negative values.
 
         References:
-            [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
+            [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding', https://www.jmlr.org/papers/volume12/jenatton11a/jenatton11a.pdf
             [2] Schiavi et al. - 'A new method for accurate in vivo mapping of human brain connections using 
-                microstructural and anatomical information'
-            [3] Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
-            [4] Yuan, Lin - 'Model selection and estimation in regression with grouped variables'
+                microstructural and anatomical information', https://doi.org/10.1126/sciadv.aba8245
+            [3] Kim et al. - 'An interior-point method for large-scale l1-regularized least squares', https://doi.org/10.1109/JSTSP.2007.910971
+            [4] Yuan, Lin - 'Model selection and estimation in regression with grouped variables', https://doi.org/10.1111/j.1467-9868.2005.00532.x
         """
 
         # functions to compute the maximum value of the regularisation parameter (lambda)
 
         def compute_lambda_max_lasso(start, size, w_coeff): 
-            # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
+            # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized least squares' https://doi.org/10.1109/JSTSP.2007.910971 
             At = self.A.T
             y  = self.get_y()
             Aty = np.asarray(At.dot(y))
             return np.max(np.abs(Aty[start:start+size]) / w_coeff)
 
         def compute_lambda_max_group(w_group, idx_group):
-            # Ref. Yuan, Lin - 'Model selection and estimation in regression with grouped variables'
+            # Ref. Yuan, Lin - 'Model selection and estimation in regression with grouped variables' https://doi.org/10.1111/j.1467-9868.2005.00532.x
             At = self.A.T
             y  = self.get_y()
             Aty = np.asarray(At.dot(y))
@@ -885,6 +885,16 @@ cdef class Evaluation :
                 norm_group[g] = np.sqrt(np.sum(Aty[idx_group[g]]**2)) / w_group[g]
             return np.max(norm_group)
             
+        if self.niiDWI is None :
+            logger.error( 'Data not loaded; call "load_data()" first' )
+        if self.DICTIONARY is None :
+            logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
+        if self.KERNELS is None :
+            logger.error( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
+        if self.THREADS is None :
+            logger.error( 'Threads not set; call "set_threads()" first' )
+        if self.A is None :
+            logger.error( 'Operator not built; call "build_operator()" first' )
 
         regularisation = {}
 
@@ -904,6 +914,11 @@ cdef class Evaluation :
         regularisation['nnISO'] = is_nonnegative[2]
 
         dictIC_params, dictEC_params, dictISO_params = params
+        if dictIC_params is not None:
+            keys_IC = dictIC_params.keys()
+            for key in keys_IC:
+                if key not in ['group_idx', 'group_weights_cardinality', 'group_weights_adaptive', 'group_weights_extra', 'coeff_weights', 'group_weights', 'group_idx_kept', 'coeff_weights_kept']:
+                    logger.warning(f'Unexpected key "{key}" in the dictionary of additional parameters for the IC compartment. Ignoring it.')
 
         tr = time.time()
         logger.subinfo('')
@@ -1008,6 +1023,13 @@ cdef class Evaluation :
                 else:
                     logger.error('"group_weights_adaptive" must be a boolean or a string')
 
+        # check if group_idx contains all the indices of the input streamlines
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            all_idx_in = np.sort(np.unique(np.concatenate(dictIC_params['group_idx'])))
+            all_idx = np.arange(self.DICTIONARY['IC']['nF'], dtype=np.int32)
+            if np.any(all_idx_in != all_idx):
+                logger.error('Group indices must contain all the indices of the input streamlines')          
+
         # check if group_weights_extra is consistent with the number of groups
         if (regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso') and 'group_weights_extra' in dictIC_params:
             if type(dictIC_params['group_weights_extra']) not in [list, np.ndarray]:
@@ -1048,12 +1070,10 @@ cdef class Evaluation :
                 newweightsIC_group = np.array(newweightsIC_group, dtype=np.float64)
                 dictIC_params['group_idx_kept'] = np.array(newICgroup_idx, dtype=np.object_)
                 if weightsIC_group.size != newweightsIC_group.size:
-                    logger.warning(f"""\
-                    Not all the original groups are kept. 
-                    {weightsIC_group.size - newweightsIC_group.size} groups have been removed because their streamlines didn't satisfy the criteria set in trk2dictionary.""")
+                    logger.debug(f"""{weightsIC_group.size - newweightsIC_group.size} groups removed because their streamlines didn't satisfy the criteria set in trk2dictionary.""")
             else:
                 newweightsIC_group = weightsIC_group
-                dictIC_params['group_idx_kept'] = dictIC_params['group_idx']
+                dictIC_params['group_idx_kept'] = dictIC_params['group_idx'].copy()
 
             # compute group weights
             if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
