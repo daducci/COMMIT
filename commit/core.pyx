@@ -1461,7 +1461,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, do_reweighting=True ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -1674,8 +1674,8 @@ cdef class Evaluation :
         # Configuration and results
         logger.subinfo('Configuration and results:', indent_char='*', indent_lvl=1)
         log_list = []
-        ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=False if (hasattr(self.model, '_postprocess') and do_reweighting) else True)
-        with ProgressBar(disable=self.verbose < 3 or (hasattr(self.model, '_postprocess') and do_reweighting), hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=False if hasattr(self.model, '_postprocess') else True)
+        with ProgressBar(disable=self.verbose < 3 or hasattr(self.model, '_postprocess'), hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             xic, _, _ = self.get_coeffs()
             if stat_coeffs != 'all' and xic.size > 0 :
                 xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
@@ -1723,7 +1723,7 @@ cdef class Evaluation :
             self.temp_data['RESULTS_path'] = RESULTS_path
             self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
 
-            if hasattr(self.model, '_postprocess') and do_reweighting:
+            if hasattr(self.model, '_postprocess') and (hasattr(self.model, 'lesion_mask') and self.model.lesion_mask):
                 self.model._postprocess(self.temp_data, verbose=self.verbose)
             else:
                 np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
