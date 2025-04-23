@@ -87,7 +87,7 @@ cdef class Evaluation :
     cdef public debias_mask
     cdef public verbose
 
-    def __init__( self, study_path='.', subject='.', dictionary_path='.'):
+    def __init__( self, study_path='.', subject='.', dictionary_path='COMMIT'):
         """Setup the data structures with default values.
 
         Parameters
