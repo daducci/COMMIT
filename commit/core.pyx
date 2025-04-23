@@ -75,6 +75,7 @@ cdef class Evaluation :
     cdef public model
     cdef public KERNELS
     cdef public DICTIONARY
+    cdef public dictionary_info
     cdef public THREADS
     cdef public A
     cdef public regularisation_params
@@ -86,7 +87,7 @@ cdef class Evaluation :
     cdef public debias_mask
     cdef public verbose
 
-    def __init__( self, study_path='.', subject='.' ) :
+    def __init__( self, study_path='.', subject='.', dictionary_path='.'):
         """Setup the data structures with default values.
 
         Parameters
@@ -101,6 +102,7 @@ cdef class Evaluation :
         self.model                  = None # set by "set_model" method
         self.KERNELS                = None # set by "load_kernels" method
         self.DICTIONARY             = None # set by "load_dictionary" method
+        self.dictionary_info        = None # set by "load_dictionary" method
         self.THREADS                = None # set by "set_threads" method
         self.A                      = None # set by "build_operator" method
         self.regularisation_params  = None # set by "set_regularisation" method
@@ -117,6 +119,7 @@ cdef class Evaluation :
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
         self.set_config('DATA_path', pjoin( study_path, subject ))
+        self.set_config('TRACKING_path', pjoin( study_path, subject, dictionary_path ))
 
         self.set_config('doNormalizeSignal', True)
         self.set_config('doMergeB0', False)
@@ -173,6 +176,8 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the data' )
+
+        self.dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
 
         logger.subinfo('Acquisition scheme:', indent_char='*', indent_lvl=1 )
         if scheme_filename is not None:
@@ -285,6 +290,14 @@ cdef class Evaluation :
             self.model = getattr(commit.models, 'ScalarMap')()
         else:
             logger.error( 'Model "%s" not recognized' % model_name )
+
+        # Check if a lesion mask is provided and if the model supports it
+        if self.dictionary_info['lesion_mask']:
+            if  self.model.id == 'ScalarMap':
+                self.model.lesion_mask = True
+            else:
+                logger.error('Lesion mask is not compatible with the selected model. Please use "ScalarMap" model.')
+
 
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
@@ -417,7 +430,7 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
+    cpdef load_dictionary( self, path=None, use_all_voxels_in_mask=False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
@@ -437,14 +450,16 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading the data structure' )
         self.DICTIONARY = {}
-        self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
+        if path is None :
+            path = self.get_config('TRACKING_path')
+        else :
+            self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
 
         # check that ndirs of dictionary matches with that of the kernels
-        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-        if dictionary_info['ndirs'] != self.get_config('ndirs'):
-            logger.error( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
-        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
-        self.DICTIONARY['n_threads'] = dictionary_info['n_threads']
+        if self.dictionary_info['ndirs'] != self.get_config('ndirs'):
+            logger.error( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (self.dictionary_info['ndirs'], self.get_config('ndirs')) )
+        self.DICTIONARY['ndirs'] = self.dictionary_info['ndirs']
+        self.DICTIONARY['n_threads'] = self.dictionary_info['n_threads']
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
@@ -463,13 +478,6 @@ cdef class Evaluation :
              abs(self.get_config('pixdim')[2]-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dictionary does not have the same geometry as the dataset' )
         self.DICTIONARY['MASK'] = ( np.asanyarray(niiMASK.dataobj ) > 0).astype(np.uint8)
-    
-        # load lesion mask if any
-        if dictionary_info['lesion_mask']:
-            if  self.model.id == 'ScalarMap':
-                self.model.lesion_mask = True
-            else:
-                logger.error('Lesion mask is not compatible with the selected model. Please use "ScalarMap" model.')
 
         # segments from the tracts
         # ------------------------
@@ -1628,6 +1636,7 @@ cdef class Evaluation :
 
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
+
         if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask:
             niiLesion_img = niiISO_img.copy()
             niiLesion = nibabel.Nifti1Image( niiLesion_img, affine, header=niiMAP_hdr )
@@ -1659,16 +1668,15 @@ cdef class Evaluation :
                     logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all' )
 
             # scale output weights if blur was used
-            dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
+            if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
                 if stat_coeffs == 'all' :
                     logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            if "tractogram_centr_idx" in dictionary_info.keys():
-                ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
-                unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
+            if "tractogram_centr_idx" in self.dictionary_info.keys():
+                ordered_idx = self.dictionary_info["tractogram_centr_idx"].astype(np.int64)
+                unravel_weights = np.zeros( self.dictionary_info['n_count'], dtype=np.float64)
                 unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
                 temp_weights = unravel_weights[ordered_idx] 
-                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                     unravel_weights[ordered_idx] = temp_weights
                     xic = unravel_weights
@@ -1678,11 +1686,10 @@ cdef class Evaluation :
                     xic = unravel_weights
 
             else:
-                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
             
-            print(f"non zero in lesion mask: {np.count_nonzero(niiLesion_img)}")
             self.temp_data['DICTIONARY'] = self.DICTIONARY
             self.temp_data['niiIC_img'] = niiIC_img
             self.temp_data['niiEC_img'] = niiEC_img
