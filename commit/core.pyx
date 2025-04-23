@@ -118,8 +118,13 @@ cdef class Evaluation :
         self.set_config('version', get_distribution('dmri-commit').version)
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
-        self.set_config('DATA_path', pjoin( study_path, subject ))
-        self.set_config('TRACKING_path', pjoin( study_path, subject, dictionary_path ))
+
+        if study_path == subject:
+            self.set_config('DATA_path', study_path)
+            self.set_config('TRACKING_path', pjoin( study_path, dictionary_path ))
+        else:
+            self.set_config('DATA_path', pjoin( study_path, subject ))
+            self.set_config('TRACKING_path', pjoin( study_path, subject, dictionary_path ))
 
         self.set_config('doNormalizeSignal', True)
         self.set_config('doMergeB0', False)
