@@ -95,7 +95,7 @@ cdef class Evaluation :
         study_path : string
             The path to the folder containing all the subjects from one study (default : '.')
         subject : string
-            The path (relative to previous folder) to the subject folder (default : '.')
+            The path (relative to previous folder) to the subject folder containing the output of the trk2dictionary script (default : '.')
         """
         self.niiDWI                 = None # set by "load_data" method
         self.scheme                 = None # set by "load_data" method
@@ -435,13 +435,11 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    cpdef load_dictionary( self, path=None, use_all_voxels_in_mask=False ) :
+    cpdef load_dictionary( self, use_all_voxels_in_mask=False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
         ----------
-        path : string
-            Folder containing the output of the trk2dictionary script (relative to subject path)
         use_all_voxels_in_mask : boolean
             If False (default) the optimization will be conducted only on the voxels actually
             traversed by tracts. If True, then all voxels present in the mask specified in
@@ -455,10 +453,7 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading the data structure' )
         self.DICTIONARY = {}
-        if path is None :
-            path = self.get_config('TRACKING_path')
-        else :
-            self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
+        path = self.get_config('TRACKING_path')
 
         # check that ndirs of dictionary matches with that of the kernels
         if self.dictionary_info['ndirs'] != self.get_config('ndirs'):
