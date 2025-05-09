@@ -557,7 +557,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     # Concatenate files together
     log_list = []
-    ret_subinfo = logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=verbose>2 )
+    ret_subinfo = logger.subinfo( f'Saving data structure in {path_out} ', indent_char='*', indent_lvl=1, with_progress=verbose>2 )
     cdef int discarded = 0
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
         for j in range(n_threads-1):

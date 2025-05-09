@@ -96,6 +96,8 @@ cdef class Evaluation :
             The path to the folder containing all the subjects from one study (default : '.')
         subject : string
             The path (relative to previous folder) to the subject folder containing the output of the trk2dictionary script (default : '.')
+        dictionary_path : string
+            The path to the folder containing the dictionary files (default : 'COMMIT')
         """
         self.niiDWI                 = None # set by "load_data" method
         self.scheme                 = None # set by "load_data" method
