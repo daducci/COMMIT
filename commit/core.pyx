@@ -52,7 +52,7 @@ def load_dictionary_info( filename ):
         This value is always COMMIT_PATH + dictionary_info.pickle
     """
     if not isfile( filename ):
-        logger.error( 'Dictionary is outdated or not found. Execute "trk2dictionary" script first' )
+        logger.error( 'Dictionary is outdated or not found. Execute "trk2dictionary" script first. Note: if "path_out" is different from the default (i.e., "COMMIT"), use the same path as "dictionary_path" in the Evaluation class.' )
     with open( filename, 'rb' ) as dictionary_info_file:
         if sys.version_info.major == 3:
             aux = pickle.load( dictionary_info_file, fix_imports=True, encoding='bytes' )
@@ -120,6 +120,7 @@ cdef class Evaluation :
         self.set_config('version', get_distribution('dmri-commit').version)
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
+        self.set_config('dictionary_path', dictionary_path)
 
         if study_path == subject:
             self.set_config('DATA_path', study_path)
@@ -294,6 +295,7 @@ cdef class Evaluation :
         if hasattr(commit.models, model_name ) :
             self.model = getattr(commit.models, model_name)()
         elif model_name == 'VolumeFractions' :
+            logger.warning( 'Model "VolumeFractions" is deprecated. "ScalarMap" will be used instead (also for the name of the folder containing the results).' )
             self.model = getattr(commit.models, 'ScalarMap')()
         else:
             logger.error( 'Model "%s" not recognized' % model_name )
@@ -437,7 +439,7 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    cpdef load_dictionary( self, use_all_voxels_in_mask=False ) :
+    cpdef load_dictionary( self, path=None, use_all_voxels_in_mask=False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
@@ -455,6 +457,9 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading the data structure' )
         self.DICTIONARY = {}
+
+        if path is not None:
+            logger.warning('The "path" parameter is deprecated, so it will be ignored. The folder containing the dictionary files is now set using "dictionary_path" parameter in the Evaluation class.')
         path = self.get_config('TRACKING_path')
 
         # check that ndirs of dictionary matches with that of the kernels
