@@ -128,6 +128,8 @@ cdef class Evaluation :
             self.set_config('DATA_path', pjoin( study_path, subject ))
             self.set_config('TRACKING_path', pjoin( study_path, subject, dictionary_path ))
 
+        self.dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
+
         self.set_config('doNormalizeSignal', True)
         self.set_config('doMergeB0', False)
         self.set_config('doNormalizeKernels', True)
@@ -183,8 +185,6 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the data' )
-
-        self.dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
 
         logger.subinfo('Acquisition scheme:', indent_char='*', indent_lvl=1 )
         if scheme_filename is not None:
