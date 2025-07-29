@@ -1,12 +1,7 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, profile=False
-
-from os import cpu_count as num_cpu
 from os.path import join as pjoin
 
-from setuptools import Extension
-
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 import nibabel as nib
 
@@ -14,10 +9,7 @@ from amico.models import BaseModel, StickZeppelinBall as _StickZeppelinBall, Cyl
 import amico.util as util
 
 from dicelib.ui import setup_logger, set_verbose, ProgressBar
-
-
 logger = setup_logger('models')
-
 
 
 class StickZeppelinBall(_StickZeppelinBall):
@@ -38,56 +30,10 @@ class CylinderZeppelinBall(_CylinderZeppelinBall):
         return super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
 
 
-# class VolumeFractions(BaseModel):
-#     """Implements a simple model where each compartment contributes only with
-#        its own volume fraction. This model has been created to test there
-#        ability to remove false positive fibers with COMMIT.
-#     """
-#     def __init__(self):
-#         self.id = 'VolumeFractions'
-#         self.name = 'Volume fractions'
-#         self.maps_name = []
-#         self.maps_descr = []
-#         self.nolut = True
-
-#     def set(self):
-#         return
-
-#     def get_params(self):
-#         params = {}
-#         params['id'] = self.id
-#         params['name'] = self.name
-#         return params
-
-#     def set_solver(self):
-#         logger.error('Not implemented')
-
-#     def generate(self, out_path, aux, idx_in, idx_out, ndirs):
-#         return
-
-#     def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
-#         if doMergeB0:
-#             nS = 1 + self.scheme.dwi_count
-#             merge_idx = np.hstack((self.scheme.b0_idx[0], self.scheme.dwi_idx))
-#         else:
-#             nS = self.scheme.nS
-#             merge_idx = np.arange(nS)
-
-#         KERNELS = {}
-#         KERNELS['model'] = self.id
-#         KERNELS['wmr'] = np.ones((1, ndirs, nS), dtype=np.float32)
-#         KERNELS['wmh'] = np.ones((0, ndirs, nS), dtype=np.float32)
-#         KERNELS['iso'] = np.ones((0, nS), dtype=np.float32)
-#         return KERNELS
-
-#     def fit(self, evaluation):
-#         logger.error('Not implemented')
-
-
 class ScalarMap( BaseModel ) :
-    """Implements a simple model where each compartment contributes only with
-       its own volume fraction. This model has been created to test there
-       ability to remove false positive fibers with COMMIT.
+    """Implements a simple model where each compartment contributes to a scalar map,
+    e.g. intra-axonsl signal fraction or myelin water fraction, proportionally to
+    its local length inside each voxel.
     """
 
     def __init__( self ) :
@@ -136,39 +82,43 @@ class ScalarMap( BaseModel ) :
         return KERNELS
 
 
-    def _postprocess(self, temp_data, verbose=1):
-        """Rescale the streamline weights using the estimate tissue damage in all imaging voxels"""
-        dictionary = temp_data['DICTIONARY']
+    def _postprocess(self, aux_data, verbose=1):
+        """Rescale the streamline weights using the local tissue damage estimated
+        in all imaging voxels with the COMMIT_lesion new model."""
+
+        if not self.lesion_mask:
+            # nothing to do if lesion mask is not given
+            return
 
         # compute the actual damage in each voxel
-        IC_map = np.array(temp_data['niiIC_img'], dtype=np.float32)
-        IC = IC_map[dictionary['MASK_ix'], dictionary['MASK_iy'], dictionary['MASK_iz']]
-        ISO_map = np.array(temp_data['niiISO_img'], dtype=np.float32)
-        ISO = ISO_map[dictionary['MASK_ix'], dictionary['MASK_iy'], dictionary['MASK_iz']]
+        IC_map = np.array(aux_data['niiIC_img'], dtype=np.float32)
+        IC = IC_map[aux_data['DICTIONARY']['MASK_ix'], aux_data['DICTIONARY']['MASK_iy'], aux_data['DICTIONARY']['MASK_iz']]
+        ISO_map = np.array(aux_data['niiISO_img'], dtype=np.float32)
+        ISO = ISO_map[aux_data['DICTIONARY']['MASK_ix'], aux_data['DICTIONARY']['MASK_iy'], aux_data['DICTIONARY']['MASK_iz']]
         ISO_scaled = np.zeros_like(ISO)
         ISO_scaled[ISO>0] = (IC[ISO>0] - ISO[ISO>0]) / IC[ISO>0]
         ISO_scaled_save = np.zeros_like(ISO_map)
-        ISO_scaled_save[dictionary['MASK_ix'], dictionary['MASK_iy'], dictionary['MASK_iz']] = ISO_scaled
-        nib.save(nib.Nifti1Image(ISO_scaled_save, temp_data['affine']), pjoin(temp_data['RESULTS_path'],'compartment_IC_lesion_scaled.nii.gz'))
+        ISO_scaled_save[aux_data['DICTIONARY']['MASK_ix'], aux_data['DICTIONARY']['MASK_iy'], aux_data['DICTIONARY']['MASK_iz']] = ISO_scaled
+        nib.save(nib.Nifti1Image(ISO_scaled_save, aux_data['affine']), pjoin(aux_data['RESULTS_path'],'compartment_IC_lesion_scaled.nii.gz'))
         del IC, IC_map, ISO, ISO_map, ISO_scaled_save
         if np.count_nonzero(ISO_scaled>0) == 0:
-            logger.error('No lesions found in the input image.')
+            logger.warning('No lesions found')
             return
 
         # rescale each streamline weight
-        kept = dictionary['TRK']['kept']
-        cdef double [::1] xic_view = temp_data['streamline_weights'][kept==1]
-        cdef double [::1] xic_scaled_view = temp_data['streamline_weights'][kept==1].copy()
+        kept = aux_data['DICTIONARY']['TRK']['kept']
+        cdef double [::1] xic_view = aux_data['streamline_weights'][kept==1]
+        cdef double [::1] xic_scaled_view = aux_data['streamline_weights'][kept==1].copy()
         cdef float [::1] ISO_scaled_view = ISO_scaled
-        cdef unsigned int [::1] idx_v_view = dictionary['IC']['v']
-        cdef unsigned int [::1] idx_f_view = dictionary['IC']['fiber']
+        cdef unsigned int [::1] idx_v_view = aux_data['DICTIONARY']['IC']['v']
+        cdef unsigned int [::1] idx_f_view = aux_data['DICTIONARY']['IC']['fiber']
         cdef size_t i, idx_v, idx_f
         cdef double val
 
         log_list = []
         ret_subinfo = logger.subinfo('Rescaling streamline weights accounting for lesions', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=False, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
-            for i in range(dictionary['IC']['v'].shape[0]):
+            for i in range(aux_data['DICTIONARY']['IC']['v'].shape[0]):
                 idx_v = idx_v_view[i]
                 val = ISO_scaled_view[idx_v]
                 if val > 0:

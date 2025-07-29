@@ -151,6 +151,7 @@ cdef class Evaluation :
         self.verbose = verbose
         ui.set_verbose( 'core', verbose )
 
+
     def set_config( self, key, value ) :
         self.CONFIG[ key ] = value
         self.temp_data[ key ] = value
@@ -1665,19 +1666,22 @@ cdef class Evaluation :
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
 
         if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask:
+            #FIXME: check with Sara if this is needed (perhaps move to the _postprocess function?)
             niiLesion_img = niiISO_img.copy()
             niiLesion = nibabel.Nifti1Image( niiLesion_img, affine, header=niiMAP_hdr )
             nibabel.save( niiLesion , pjoin(RESULTS_path,'compartment_lesion.nii.gz') )
             niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             niiISO = nibabel.Nifti1Image( niiISO_img, affine, header=niiMAP_hdr )
 
+        #BUG: in case of lesion model, the same map is saved twice?
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # Configuration and results
         logger.subinfo('Configuration and results:', indent_char='*', indent_lvl=1)
         log_list = []
         ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=False if hasattr(self.model, '_postprocess') else True)
-        with ProgressBar(disable=self.verbose < 3 or hasattr(self.model, '_postprocess'), hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3 or hasattr(self.model, '_postprocess'), hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+            #FIXME: all this within the ProgressBar block?
             xic, _, _ = self.get_coeffs()
             if stat_coeffs != 'all' and xic.size > 0 :
                 xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
@@ -1695,9 +1699,11 @@ cdef class Evaluation :
                     logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all' )
 
             # scale output weights if blur was used
+            #FIXME: shall we write something into the log?
             if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
                 if stat_coeffs == 'all' :
                     logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
+
             if "tractogram_centr_idx" in self.dictionary_info.keys():
                 ordered_idx = self.dictionary_info["tractogram_centr_idx"].astype(np.int64)
                 unravel_weights = np.zeros( self.dictionary_info['n_count'], dtype=np.float64)
@@ -1711,22 +1717,19 @@ cdef class Evaluation :
                     temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
                     unravel_weights[ordered_idx] = temp_weights
                     xic = unravel_weights
-
             else:
                 if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
-
-            self.temp_data['DICTIONARY'] = self.DICTIONARY
-            self.temp_data['niiIC_img'] = niiIC_img
-            self.temp_data['niiEC_img'] = niiEC_img
-            self.temp_data['niiISO_img'] = niiLesion_img if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask else niiISO_img
-            self.temp_data['streamline_weights'] = xic
-            self.temp_data['RESULTS_path'] = RESULTS_path
-            self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
-
-            #TODO: shall we check for the existence of 'lesion_mask' etc?
-            if hasattr(self.model, '_postprocess') and (hasattr(self.model, 'lesion_mask') and self.model.lesion_mask):
+            if hasattr(self.model, '_postprocess') :
+                #FIXME: make this part "model independent", e.g. some data is only for the lesion model
+                self.temp_data['DICTIONARY'] = self.DICTIONARY
+                self.temp_data['niiIC_img'] = niiIC_img
+                self.temp_data['niiEC_img'] = niiEC_img
+                self.temp_data['niiISO_img'] = niiLesion_img if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask else niiISO_img
+                self.temp_data['streamline_weights'] = xic
+                self.temp_data['RESULTS_path'] = RESULTS_path
+                self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
                 xic = self.model._postprocess(self.temp_data, verbose=self.verbose)
             np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
 
