@@ -110,7 +110,7 @@ cdef class Evaluation :
         self.regularisation_params  = None # set by "set_regularisation" method
         self.x                      = None # set by "fit" method
         self.confidence_map_img     = None # set by "fit" method
-        self.debias_mask            = None # set by "fit" method 
+        self.debias_mask            = None # set by "fit" method
         self.x_nnls                 = None # set by "fit" method (coefficients of IC compartment estimated without regularization)
         self.verbose                = 3
 
@@ -337,7 +337,7 @@ cdef class Evaluation :
         if self.model.id=='VolumeFractions' or self.model.id=='ScalarMap' and ndirs!=1:
             ndirs = 1
             logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
- 
+
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
@@ -554,7 +554,7 @@ cdef class Evaluation :
 
             self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
             self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
-                
+
             self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
             # reorder the segments based on the "v" field
@@ -563,7 +563,7 @@ cdef class Evaluation :
             del idx
 
         logger.subinfo( f"{self.DICTIONARY['ISO']['nV']} voxels", indent_char='-', indent_lvl=2 )
-        
+
         # post-processing
         # ---------------
         log_list = []
@@ -591,7 +591,7 @@ cdef class Evaluation :
         ----------
         n : integer
             Number of threads to use (default : number of CPUs in the system)
-        """  
+        """
         if n is None :
             # Use the same number of threads used in trk2dictionary
             n = self.DICTIONARY['n_threads']
@@ -661,7 +661,7 @@ cdef class Evaluation :
                 for i in xrange(n) :
                     self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
                 self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
-                
+
             else :
                 self.THREADS['ISO'] = None
 
@@ -708,11 +708,11 @@ cdef class Evaluation :
             if self.DICTIONARY['ISO']['nV'] > 0 :
                 self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
                 N = np.floor( self.DICTIONARY['ISO']['nV']/n )
-                
+
                 for i in xrange(1,n) :
                     self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
                 self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
-                
+
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
@@ -800,7 +800,7 @@ cdef class Evaluation :
                 lambdas[2] corresponds to the Isotropic compartment
             The lambdas correspond to the ones described in the mathematical formulation of the regularisation term
             $\Omega(x) = lambdas[0]*regularisers[0](x) + lambdas[1]*regularisers[1](x) + lambdas[2]*regularisers[2](x)$
-            The maximum value of the regularisation parameter is the value of lambda above which it is guaranteed that  
+            The maximum value of the regularisation parameter is the value of lambda above which it is guaranteed that
                 the optimal solution is zero (computed as in [3] for lasso and as in [4] for group lasso).
             NB: if regularisers[k] is None, then lambdas[k] is ignored.
             NB: lambdas[k] must be a float greater than 0.
@@ -842,14 +842,14 @@ cdef class Evaluation :
                         group_weights_extra[k] - additional information associated to group k, only if group_weights_extra is not None
                         ||x_nnls[g[k]]||_2     - l2 norm of the streamline weights in group k, only if group_weights_adaptive is True
                 'group_weights_cardinality' - boolean :
-                    if True, the weight of a group is multiplied by the square root of its size in order to penalize 
+                    if True, the weight of a group is multiplied by the square root of its size in order to penalize
                         all groups in the same manner regardless their cardinality.
                     This field can be specified only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
                 'group_weights_adaptive' - boolean:
-                    if True, the weights of the groups are scaled by the l2 norm of the streamline weights obtained 
+                    if True, the weights of the groups are scaled by the l2 norm of the streamline weights obtained
                         by solving the NNLS problem without regularisation.
                     This field can be specified only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
-                    NB: if both 'group_weights_cardinality' and 'group_weights_adaptive' are True, then the weights 
+                    NB: if both 'group_weights_cardinality' and 'group_weights_adaptive' are True, then the weights
                         are computed as in [2].
                 'group_weights_extra' - np.array(np.float64) :
                     additional inforamation associated to each group of the IC compartment, based on prior knowledge.
@@ -862,7 +862,7 @@ cdef class Evaluation :
 
         References:
             [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding', https://www.jmlr.org/papers/volume12/jenatton11a/jenatton11a.pdf
-            [2] Schiavi et al. - 'A new method for accurate in vivo mapping of human brain connections using 
+            [2] Schiavi et al. - 'A new method for accurate in vivo mapping of human brain connections using
                 microstructural and anatomical information', https://doi.org/10.1126/sciadv.aba8245
             [3] Kim et al. - 'An interior-point method for large-scale l1-regularized least squares', https://doi.org/10.1109/JSTSP.2007.910971
             [4] Yuan, Lin - 'Model selection and estimation in regression with grouped variables', https://doi.org/10.1111/j.1467-9868.2005.00532.x
@@ -870,8 +870,8 @@ cdef class Evaluation :
 
         # functions to compute the maximum value of the regularisation parameter (lambda)
 
-        def compute_lambda_max_lasso(start, size, w_coeff): 
-            # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized least squares' https://doi.org/10.1109/JSTSP.2007.910971 
+        def compute_lambda_max_lasso(start, size, w_coeff):
+            # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized least squares' https://doi.org/10.1109/JSTSP.2007.910971
             At = self.A.T
             y  = self.get_y()
             Aty = np.asarray(At.dot(y))
@@ -886,7 +886,7 @@ cdef class Evaluation :
             for g in range(w_group.size):
                 norm_group[g] = np.sqrt(np.sum(Aty[idx_group[g]]**2)) / w_group[g]
             return np.max(norm_group)
-            
+
         if self.niiDWI is None :
             logger.error( 'Data not loaded; call "load_data()" first' )
         if self.DICTIONARY is None :
@@ -925,12 +925,12 @@ cdef class Evaluation :
         tr = time.time()
         logger.subinfo('')
         logger.info( 'Setting regularisation' )
-        
+
         ############################
         # INTRACELLULAR COMPARTMENT#
         ############################
         logger.subinfo( 'IC compartment:', indent_char='*', indent_lvl=1)
-    
+
         if regularisation['regIC'] == 'lasso':
             if lambdas[0] is None:
                 logger.error('Missing regularisation parameter for the IC compartment')
@@ -1030,7 +1030,7 @@ cdef class Evaluation :
             all_idx_in = np.sort(np.unique(np.concatenate(dictIC_params['group_idx'])))
             all_idx = np.arange(self.DICTIONARY['IC']['nF'], dtype=np.int32)
             if np.any(all_idx_in != all_idx):
-                logger.error('Group indices must contain all the indices of the input streamlines')          
+                logger.error('Group indices must contain all the indices of the input streamlines')
 
         # check if group_weights_extra is consistent with the number of groups
         if (regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso') and 'group_weights_extra' in dictIC_params:
@@ -1238,7 +1238,7 @@ cdef class Evaluation :
             logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=2, indent_char='-' )
 
         logger.subinfo( f'Non-negativity constraint: {regularisation["nnISO"]}', indent_char='-', indent_lvl=2 )
-        if regularisation['regISO'] is not None: 
+        if regularisation['regISO'] is not None:
             logger.debug( f'Lambda max: {regularisation["lambdaISO_max"]}' )
             logger.debug( f'% lambda: {regularisation["lambdaISO_perc"]}' )
             logger.debug( f'Lambda used: {regularisation["lambdaISO"]}' )
@@ -1702,7 +1702,7 @@ cdef class Evaluation :
                 ordered_idx = self.dictionary_info["tractogram_centr_idx"].astype(np.int64)
                 unravel_weights = np.zeros( self.dictionary_info['n_count'], dtype=np.float64)
                 unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
-                temp_weights = unravel_weights[ordered_idx] 
+                temp_weights = unravel_weights[ordered_idx]
                 if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                     unravel_weights[ordered_idx] = temp_weights
@@ -1716,7 +1716,7 @@ cdef class Evaluation :
                 if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
-            
+
             self.temp_data['DICTIONARY'] = self.DICTIONARY
             self.temp_data['niiIC_img'] = niiIC_img
             self.temp_data['niiEC_img'] = niiEC_img
@@ -1725,10 +1725,10 @@ cdef class Evaluation :
             self.temp_data['RESULTS_path'] = RESULTS_path
             self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
 
+            #TODO: shall we check for the existence of 'lesion_mask' etc?
             if hasattr(self.model, '_postprocess') and (hasattr(self.model, 'lesion_mask') and self.model.lesion_mask):
-                self.model._postprocess(self.temp_data, verbose=self.verbose)
-            else:
-                np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
+                xic = self.model._postprocess(self.temp_data, verbose=self.verbose)
+            np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
 
             self.set_config('stat_coeffs', stat_coeffs)
 
@@ -1747,7 +1747,7 @@ cdef class Evaluation :
         if save_est_dwi:
             log_list = []
             ret_subinfo = logger.subinfo('Estimated signal:', indent_char='-', indent_lvl=2, with_progress=True)
-            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):                    
+            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea

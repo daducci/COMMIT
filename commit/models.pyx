@@ -111,7 +111,7 @@ class ScalarMap( BaseModel ) :
 
     def generate( self, out_path, aux, idx_in, idx_out, ndirs ) :
         return
-    
+
     def fit(self, evaluation):
         """Placeholder implementation for the abstract method."""
         logger.error('Not implemented')
@@ -134,115 +134,50 @@ class ScalarMap( BaseModel ) :
             KERNELS['iso']   = np.ones( (0,nS), dtype=np.float32 )
 
         return KERNELS
-    
-    def find_idx(self, ic_v, ic_les, dict_icf, max_size, progress_bar, chunk_num):
-        cdef unsigned int [::1]ic_les_view = ic_les
-        cdef long les_shape = ic_les.shape[0]
-        cdef long ic_v_shape = ic_v.shape[0]
-        cdef int chunk_num_mem = chunk_num
-        cdef unsigned int [::1]progress_bar_mem = progress_bar
 
 
-        # indices_vox = np.zeros(les_shape*ic_v_shape, dtype=np.uint32)
-        indices_vox = np.zeros(max_size, dtype=np.uint32)
-        cdef unsigned int [::1]indices_vox_view = indices_vox
+    def _postprocess(self, temp_data, verbose=1):
+        """Rescale the streamline weights using the estimate tissue damage in all imaging voxels"""
+        dictionary = temp_data['DICTIONARY']
 
-        # indices_str = np.zeros(les_shape*ic_v_shape, dtype=np.uint32)
-        indices_str = np.zeros(max_size, dtype=np.uint32)
-        cdef unsigned int [::1]indices_str_view = indices_str
-
-        cdef unsigned int[::1] ic_v_view = ic_v
-
-        cdef int count = 0
-
-        cdef unsigned int [::1]dict_icf_view = dict_icf
-
-        cdef unsigned int ic_les_val = 0
-        cdef size_t i, j = 0
-
-        with nogil:
-            for i in range(les_shape):
-                ic_les_val = ic_les_view[i]
-                for j in range(ic_v_shape):
-                    if ic_v_view[j] == ic_les_val:# and ic_les_val > 0:
-                        indices_vox_view[count] = ic_v_view[j]
-                        indices_str_view[count] = dict_icf_view[j]
-                        count += 1
-                progress_bar_mem[chunk_num_mem] += 1
-
-        return indices_vox[:count], indices_str[:count]
-    
-    def _postprocess(self, preproc_dict, verbose=1):
-        ISO_map = np.array(preproc_dict['niiISO_img'], dtype=np.float32)
-        IC_map = np.array(preproc_dict['niiIC_img'], dtype=np.float32)
-
-        dictionary = preproc_dict['DICTIONARY']
-
-        kept = dictionary['TRK']['kept']
-        x_weights = preproc_dict["streamline_weights"][kept==1].copy()
-        x_weights_scaled = x_weights.copy()
-        new_weights = np.zeros_like(kept, dtype=np.float32)
-
-
+        # compute the actual damage in each voxel
+        IC_map = np.array(temp_data['niiIC_img'], dtype=np.float32)
         IC = IC_map[dictionary['MASK_ix'], dictionary['MASK_iy'], dictionary['MASK_iz']]
+        ISO_map = np.array(temp_data['niiISO_img'], dtype=np.float32)
         ISO = ISO_map[dictionary['MASK_ix'], dictionary['MASK_iy'], dictionary['MASK_iz']]
-        ISO_scaled = np.zeros_like(ISO) 
+        ISO_scaled = np.zeros_like(ISO)
         ISO_scaled[ISO>0] = (IC[ISO>0] - ISO[ISO>0]) / IC[ISO>0]
-
         ISO_scaled_save = np.zeros_like(ISO_map)
         ISO_scaled_save[dictionary['MASK_ix'], dictionary['MASK_iy'], dictionary['MASK_iz']] = ISO_scaled
-        nib.save(nib.Nifti1Image(ISO_scaled_save, preproc_dict['affine']), pjoin(preproc_dict["RESULTS_path"],'compartment_IC_lesion_scaled.nii.gz'))
-        
-        idx_les = np.argwhere(ISO_scaled > 0)[:,0].astype(np.uint32)
-        if idx_les.shape[0] == 0:
-            logger.error('No lesion found in the input image.')
+        nib.save(nib.Nifti1Image(ISO_scaled_save, temp_data['affine']), pjoin(temp_data['RESULTS_path'],'compartment_IC_lesion_scaled.nii.gz'))
+        del IC, IC_map, ISO, ISO_map, ISO_scaled_save
+        if np.count_nonzero(ISO_scaled>0) == 0:
+            logger.error('No lesions found in the input image.')
             return
 
-    
-        result = []
-        dict_idx_v = dictionary['IC']['v']
-        cdef unsigned int [::1]dict_idx_v_view = dict_idx_v
-
-        cdef unsigned int cpu_count = num_cpu()
-        cdef unsigned int[:] find_idx_progress = np.zeros(cpu_count, dtype=np.uint32)
-
-        n = idx_les.shape[0]
-        c = n // cpu_count
-        max_size = int(3e9/cpu_count)
-        chunks = []
-        for ii, jj in zip(range(0, n, c), range(c, n+1, c)):
-            chunks.append((ii, jj))
-        if chunks[len(chunks)-1][1] != n:
-            chunks[len(chunks)-1] = (chunks[len(chunks)-1][0], n)
-        logger
-        logger.subinfo('Recomputing streamlines weights accounting for lesions', indent_lvl=3, indent_char='->', with_progress=True)
-        with ProgressBar(multithread_progress=find_idx_progress, total=n,
-                         disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
-            with ThreadPoolExecutor(max_workers=cpu_count) as executor:
-                futures = [executor.submit(self.find_idx, dict_idx_v_view, idx_les[ii:jj], dictionary['IC']['fiber'], max_size, find_idx_progress, chunk_num) for chunk_num, (ii, jj) in enumerate(chunks)]
-                for future in as_completed(futures):
-                    result.append(future.result())
-
-        idx_vox = []
-        idx_str = []
-        for r in result:
-            idx_vox.extend(r[0].tolist())
-            idx_str.extend(r[1].tolist())
-
-        cdef double [::1] x_weights_view = x_weights
-        cdef double [::1] x_weights_scaled_view = x_weights_scaled
-        cdef double x_weight = 0
+        # rescale each streamline weight
+        kept = dictionary['TRK']['kept']
+        cdef double [::1] xic_view = temp_data['streamline_weights'][kept==1]
+        cdef double [::1] xic_scaled_view = temp_data['streamline_weights'][kept==1].copy()
         cdef float [::1] ISO_scaled_view = ISO_scaled
+        cdef unsigned int [::1] idx_v_view = dictionary['IC']['v']
+        cdef unsigned int [::1] idx_f_view = dictionary['IC']['fiber']
+        cdef size_t i, idx_v, idx_f
+        cdef double val
 
-        cdef size_t vox = 0
-        cdef size_t str_i = 0
+        log_list = []
+        ret_subinfo = logger.subinfo('Rescaling streamline weights accounting for lesions', indent_lvl=2, indent_char='-', with_progress=True)
+        with ProgressBar(disable=False, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+            for i in range(dictionary['IC']['v'].shape[0]):
+                idx_v = idx_v_view[i]
+                val = ISO_scaled_view[idx_v]
+                if val > 0:
+                    idx_f = idx_f_view[i]
+                    #TODO: allow considering other than the min value
+                    if xic_view[idx_f] * val < xic_scaled_view[idx_f]:
+                        xic_scaled_view[idx_f] = xic_view[idx_f] * val
 
-        for vox, str_i in zip(idx_vox, idx_str):
-            x_weight = x_weights_view[str_i] * ISO_scaled_view[vox]
-            if x_weight < x_weights_scaled_view[str_i]:
-                x_weights_scaled_view[str_i] = x_weight
-
-        new_weights[kept==1] = x_weights_scaled
-        coeffs_format='%.5e'
-
-        np.savetxt( pjoin(preproc_dict["RESULTS_path"],'streamline_weights.txt'), new_weights, fmt=coeffs_format )
+        # return rescaled streamline weights
+        xic_scaled = np.zeros_like(kept, dtype=np.float32)
+        xic_scaled[kept==1] = xic_scaled_view
+        return xic_scaled
