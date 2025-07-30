@@ -1485,7 +1485,7 @@ cdef class Evaluation :
             RESULTS_path = RESULTS_path + path_suffix
 
         logger.subinfo('')
-        logger.info( 'Saving results to "%s/*"' % RESULTS_path )
+        logger.info( f'Saving output to "{RESULTS_path}/*"' )
         tic = time.time()
 
         if self.x is None :
@@ -1676,13 +1676,17 @@ cdef class Evaluation :
         #BUG: in case of lesion model, the same map is saved twice?
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
-        # Configuration and results
-        logger.subinfo('Configuration and results:', indent_char='*', indent_lvl=1)
+        # process and save streamline_weights.txt
+        logger.subinfo('Streamline weights:', indent_char='*', indent_lvl=1)
+        xic, _, _ = self.get_coeffs()
+
         log_list = []
-        ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=False if hasattr(self.model, '_postprocess') else True)
-        with ProgressBar(disable=self.verbose<3 or hasattr(self.model, '_postprocess'), hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
-            #FIXME: all this within the ProgressBar block?
-            xic, _, _ = self.get_coeffs()
+        ret_subinfo = logger.subinfo(f'Handling multiple coeffs per streamline: "{stat_coeffs}"', indent_lvl=2, indent_char='-', with_progress=True)
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+            self.set_config('stat_coeffs', stat_coeffs)
+            if stat_coeffs == 'all' :
+                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
+                    logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             if stat_coeffs != 'all' and xic.size > 0 :
                 xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                 if stat_coeffs == 'sum' :
@@ -1699,11 +1703,6 @@ cdef class Evaluation :
                     logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all' )
 
             # scale output weights if blur was used
-            #FIXME: shall we write something into the log?
-            if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
-                if stat_coeffs == 'all' :
-                    logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-
             if "tractogram_centr_idx" in self.dictionary_info.keys():
                 ordered_idx = self.dictionary_info["tractogram_centr_idx"].astype(np.int64)
                 unravel_weights = np.zeros( self.dictionary_info['n_count'], dtype=np.float64)
@@ -1721,7 +1720,11 @@ cdef class Evaluation :
                 if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
-            if hasattr(self.model, '_postprocess') :
+        # call (potential) postprocessing required by the specific model
+        if hasattr(self.model, '_postprocess') :
+            log_list = []
+            ret_subinfo = logger.subinfo('Calling model-specific postprocessing', indent_lvl=2, indent_char='-', with_progress=True)
+            with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
                 #FIXME: make this part "model independent", e.g. some data is only for the lesion model
                 self.temp_data['DICTIONARY'] = self.DICTIONARY
                 self.temp_data['niiIC_img'] = niiIC_img
@@ -1731,14 +1734,14 @@ cdef class Evaluation :
                 self.temp_data['RESULTS_path'] = RESULTS_path
                 self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
                 xic = self.model._postprocess(self.temp_data, verbose=self.verbose)
-            np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
 
-            self.set_config('stat_coeffs', stat_coeffs)
+        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
 
         # Save to a pickle file the following items:
         #   item 0: dictionary with all the configuration details
         #   item 1: np.array obtained through the optimisation process with the normalised kernels
         #   item 2: np.array renormalisation of coeffs in item 1
+        logger.subinfo('Configuration settings:', indent_char='*', indent_lvl=1)
         log_list = []
         ret_subinfo = logger.subinfo('results.pickle', indent_char='-', indent_lvl=2, with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):

@@ -17,6 +17,7 @@ class StickZeppelinBall(_StickZeppelinBall):
     See the AMICO.model module for details.
     """
     def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
+        #FIXME: use logger
         util.set_verbose(2)
         return super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
 
@@ -26,6 +27,7 @@ class CylinderZeppelinBall(_CylinderZeppelinBall):
     See the AMICO.model module for details.
     """
     def resample(self, in_path, idx_out, Ylm_out, doMergeB0, ndirs):
+        #FIXME: use logger
         util.set_verbose(2)
         return super().resample(in_path, idx_out, Ylm_out, doMergeB0, ndirs)
 
@@ -82,9 +84,10 @@ class ScalarMap( BaseModel ) :
         return KERNELS
 
 
-    def _postprocess(self, aux_data, verbose=1):
+    def _postprocess(self, aux_data, verbose=2):
         """Rescale the streamline weights using the local tissue damage estimated
         in all imaging voxels with the COMMIT_lesion new model."""
+        set_verbose( 'model', verbose )
 
         if not self.lesion_mask:
             # nothing to do if lesion mask is not given
@@ -115,17 +118,15 @@ class ScalarMap( BaseModel ) :
         cdef size_t i, idx_v, idx_f
         cdef double val
 
-        log_list = []
-        ret_subinfo = logger.subinfo('Rescaling streamline weights accounting for lesions', indent_lvl=2, indent_char='-', with_progress=True)
-        with ProgressBar(disable=False, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
-            for i in range(aux_data['DICTIONARY']['IC']['v'].shape[0]):
-                idx_v = idx_v_view[i]
-                val = ISO_scaled_view[idx_v]
-                if val > 0:
-                    idx_f = idx_f_view[i]
-                    #TODO: allow considering other than the min value
-                    if xic_view[idx_f] * val < xic_scaled_view[idx_f]:
-                        xic_scaled_view[idx_f] = xic_view[idx_f] * val
+        # Rescaling streamline weights accounting for lesions
+        for i in range(aux_data['DICTIONARY']['IC']['v'].shape[0]):
+            idx_v = idx_v_view[i]
+            val = ISO_scaled_view[idx_v]
+            if val > 0:
+                idx_f = idx_f_view[i]
+                #TODO: allow considering other than the min value
+                if xic_view[idx_f] * val < xic_scaled_view[idx_f]:
+                    xic_scaled_view[idx_f] = xic_view[idx_f] * val
 
         # return rescaled streamline weights
         xic_scaled = np.zeros_like(kept, dtype=np.float32)
