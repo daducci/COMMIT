@@ -1732,7 +1732,10 @@ cdef class Evaluation :
                 self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
                 xic = self.model._postprocess(self.temp_data, verbose=self.verbose)
 
-        np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
+        # Save xic to streamline_weights.txt
+        ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
+            np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
 
         # Save to a pickle file the following items:
         #   item 0: dictionary with all the configuration details
@@ -1747,7 +1750,7 @@ cdef class Evaluation :
                 pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
 
         if save_est_dwi:
-            ret_subinfo = logger.subinfo('Estimated signal:', indent_char='-', indent_lvl=2, with_progress=True)
+            ret_subinfo = logger.subinfo('Estimated signal', indent_char='-', indent_lvl=2, with_progress=True)
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )

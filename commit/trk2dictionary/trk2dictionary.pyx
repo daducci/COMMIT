@@ -28,7 +28,7 @@ import shutil
 
 import time
 
- 
+
 logger = setup_logger('trk2dictionary')
 
 # Interface to actual C code
@@ -99,7 +99,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         the mask is created from all voxels intersected by the tracts.
 
     filename_lesion_mask : string
-        Path to a binary mask that defines the position(s) of the lesion(s). 
+        Path to a binary mask that defines the position(s) of the lesion(s).
 
     do_intersect : boolean
         If True then streamline segments that intersect voxel boundaries are splitted (default).
@@ -431,7 +431,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiMASK_hdr = _get_header( niiMASK )
         logger.subinfo( f'{niiMASK.shape[0]} x {niiMASK.shape[1]} x {niiMASK.shape[2]}', indent_lvl=3, indent_char='-' )
         logger.subinfo( f'{niiMASK_hdr["pixdim"][1]:.4f} x {niiMASK_hdr["pixdim"][2]:.4f} x {niiMASK_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
-        if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or 
+        if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
             abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dataset does not have the same geometry as the tractogram' )
         niiMASK_img = np.ascontiguousarray( np.asanyarray( niiMASK.dataobj ).astype(np.float32) )
@@ -458,7 +458,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiPEAKS_hdr = _get_header( niiPEAKS )
         logger.subinfo( f'{niiPEAKS.shape[0]} x {niiPEAKS.shape[1]} x {niiPEAKS.shape[2]} x {niiPEAKS.shape[3]}', indent_lvl=3, indent_char='-' )
         logger.subinfo( f'{niiPEAKS_hdr["pixdim"][1]:.4f} x {niiPEAKS_hdr["pixdim"][2]:.4f} x {niiPEAKS_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
-        
+
         logger.subinfo( f'ignoring peaks < {vf_THR:.2f} * MaxPeak', indent_lvl=3, indent_char='-' )
         logger.subinfo( f'{"" if peaks_use_affine else "not "}using affine matrix', indent_lvl=3, indent_char='-' )
         logger.subinfo( f'flipping axes : [ x={flip_peaks[0]}, y={flip_peaks[1]}, z={flip_peaks[2]} ]', indent_lvl=3, indent_char='-' )
@@ -484,7 +484,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Np = 0
         ptrPEAKS = NULL
         ptrPeaksAffine = NULL
-    
+
     # ISO map for isotropic compartment
     cdef float* ptrISO
     cdef float [:, :, ::1] niiISO_img
@@ -548,14 +548,14 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
     # free memory
     free(ptrTDI)
-    
+
     # NOTE: this is to ensure flushing all the output from the cpp code
     print(end='', flush=True)
     time.sleep(0.5)
 
     # Concatenate files together
     log_list = []
-    ret_subinfo = logger.subinfo( f'Saving data structure in {path_out} ', indent_char='*', indent_lvl=1, with_progress=verbose>2 )
+    ret_subinfo = logger.subinfo( f'Saving data structure in "{path_out}" ', indent_char='*', indent_lvl=1, with_progress=verbose>2 )
     cdef int discarded = 0
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
         for j in range(n_threads-1):
@@ -636,7 +636,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
         v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
         l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
-        
+
         niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose=0 )
         niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
 
