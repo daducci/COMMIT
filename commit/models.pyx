@@ -3,7 +3,7 @@
 from os.path import join as pjoin
 
 import numpy as np
-import nibabel as nib
+import nibabel
 
 from amico.models import BaseModel, StickZeppelinBall as _StickZeppelinBall, CylinderZeppelinBall as _CylinderZeppelinBall
 import amico.util as util
@@ -84,42 +84,61 @@ class ScalarMap( BaseModel ) :
         return KERNELS
 
 
-    def _postprocess(self, aux_data, verbose=2):
+    def _postprocess(self, evaluation, xic):
         """Rescale the streamline weights using the local tissue damage estimated
-        in all imaging voxels with the COMMIT_lesion new model."""
-        set_verbose( 'models', verbose )
+        in all imaging voxels with the COMMIT_lesion new model.
 
+        Parameters
+        ----------
+        evaluation : object
+            Evaluation object, to enable accessing the whole content of the
+            whole evaluation object
+
+        xic : np.array
+            Streamline weights
+        """
         if not self.lesion_mask:
             # nothing to do if lesion mask is not given
             return
 
-        # compute the actual damage in each voxel
-        IC_map = np.array(aux_data['niiIC_img'], dtype=np.float32)
-        IC = IC_map[aux_data['DICTIONARY']['MASK_ix'], aux_data['DICTIONARY']['MASK_iy'], aux_data['DICTIONARY']['MASK_iz']]
-        ISO_map = np.array(aux_data['niiISO_img'], dtype=np.float32)
-        ISO = ISO_map[aux_data['DICTIONARY']['MASK_ix'], aux_data['DICTIONARY']['MASK_iy'], aux_data['DICTIONARY']['MASK_iz']]
-        ISO_scaled = np.zeros_like(ISO)
+        RESULTS_path = evaluation.get_config('RESULTS_path')
+
+        evaluation.DICTIONARY = evaluation.DICTIONARY
+        niiIC_img = np.asanyarray( nibabel.load( pjoin(RESULTS_path,'compartment_IC.nii.gz') ).dataobj ).astype(np.float32)
+        niiISO_img = np.asanyarray( nibabel.load( pjoin(RESULTS_path,'compartment_ISO.nii.gz') ).dataobj ).astype(np.float32)
+        affine = evaluation.niiDWI.affine if nibabel.__version__ >= '2.0.0' else evaluation.niiDWI.get_affine()
+
+        #TODO: fix this with Sara
+        # rescale the input scalar map in each voxel according to the lesion
+        IC = niiIC_img[evaluation.DICTIONARY['MASK_ix'], evaluation.DICTIONARY['MASK_iy'], evaluation.DICTIONARY['MASK_iz']]
+        ISO = niiISO_img[evaluation.DICTIONARY['MASK_ix'], evaluation.DICTIONARY['MASK_iy'], evaluation.DICTIONARY['MASK_iz']]
+        ISO_scaled = np.zeros_like(ISO, dtype=np.float32)
         ISO_scaled[ISO>0] = (IC[ISO>0] - ISO[ISO>0]) / IC[ISO>0]
-        ISO_scaled_save = np.zeros_like(ISO_map)
-        ISO_scaled_save[aux_data['DICTIONARY']['MASK_ix'], aux_data['DICTIONARY']['MASK_iy'], aux_data['DICTIONARY']['MASK_iz']] = ISO_scaled
-        nib.save(nib.Nifti1Image(ISO_scaled_save, aux_data['affine']), pjoin(aux_data['RESULTS_path'],'compartment_IC_lesion_scaled.nii.gz'))
-        del IC, IC_map, ISO, ISO_map, ISO_scaled_save
+        ISO_scaled_save = np.zeros_like(niiISO_img, dtype=np.float32)
+        ISO_scaled_save[evaluation.DICTIONARY['MASK_ix'], evaluation.DICTIONARY['MASK_iy'], evaluation.DICTIONARY['MASK_iz']] = ISO_scaled
+        nibabel.save(nibabel.Nifti1Image(ISO_scaled_save, affine), pjoin(RESULTS_path,'compartment_IC_lesion_scaled.nii.gz'))
         if np.count_nonzero(ISO_scaled>0) == 0:
             logger.warning('No lesions found')
             return
 
+        # save to map of local tissue damage estimated in each voxel
+        nibabel.save( nibabel.Nifti1Image( niiISO_img, affine ), pjoin(RESULTS_path,'compartment_lesion.nii.gz') )
+
+        # override ISO map and set it to 0
+        nibabel.save( nibabel.Nifti1Image( 0*niiISO_img, affine), pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
+
         # rescale each streamline weight
-        kept = aux_data['DICTIONARY']['TRK']['kept']
-        cdef double [::1] xic_view = aux_data['streamline_weights'][kept==1]
-        cdef double [::1] xic_scaled_view = aux_data['streamline_weights'][kept==1].copy()
+        kept = evaluation.DICTIONARY['TRK']['kept']
+        cdef double [::1] xic_view = xic[kept==1]
+        cdef double [::1] xic_scaled_view = xic[kept==1].copy()
         cdef float [::1] ISO_scaled_view = ISO_scaled
-        cdef unsigned int [::1] idx_v_view = aux_data['DICTIONARY']['IC']['v']
-        cdef unsigned int [::1] idx_f_view = aux_data['DICTIONARY']['IC']['fiber']
+        cdef unsigned int [::1] idx_v_view = evaluation.DICTIONARY['IC']['v']
+        cdef unsigned int [::1] idx_f_view = evaluation.DICTIONARY['IC']['fiber']
         cdef size_t i, idx_v, idx_f
         cdef double val
 
         # Rescaling streamline weights accounting for lesions
-        for i in range(aux_data['DICTIONARY']['IC']['v'].shape[0]):
+        for i in range(evaluation.DICTIONARY['IC']['v'].shape[0]):
             idx_v = idx_v_view[i]
             val = ISO_scaled_view[idx_v]
             if val > 0:

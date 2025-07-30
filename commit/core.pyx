@@ -1494,8 +1494,7 @@ cdef class Evaluation :
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
         norm_fib = np.ones( nF )
-        # x is the x of the original problem
-        # self.x is the x preconditioned
+        # NB: x correspond to the original problem, self.x are the preconditioned ones
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
@@ -1663,16 +1662,6 @@ cdef class Evaluation :
 
         nibabel.save( niiIC , pjoin(RESULTS_path,'compartment_IC.nii.gz') )
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
-
-        if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask:
-            #FIXME: check with Sara if this is needed (perhaps move to the _postprocess function?)
-            niiLesion_img = niiISO_img.copy()
-            niiLesion = nibabel.Nifti1Image( niiLesion_img, affine, header=niiMAP_hdr )
-            nibabel.save( niiLesion , pjoin(RESULTS_path,'compartment_lesion.nii.gz') )
-            niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
-            niiISO = nibabel.Nifti1Image( niiISO_img, affine, header=niiMAP_hdr )
-
-        #BUG: in case of lesion model, the same map is saved twice?
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
         # process and save streamline_weights.txt
@@ -1723,14 +1712,14 @@ cdef class Evaluation :
             ret_subinfo = logger.subinfo('Calling model-specific postprocessing', indent_lvl=2, indent_char='-', with_progress=True)
             with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
                 #FIXME: make this part "model independent", e.g. some data is only for the lesion model
-                self.temp_data['DICTIONARY'] = self.DICTIONARY
-                self.temp_data['niiIC_img'] = niiIC_img
-                self.temp_data['niiEC_img'] = niiEC_img
-                self.temp_data['niiISO_img'] = niiLesion_img if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask else niiISO_img
-                self.temp_data['streamline_weights'] = xic
-                self.temp_data['RESULTS_path'] = RESULTS_path
-                self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
-                xic = self.model._postprocess(self.temp_data, verbose=self.verbose)
+                # self.temp_data['DICTIONARY'] = self.DICTIONARY
+                # self.temp_data['niiIC_img'] = niiIC_img
+                # self.temp_data['niiEC_img'] = niiEC_img
+                # self.temp_data['niiISO_img'] = niiLesion_img if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask else niiISO_img
+                # self.temp_data['streamline_weights'] = xic
+                # self.temp_data['RESULTS_path'] = RESULTS_path
+                # self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
+                xic = self.model._postprocess(self, xic, verbose=self.verbose)
 
         # Save xic to streamline_weights.txt
         ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
