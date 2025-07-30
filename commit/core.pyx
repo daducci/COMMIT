@@ -242,9 +242,8 @@ cdef class Evaluation :
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
-                    log_list = []
                     ret_subinfo = logger.subinfo('Normalizing to b0:', with_progress=True, indent_char='*', indent_lvl=1)
-                    with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+                    with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
                         b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
                         idx = b0 <= b0_min_signal * b0[b0>0].mean()
                         b0[ idx ] = 1
@@ -1680,9 +1679,8 @@ cdef class Evaluation :
         logger.subinfo('Streamline weights:', indent_char='*', indent_lvl=1)
         xic, _, _ = self.get_coeffs()
 
-        log_list = []
         ret_subinfo = logger.subinfo(f'Handling multiple coeffs per streamline: "{stat_coeffs}"', indent_lvl=2, indent_char='-', with_progress=True)
-        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
             self.set_config('stat_coeffs', stat_coeffs)
             if stat_coeffs == 'all' :
                 if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
@@ -1722,9 +1720,8 @@ cdef class Evaluation :
 
         # call (potential) postprocessing required by the specific model
         if hasattr(self.model, '_postprocess') :
-            log_list = []
             ret_subinfo = logger.subinfo('Calling model-specific postprocessing', indent_lvl=2, indent_char='-', with_progress=True)
-            with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+            with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
                 #FIXME: make this part "model independent", e.g. some data is only for the lesion model
                 self.temp_data['DICTIONARY'] = self.DICTIONARY
                 self.temp_data['niiIC_img'] = niiIC_img
@@ -1742,18 +1739,16 @@ cdef class Evaluation :
         #   item 1: np.array obtained through the optimisation process with the normalised kernels
         #   item 2: np.array renormalisation of coeffs in item 1
         logger.subinfo('Configuration settings:', indent_char='*', indent_lvl=1)
-        log_list = []
         ret_subinfo = logger.subinfo('results.pickle', indent_char='-', indent_lvl=2, with_progress=True)
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
                 self.CONFIG['optimization']['regularisation'].pop('omega', None)
                 self.CONFIG['optimization']['regularisation'].pop('prox', None)
                 pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
 
         if save_est_dwi:
-            log_list = []
             ret_subinfo = logger.subinfo('Estimated signal:', indent_char='-', indent_lvl=2, with_progress=True)
-            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea

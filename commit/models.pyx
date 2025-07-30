@@ -87,7 +87,7 @@ class ScalarMap( BaseModel ) :
     def _postprocess(self, aux_data, verbose=2):
         """Rescale the streamline weights using the local tissue damage estimated
         in all imaging voxels with the COMMIT_lesion new model."""
-        set_verbose( 'model', verbose )
+        set_verbose( 'models', verbose )
 
         if not self.lesion_mask:
             # nothing to do if lesion mask is not given
