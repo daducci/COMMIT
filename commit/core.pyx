@@ -1136,9 +1136,9 @@ cdef class Evaluation :
                 logger.debug( str_weights )
 
 
-        ###########################
-        # EXTRCELLULAR COMPARTMENT#
-        ###########################
+        #############################
+        # EXTRACELLULAR COMPARTMENT #
+        #############################
         logger.subinfo( 'EC compartment:', indent_char='*', indent_lvl=1 )
 
         if regularisation['regEC'] == 'lasso':
@@ -1711,15 +1711,8 @@ cdef class Evaluation :
         if hasattr(self.model, '_postprocess') :
             ret_subinfo = logger.subinfo('Calling model-specific postprocessing', indent_lvl=2, indent_char='-', with_progress=True)
             with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
-                #FIXME: make this part "model independent", e.g. some data is only for the lesion model
-                # self.temp_data['DICTIONARY'] = self.DICTIONARY
-                # self.temp_data['niiIC_img'] = niiIC_img
-                # self.temp_data['niiEC_img'] = niiEC_img
-                # self.temp_data['niiISO_img'] = niiLesion_img if hasattr(self.model, 'lesion_mask') and self.model.lesion_mask else niiISO_img
-                # self.temp_data['streamline_weights'] = xic
-                # self.temp_data['RESULTS_path'] = RESULTS_path
-                # self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
-                xic = self.model._postprocess(self, xic, verbose=self.verbose)
+                #FIXME: make this part "model independent" passing all variables of this context
+                xic = self.model._postprocess(self, xic)
 
         # Save xic to streamline_weights.txt
         ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
@@ -1730,8 +1723,8 @@ cdef class Evaluation :
         #   item 0: dictionary with all the configuration details
         #   item 1: np.array obtained through the optimisation process with the normalised kernels
         #   item 2: np.array renormalisation of coeffs in item 1
-        logger.subinfo('Configuration settings:', indent_char='*', indent_lvl=1)
-        ret_subinfo = logger.subinfo('results.pickle', indent_char='-', indent_lvl=2, with_progress=True)
+        logger.subinfo('Configuration settings:', indent_lvl=1, indent_char='*')
+        ret_subinfo = logger.subinfo('results.pickle', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
                 self.CONFIG['optimization']['regularisation'].pop('omega', None)
@@ -1739,7 +1732,7 @@ cdef class Evaluation :
                 pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
 
         if save_est_dwi:
-            ret_subinfo = logger.subinfo('Estimated signal', indent_char='-', indent_lvl=2, with_progress=True)
+            ret_subinfo = logger.subinfo('Estimated signal', indent_lvl=2, indent_char='-', with_progress=True)
             with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )

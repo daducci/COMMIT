@@ -24,7 +24,7 @@ def init_regularisation(regularisation_params):
     # check if regularisations are in the list
     if regularisation_params['regIC'] not in list_regularizers or regularisation_params['regEC'] not in list_regularizers or regularisation_params['regISO'] not in list_regularizers:
         logger.error('Regularisation not in the list')
-    
+
     startIC  = regularisation_params.get('startIC')
     sizeIC   = regularisation_params.get('sizeIC')
     startEC  = regularisation_params.get('startEC')
@@ -97,7 +97,7 @@ def init_regularisation(regularisation_params):
             proxIC = lambda x, scaling: non_negativity(prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC),startIC,sizeIC)
         else:
             proxIC = lambda x, scaling: prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
-  
+
     elif regularisation_params['regIC'] == 'sparse_group_lasso':
         if not len(dictIC_params['group_idx_kept']) == len(dictIC_params['group_weights']):
             logger.error('Number of groups and weights do not match')
@@ -132,12 +132,10 @@ def init_regularisation(regularisation_params):
                 proxIC = lambda x, scaling: prox_group_lasso(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
 
 
-    ###########################
-    # EXTRCELLULAR COMPARTMENT#
-    ###########################
-
-    dictEC_params = regularisation_params.get('dictEC_params')
-
+    #############################
+    # EXTRACELLULAR COMPARTMENT #
+    #############################
+    # dictEC_params = regularisation_params.get('dictEC_params')
     if regularisation_params['regEC'] is None:
         omegaEC = lambda x: 0.0
         if regularisation_params.get('nnEC')==True:
@@ -167,12 +165,10 @@ def init_regularisation(regularisation_params):
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
 
 
-    ########################
-    # ISOTROPIC COMPARTMENT#
-    ########################
-
-    dictISO_params = regularisation_params.get('dictISO_params')
-
+    #########################
+    # ISOTROPIC COMPARTMENT #
+    #########################
+    # dictISO_params = regularisation_params.get('dictISO_params')
     if regularisation_params['regISO'] is None:
         omegaISO = lambda x: 0.0
         if regularisation_params.get('nnISO')==True:
