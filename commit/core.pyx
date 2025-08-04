@@ -2,35 +2,27 @@
 #cython: language_level=3, boundscheck=False, wraparound=False, nonecheck=False, cdivision=True, initializedcheck=False, binding=False
 
 cimport numpy as np
-
 import glob
 from os import makedirs, remove, listdir
 from os.path import exists, join as pjoin, isfile, isdir
 import pyximport
 import sys
 import time
-
 import nibabel
-
 import numpy as np
-
 import pickle
-
-from pkg_resources import get_distribution
-
+from importlib import metadata
 import amico.scheme
 import amico.lut
-
 from dicelib.ui import ProgressBar, setup_logger
 from dicelib import ui
 from dicelib.utils import format_time
-
 import commit.models
 import commit.solvers
 from commit.operator import operator
 
-
 logger = setup_logger('core')
+
 
 def setup( lmax=12 ) :
     """General setup/initialization of the COMMIT framework.
@@ -117,7 +109,7 @@ cdef class Evaluation :
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
         self.temp_data = {}
-        self.set_config('version', get_distribution('dmri-commit').version)
+        self.set_config('version', metadata.version('dmri-commit'))
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
         self.set_config('dictionary_path', dictionary_path)

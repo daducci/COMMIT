@@ -1,13 +1,10 @@
 #!python
 #cython: language_level=3, boundscheck=False, wraparound=False, profile=False
 from os.path import join as pjoin
-
 import numpy as np
 import nibabel
-
 from amico.models import BaseModel, StickZeppelinBall as _StickZeppelinBall, CylinderZeppelinBall as _CylinderZeppelinBall
 import amico.util as util
-
 from dicelib.ui import setup_logger, set_verbose, ProgressBar
 logger = setup_logger('models')
 

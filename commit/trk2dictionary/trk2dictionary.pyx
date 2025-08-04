@@ -1,35 +1,26 @@
 #!python
 # cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
-
 from libc.stdlib cimport malloc, free
 from libcpp cimport bool
 cimport numpy as np
-
 import nibabel
 import numpy as np
-
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
 from os import makedirs, remove
-
 import amico
-
 from dicelib.clustering import run_clustering
 from dicelib.ui import _in_notebook
 from dicelib.ui import ProgressBar, setup_logger
 from dicelib import ui
 from dicelib.utils import format_time
-
 import pickle
-
-from pkg_resources import get_distribution
-
+from importlib import metadata
 import shutil
-
 import time
 
-
 logger = setup_logger('trk2dictionary')
+
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
@@ -642,7 +633,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
 
         niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
         niiTDI_hdr = _get_header( niiTDI )
-        niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
+        niiTDI_hdr['descrip'] = f'Created with COMMIT {metadata.version("dmri-commit")}'
         nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
 
         if filename_mask is not None :
