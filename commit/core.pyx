@@ -329,12 +329,12 @@ cdef class Evaluation :
         logger.info( f'Simulating with "{self.model.name}" model' )
 
         if not amico.lut.is_valid( ndirs ):
-            logger.error( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
+            logger.error( 'Unsupported value for "ndirs".\nNote: Supported values for "ndirs" are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
         if self.scheme is None :
             logger.error( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
             logger.error( 'Model not set; call "set_model()" method first' )
-        if self.model.id=='VolumeFractions' or self.model.id=='ScalarMap' and ndirs!=1:
+        if self.model.id=='ScalarMap' and ndirs!=1:
             ndirs = 1
             logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
 
