@@ -194,7 +194,7 @@ cdef class Evaluation :
             self.set_config('b0_thr', b0_thr)
             logger.subinfo('diffusion-weighted signal', indent_char='-', indent_lvl=2)
             self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
-            logger.subinfo('%d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ), indent_lvl=2, indent_char='-' )
+            logger.subinfo( f'{self.scheme.nS} samples, {len(self.scheme.shells)} shells', indent_lvl=2, indent_char='-' )
             scheme_string = f'{self.scheme.b0_count} @ b=0'
             for i in xrange(len(self.scheme.shells)) :
                 scheme_string += f', {len(self.scheme.shells[i]["idx"])} @ b={self.scheme.shells[i]["b"]:.1f}'
@@ -217,7 +217,7 @@ cdef class Evaluation :
         self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
         logger.subinfo('dim    : %d x %d x %d x %d' % self.niiDWI_img.shape, indent_lvl=2, indent_char='-' )
         logger.subinfo('pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim'), indent_lvl=2, indent_char='-' )
-        logger.subinfo('values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2, indent_char='-' )
+        logger.subinfo(f'values : min={self.niiDWI_img.min():.2f}, max={self.niiDWI_img.max():.2f}, mean={self.niiDWI_img.mean():.2f}', indent_lvl=2, indent_char='-' )
 
         if self.scheme.nS != self.niiDWI_img.shape[3] :
             logger.error( 'Scheme does not match with input data' )
@@ -251,7 +251,7 @@ cdef class Evaluation :
                         b0[ idx ] = 0
                         for i in xrange(self.scheme.nS) :
                             self.niiDWI_img[:,:,:,i] *= b0
-                    logger.subinfo( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2 )
+                    logger.subinfo( f'[ min={self.niiDWI_img.min():.2f}, max={self.niiDWI_img.max():.2f}, mean={self.niiDWI_img.mean():.2f} ]', indent_lvl=2 )
                     del idx, b0
                 else :
                     logger.warning( 'There are no b0 volumes for normalization' )
@@ -270,7 +270,7 @@ cdef class Evaluation :
                 mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
                 self.niiDWI_img = self.niiDWI_img - mean
                 logger.subinfo('Demeaning signal:', indent_char='*', indent_lvl=1)
-                logger.subinfo('[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2 )
+                logger.subinfo(f'[ min={self.niiDWI_img.min():.2f}, max={self.niiDWI_img.max():.2f}, mean={self.niiDWI_img.mean():.2f} ]', indent_lvl=2 )
 
             # Check for Nan or Inf values in pre-processed data
             if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
@@ -298,7 +298,7 @@ cdef class Evaluation :
             logger.warning( 'Model "VolumeFractions" is deprecated. "ScalarMap" will be used instead (also for the name of the folder containing the results).' )
             self.model = getattr(commit.models, 'ScalarMap')()
         else:
-            logger.error( 'Model "%s" not recognized' % model_name )
+            logger.error( f'Model "{model_name}" not recognized' )
 
         # Check if a lesion mask is provided and if the model supports it
         if self.dictionary_info['lesion_mask']:
@@ -326,7 +326,7 @@ cdef class Evaluation :
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 500)
         """
         logger.subinfo('')
-        logger.info( 'Simulating with "%s" model' % self.model.name )
+        logger.info( f'Simulating with "{self.model.name}" model' )
 
         if not amico.lut.is_valid( ndirs ):
             logger.error( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
@@ -380,7 +380,8 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading the kernels' )
         log_list = []
-        ret_subinfo = logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', indent_lvl=1, with_progress=True ) # TODO: check why not printed
+        # FIXME: check why not printed
+        ret_subinfo = logger.subinfo( f'Resampling LUT for subject "{self.get_config('subject')}":', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
@@ -464,13 +465,13 @@ cdef class Evaluation :
 
         # check that ndirs of dictionary matches with that of the kernels
         if self.dictionary_info['ndirs'] != self.get_config('ndirs'):
-            logger.error( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (self.dictionary_info['ndirs'], self.get_config('ndirs')) )
+            logger.error( f'"ndirs" of the dictionary ({self.dictionary_info['ndirs']}) does not match with kernels ({self.get_config('ndirs')})' )
         self.DICTIONARY['ndirs'] = self.dictionary_info['ndirs']
         self.DICTIONARY['n_threads'] = self.dictionary_info['n_threads']
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
-        mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_%s.nii'%self.get_config('dictionary_mask'))
+        mask_filename = pjoin(self.get_config('TRACKING_path'),f'dictionary_{self.get_config('dictionary_mask')}.nii')
         if not exists( mask_filename ) :
             mask_filename += '.gz'
             if not exists( mask_filename ) :
@@ -615,7 +616,7 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Distributing workload to different threads' )
-        logger.subinfo('Number of threads: %d' % n , indent_char='*', indent_lvl=1 )
+        logger.subinfo(f'Number of threads: {n}', indent_char='*', indent_lvl=1 )
 
         # Distribute load for the computation of A*x product
         log_list = []
@@ -1347,7 +1348,7 @@ cdef class Evaluation :
 
             elif(confidence_map_rescale):
                 confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
-                logger.subinfo ( '[Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ), indent_lvl=3 )
+                logger.subinfo ( f'[Confidence map interval was scaled from the original [{cMIN:.1f}, {cMAX:.1f}] to the intended [{np.min(confidence_array):.1f}, {np.max(confidence_array):.1f}] linearly]', indent_lvl=3 )
                 confidence_array_changed = True
 
             if(confidence_array_changed):
@@ -1521,7 +1522,7 @@ cdef class Evaluation :
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
-        niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
+        niiMAP_hdr['descrip'] = f'Created with COMMIT {self.get_config('version')}'
         niiMAP_hdr['db_name'] = ''
 
         if self.debias_mask is not None:
