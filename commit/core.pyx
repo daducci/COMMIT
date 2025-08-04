@@ -380,8 +380,7 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading the kernels' )
         log_list = []
-        # FIXME: check why not printed
-        ret_subinfo = logger.subinfo( f'Resampling LUT for subject "{self.get_config('subject')}":', indent_char='*', indent_lvl=1, with_progress=True )
+        ret_subinfo = logger.subinfo( f'Resampling LUT for subject "{self.get_config("subject")}":', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
@@ -465,13 +464,13 @@ cdef class Evaluation :
 
         # check that ndirs of dictionary matches with that of the kernels
         if self.dictionary_info['ndirs'] != self.get_config('ndirs'):
-            logger.error( f'"ndirs" of the dictionary ({self.dictionary_info['ndirs']}) does not match with kernels ({self.get_config('ndirs')})' )
+            logger.error( f'"ndirs" of the dictionary ({self.dictionary_info["ndirs"]}) does not match with kernels ({self.get_config("ndirs")})' )
         self.DICTIONARY['ndirs'] = self.dictionary_info['ndirs']
         self.DICTIONARY['n_threads'] = self.dictionary_info['n_threads']
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
-        mask_filename = pjoin(self.get_config('TRACKING_path'),f'dictionary_{self.get_config('dictionary_mask')}.nii')
+        mask_filename = pjoin(self.get_config('TRACKING_path'),f'dictionary_{self.get_config("dictionary_mask")}.nii')
         if not exists( mask_filename ) :
             mask_filename += '.gz'
             if not exists( mask_filename ) :
@@ -1522,7 +1521,7 @@ cdef class Evaluation :
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
-        niiMAP_hdr['descrip'] = f'Created with COMMIT {self.get_config('version')}'
+        niiMAP_hdr['descrip'] = f'Created with COMMIT {self.get_config("version")}'
         niiMAP_hdr['db_name'] = ''
 
         if self.debias_mask is not None:
@@ -1712,7 +1711,7 @@ cdef class Evaluation :
         if hasattr(self.model, '_postprocess') :
             ret_subinfo = logger.subinfo('Calling model-specific postprocessing', indent_lvl=2, indent_char='-', with_progress=True)
             with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
-                #FIXME: make this part "model independent" passing all variables of this context
+                #TODO: make this part "model independent" passing all variables of this context
                 xic = self.model._postprocess(self, xic)
 
         # Save xic to streamline_weights.txt
