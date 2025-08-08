@@ -105,23 +105,23 @@ class ScalarMap( BaseModel ) :
 
         RESULTS_path = evaluation.get_config('RESULTS_path')
         niiISO_img = np.asanyarray( nibabel.load( pjoin(RESULTS_path,'compartment_ISO.nii.gz') ).dataobj ).astype(np.float32)
-        ISO = niiISO_img[evaluation.DICTIONARY['MASK_ix'], evaluation.DICTIONARY['MASK_iy'], evaluation.DICTIONARY['MASK_iz']]
-        if np.count_nonzero(ISO>0) == 0:
+        xLES = niiISO_img[evaluation.DICTIONARY['MASK_ix'], evaluation.DICTIONARY['MASK_iy'], evaluation.DICTIONARY['MASK_iz']] 
+        if np.count_nonzero(xLES>0) == 0:
             logger.warning('No lesions found')
             return xic
 
         # rescale the input scalar map in each voxel according to estimated lesion contributions
-        niiIC_img = np.asanyarray( nibabel.load( pjoin(RESULTS_path,'compartment_IC.nii.gz') ).dataobj ).astype(np.float32)
+        niiIC_img = np.asanyarray( nibabel.load( pjoin(RESULTS_path,'compartment_IC.nii.gz') ).dataobj ).astype(np.float32) #IC ma puo essere anche myelin ---> signal? 
         IC = niiIC_img[evaluation.DICTIONARY['MASK_ix'], evaluation.DICTIONARY['MASK_iy'], evaluation.DICTIONARY['MASK_iz']]
-        ISO_scaled = np.zeros_like(ISO, dtype=np.float32)
-        ISO_scaled[ISO>0] = (IC[ISO>0] - ISO[ISO>0]) / IC[ISO>0]
-        ISO_scaled_save = np.zeros_like(niiISO_img, dtype=np.float32)
-        ISO_scaled_save[evaluation.DICTIONARY['MASK_ix'], evaluation.DICTIONARY['MASK_iy'], evaluation.DICTIONARY['MASK_iz']] = ISO_scaled
+        R_scaling_factor = np.zeros_like(xLES, dtype=np.float32)
+        R_scaling_factor[xLES>0] = (IC[xLES>0] - xLES[xLES>0]) / IC[xLES>0] 
+        niiR_img = np.zeros_like(niiISO_img, dtype=np.float32)
+        niiR_img[evaluation.DICTIONARY['MASK_ix'], evaluation.DICTIONARY['MASK_iy'], evaluation.DICTIONARY['MASK_iz']] = R_scaling_factor
         affine = evaluation.niiDWI.affine if nibabel.__version__ >= '2.0.0' else evaluation.niiDWI.get_affine()
-        nibabel.save(nibabel.Nifti1Image(ISO_scaled_save, affine), pjoin(RESULTS_path,'compartment_IC_lesion_scaled.nii.gz'))
+        nibabel.save(nibabel.Nifti1Image(niiR_img, affine), pjoin(RESULTS_path,'R_scaling_factor.nii.gz')) 
 
         # save the map of local tissue damage estimated in each voxel
-        nibabel.save( nibabel.Nifti1Image( niiISO_img, affine ), pjoin(RESULTS_path,'compartment_lesion.nii.gz') )
+        nibabel.save( nibabel.Nifti1Image( niiISO_img, affine ), pjoin(RESULTS_path,'compartment_Lesion.nii.gz') )
 
         # override ISO map and set it to 0
         nibabel.save( nibabel.Nifti1Image( 0*niiISO_img, affine), pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
@@ -130,7 +130,7 @@ class ScalarMap( BaseModel ) :
         kept = evaluation.DICTIONARY['TRK']['kept']
         cdef double [::1] xic_view = xic[kept==1]
         cdef double [::1] xic_scaled_view = xic[kept==1].copy()
-        cdef float [::1] ISO_scaled_view = ISO_scaled
+        cdef float [::1] R_scaled_view = R_scaling_factor
         cdef unsigned int [::1] idx_v_view = evaluation.DICTIONARY['IC']['v']
         cdef unsigned int [::1] idx_f_view = evaluation.DICTIONARY['IC']['fiber']
         cdef size_t i, idx_v, idx_f
@@ -139,7 +139,7 @@ class ScalarMap( BaseModel ) :
         # Rescaling streamline weights accounting for lesions
         for i in range(evaluation.DICTIONARY['IC']['v'].shape[0]):
             idx_v = idx_v_view[i]
-            val = ISO_scaled_view[idx_v]
+            val = R_scaled_view[idx_v]
             if val > 0:
                 idx_f = idx_f_view[i]
                 #TODO: allow considering other than the min value
