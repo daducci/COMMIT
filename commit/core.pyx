@@ -1700,6 +1700,7 @@ cdef class Evaluation :
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
         # call (potential) postprocessing required by the specific model
+        #TODO: in this the right place to call such a function?
         if hasattr(self.model, '_postprocess') :
             ret_subinfo = logger.subinfo('Calling model-specific postprocessing', indent_lvl=2, indent_char='-', with_progress=True)
             with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):

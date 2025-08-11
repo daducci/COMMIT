@@ -480,7 +480,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrISO
     cdef float [:, :, ::1] niiISO_img
     if filename_lesion_mask is not None :
-        logger.subinfo( 'Restricted ISO map', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'Restricting ISO compartments to lesion mask:', indent_lvl=2, indent_char='-' )
         niiISO = nibabel.load( filename_lesion_mask )
         niiISO_hdr = _get_header( niiISO )
         logger.subinfo( f'{niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}', indent_lvl=3, indent_char='-' )
@@ -491,7 +491,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
         ptrISO  = &niiISO_img[0,0,0]
     else :
-        logger.subinfo( 'No ISO map specified, using tdi', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'No mask specified to filter ISO compartments', indent_lvl=2, indent_char='-' )
         ptrISO = NULL
 
     # write dictionary information info file
