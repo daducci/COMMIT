@@ -288,17 +288,14 @@ int trk2dictionary(
 
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    double** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads){
-
-    // Variables definition
+    double** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads)
+{
     string    filename;
     string    OUTPUT_path(path_out);
     OUTPUT_path = OUTPUT_path.substr (0,OUTPUT_path.size()-5);
-
     unsigned short o;
     unsigned int v;
     unsigned int temp_totECSegments = 0, temp_totECVoxels = 0;
-
 
     filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v       = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_EC_o.dict";        FILE* pDict_EC_o       = fopen(filename.c_str(),"wb");
@@ -351,38 +348,38 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                         atLeastOne = 0;
                         for(id=0; id<Np ;id++)
                         {
-                        if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
+                            if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
 
-                        // get the orientation of the current peak
-                        ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+                            // get the orientation of the current peak
+                            ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
 
-                        // multiply by the affine matrix
-                        dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
-                        dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
-                        dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
+                            // multiply by the affine matrix
+                            dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
+                            dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
+                            dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
 
-                        // flip axes if requested
-                        dir.x *= ECix;
-                        dir.y *= ECiy;
-                        dir.z *= ECiz;
-                        if ( dir.y < 0 )
-                        {
-                            // ensure to be in the right hemisphere (the one where kernels were pre-computed)
-                            dir.x = -dir.x;
-                            dir.y = -dir.y;
-                            dir.z = -dir.z;
-                        }
-                        colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
-                        longitude  = atan2( dir.y, dir.x );
-                        ox = (int)round(colatitude/M_PI*180.0);
-                        oy = (int)round(longitude/M_PI*180.0);
+                            // flip axes if requested
+                            dir.x *= ECix;
+                            dir.y *= ECiy;
+                            dir.z *= ECiz;
+                            if ( dir.y < 0 )
+                            {
+                                // ensure to be in the right hemisphere (the one where kernels were pre-computed)
+                                dir.x = -dir.x;
+                                dir.y = -dir.y;
+                                dir.z = -dir.z;
+                            }
+                            colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
+                            longitude  = atan2( dir.y, dir.x );
+                            ox = (int)round(colatitude/M_PI*180.0);
+                            oy = (int)round(longitude/M_PI*180.0);
 
-                        v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
-                        o = ptrHashTable[ox*181 + oy];
-                        fwrite( &v, 4, 1, pDict_EC_v );
-                        fwrite( &o, 2, 1, pDict_EC_o );
-                        temp_totECSegments++;
-                        atLeastOne = 1;
+                            v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
+                            o = ptrHashTable[ox*181 + oy];
+                            fwrite( &v, 4, 1, pDict_EC_v );
+                            fwrite( &o, 2, 1, pDict_EC_o );
+                            temp_totECSegments++;
+                            atLeastOne = 1;
                         }
                     if ( atLeastOne>0 )
                         temp_totECVoxels++;
@@ -398,41 +395,37 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
     fclose( pDict_EC_o );
 
     return 1;
-
 }
 
 
 
-int ISOcompartments(double** ptrTDI, char* path_out, int threads){
-    // Variables definition
+int ISOcompartments(double** ptrTDI, char* path_out, int threads)
+{
     string    filename;
     string    OUTPUT_path(path_out);
     OUTPUT_path = OUTPUT_path.substr (0,OUTPUT_path.size()-5);
-    unsigned int totISOVoxels = 0, v=0;
+    unsigned int totISOVoxels=0, v=0;
 
     filename = OUTPUT_path+"/dictionary_ISO_v.dict";
     FILE* pDict_ISO_v = fopen( filename.c_str(),   "wb" );
 
-    int  ix, iy, iz, id, atLeastOne;
-    int  skip = 0;
+    int  ix, iy, iz, id;
+    int  skip=0;
 
     for(iz=0; iz<dim.z ;iz++){
         for(iy=0; iy<dim.y ;iy++)
         for(ix=0; ix<dim.x ;ix++){
             // check if ptrISO and ptrMASK are not NULL
-            if ( ptrISO != NULL ){
+            if ( ptrISO != NULL )
                 if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-            }
-            if ( ptrMASK != NULL ){
+            if ( ptrMASK != NULL )
                 if ( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-            }
             // check if in mask previously computed from IC segments
-            for(int i =0; i<threads; i++){
-                if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ){
+            for(int i =0; i<threads; i++)
+                if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 )
                     skip += 1;
-                }
-            }
-            if(skip==threads){
+            if(skip==threads)
+            {
                 skip = 0;
                 continue;
             }
