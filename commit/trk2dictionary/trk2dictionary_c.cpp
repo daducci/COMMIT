@@ -283,7 +283,6 @@ int trk2dictionary(
     delete[] Buff;
 
     return 1;
-
 }
 
 
@@ -398,42 +397,39 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
 }
 
 
-
 int ISOcompartments(double** ptrTDI, char* path_out, int threads)
 {
     string    filename;
     string    OUTPUT_path(path_out);
     OUTPUT_path = OUTPUT_path.substr (0,OUTPUT_path.size()-5);
     unsigned int totISOVoxels=0, v=0;
-
     filename = OUTPUT_path+"/dictionary_ISO_v.dict";
     FILE* pDict_ISO_v = fopen( filename.c_str(),   "wb" );
-
     int  ix, iy, iz, id;
     int  skip=0;
 
-    for(iz=0; iz<dim.z ;iz++){
-        for(iy=0; iy<dim.y ;iy++)
-        for(ix=0; ix<dim.x ;ix++){
-            // check if ptrISO and ptrMASK are not NULL
-            if ( ptrISO != NULL )
-                if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-            if ( ptrMASK != NULL )
-                if ( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-            // check if in mask previously computed from IC segments
-            for(int i =0; i<threads; i++)
-                if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 )
-                    skip += 1;
-            if(skip==threads)
-            {
-                skip = 0;
-                continue;
-            }
+    for(iz=0; iz<dim.z ;iz++)
+    for(iy=0; iy<dim.y ;iy++)
+    for(ix=0; ix<dim.x ;ix++)
+    {
+        // check if ptrISO and ptrMASK are not NULL
+        if ( ptrISO != NULL )
+            if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+        if ( ptrMASK != NULL )
+            if ( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+        // check if in mask previously computed from IC segments
+        for(int i =0; i<threads; i++)
+            if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 )
+                skip += 1;
+        if(skip==threads)
+        {
             skip = 0;
-            v = ix + dim.x * ( iy + dim.y * iz );
-            fwrite( &v, 4, 1, pDict_ISO_v );
-            totISOVoxels++;
+            continue;
         }
+        skip = 0;
+        v = ix + dim.x * ( iy + dim.y * iz );
+        fwrite( &v, 4, 1, pDict_ISO_v );
+        totISOVoxels++;
     }
     fclose( pDict_ISO_v );
 

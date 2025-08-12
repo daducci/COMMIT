@@ -292,13 +292,12 @@ cdef class Evaluation :
         else:
             logger.error( f'Model "{model_name}" not recognized' )
 
-        # Check if a lesion mask is provided and if the model supports it
-        if self.dictionary_info['lesion_mask']:
+        # Check if a mask was provided to restrict ISO compartments (and if the model supports it)
+        if self.dictionary_info['iso_mask']:
             if  self.model.id == 'ScalarMap':
                 self.model.lesion_mask = True
-            else:
-                logger.error('Lesion mask is not compatible with the selected model. Please use "ScalarMap" model.')
-
+            # else:
+            #     logger.error('Lesion mask is not compatible with the selected model. Please use "ScalarMap" model.')
 
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
 
@@ -727,7 +726,7 @@ cdef class Evaluation :
             logger.error( 'Threads not set; call "set_threads()" first' )
 
         if self.DICTIONARY['IC']['nF'] <= 0 :
-            logger.error( 'No streamline found in the dictionary; check your data' )
+            logger.error( 'No streamlines found in the dictionary; check your data' )
         if self.DICTIONARY['EC']['nE'] <= 0 and self.KERNELS['wmh'].shape[0] > 0 :
             logger.error( 'The selected model has EC compartments, but no peaks have been provided; check your data' )
 

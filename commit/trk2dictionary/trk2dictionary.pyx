@@ -59,7 +59,7 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
     return tdi
 
 
-cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_lesion_mask=None,
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_iso_mask=None,
             do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
@@ -85,12 +85,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         a folder name "COMMIT" will be created in the same folder of the tractogram.
 
     filename_mask : string
-        Path to a binary mask for restricting the analysis to specific areas.
+        Path to a binary mask for restricting the fit to a subset of voxels.
         Segments outside this mask are discarded. If not specified (default),
         the mask is created from all voxels intersected by the tracts.
 
-    filename_lesion_mask : string
-        Path to a binary mask that defines the position(s) of the lesion(s).
+    filename_iso_mask : string
+        Path to a binary mask that defines the position(s) of the lesion(s). If not specified (default),
+        ISO compartments will be potentially inserted in all voxels traversed by streamlines.
 
     do_intersect : boolean
         If True then streamline segments that intersect voxel boundaries are splitted (default).
@@ -387,7 +388,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         n_threads = n_count
 
     logger.subinfo( f'{Nx} x {Ny} x {Nz}', indent_lvl=3, indent_char='-' )
-    logger.subinfo( f'{Px:.4f} x {Py:.4f} x {Pz:.4f}', indent_lvl=3, indent_char='-' )
+    logger.subinfo( f'{Px:.3f} x {Py:.3f} x {Pz:.3f}', indent_lvl=3, indent_char='-' )
     if blur_clust_thr[0]> 0:
         logger.subinfo( f'{input_n_count} streamlines', indent_lvl=3, indent_char='-' )
     else:
@@ -417,18 +418,19 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrMASK
     cdef float [:, :, ::1] niiMASK_img
     if filename_mask is not None :
-        logger.subinfo( 'Filtering mask:', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'Restricting (potential) IC compartments to mask:', indent_lvl=2, indent_char='-' )
         niiMASK = nibabel.load( filename_mask )
         niiMASK_hdr = _get_header( niiMASK )
         logger.subinfo( f'{niiMASK.shape[0]} x {niiMASK.shape[1]} x {niiMASK.shape[2]}', indent_lvl=3, indent_char='-' )
-        logger.subinfo( f'{niiMASK_hdr["pixdim"][1]:.4f} x {niiMASK_hdr["pixdim"][2]:.4f} x {niiMASK_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'{niiMASK_hdr["pixdim"][1]:.3f} x {niiMASK_hdr["pixdim"][2]:.3f} x {niiMASK_hdr["pixdim"][3]:.3f}', indent_lvl=3, indent_char='-' )
         if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
             abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dataset does not have the same geometry as the tractogram' )
         niiMASK_img = np.ascontiguousarray( np.asanyarray( niiMASK.dataobj ).astype(np.float32) )
+        logger.subinfo( f'{np.count_nonzero(niiMASK_img)} non-zero voxels', indent_lvl=3, indent_char='-' )
         ptrMASK  = &niiMASK_img[0,0,0]
     else :
-        logger.subinfo( 'No mask specified to filter IC compartments', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'No mask specified to restrict IC compartments', indent_lvl=2, indent_char='-' )
         ptrMASK = NULL
 
     # peaks file for EC contributions
@@ -448,7 +450,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiPEAKS = nibabel.load( filename_peaks )
         niiPEAKS_hdr = _get_header( niiPEAKS )
         logger.subinfo( f'{niiPEAKS.shape[0]} x {niiPEAKS.shape[1]} x {niiPEAKS.shape[2]} x {niiPEAKS.shape[3]}', indent_lvl=3, indent_char='-' )
-        logger.subinfo( f'{niiPEAKS_hdr["pixdim"][1]:.4f} x {niiPEAKS_hdr["pixdim"][2]:.4f} x {niiPEAKS_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'{niiPEAKS_hdr["pixdim"][1]:.3f} x {niiPEAKS_hdr["pixdim"][2]:.3f} x {niiPEAKS_hdr["pixdim"][3]:.3f}', indent_lvl=3, indent_char='-' )
 
         logger.subinfo( f'ignoring peaks < {vf_THR:.2f} * MaxPeak', indent_lvl=3, indent_char='-' )
         logger.subinfo( f'{"" if peaks_use_affine else "not "}using affine matrix', indent_lvl=3, indent_char='-' )
@@ -479,19 +481,20 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # ISO map for isotropic compartment
     cdef float* ptrISO
     cdef float [:, :, ::1] niiISO_img
-    if filename_lesion_mask is not None :
-        logger.subinfo( 'Restricting ISO compartments to lesion mask:', indent_lvl=2, indent_char='-' )
-        niiISO = nibabel.load( filename_lesion_mask )
+    if filename_iso_mask is not None :
+        logger.subinfo( 'Restricting (potential) ISO compartments to mask:', indent_lvl=2, indent_char='-' )
+        niiISO = nibabel.load( filename_iso_mask )
         niiISO_hdr = _get_header( niiISO )
         logger.subinfo( f'{niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}', indent_lvl=3, indent_char='-' )
-        logger.subinfo( f'{niiISO_hdr["pixdim"][1]:.4f} x {niiISO_hdr["pixdim"][2]:.4f} x {niiISO_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'{niiISO_hdr["pixdim"][1]:.3f} x {niiISO_hdr["pixdim"][2]:.3f} x {niiISO_hdr["pixdim"][3]:.3f}', indent_lvl=3, indent_char='-' )
         if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
             abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dataset does not have the same geometry as the tractogram' )
         niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
+        logger.subinfo( f'{np.count_nonzero(niiISO_img)} non-zero voxels', indent_lvl=3, indent_char='-' )
         ptrISO  = &niiISO_img[0,0,0]
     else :
-        logger.subinfo( 'No mask specified to filter ISO compartments', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'No mask specified to restrict ISO compartments', indent_lvl=2, indent_char='-' )
         ptrISO = NULL
 
     # write dictionary information info file
@@ -502,7 +505,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         dictionary_info['n_count'] = input_n_count
         dictionary_info['tractogram_centr_idx'] = idx_centroids
 
-    dictionary_info['lesion_mask'] = True if filename_lesion_mask is not None else False
+    dictionary_info['iso_mask'] = True if filename_iso_mask is not None else False
     dictionary_info['TCK_ref_image'] = TCK_ref_image
     dictionary_info['path_out'] = path_out
     dictionary_info['filename_peaks'] = filename_peaks
