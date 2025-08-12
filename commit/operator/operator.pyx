@@ -7,43 +7,43 @@ from dicelib.ui import setup_logger
 
 # Interfaces to actual C code performing the multiplications
 cdef extern void COMMIT_A(
-    int _nF, int _nE, int _nV, int _nS, int _ndirs,
-    double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
-    unsigned int *_ECv, unsigned short *_ECo,
-    unsigned int *_ISOv,
-    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads,
-    unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
+    int, int, int, int, int,
+    double *, double *,
+    unsigned int *, unsigned int *, unsigned int *, unsigned short *, float *,
+    unsigned int *, unsigned short *,
+    unsigned int *,
+    float *, float *, float *,
+    unsigned int*, unsigned int*, unsigned int*,
+    unsigned int, unsigned int, unsigned int, unsigned int
 ) nogil
 
 cdef extern void COMMIT_At(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
-    double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
-    unsigned int *_ECv, unsigned short *_ECo,
-    unsigned int *_ISOv,
-    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned char* _ICthreadsT, unsigned int* _ECthreadsT, unsigned int* _ISOthreadsT,
-    unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
+    int, int, int, int, int, int,
+    double *, double *,
+    unsigned int *, unsigned int *, unsigned int *, unsigned short *, float *,
+    unsigned int *, unsigned short *,
+    unsigned int *,
+    float *, float *, float *,
+    unsigned char*, unsigned int*, unsigned int*,
+    unsigned int, unsigned int, unsigned int, unsigned int
 ) nogil
 
 cdef extern void COMMIT_A_nolut(
-    int _nF,
-    double *_v_in, double *_v_out,
-    unsigned int *_ICf,  unsigned int *_ICeval, unsigned int *_ICv, float *_ICl,
-    unsigned int *_ISOv,
-    unsigned int* _ICthreads, unsigned int* _ISOthreads,
-    unsigned int _nISO, unsigned int _nThreads
+    int,
+    double *, double *,
+    unsigned int *,  unsigned int *, unsigned int *, float *,
+    unsigned int *,
+    unsigned int *, unsigned int *,
+    unsigned int, unsigned int
 ) nogil
 
 cdef extern void COMMIT_At_nolut(
-    int _nF, int _n,
-    double *_v_in, double *_v_out,
-    unsigned int *_ICf,  unsigned int *_ICeval, unsigned int *_ICv, float *_ICl,
-    unsigned int *_ISOv,
-    unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
-    unsigned int _nISO, unsigned int _nThreads
+    int, int,
+    double *, double *,
+    unsigned int *,  unsigned int *, unsigned int *, float *,
+    unsigned int *,
+    unsigned char*, unsigned int*,
+    unsigned int, unsigned int
 ) nogil
 
 logger = setup_logger('operator')
