@@ -490,19 +490,20 @@ cdef class Evaluation :
 
 
             self.DICTIONARY['IC'] = {}
-            self.DICTIONARY['IC']['fiber'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
-            self.DICTIONARY['IC']['v']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
-            self.DICTIONARY['IC']['o']     = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
+            self.DICTIONARY['IC']['str']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_f.dict'), dtype=np.uint32 )
+            self.DICTIONARY['IC']['vox']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_v.dict'), dtype=np.uint32 )
+            self.DICTIONARY['IC']['dir']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_o.dict'), dtype=np.uint16 )
             self.DICTIONARY['IC']['len']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_IC_len.dict'), dtype=np.float32 )
-            self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['fiber'].size
-            self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
+            self.DICTIONARY['IC']['n']     = self.DICTIONARY['IC']['vox'].size
+            self.DICTIONARY['IC']['nSTR']  = self.DICTIONARY['TRK']['norm'].size
+            self.DICTIONARY['IC']['nVOX']  = self.DICTIONARY['MASK'].sum() # tot voxels of the fit
 
             # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
-            self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
-            self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
-            self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
-            self.DICTIONARY['IC']['len']   = self.DICTIONARY['IC']['len'][ idx ]
+            idx = np.argsort( self.DICTIONARY['IC']['vox'], kind='mergesort' )
+            self.DICTIONARY['IC']['vox']  = self.DICTIONARY['IC']['vox'][ idx ]
+            self.DICTIONARY['IC']['dir']  = self.DICTIONARY['IC']['dir'][ idx ]
+            self.DICTIONARY['IC']['str']  = self.DICTIONARY['IC']['str'][ idx ]
+            self.DICTIONARY['IC']['len']  = self.DICTIONARY['IC']['len'][ idx ]
             del idx
 
         # divide the length of each segment by the fiber length so that all the columns of the linear operator will have same length
@@ -510,31 +511,33 @@ cdef class Evaluation :
         cdef :
             np.float32_t [:] sl = self.DICTIONARY['IC']['len']
             np.float32_t [:] tl = self.DICTIONARY['TRK']['norm']
-            np.uint32_t  [:] f  = self.DICTIONARY['IC']['fiber']
+            np.uint32_t  [:] f  = self.DICTIONARY['IC']['str']
             int s
         if self.get_config('doNormalizeKernels') :
             for s in xrange(self.DICTIONARY['IC']['n']) :
                 sl[s] /= tl[ f[s] ]
 
-        logger.subinfo(f"{self.DICTIONARY['IC']['nF']} fibers and {self.DICTIONARY['IC']['n']} segments", indent_char='-', indent_lvl=2 )
+        logger.subinfo(f"{self.DICTIONARY['IC']['nSTR']} streamlines", indent_char='-', indent_lvl=2 )
+        logger.subinfo(f"{self.DICTIONARY['IC']['n']} contributions (i.e. segments)", indent_char='-', indent_lvl=2 )
+        logger.subinfo(f"{self.DICTIONARY['IC']['nVOX']} voxels", indent_char='-', indent_lvl=2 )
 
-        # segments from the peaks
+        # contributions from the peaks
         # -----------------------
         log_list = []
-        ret_subinfo = logger.subinfo('Segments from the peaks:', indent_char='*', indent_lvl=1, with_progress=True )
+        ret_subinfo = logger.subinfo('Contributions from the peaks:', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             self.DICTIONARY['EC'] = {}
-            self.DICTIONARY['EC']['v']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
-            self.DICTIONARY['EC']['o']  = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
-            self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
+            self.DICTIONARY['EC']['vox'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
+            self.DICTIONARY['EC']['dir'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
+            self.DICTIONARY['EC']['n']   = self.DICTIONARY['EC']['vox'].size
 
-            # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
-            self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
-            self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
+            # reorder the elements based on the "vox" field
+            idx = np.argsort( self.DICTIONARY['EC']['vox'], kind='mergesort' )
+            self.DICTIONARY['EC']['vox'] = self.DICTIONARY['EC']['vox'][ idx ]
+            self.DICTIONARY['EC']['dir'] = self.DICTIONARY['EC']['dir'][ idx ]
             del idx
 
-        logger.subinfo( f"{self.DICTIONARY['EC']['nE']} segments", indent_char='-', indent_lvl=2)
+        logger.subinfo( f"{self.DICTIONARY['EC']['n']} segments", indent_char='-', indent_lvl=2)
 
         # isotropic compartments
         # ----------------------
@@ -543,17 +546,15 @@ cdef class Evaluation :
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             self.DICTIONARY['ISO'] = {}
 
-            self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
-            self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
-
-            self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
+            self.DICTIONARY['ISO']['vox'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
+            self.DICTIONARY['ISO']['n']   = self.DICTIONARY['ISO']['vox'].size
 
             # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
-            self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
+            idx = np.argsort( self.DICTIONARY['ISO']['vox'], kind='mergesort' )
+            self.DICTIONARY['ISO']['vox'] = self.DICTIONARY['ISO']['vox'][ idx ]
             del idx
 
-        logger.subinfo( f"{self.DICTIONARY['ISO']['nV']} voxels", indent_char='-', indent_lvl=2 )
+        logger.subinfo( f"{self.DICTIONARY['ISO']['n']} voxels", indent_char='-', indent_lvl=2 )
 
         # post-processing
         # ---------------
@@ -567,9 +568,9 @@ cdef class Evaluation :
             lut = np.zeros( self.get_config('dim'), dtype=np.uint32 ).ravel()
             for i in xrange(idx.size) :
                 lut[ idx[i] ] = i
-            self.DICTIONARY['IC'][ 'v'] = lut[ self.DICTIONARY['IC'][ 'v'] ]
-            self.DICTIONARY['EC'][ 'v'] = lut[ self.DICTIONARY['EC'][ 'v'] ]
-            self.DICTIONARY['ISO']['v'] = lut[ self.DICTIONARY['ISO']['v'] ]
+            self.DICTIONARY['IC'][ 'vox'] = lut[ self.DICTIONARY['IC'][ 'vox'] ]
+            self.DICTIONARY['EC'][ 'vox'] = lut[ self.DICTIONARY['EC'][ 'vox'] ]
+            self.DICTIONARY['ISO']['vox'] = lut[ self.DICTIONARY['ISO']['vox'] ]
 
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
@@ -618,7 +619,7 @@ cdef class Evaluation :
                     N = np.floor( self.DICTIONARY['IC']['n']/n )
                     t = 1
                     tot = 0
-                    C = np.bincount( self.DICTIONARY['IC']['v'] )
+                    C = np.bincount( self.DICTIONARY['IC']['vox'] )
                     for c in C :
                         tot += c
                         if tot >= N and t <= n :
@@ -634,11 +635,11 @@ cdef class Evaluation :
             else :
                 self.THREADS['IC'] = None
 
-            if self.DICTIONARY['EC']['nE'] > 0 :
+            if self.DICTIONARY['EC']['n'] > 0 :
                 self.THREADS['EC'] = np.zeros( n+1, dtype=np.uint32 )
                 for i in xrange(n) :
-                    self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-                self.THREADS['EC'][n] = self.DICTIONARY['EC']['nE']
+                    self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['vox'], self.DICTIONARY['IC']['vox'][ self.THREADS['IC'][i] ] )
+                self.THREADS['EC'][n] = self.DICTIONARY['EC']['n']
 
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
@@ -647,12 +648,11 @@ cdef class Evaluation :
             else :
                 self.THREADS['EC'] = None
 
-            if self.DICTIONARY['nV'] > 0 :
+            if self.DICTIONARY['ISO']['n'] > 0 :
                 self.THREADS['ISO'] = np.zeros( n+1, dtype=np.uint32 )
                 for i in xrange(n) :
-                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
-                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
-
+                    self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['vox'], self.DICTIONARY['IC']['vox'][ self.THREADS['IC'][i] ] )
+                self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['n']
             else :
                 self.THREADS['ISO'] = None
 
@@ -663,8 +663,8 @@ cdef class Evaluation :
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
                 if n > 1 :
-                    idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind='mergesort' )
-                    C = np.bincount( self.DICTIONARY['IC']['fiber'] )
+                    idx = np.argsort( self.DICTIONARY['IC']['str'], kind='mergesort' )
+                    C = np.bincount( self.DICTIONARY['IC']['str'] )
                     t = tot = i1 = i2 = 0
                     N = np.floor(self.DICTIONARY['IC']['n']/n)
                     for c in C :
@@ -682,12 +682,12 @@ cdef class Evaluation :
             else :
                 self.THREADS['ICt'] = None
 
-            if self.DICTIONARY['EC']['nE'] > 0 :
+            if self.DICTIONARY['EC']['n'] > 0 :
                 self.THREADS['ECt'] = np.zeros( n+1, dtype=np.uint32 )
-                N = np.floor( self.DICTIONARY['EC']['nE']/n )
+                N = np.floor( self.DICTIONARY['EC']['n']/n )
                 for i in xrange(1,n) :
                     self.THREADS['ECt'][i] = self.THREADS['ECt'][i-1] + N
-                self.THREADS['ECt'][n] = self.DICTIONARY['EC']['nE']
+                self.THREADS['ECt'][n] = self.DICTIONARY['EC']['n']
 
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ECt'].astype(np.int32) ) <= 0 ) :
@@ -696,13 +696,13 @@ cdef class Evaluation :
             else :
                 self.THREADS['ECt'] = None
 
-            if self.DICTIONARY['ISO']['nV'] > 0 :
+            if self.DICTIONARY['ISO']['n'] > 0 :
                 self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
-                N = np.floor( self.DICTIONARY['ISO']['nV']/n )
+                N = np.floor( self.DICTIONARY['ISO']['n']/n )
 
                 for i in xrange(1,n) :
                     self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
-                self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
+                self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['n']
 
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
@@ -725,22 +725,16 @@ cdef class Evaluation :
         if self.THREADS is None :
             logger.error( 'Threads not set; call "set_threads()" first' )
 
-        if self.DICTIONARY['IC']['nF'] <= 0 :
+        if self.DICTIONARY['IC']['nSTR'] <= 0 :
             logger.error( 'No streamlines found in the dictionary; check your data' )
-        if self.DICTIONARY['EC']['nE'] <= 0 and self.KERNELS['wmh'].shape[0] > 0 :
+        if self.DICTIONARY['EC']['n'] <= 0 and self.KERNELS['wmh'].shape[0] > 0 :
             logger.error( 'The selected model has EC compartments, but no peaks have been provided; check your data' )
 
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
-
-        nF          = self.DICTIONARY['IC']['nF']    # number of FIBERS
-        n2          = nF * self.KERNELS['wmr'].shape[0]
-
-        self.DICTIONARY["IC"]["eval"] = np.ones( int(n2), dtype=np.uint32)
-
+        self.DICTIONARY["IC"]["eval"] = np.ones( int(self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0]), dtype=np.uint32)
         self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
-
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
@@ -892,11 +886,11 @@ cdef class Evaluation :
         regularisation = {}
 
         regularisation['startIC']  = 0
-        regularisation['sizeIC']   = int( self.DICTIONARY['IC']['nF'] * self.KERNELS['wmr'].shape[0] )
+        regularisation['sizeIC']   = int( self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] )
         regularisation['startEC']  = int( regularisation['sizeIC'] )
-        regularisation['sizeEC']   = int( self.DICTIONARY['EC']['nE'] * self.KERNELS['wmh'].shape[0] )
+        regularisation['sizeEC']   = int( self.DICTIONARY['EC']['n'] * self.KERNELS['wmh'].shape[0] )
         regularisation['startISO'] = int( regularisation['sizeIC'] + regularisation['sizeEC'] )
-        regularisation['sizeISO']  = int( self.DICTIONARY['nV'] * self.KERNELS['iso'].shape[0] )
+        regularisation['sizeISO']  = int( self.DICTIONARY['ISO']['n'] * self.KERNELS['iso'].shape[0] )
 
         regularisation['regIC']  = regularisers[0]
         regularisation['regEC']  = regularisers[1]
@@ -1019,7 +1013,7 @@ cdef class Evaluation :
         # check if group_idx contains all the indices of the input streamlines
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
             all_idx_in = np.sort(np.unique(np.concatenate(dictIC_params['group_idx'])))
-            all_idx = np.arange(self.DICTIONARY['IC']['nF'], dtype=np.int32)
+            all_idx = np.arange(self.DICTIONARY['IC']['nSTR'], dtype=np.int32)
             if np.any(all_idx_in != all_idx):
                 logger.error('Group indices must contain all the indices of the input streamlines')
 
@@ -1043,7 +1037,7 @@ cdef class Evaluation :
             if (0 in self.DICTIONARY['TRK']['kept']):
                 dictionary_TRK_kept = self.DICTIONARY['TRK']['kept']
                 idx_in_kept = np.zeros(dictionary_TRK_kept.size, dtype=np.int32) - 1  # -1 is used to flag indices for removal
-                idx_in_kept[dictionary_TRK_kept==1] = list(range(self.DICTIONARY['IC']['nF']))
+                idx_in_kept[dictionary_TRK_kept==1] = list(range(self.DICTIONARY['IC']['nSTR']))
 
                 newICgroup_idx = []
                 newweightsIC_group = []
@@ -1342,8 +1336,8 @@ cdef class Evaluation :
                 confidence_array_changed = True
 
             if(confidence_array_changed):
-                nV = self.DICTIONARY['nV']
-                self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nV,-1) ).astype(np.float32)
+                nVOX = self.DICTIONARY['IC']['nVOX']
+                self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape( confidence_array, (nVOX,-1) ).astype(np.float32)
 
         if x0 is not None :
             if x0.shape[0] != self.A.shape[1] :
@@ -1368,12 +1362,9 @@ cdef class Evaluation :
             logger.info( 'Running debias' )
             self.set_verbose(0)
 
-            nF = self.DICTIONARY['IC']['nF']
-
-            offset1 = nF * self.KERNELS['wmr'].shape[0]
-            xic = self.x[:offset1]
-
-            mask = np.ones(offset1, dtype=np.uint32)
+            offset = self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0]
+            xic = self.x[:offset]
+            mask = np.ones(offset, dtype=np.uint32)
             mask[xic<0.000000000000001] = 0
 
             self.DICTIONARY["IC"]["eval"] = mask
@@ -1381,14 +1372,13 @@ cdef class Evaluation :
             self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
 
             self.set_regularisation()
-
             self.set_verbose(temp_verb)
 
             logger.subinfo('Recomputing coefficients', indent_lvl=1, indent_char='*', with_progress=True)
 
             x_debias = self.x.copy()
-            x_debias[:offset1] *= mask
-            x_debias[offset1:] = 0
+            x_debias[:offset] *= mask
+            x_debias[offset:] = 0
 
             y_mask = np.asarray(self.A.dot(x_debias))
             # binarize y_debias
@@ -1429,21 +1419,21 @@ cdef class Evaluation :
         if self.x is None :
             logger.error( 'Model not fitted to the data; call "fit()" first' )
 
-        nF = self.DICTIONARY['IC']['nF']
-        nE = self.DICTIONARY['EC']['nE']
-        nV = self.DICTIONARY['nV']
+        nSTR = self.DICTIONARY['IC']['nSTR']
+        nE   = self.DICTIONARY['EC']['n']
+        nVOX   = self.DICTIONARY['ISO']['n']
 
         if get_normalized and self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
-            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
+            norm1 = np.repeat(self.KERNELS['wmr_norm'],nSTR)
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
-            norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
+            norm3 = np.repeat(self.KERNELS['iso_norm'],nVOX)
             norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
             x = self.x
 
-        offset1 = nF * self.KERNELS['wmr'].shape[0]
+        offset1 = nSTR * self.KERNELS['wmr'].shape[0]
         offset2 = offset1 + nE * self.KERNELS['wmh'].shape[0]
         kept = np.tile( self.DICTIONARY['TRK']['kept'], self.KERNELS['wmr'].shape[0] )
         xic = np.zeros( kept.size )
@@ -1481,16 +1471,16 @@ cdef class Evaluation :
         if self.x is None :
             logger.error( 'Model not fitted to the data; call "fit()" first' )
 
-        nF = self.DICTIONARY['IC']['nF']
-        nE = self.DICTIONARY['EC']['nE']
-        nV = self.DICTIONARY['nV']
-        norm_fib = np.ones( nF )
+        nSTR = self.DICTIONARY['IC']['nSTR']
+        nE   = self.DICTIONARY['EC']['n']
+        nVOX   = self.DICTIONARY['ISO']['n']
+        norm_fib = np.ones( nSTR )
         # NB: x correspond to the original problem, self.x are the preconditioned ones
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
-            norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
+            norm1 = np.repeat(self.KERNELS['wmr_norm'],nSTR)
             norm2 = np.repeat(self.KERNELS['wmh_norm'],nE)
-            norm3 = np.repeat(self.KERNELS['iso_norm'],nV)
+            norm3 = np.repeat(self.KERNELS['iso_norm'],nVOX)
             norm_fib = np.kron(np.ones(self.KERNELS['wmr'].shape[0]), self.DICTIONARY['TRK']['norm'])
             x = self.x / np.hstack( (norm1*norm_fib,norm2,norm3) )
         else :
@@ -1516,15 +1506,11 @@ cdef class Evaluation :
         niiMAP_hdr['db_name'] = ''
 
         if self.debias_mask is not None:
-            nV = int(np.sum(self.debias_mask)/self.niiDWI_img.shape[3])
+            nVOX = int(np.sum(self.debias_mask)/self.niiDWI_img.shape[3])
             ind_mask = np.where(self.debias_mask>0)[0]
-            vox_mask = np.reshape( self.debias_mask[ind_mask], (nV,-1) )
 
-            y_mea = np.reshape( self.get_y()[ind_mask], (nV,-1) )
-
-            y_est_ = np.asarray(self.A.dot(self.x))
-            y_est = np.reshape( y_est_[ind_mask], (nV,-1) )
-
+            y_mea = np.reshape( self.get_y()[ind_mask], (nVOX,-1) )
+            y_est = np.reshape( np.asarray(self.A.dot(self.x))[ind_mask], (nVOX,-1) )
             tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
 
             logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
@@ -1536,10 +1522,8 @@ cdef class Evaluation :
             tmp[ idx ] = 0
             logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
 
-            y_mea = np.reshape( self.get_y(), (self.DICTIONARY['nV'],-1) )
-
-            y_est_ = np.asarray(self.A.dot(self.x))
-            y_est = np.reshape( y_est_, (self.DICTIONARY['nV'],-1) )
+            y_mea = np.reshape( self.get_y(), (self.DICTIONARY['IC']['nVOX'],-1) )
+            y_est = np.reshape( self.A.dot(self.x), (self.DICTIONARY['IC']['nVOX'],-1) ).astype(np.float32)
             tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
 
             niiMAP_img[self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz']] = tmp
@@ -1559,9 +1543,9 @@ cdef class Evaluation :
             nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
 
         else:
-            y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
-            y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
-
+            nVOX = self.DICTIONARY['IC']['nVOX']
+            y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nVOX,-1) )
+            y_est = np.reshape( self.A.dot(self.x), (nVOX,-1) ).astype(np.float32)
             tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
             logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
             niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
@@ -1581,7 +1565,7 @@ cdef class Evaluation :
             nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
 
         if self.confidence_map_img is not None:
-            confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
+            confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nVOX,-1) )
 
             tmp = np.sum(confidence_array,axis=1)
             idx = np.where( tmp < 1E-12 )
@@ -1614,10 +1598,10 @@ cdef class Evaluation :
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['wmr']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0]
-                tmp = ( x[:offset].reshape( (-1,nF) ) * norm_fib.reshape( (-1,nF) ) ).sum( axis=0 )
-                xv = np.bincount( self.DICTIONARY['IC']['v'], minlength=nV,
-                    weights=tmp[ self.DICTIONARY['IC']['fiber'] ] * self.DICTIONARY['IC']['len']
+                offset = nSTR * self.KERNELS['wmr'].shape[0]
+                tmp = ( x[:offset].reshape( (-1,nSTR) ) * norm_fib.reshape( (-1,nSTR) ) ).sum( axis=0 )
+                xv = np.bincount( self.DICTIONARY['IC']['vox'], minlength=nVOX,
+                    weights=tmp[ self.DICTIONARY['IC']['str'] ] * self.DICTIONARY['IC']['len']
                 ).astype(np.float32)
                 niiIC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
@@ -1626,9 +1610,9 @@ cdef class Evaluation :
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['wmh']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0]
+                offset = nSTR * self.KERNELS['wmr'].shape[0]
                 tmp = x[offset:offset+nE*len(self.KERNELS['wmh'])].reshape( (-1,nE) ).sum( axis=0 )
-                xv = np.bincount( self.DICTIONARY['EC']['v'], weights=tmp, minlength=nV ).astype(np.float32)
+                xv = np.bincount( self.DICTIONARY['EC']['vox'], weights=tmp, minlength=nVOX ).astype(np.float32)
                 niiEC_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
         log_list = []
@@ -1636,10 +1620,10 @@ cdef class Evaluation :
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['iso']) > 0 :
-                offset = nF * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
-                offset_iso = offset + self.DICTIONARY['ISO']['nV']
-                tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['nV']) ).sum( axis=0 )
-                xv = np.bincount( self.DICTIONARY['ISO']['v'], weights=tmp, minlength=nV ).astype(np.float32)
+                offset = nSTR * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
+                offset_iso = offset + self.DICTIONARY['ISO']['n']
+                tmp = x[offset:offset_iso].reshape( (-1,self.DICTIONARY['ISO']['n']) ).sum( axis=0 )
+                xv = np.bincount( self.DICTIONARY['ISO']['vox'], weights=tmp, minlength=nVOX ).astype(np.float32)
                 niiISO_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = xv
 
         if self.get_config('doNormalizeMaps') :

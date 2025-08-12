@@ -135,13 +135,13 @@ class ScalarMap( BaseModel ) :
         cdef double [::1] xic_view = xic[kept==1]
         cdef double [::1] xic_scaled_view = xic[kept==1].copy()
         cdef float [::1] R_view = R
-        cdef unsigned int [::1] idx_v_view = evaluation.DICTIONARY['IC']['v']
-        cdef unsigned int [::1] idx_f_view = evaluation.DICTIONARY['IC']['fiber']
+        cdef unsigned int [::1] idx_v_view = evaluation.DICTIONARY['IC']['vox']
+        cdef unsigned int [::1] idx_f_view = evaluation.DICTIONARY['IC']['str']
         cdef size_t i, idx_v, idx_f
         cdef double val
 
         # Rescaling streamline weights accounting for lesions
-        for i in range(evaluation.DICTIONARY['IC']['v'].shape[0]):
+        for i in range(evaluation.DICTIONARY['IC']['vox'].shape[0]):
             idx_v = idx_v_view[i]
             val = R_view[idx_v]
             if val > 0:

@@ -49,38 +49,21 @@ cdef extern void COMMIT_At_nolut(
 logger = setup_logger('operator')
 
 cdef class LinearOperator :
-    """This class is a wrapper to the C code for performing marix-vector multiplications
-    with the COMMIT linear operator A. The multiplications are done using C code
+    """This class is a wrapper to the C code for performing matrix-vector multiplications
+    with the COMMIT linear operator A. The calculations are done using C code
     that uses information from the DICTIONARY, KERNELS and THREADS data structures.
     """
-    cdef int nS, nF, nR, nE, nT, nV, nI, n, ndirs
-    cdef public int adjoint, n1, n2
+    cdef public int adjoint, nROWS, nCOLS
 
-    cdef DICTIONARY
-    cdef KERNELS
-    cdef THREADS
-    cdef nolut
-
-    cdef unsigned int*   ICf
-    cdef unsigned int*   ICeval
-    cdef float*          ICl
-    cdef unsigned int*   ICv
-    cdef unsigned short* ICo
-    cdef unsigned int*   ECv
-    cdef unsigned short* ECo
-    cdef unsigned int*   ISOv
-
-    cdef float* LUT_IC
-    cdef float* LUT_EC
-    cdef float* LUT_ISO
-
-    cdef unsigned int*   ICthreads
-    cdef unsigned int*   ECthreads
-    cdef unsigned int*   ISOthreads
-
-    cdef unsigned char*  ICthreadsT
-    cdef unsigned int*   ECthreadsT
-    cdef unsigned int*   ISOthreadsT
+    cdef:
+        DICTIONARY, KERNELS, THREADS
+        int nSAMPLES, ndirs, nolut
+        int ICn, ICnVOX, ICnSTR, ICnRF, ECn, ECnRF, ISOn, ISOnRF
+        unsigned int *ICf, *ICv, *ECv, *ISOv, *ICeval
+        float *ICl, *LUT_IC, *LUT_EC, *LUT_ISO
+        unsigned short *ICo, *ECo
+        unsigned int *ICthreads, *ECthreads, *ISOthreads, *ECthreadsT, *ISOthreadsT
+        unsigned char *ICthreadsT
 
 
     def __init__( self, DICTIONARY, KERNELS, THREADS, nolut=False ) :
@@ -90,43 +73,44 @@ cdef class LinearOperator :
         self.THREADS    = THREADS
         self.nolut      = nolut
 
-        self.nF         = DICTIONARY['IC']['nF']    # number of FIBERS
-        self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
-        self.nE         = DICTIONARY['EC']['nE']    # number of EC segments
-        self.nT         = KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
-        self.nV         = DICTIONARY['nV']          # number of VOXELS
-        self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
-        self.n          = DICTIONARY['IC']['n']     # numbner of IC segments
-        self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
+        self.ICn        = DICTIONARY['IC']['n']     # number of IC contributions (i.e. segments)
+        self.ICnSTR     = DICTIONARY['IC']['nSTR']  # number of IC streamlines
+        self.ICnRF      = KERNELS['wmr'].shape[0]   # number of IC response functions
+        self.ICnVOX     = DICTIONARY['IC']['nVOX']  # number of IC voxels
+        self.ECn        = DICTIONARY['EC']['n']     # number of EC contributions (i.e. peaks)
+        self.ECnRF      = KERNELS['wmh'].shape[0]   # number of EC response functions
+        self.ISOn       = DICTIONARY['ISO']['n']    # number of ISO contributions (i.e. voxels)
+        self.ISOnRF     = KERNELS['iso'].shape[0]   # number of ISO response functions
 
+        # number of SAMPLES and SAMPLING DIRECTIONS
         if KERNELS['wmr'].size > 0 :
-            self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
+            self.nSAMPLES = KERNELS['wmr'].shape[2]
         elif KERNELS['wmh'].size > 0 :
-            self.nS = KERNELS['wmh'].shape[2]
+            self.nSAMPLES = KERNELS['wmh'].shape[2]
         else :
-            self.nS = KERNELS['wmr'].shape[1]
+            self.nSAMPLES = KERNELS['wmr'].shape[1]
+        self.ndirs = KERNELS['wmr'].shape[1]   # number of directions
 
-        self.adjoint    = 0                         # direct of inverse product
-
-        self.n1 = self.nV*self.nS
-        self.n2 = self.nR*self.nF + self.nT*self.nE + self.nI*self.nV
+        self.adjoint    = 0 # direct of inverse product
+        self.nROWS = self.ICnVOX*self.nSAMPLES
+        self.nCOLS = self.ICnSTR*self.ICnRF + self.ECn*self.ECnRF + self.ISOn*self.ISOnRF
 
         # get C pointers to arrays in DICTIONARY
-        cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
+        cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['str']
         self.ICf = &ICf[0]
-        cdef unsigned int [::1]   ICeval = DICTIONARY["IC"]["eval"]
+        cdef unsigned int [::1]   ICeval = DICTIONARY['IC']['eval']
         self.ICeval = &ICeval[0]
         cdef float [::1]          ICl  = DICTIONARY['IC']['len']
         self.ICl = &ICl[0]
-        cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
+        cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['vox']
         self.ICv = &ICv[0]
-        cdef unsigned short [::1] ICo  = DICTIONARY['IC']['o']
+        cdef unsigned short [::1] ICo  = DICTIONARY['IC']['dir']
         self.ICo = &ICo[0]
-        cdef unsigned int [::1]   ECv  = DICTIONARY['EC']['v']
+        cdef unsigned int [::1]   ECv  = DICTIONARY['EC']['vox']
         self.ECv = &ECv[0]
-        cdef unsigned short [::1] ECo  = DICTIONARY['EC']['o']
+        cdef unsigned short [::1] ECo  = DICTIONARY['EC']['dir']
         self.ECo = &ECo[0]
-        cdef unsigned int [::1]   ISOv = DICTIONARY['ISO']['v']
+        cdef unsigned int [::1]   ISOv = DICTIONARY['ISO']['vox']
         self.ISOv = &ISOv[0]
 
         # get C pointers to arrays in KERNELS
@@ -165,9 +149,9 @@ cdef class LinearOperator :
     def shape( self ) :
         """Size of the explicit matrix."""
         if not self.adjoint :
-            return ( self.n1, self.n2 )
+            return ( self.nROWS, self.nCOLS )
         else :
-            return ( self.n2, self.n1 )
+            return ( self.nCOLS, self.nROWS )
 
 
     def dot( self, double [::1] v_in  ):
@@ -202,7 +186,7 @@ cdef class LinearOperator :
             if self.nolut:
                 with nogil:
                     COMMIT_A_nolut(
-                        self.nF,
+                        self.ICnSTR,
                         &v_in[0], &v_out[0],
                         self.ICf, self.ICeval, self.ICv, self.ICl,
                         self.ISOv,
@@ -212,7 +196,7 @@ cdef class LinearOperator :
             else:
                 with nogil:
                     COMMIT_A(
-                        self.nF, self.nE, self.nV, self.nS, self.ndirs,
+                        self.ICnSTR, self.ECn, self.ISOn, self.nSAMPLES, self.ndirs,
                         &v_in[0], &v_out[0],
                         self.ICf, self.ICeval, self.ICv, self.ICo, self.ICl,
                         self.ECv, self.ECo,
@@ -226,7 +210,7 @@ cdef class LinearOperator :
             if self.nolut:
                 with nogil:
                     COMMIT_At_nolut(
-                        self.nF, self.n,
+                        self.ICnSTR, self.ICn,
                         &v_in[0], &v_out[0],
                         self.ICf, self.ICeval, self.ICv, self.ICl,
                         self.ISOv,
@@ -236,7 +220,7 @@ cdef class LinearOperator :
             else:
                 with nogil:
                     COMMIT_At(
-                        self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
+                        self.ICnSTR, self.ICn, self.ECn, self.ISOn, self.nSAMPLES, self.ndirs,
                         &v_in[0], &v_out[0],
                         self.ICf, self.ICeval, self.ICv, self.ICo, self.ICl,
                         self.ECv, self.ECo,
