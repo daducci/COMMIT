@@ -1353,9 +1353,8 @@ cdef class Evaluation :
         t = time.time()
         with ProgressBar(disable=self.verbose<3, hide_on_exit=True):
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
-        logger.subinfo(f'Stopped after {opt_details["iterations"]} iterations', indent_lvl=1, indent_char='*')
+        logger.subinfo(f'Stopped after {opt_details["iterations"]} iterations', indent_lvl=1, indent_char='*', with_progress=True)
         logger.subinfo(f'Stopping condition: \"{opt_details["stopping_criterion"]}\"', indent_lvl=1, indent_char='*')
-
 
         if (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and debias:
             from commit.operator import operator
