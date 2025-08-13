@@ -130,7 +130,7 @@ cdef class LinearOperator :
             raise RuntimeError( "A.dot(): dimensions do not match" )
 
         # Create output array
-        cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
+        cdef static double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
 
         # Call the c++ function to perform the multiplications
         with nogil:
