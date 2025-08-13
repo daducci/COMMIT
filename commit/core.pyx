@@ -129,6 +129,9 @@ cdef class Evaluation :
         self.set_config('doDemean', False)
         self.set_config('doNormalizeMaps', False)
 
+        self.set_config('sortDictionaryWith', 'mergesort')
+        self.set_config('sortThreadsWith', 'mergesort')
+
         ui.set_verbose( 'core', self.verbose )
 
 
@@ -444,9 +447,13 @@ cdef class Evaluation :
         if self.niiDWI is None :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
+        if self.get_config('sortDictionaryWith') not in ['quicksort','mergesort','stable']:
+            logger.error('The option "sortDictionaryWith" should be one of ["quicksort", "mergesort","stable"]')
+
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the data structure' )
+        logger.debug( f'sortDictionaryWith = {self.get_config("sortDictionaryWith")}' )
         self.DICTIONARY = {}
 
         if path is not None:
@@ -498,8 +505,8 @@ cdef class Evaluation :
             self.DICTIONARY['IC']['nSTR']  = self.DICTIONARY['TRK']['norm'].size
             self.DICTIONARY['IC']['nVOX']  = self.DICTIONARY['MASK'].sum() # tot voxels of the fit
 
-            # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['IC']['vox'], kind='mergesort' )
+            # reorder the segments based on the "vox" field
+            idx = np.argsort( self.DICTIONARY['IC']['vox'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['IC']['vox']  = self.DICTIONARY['IC']['vox'][ idx ]
             self.DICTIONARY['IC']['dir']  = self.DICTIONARY['IC']['dir'][ idx ]
             self.DICTIONARY['IC']['str']  = self.DICTIONARY['IC']['str'][ idx ]
@@ -532,7 +539,7 @@ cdef class Evaluation :
             self.DICTIONARY['EC']['n']   = self.DICTIONARY['EC']['vox'].size
 
             # reorder the elements based on the "vox" field
-            idx = np.argsort( self.DICTIONARY['EC']['vox'], kind='mergesort' )
+            idx = np.argsort( self.DICTIONARY['EC']['vox'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['EC']['vox'] = self.DICTIONARY['EC']['vox'][ idx ]
             self.DICTIONARY['EC']['dir'] = self.DICTIONARY['EC']['dir'][ idx ]
             del idx
@@ -549,8 +556,8 @@ cdef class Evaluation :
             self.DICTIONARY['ISO']['vox'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
             self.DICTIONARY['ISO']['n']   = self.DICTIONARY['ISO']['vox'].size
 
-            # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['ISO']['vox'], kind='mergesort' )
+            # reorder the segments based on the "vox" field
+            idx = np.argsort( self.DICTIONARY['ISO']['vox'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['ISO']['vox'] = self.DICTIONARY['ISO']['vox'][ idx ]
             del idx
 
@@ -595,6 +602,8 @@ cdef class Evaluation :
             logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.KERNELS is None :
             logger.error( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
+        if self.get_config('sortThreadsWith') not in ['quicksort','mergesort','stable']:
+            logger.error('The option "sortThreadsWith" should be one of ["quicksort", "mergesort","stable"]')
 
         self.THREADS = {}
         self.THREADS['n'] = n
@@ -608,6 +617,7 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Distributing workload to different threads' )
         logger.subinfo(f'Number of threads: {n}', indent_char='*', indent_lvl=1 )
+        logger.debug( f'sortThreadsWith = {self.get_config("sortThreadsWith")}' )
 
         # Distribute load for the computation of A*x product
         log_list = []
@@ -663,7 +673,7 @@ cdef class Evaluation :
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
                 if n > 1 :
-                    idx = np.argsort( self.DICTIONARY['IC']['str'], kind='mergesort' )
+                    idx = np.argsort( self.DICTIONARY['IC']['str'], kind=self.get_config('sortThreadsWith') )
                     C = np.bincount( self.DICTIONARY['IC']['str'] )
                     t = tot = i1 = i2 = 0
                     N = np.floor(self.DICTIONARY['IC']['n']/n)
