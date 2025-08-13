@@ -235,7 +235,7 @@ cdef class Evaluation :
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
                     ret_subinfo = logger.subinfo('Normalizing to b0:', with_progress=True, indent_char='*', indent_lvl=1)
-                    with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
+                    with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
                         b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
                         idx = b0 <= b0_min_signal * b0[b0>0].mean()
                         b0[ idx ] = 1
@@ -372,7 +372,7 @@ cdef class Evaluation :
         logger.info( 'Loading the kernels' )
         log_list = []
         ret_subinfo = logger.subinfo( f'Resampling LUT for subject "{self.get_config("subject")}":', indent_char='*', indent_lvl=1, with_progress=True )
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
 
@@ -396,7 +396,7 @@ cdef class Evaluation :
         if self.get_config('doDemean') :
             log_list = []
             ret_subinfo = logger.subinfo('Demeaning signal', with_progress=True, indent_lvl=2, indent_char='-' )
-            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+            with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
                 for j in xrange(self.get_config('ndirs')) :
                     for i in xrange(nIC) :
                         self.KERNELS['wmr'][i,j,:] -= self.KERNELS['wmr'][i,j,:].mean()
@@ -409,7 +409,7 @@ cdef class Evaluation :
         if self.get_config('doNormalizeKernels') :
             log_list = []
             ret_subinfo = logger.subinfo('Normalizing kernels', with_progress=True, indent_lvl=2, indent_char='-' )
-            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+            with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
                 self.KERNELS['wmr_norm'] = np.zeros( nIC )
                 for i in xrange(nIC) :
                     self.KERNELS['wmr_norm'][i] = np.linalg.norm( self.KERNELS['wmr'][i,0,:] )
@@ -481,7 +481,7 @@ cdef class Evaluation :
         # ------------------------
         log_list = []
         ret_subinfo = logger.subinfo('Segments from the tracts:', indent_char='*', indent_lvl=1, with_progress=True )
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             self.DICTIONARY['TRK'] = {}
             self.DICTIONARY['TRK']['kept']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_kept.dict'), dtype=np.uint8 )
             self.DICTIONARY['TRK']['norm']   = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_TRK_norm.dict'), dtype=np.float32 )
@@ -525,7 +525,7 @@ cdef class Evaluation :
         # -----------------------
         log_list = []
         ret_subinfo = logger.subinfo('Contributions from the peaks:', indent_char='*', indent_lvl=1, with_progress=True )
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             self.DICTIONARY['EC'] = {}
             self.DICTIONARY['EC']['vox'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_v.dict'), dtype=np.uint32 )
             self.DICTIONARY['EC']['dir'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_EC_o.dict'), dtype=np.uint16 )
@@ -543,7 +543,7 @@ cdef class Evaluation :
         # ----------------------
         log_list = []
         ret_subinfo = logger.subinfo('Isotropic contributions:', indent_char='*', indent_lvl=1, with_progress=True )
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             self.DICTIONARY['ISO'] = {}
 
             self.DICTIONARY['ISO']['vox'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
@@ -560,7 +560,7 @@ cdef class Evaluation :
         # ---------------
         log_list = []
         ret_subinfo = logger.subinfo('Post-processing', indent_char='*', indent_lvl=1, with_progress=True )
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             # get the indices to extract the VOI as in MATLAB (in place of DICTIONARY.MASKidx)
             idx = self.DICTIONARY['MASK'].ravel(order='F').nonzero()[0]
             self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] = np.unravel_index( idx, self.DICTIONARY['MASK'].shape, order='F' )
@@ -612,7 +612,7 @@ cdef class Evaluation :
         # Distribute load for the computation of A*x product
         log_list = []
         ret_subinfo = logger.subinfo('A operator ', indent_char='*', indent_lvl=1, with_progress=True )
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['IC'] = np.zeros( n+1, dtype=np.uint32 )
                 if n > 1 :
@@ -659,7 +659,7 @@ cdef class Evaluation :
         # Distribute load for the computation of At*y product
         log_list = []
         ret_subinfo = logger.subinfo('A\' operator', indent_char='*', indent_lvl=1, with_progress=True )
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
                 if n > 1 :
@@ -1343,7 +1343,6 @@ cdef class Evaluation :
             if x0.shape[0] != self.A.shape[1] :
                 logger.error( 'x0 dimension does not match the number of columns of the dictionary' )
 
-
         self.CONFIG['optimization']                   = {}
         self.CONFIG['optimization']['tol_fun']        = tol_fun
         self.CONFIG['optimization']['tol_x']          = tol_x
@@ -1352,11 +1351,13 @@ cdef class Evaluation :
 
         # run solver
         t = time.time()
-        with ProgressBar(disable=self.verbose!=3, hide_on_exit=True):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True):
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+        logger.subinfo(f'Stopped after {opt_details["iterations"]} iterations', indent_lvl=1, indent_char='*')
+        logger.subinfo(f'Stopping condition: \"{opt_details["stopping_criterion"]}\"', indent_lvl=1, indent_char='*')
+
 
         if (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and debias:
-
             from commit.operator import operator
             temp_verb = self.verbose
             logger.info( 'Running debias' )
@@ -1387,12 +1388,11 @@ cdef class Evaluation :
 
             self.debias_mask = y_mask
 
-            with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
+            with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=True) as pbar:
                 self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         elif (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and not debias:
             logger.warning('Fitting with regularisation but without debiasing. The coefficients will be biased, use "debias=True" to debias the coefficients')
-
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
@@ -1595,7 +1595,7 @@ cdef class Evaluation :
 
         log_list = []
         ret_subinfo = logger.subinfo('Intra-axonal', indent_lvl=2, indent_char='-', with_progress=True)
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             niiIC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['wmr']) > 0 :
                 offset = nSTR * self.KERNELS['wmr'].shape[0]
@@ -1607,7 +1607,7 @@ cdef class Evaluation :
 
         log_list = []
         ret_subinfo = logger.subinfo('Extra-axonal', indent_lvl=2, indent_char='-', with_progress=True)
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             niiEC_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['wmh']) > 0 :
                 offset = nSTR * self.KERNELS['wmr'].shape[0]
@@ -1617,7 +1617,7 @@ cdef class Evaluation :
 
         log_list = []
         ret_subinfo = logger.subinfo('Isotropic   ', indent_lvl=2, indent_char='-', with_progress=True)
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             niiISO_img = np.zeros( self.get_config('dim'), dtype=np.float32 )
             if len(self.KERNELS['iso']) > 0 :
                 offset = nSTR * self.KERNELS['wmr'].shape[0] + nE * self.KERNELS['wmh'].shape[0]
@@ -1701,14 +1701,16 @@ cdef class Evaluation :
         #   item 2: np.array renormalisation of coeffs in item 1
         logger.subinfo('Configuration settings:', indent_lvl=1, indent_char='*')
         ret_subinfo = logger.subinfo('results.pickle', indent_lvl=2, indent_char='-', with_progress=True)
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-                CONFIG_copy = {k: self.CONFIG['optimization']['regularisation'][k] for k in self.CONFIG['optimization']['regularisation'].keys() - {'prox','omega'}}
+                CONFIG_copy = self.CONFIG.copy()
+                CONFIG_copy['optimization']['regularisation'].pop('omega', None)
+                CONFIG_copy['optimization']['regularisation'].pop('prox', None)
                 pickle.dump( [CONFIG_copy, self.x, x], fid, protocol=2 )
 
         if save_est_dwi:
             ret_subinfo = logger.subinfo('Estimated signal', indent_lvl=2, indent_char='-', with_progress=True)
-            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
+            with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea

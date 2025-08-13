@@ -346,10 +346,10 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
             criterion = "Relative tolerance on the objective"
             break
         elif abs_x < eps :
-            criterion = "Absolute tolerance on the unknown"
+            criterion = "Absolute tolerance on the unknowns"
             break
         elif rel_x < tol_x :
-            criterion = "Relative tolerance on the unknown"
+            criterion = "Relative tolerance on the unknowns"
             break
         elif iter >= max_iter :
             criterion = "Maximum number of iterations"

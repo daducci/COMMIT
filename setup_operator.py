@@ -313,7 +313,8 @@ def add_commit_a() -> str:
 //
 void COMMIT_A(
     double *_vIN, double *_vOUT,
-    int _nS, int _ndirs, int _nF, int _nE, int _nV,
+    int _nS, int _ndirs,
+    int _nF, int _nE, int _nV,
     uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
