@@ -7,6 +7,7 @@
 - Lesion mask support using ScalarMap models.
 - Debias option in `fit()` to remove bias from the estimated coefficients when using regularization (e.g. `COMMIT2`).
 - Public `dictionary_info` attribute on `Evaluation` for reuse (e.g. lesion masks, blur settings, thread counts).
+- Two options to change the `argsort` algorithm (`sortDictionaryWith` and `sortThreadsWith`)
 
 ### 🛠️Changed
 - `VolumeFractions` model now is called `ScalarMap` for clarity.
@@ -29,7 +30,7 @@
 
 ## `v2.3.0`<br>_2024-07-04_
 ### ✨Added
-- Added support for Windows (requires the `pthread-win32` library) 
+- Added support for Windows (requires the `pthread-win32` library)
 - Precompiled wheels for Windows, MacOS, and Linux are now available on PyPI
 
 ### 🛠️Changed

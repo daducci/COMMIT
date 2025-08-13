@@ -129,6 +129,9 @@ cdef class Evaluation :
         self.set_config('doDemean', False)
         self.set_config('doNormalizeMaps', False)
 
+        self.set_config('sortDictionaryWith', 'mergesort')
+        self.set_config('sortThreadsWith', 'mergesort')
+
         ui.set_verbose( 'core', self.verbose )
 
 
@@ -445,9 +448,13 @@ cdef class Evaluation :
         if self.niiDWI is None :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
+        if self.get_config('sortDictionaryWith') not in ['quicksort','mergesort','stable']:
+            logger.error('The option "sortDictionaryWith" should be one of ["quicksort", "mergesort","stable"]')
+
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the data structure' )
+        logger.debug( f'sortDictionaryWith = {self.get_config("sortDictionaryWith")}' )
         self.DICTIONARY = {}
 
         if path is not None:
@@ -499,7 +506,7 @@ cdef class Evaluation :
             self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
 
             # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
+            idx = np.argsort( self.DICTIONARY['IC']['v'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
             self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
             self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
@@ -530,7 +537,7 @@ cdef class Evaluation :
             self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
             # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
+            idx = np.argsort( self.DICTIONARY['EC']['v'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
             self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
             del idx
@@ -550,7 +557,7 @@ cdef class Evaluation :
             self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
             # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
+            idx = np.argsort( self.DICTIONARY['ISO']['v'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
             del idx
 
@@ -595,6 +602,8 @@ cdef class Evaluation :
             logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.KERNELS is None :
             logger.error( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
+        if self.get_config('sortThreadsWith') not in ['quicksort','mergesort','stable']:
+            logger.error('The option "sortThreadsWith" should be one of ["quicksort", "mergesort","stable"]')
 
         self.THREADS = {}
         self.THREADS['n'] = n
@@ -608,6 +617,7 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Distributing workload to different threads' )
         logger.subinfo(f'Number of threads: {n}', indent_char='*', indent_lvl=1 )
+        logger.debug( f'sortThreadsWith = {self.get_config("sortThreadsWith")}' )
 
         # Distribute load for the computation of A*x product
         log_list = []
@@ -664,7 +674,7 @@ cdef class Evaluation :
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
                 if n > 1 :
-                    idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind='mergesort' )
+                    idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind=self.get_config('sortThreadsWith') )
                     C = np.bincount( self.DICTIONARY['IC']['fiber'] )
                     t = tot = i1 = i2 = 0
                     N = np.floor(self.DICTIONARY['IC']['n']/n)
