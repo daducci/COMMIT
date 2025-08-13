@@ -130,7 +130,7 @@ cdef class Evaluation :
         self.set_config('doNormalizeMaps', False)
 
         self.set_config('sortDictionaryWith', 'mergesort')
-        self.set_config('sortThreadsWith', 'quicksort')
+        self.set_config('sortThreadsWith', 'mergesort')
 
         ui.set_verbose( 'core', self.verbose )
 
