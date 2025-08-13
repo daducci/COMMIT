@@ -1703,10 +1703,13 @@ cdef class Evaluation :
         ret_subinfo = logger.subinfo('results.pickle', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
-                CONFIG_copy = self.CONFIG.copy()
-                CONFIG_copy['optimization']['regularisation'].pop('omega', None)
-                CONFIG_copy['optimization']['regularisation'].pop('prox', None)
-                pickle.dump( [CONFIG_copy, self.x, x], fid, protocol=2 )
+                tmp_omega = self.CONFIG['optimization']['regularisation']['omega']
+                tmp_prox = self.CONFIG['optimization']['regularisation']['prox']
+                self.CONFIG['optimization']['regularisation']['omega'] = None
+                self.CONFIG['optimization']['regularisation']['prox'] = None
+                pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
+                self.CONFIG['optimization']['regularisation']['omega'] = tmp_omega
+                self.CONFIG['optimization']['regularisation']['prox'] = tmp_prox
 
         if save_est_dwi:
             ret_subinfo = logger.subinfo('Estimated signal', indent_lvl=2, indent_char='-', with_progress=True)
