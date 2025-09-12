@@ -168,7 +168,7 @@ def init_regularisation(regularisation_params):
     #########################
     # ISOTROPIC COMPARTMENT #
     #########################
-    # dictISO_params = regularisation_params.get('dictISO_params')
+    dictISO_params = regularisation_params.get('dictISO_params')
     if regularisation_params['regISO'] is None:
         omegaISO = lambda x: 0.0
         if regularisation_params.get('nnISO')==True:
