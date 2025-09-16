@@ -40,7 +40,7 @@ def run_commit_StickZeppelinBall(local_path):
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
 
-    mit.load_dictionary(os.path.join(local_path, 'COMMIT'))
+    mit.load_dictionary()
 
     mit.set_threads()
     mit.build_operator()
@@ -73,7 +73,7 @@ def run_commit_BallandStick(local_path):
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
 
-    mit.load_dictionary(os.path.join(local_path, 'COMMIT'))
+    mit.load_dictionary()
 
     mit.set_threads()
     mit.build_operator()
@@ -106,7 +106,7 @@ def run_commit_VolumeFractions(local_path):
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
 
-    mit.load_dictionary(os.path.join(local_path, 'COMMIT'))
+    mit.load_dictionary()
 
     mit.set_threads()
     mit.build_operator()

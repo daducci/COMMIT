@@ -2,35 +2,27 @@
 #cython: language_level=3, boundscheck=False, wraparound=False, nonecheck=False, cdivision=True, initializedcheck=False, binding=False
 
 cimport numpy as np
-
 import glob
 from os import makedirs, remove, listdir
 from os.path import exists, join as pjoin, isfile, isdir
 import pyximport
 import sys
 import time
-
 import nibabel
-
 import numpy as np
-
 import pickle
-
-from pkg_resources import get_distribution
-
+from importlib import metadata
 import amico.scheme
 import amico.lut
-
 from dicelib.ui import ProgressBar, setup_logger
 from dicelib import ui
 from dicelib.utils import format_time
-
 import commit.models
 import commit.solvers
 from commit.operator import operator
 
-
 logger = setup_logger('core')
+
 
 def setup( lmax=12 ) :
     """General setup/initialization of the COMMIT framework.
@@ -52,7 +44,7 @@ def load_dictionary_info( filename ):
         This value is always COMMIT_PATH + dictionary_info.pickle
     """
     if not isfile( filename ):
-        logger.error( 'Dictionary is outdated or not found. Execute "trk2dictionary" script first' )
+        logger.error( 'Dictionary is outdated or not found. Execute "trk2dictionary" script first. Note: if "path_out" is different from the default (i.e., "COMMIT"), use the same path as "dictionary_path" in the Evaluation class.' )
     with open( filename, 'rb' ) as dictionary_info_file:
         if sys.version_info.major == 3:
             aux = pickle.load( dictionary_info_file, fix_imports=True, encoding='bytes' )
@@ -75,6 +67,7 @@ cdef class Evaluation :
     cdef public model
     cdef public KERNELS
     cdef public DICTIONARY
+    cdef public dictionary_info
     cdef public THREADS
     cdef public A
     cdef public regularisation_params
@@ -83,9 +76,10 @@ cdef class Evaluation :
     cdef public CONFIG
     cdef public temp_data
     cdef public confidence_map_img
+    cdef public debias_mask
     cdef public verbose
 
-    def __init__( self, study_path='.', subject='.' ) :
+    def __init__( self, study_path='.', subject='.', dictionary_path='COMMIT'):
         """Setup the data structures with default values.
 
         Parameters
@@ -93,34 +87,50 @@ cdef class Evaluation :
         study_path : string
             The path to the folder containing all the subjects from one study (default : '.')
         subject : string
-            The path (relative to previous folder) to the subject folder (default : '.')
+            The path (relative to previous folder) to the subject folder containing the output of the trk2dictionary script (default : '.')
+        dictionary_path : string
+            The path to the folder containing the dictionary files (default : 'COMMIT')
         """
         self.niiDWI                 = None # set by "load_data" method
         self.scheme                 = None # set by "load_data" method
         self.model                  = None # set by "set_model" method
         self.KERNELS                = None # set by "load_kernels" method
         self.DICTIONARY             = None # set by "load_dictionary" method
+        self.dictionary_info        = None # set by "load_dictionary" method
         self.THREADS                = None # set by "set_threads" method
         self.A                      = None # set by "build_operator" method
         self.regularisation_params  = None # set by "set_regularisation" method
         self.x                      = None # set by "fit" method
         self.confidence_map_img     = None # set by "fit" method
+        self.debias_mask            = None # set by "fit" method
         self.x_nnls                 = None # set by "fit" method (coefficients of IC compartment estimated without regularization)
         self.verbose                = 3
 
         # store all the parameters of an evaluation with COMMIT
         self.CONFIG = {}
         self.temp_data = {}
-        self.set_config('version', get_distribution('dmri-commit').version)
+        self.set_config('version', metadata.version('dmri-commit'))
         self.set_config('study_path', study_path)
         self.set_config('subject', subject)
-        self.set_config('DATA_path', pjoin( study_path, subject ))
+        self.set_config('dictionary_path', dictionary_path)
+
+        if study_path == subject:
+            self.set_config('DATA_path', study_path)
+            self.set_config('TRACKING_path', pjoin( study_path, dictionary_path ))
+        else:
+            self.set_config('DATA_path', pjoin( study_path, subject ))
+            self.set_config('TRACKING_path', pjoin( study_path, subject, dictionary_path ))
+
+        self.dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
 
         self.set_config('doNormalizeSignal', True)
         self.set_config('doMergeB0', False)
         self.set_config('doNormalizeKernels', True)
         self.set_config('doDemean', False)
         self.set_config('doNormalizeMaps', False)
+
+        self.set_config('sortDictionaryWith', 'mergesort')
+        self.set_config('sortThreadsWith', 'mergesort')
 
         ui.set_verbose( 'core', self.verbose )
 
@@ -135,6 +145,7 @@ cdef class Evaluation :
         """
         self.verbose = verbose
         ui.set_verbose( 'core', verbose )
+
 
     def set_config( self, key, value ) :
         self.CONFIG[ key ] = value
@@ -178,7 +189,7 @@ cdef class Evaluation :
             self.set_config('b0_thr', b0_thr)
             logger.subinfo('diffusion-weighted signal', indent_char='-', indent_lvl=2)
             self.scheme = amico.scheme.Scheme( pjoin( self.get_config('DATA_path'), scheme_filename), b0_thr )
-            logger.subinfo('%d samples, %d shells' % ( self.scheme.nS, len(self.scheme.shells) ), indent_lvl=2, indent_char='-' )
+            logger.subinfo( f'{self.scheme.nS} samples, {len(self.scheme.shells)} shells', indent_lvl=2, indent_char='-' )
             scheme_string = f'{self.scheme.b0_count} @ b=0'
             for i in xrange(len(self.scheme.shells)) :
                 scheme_string += f', {len(self.scheme.shells[i]["idx"])} @ b={self.scheme.shells[i]["b"]:.1f}'
@@ -201,7 +212,7 @@ cdef class Evaluation :
         self.set_config('pixdim', tuple( hdr.get_zooms()[:3] ))
         logger.subinfo('dim    : %d x %d x %d x %d' % self.niiDWI_img.shape, indent_lvl=2, indent_char='-' )
         logger.subinfo('pixdim : %.3f x %.3f x %.3f' % self.get_config('pixdim'), indent_lvl=2, indent_char='-' )
-        logger.subinfo('values : min=%.2f, max=%.2f, mean=%.2f' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2, indent_char='-' )
+        logger.subinfo(f'values : min={self.niiDWI_img.min():.2f}, max={self.niiDWI_img.max():.2f}, mean={self.niiDWI_img.mean():.2f}', indent_lvl=2, indent_char='-' )
 
         if self.scheme.nS != self.niiDWI_img.shape[3] :
             logger.error( 'Scheme does not match with input data' )
@@ -226,9 +237,8 @@ cdef class Evaluation :
 
             if self.get_config('doNormalizeSignal') :
                 if self.scheme.b0_count > 0:
-                    log_list = []
                     ret_subinfo = logger.subinfo('Normalizing to b0:', with_progress=True, indent_char='*', indent_lvl=1)
-                    with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+                    with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
                         b0 = np.mean( self.niiDWI_img[:,:,:,self.scheme.b0_idx], axis=3 )
                         idx = b0 <= b0_min_signal * b0[b0>0].mean()
                         b0[ idx ] = 1
@@ -236,7 +246,7 @@ cdef class Evaluation :
                         b0[ idx ] = 0
                         for i in xrange(self.scheme.nS) :
                             self.niiDWI_img[:,:,:,i] *= b0
-                    logger.subinfo( '[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2 )
+                    logger.subinfo( f'[ min={self.niiDWI_img.min():.2f}, max={self.niiDWI_img.max():.2f}, mean={self.niiDWI_img.mean():.2f} ]', indent_lvl=2 )
                     del idx, b0
                 else :
                     logger.warning( 'There are no b0 volumes for normalization' )
@@ -255,7 +265,7 @@ cdef class Evaluation :
                 mean = np.repeat( np.expand_dims(np.mean(self.niiDWI_img,axis=3),axis=3), self.niiDWI_img.shape[3], axis=3 )
                 self.niiDWI_img = self.niiDWI_img - mean
                 logger.subinfo('Demeaning signal:', indent_char='*', indent_lvl=1)
-                logger.subinfo('[ min=%.2f, max=%.2f, mean=%.2f ]' % ( self.niiDWI_img.min(), self.niiDWI_img.max(), self.niiDWI_img.mean() ), indent_lvl=2 )
+                logger.subinfo(f'[ min={self.niiDWI_img.min():.2f}, max={self.niiDWI_img.max():.2f}, mean={self.niiDWI_img.mean():.2f} ]', indent_lvl=2 )
 
             # Check for Nan or Inf values in pre-processed data
             if np.isnan(self.niiDWI_img).any() or np.isinf(self.niiDWI_img).any():
@@ -279,10 +289,22 @@ cdef class Evaluation :
         # Call the specific model constructor
         if hasattr(commit.models, model_name ) :
             self.model = getattr(commit.models, model_name)()
-        else :
-            logger.error( 'Model "%s" not recognized' % model_name )
+        elif model_name == 'VolumeFractions' :
+            logger.warning( 'Model "VolumeFractions" is deprecated. "ScalarMap" will be used instead (also for the name of the folder containing the results).' )
+            self.model = getattr(commit.models, 'ScalarMap')()
+        else:
+            logger.error( f'Model "{model_name}" not recognized' )
+
+        # Check if a lesion mask is provided and if the model supports it
+        if self.dictionary_info['lesion_mask']:
+            if  self.model.id == 'ScalarMap':
+                self.model.lesion_mask = True
+            else:
+                logger.error('Lesion mask is not compatible with the selected model. Please use "ScalarMap" model.')
+
 
         self.set_config('ATOMS_path', pjoin( self.get_config('study_path'), 'kernels', self.model.id ))
+
 
 
     def generate_kernels( self, regenerate=False, lmax=12, ndirs=500 ) :
@@ -299,22 +321,18 @@ cdef class Evaluation :
             Number of directions on the half of the sphere representing the possible orientations of the response functions (default : 500)
         """
         logger.subinfo('')
-        logger.info( 'Simulating with "%s" model' % self.model.name )
+        logger.info( f'Simulating with "{self.model.name}" model' )
 
         if not amico.lut.is_valid( ndirs ):
-            logger.error( 'Unsupported value for ndirs.\nNote: Supported values for ndirs are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
+            logger.error( 'Unsupported value for "ndirs".\nNote: Supported values for "ndirs" are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
         if self.scheme is None :
             logger.error( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
             logger.error( 'Model not set; call "set_model()" method first' )
-        if self.model.id=='VolumeFractions' and ndirs!=1:
+        if self.model.id=='ScalarMap' and ndirs!=1:
             ndirs = 1
             logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
-        if 'commitwipmodels' in sys.modules :
-            if self.model.restrictedISO is not None and ndirs!=1:
-                ndirs = 1
-                logger.subinfo('Forcing "ndirs" to 1 because model is isotropic', indent_char='*', indent_lvl=1)
- 
+
         # store some values for later use
         self.set_config('lmax', lmax)
         self.set_config('ndirs', ndirs)
@@ -357,7 +375,7 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Loading the kernels' )
         log_list = []
-        ret_subinfo = logger.subinfo( 'Resampling LUT for subject "%s":' % self.get_config('subject'), indent_char='*', indent_lvl=1, with_progress=True ) # TODO: check why not printed
+        ret_subinfo = logger.subinfo( f'Resampling LUT for subject "{self.get_config("subject")}":', indent_char='*', indent_lvl=1, with_progress=True )
         with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
@@ -416,13 +434,11 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    cpdef load_dictionary( self, path, use_all_voxels_in_mask=False ) :
+    cpdef load_dictionary( self, path=None, use_all_voxels_in_mask=False ) :
         """Load the sparse structure previously created with "trk2dictionary" script.
 
         Parameters
         ----------
-        path : string
-            Folder containing the output of the trk2dictionary script (relative to subject path)
         use_all_voxels_in_mask : boolean
             If False (default) the optimization will be conducted only on the voxels actually
             traversed by tracts. If True, then all voxels present in the mask specified in
@@ -432,22 +448,28 @@ cdef class Evaluation :
         if self.niiDWI is None :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
+        if self.get_config('sortDictionaryWith') not in ['quicksort','mergesort','stable']:
+            logger.error('The option "sortDictionaryWith" should be one of ["quicksort", "mergesort","stable"]')
+
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the data structure' )
+        logger.debug( f'sortDictionaryWith = {self.get_config("sortDictionaryWith")}' )
         self.DICTIONARY = {}
-        self.set_config('TRACKING_path', pjoin(self.get_config('DATA_path'),path))
+
+        if path is not None:
+            logger.warning('The "path" parameter is deprecated, so it will be ignored. The folder containing the dictionary files is now set using "dictionary_path" parameter in the Evaluation class.')
+        path = self.get_config('TRACKING_path')
 
         # check that ndirs of dictionary matches with that of the kernels
-        dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-        if dictionary_info['ndirs'] != self.get_config('ndirs'):
-            logger.error( '"ndirs" of the dictionary (%d) does not match with the kernels (%d)' % (dictionary_info['ndirs'], self.get_config('ndirs')) )
-        self.DICTIONARY['ndirs'] = dictionary_info['ndirs']
-        self.DICTIONARY['n_threads'] = dictionary_info['n_threads']
+        if self.dictionary_info['ndirs'] != self.get_config('ndirs'):
+            logger.error( f'"ndirs" of the dictionary ({self.dictionary_info["ndirs"]}) does not match with kernels ({self.get_config("ndirs")})' )
+        self.DICTIONARY['ndirs'] = self.dictionary_info['ndirs']
+        self.DICTIONARY['n_threads'] = self.dictionary_info['n_threads']
 
         # load mask
         self.set_config('dictionary_mask', 'mask' if use_all_voxels_in_mask else 'tdi' )
-        mask_filename = pjoin(self.get_config('TRACKING_path'),'dictionary_%s.nii'%self.get_config('dictionary_mask'))
+        mask_filename = pjoin(self.get_config('TRACKING_path'),f'dictionary_{self.get_config("dictionary_mask")}.nii')
         if not exists( mask_filename ) :
             mask_filename += '.gz'
             if not exists( mask_filename ) :
@@ -484,7 +506,7 @@ cdef class Evaluation :
             self.DICTIONARY['IC']['nF']    = self.DICTIONARY['TRK']['norm'].size
 
             # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['IC']['v'], kind='mergesort' )
+            idx = np.argsort( self.DICTIONARY['IC']['v'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['IC']['v']     = self.DICTIONARY['IC']['v'][ idx ]
             self.DICTIONARY['IC']['o']     = self.DICTIONARY['IC']['o'][ idx ]
             self.DICTIONARY['IC']['fiber'] = self.DICTIONARY['IC']['fiber'][ idx ]
@@ -515,7 +537,7 @@ cdef class Evaluation :
             self.DICTIONARY['EC']['nE'] = self.DICTIONARY['EC']['v'].size
 
             # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['EC']['v'], kind='mergesort' )
+            idx = np.argsort( self.DICTIONARY['EC']['v'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['EC']['v'] = self.DICTIONARY['EC']['v'][ idx ]
             self.DICTIONARY['EC']['o'] = self.DICTIONARY['EC']['o'][ idx ]
             del idx
@@ -531,16 +553,16 @@ cdef class Evaluation :
 
             self.DICTIONARY['ISO']['v'] = np.fromfile( pjoin(self.get_config('TRACKING_path'),'dictionary_ISO_v.dict'), dtype=np.uint32 )
             self.DICTIONARY['ISO']['nV'] = self.DICTIONARY['ISO']['v'].size
-                
+
             self.DICTIONARY['nV'] = self.DICTIONARY['MASK'].sum()
 
             # reorder the segments based on the "v" field
-            idx = np.argsort( self.DICTIONARY['ISO']['v'], kind='mergesort' )
+            idx = np.argsort( self.DICTIONARY['ISO']['v'], kind=self.get_config('sortDictionaryWith') )
             self.DICTIONARY['ISO']['v'] = self.DICTIONARY['ISO']['v'][ idx ]
             del idx
 
         logger.subinfo( f"{self.DICTIONARY['ISO']['nV']} voxels", indent_char='-', indent_lvl=2 )
-        
+
         # post-processing
         # ---------------
         log_list = []
@@ -568,7 +590,7 @@ cdef class Evaluation :
         ----------
         n : integer
             Number of threads to use (default : number of CPUs in the system)
-        """  
+        """
         if n is None :
             # Use the same number of threads used in trk2dictionary
             n = self.DICTIONARY['n_threads']
@@ -580,6 +602,8 @@ cdef class Evaluation :
             logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
         if self.KERNELS is None :
             logger.error( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
+        if self.get_config('sortThreadsWith') not in ['quicksort','mergesort','stable']:
+            logger.error('The option "sortThreadsWith" should be one of ["quicksort", "mergesort","stable"]')
 
         self.THREADS = {}
         self.THREADS['n'] = n
@@ -592,7 +616,8 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Distributing workload to different threads' )
-        logger.subinfo('Number of threads: %d' % n , indent_char='*', indent_lvl=1 )
+        logger.subinfo(f'Number of threads: {n}', indent_char='*', indent_lvl=1 )
+        logger.debug( f'sortThreadsWith = {self.get_config("sortThreadsWith")}' )
 
         # Distribute load for the computation of A*x product
         log_list = []
@@ -639,13 +664,8 @@ cdef class Evaluation :
                     self.THREADS['ISO'][i] = np.searchsorted( self.DICTIONARY['ISO']['v'], self.DICTIONARY['IC']['v'][ self.THREADS['IC'][i] ] )
                 self.THREADS['ISO'][n] = self.DICTIONARY['ISO']['nV']
 
-                # check if some threads are not assigned any segment
-                if np.count_nonzero( np.diff( self.THREADS['ISO'].astype(np.int32) ) <= 0 ) :
-                    self.THREADS = None
-                    logger.error( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
             else :
                 self.THREADS['ISO'] = None
-
 
         # Distribute load for the computation of At*y product
         log_list = []
@@ -654,7 +674,7 @@ cdef class Evaluation :
             if self.DICTIONARY['IC']['n'] > 0 :
                 self.THREADS['ICt'] = np.full( self.DICTIONARY['IC']['n'], n-1, dtype=np.uint8 )
                 if n > 1 :
-                    idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind='mergesort' )
+                    idx = np.argsort( self.DICTIONARY['IC']['fiber'], kind=self.get_config('sortThreadsWith') )
                     C = np.bincount( self.DICTIONARY['IC']['fiber'] )
                     t = tot = i1 = i2 = 0
                     N = np.floor(self.DICTIONARY['IC']['n']/n)
@@ -687,14 +707,14 @@ cdef class Evaluation :
             else :
                 self.THREADS['ECt'] = None
 
-            if self.DICTIONARY['nV'] > 0 :
+            if self.DICTIONARY['ISO']['nV'] > 0 :
                 self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
                 N = np.floor( self.DICTIONARY['ISO']['nV']/n )
-                
+
                 for i in xrange(1,n) :
                     self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
                 self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['nV']
-                
+
                 # check if some threads are not assigned any segment
                 if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
@@ -725,6 +745,11 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
 
+        nF          = self.DICTIONARY['IC']['nF']    # number of FIBERS
+        n2          = nF * self.KERNELS['wmr'].shape[0]
+
+        self.DICTIONARY["IC"]["eval"] = np.ones( int(n2), dtype=np.uint32)
+
         self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
 
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
@@ -741,8 +766,102 @@ cdef class Evaluation :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        # y[y < 0] = 0
+
+        if self.debias_mask is not None :
+            y *= self.debias_mask
+
         return y
+
+    def set_wLasso_ISO(self, img_weights_filename, lambda_perc_iso):
+        """
+        Compute array of weights for ISO compartment from given image and set weighted lasso regularisation.
+
+        Parameters
+        ----------
+        img_weights_filename - string :
+            Path to the NIFTI file containing the image with the weights for the ISO compartment.
+            NB: The file can be 3D in the same space as the dwi_filename used (dim and voxel size).
+            NB: the weights must be greater or equal to 1 (greater the value, more that voxel is penalized).
+
+        lambda_perc_iso - float :
+            percentage of the maximum value of the regularisation parameter for the ISO compartment.
+            NB: lambda_perc_iso must be a float greater than 0.
+        """
+        tic = time.time()
+        logger.subinfo('')
+        logger.info( 'Setting weighted lasso regularisation for ISO compartment' )
+
+        # check if all the necessary functions have been called
+        if self.niiDWI is None :
+            logger.error( 'Data not loaded; call "load_data()" first' )
+        if self.DICTIONARY is None :
+            logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
+        if self.KERNELS is None :
+            logger.error( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
+        if self.THREADS is None :
+            logger.error( 'Threads not set; call "set_threads()" first' )
+        if self.A is None :
+            logger.error( 'Operator not built; call "build_operator()" first' )
+
+        if self.DICTIONARY['IC']['nF'] <= 0 :
+            logger.error( 'No streamline found in the dictionary; check your data' )
+
+        if int( self.DICTIONARY['nV'] * self.KERNELS['iso'].shape[0] ) == 0 :
+            logger.error( 'Unable to set regularisation because no isotropic compartment found in the dictionary.' )
+
+        # load image and check it
+        logger.subinfo('Loading image with weights', indent_char='*', indent_lvl=1)
+
+        if not exists(pjoin(img_weights_filename)) :
+            logger.error( 'Image not found' )
+        weights_nii = nibabel.load(img_weights_filename)
+        weights_img = np.asanyarray( weights_nii.dataobj ).astype(np.float32)
+
+        if weights_img.ndim != 3:
+            logger.error( 'Weights image must be 3D dataset' )
+
+        hdr = weights_nii.header if nibabel.__version__ >= '2.0.0' else weights_nii.get_header()
+        weights_nii_dim = weights_img.shape[0:3]
+        weights_nii_pixdim = tuple( hdr.get_zooms()[:3] )
+
+        if ( self.get_config('dim') != weights_nii_dim ):
+            logger.error( 'Dataset does not have the same geometry (number of voxels) as the DWI signal' )
+        if (self.get_config('pixdim') != weights_nii_pixdim ):
+            logger.error( 'Dataset does not have the same geometry (voxel size) as the DWI signal' )
+        if (np.isnan(weights_img).any()):
+            weights_img[np.isnan(weights_img)] = 1.
+            logger.warning('Weights image contains NaNs. Those values were changed to 1.')
+
+        # compute array of weights from image
+        array_weights = weights_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ].flatten().astype(np.float32)
+        if array_weights.size != self.DICTIONARY['nV']:
+            logger.error( 'Number of voxels in the weights image does not match the number of voxels in the dictionary' )
+        if np.any(array_weights < 1):
+            logger.error('All weights must be greater or equal to 1')
+
+        if self.KERNELS['iso'].shape[0] > 1:
+            array_weights = np.tile(array_weights, self.KERNELS['iso'].shape[0])
+        dict_iso = {}
+        dict_iso['coeff_weights'] = array_weights
+
+        # set reg
+        logger.subinfo('Setting regularisation', indent_char='*', indent_lvl=1)
+        ui.set_verbose( 'core', 1 )
+        self.set_regularisation(
+            regularisers   = (None, None, 'lasso'), 
+            lambdas        = (None, None, lambda_perc_iso), 
+            is_nonnegative = (True, True, True),
+            params         = (None, None, dict_iso))
+        ui.set_verbose( 'core', self.verbose )
+
+        # save the weights image to check if is correct
+        # path_to_save = img_weights_filename.replace('.nii.gz', '_resaved.nii.gz')
+        # affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
+        # img_to_save = np.copy(self.niiDWI_img[:,:,:,0])
+        # img_to_save[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = np.reshape(array_weights[:self.DICTIONARY['nV']], (self.DICTIONARY['nV'], -1))[:,0]
+        # nibabel.save( nibabel.Nifti1Image( img_to_save , affine ), path_to_save )
+
+        logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
     def set_regularisation(self, regularisers=(None, None, None), lambdas=(None, None, None), is_nonnegative=(True, True, True), params=(None, None, None)):
@@ -774,7 +893,7 @@ cdef class Evaluation :
                 lambdas[2] corresponds to the Isotropic compartment
             The lambdas correspond to the ones described in the mathematical formulation of the regularisation term
             $\Omega(x) = lambdas[0]*regularisers[0](x) + lambdas[1]*regularisers[1](x) + lambdas[2]*regularisers[2](x)$
-            The maximum value of the regularisation parameter is the value of lambda above which it is guaranteed that  
+            The maximum value of the regularisation parameter is the value of lambda above which it is guaranteed that
                 the optimal solution is zero (computed as in [3] for lasso and as in [4] for group lasso).
             NB: if regularisers[k] is None, then lambdas[k] is ignored.
             NB: lambdas[k] must be a float greater than 0.
@@ -816,14 +935,14 @@ cdef class Evaluation :
                         group_weights_extra[k] - additional information associated to group k, only if group_weights_extra is not None
                         ||x_nnls[g[k]]||_2     - l2 norm of the streamline weights in group k, only if group_weights_adaptive is True
                 'group_weights_cardinality' - boolean :
-                    if True, the weight of a group is multiplied by the square root of its size in order to penalize 
+                    if True, the weight of a group is multiplied by the square root of its size in order to penalize
                         all groups in the same manner regardless their cardinality.
                     This field can be specified only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
                 'group_weights_adaptive' - boolean:
-                    if True, the weights of the groups are scaled by the l2 norm of the streamline weights obtained 
+                    if True, the weights of the groups are scaled by the l2 norm of the streamline weights obtained
                         by solving the NNLS problem without regularisation.
                     This field can be specified only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
-                    NB: if both 'group_weights_cardinality' and 'group_weights_adaptive' are True, then the weights 
+                    NB: if both 'group_weights_cardinality' and 'group_weights_adaptive' are True, then the weights
                         are computed as in [2].
                 'group_weights_extra' - np.array(np.float64) :
                     additional inforamation associated to each group of the IC compartment, based on prior knowledge.
@@ -835,24 +954,24 @@ cdef class Evaluation :
                     NB: this array must have the same size as the number of elements in the compartment and contain only non-negative values.
 
         References:
-            [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding'
-            [2] Schiavi et al. - 'A new method for accurate in vivo mapping of human brain connections using 
-                microstructural and anatomical information'
-            [3] Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
-            [4] Yuan, Lin - 'Model selection and estimation in regression with grouped variables'
+            [1] Jenatton et al. - 'Proximal Methods for Hierarchical Sparse Coding', https://www.jmlr.org/papers/volume12/jenatton11a/jenatton11a.pdf
+            [2] Schiavi et al. - 'A new method for accurate in vivo mapping of human brain connections using
+                microstructural and anatomical information', https://doi.org/10.1126/sciadv.aba8245
+            [3] Kim et al. - 'An interior-point method for large-scale l1-regularized least squares', https://doi.org/10.1109/JSTSP.2007.910971
+            [4] Yuan, Lin - 'Model selection and estimation in regression with grouped variables', https://doi.org/10.1111/j.1467-9868.2005.00532.x
         """
 
         # functions to compute the maximum value of the regularisation parameter (lambda)
 
-        def compute_lambda_max_lasso(start, size, w_coeff): 
-            # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized logistic regression'
+        def compute_lambda_max_lasso(start, size, w_coeff):
+            # Ref. Kim et al. - 'An interior-point method for large-scale l1-regularized least squares' https://doi.org/10.1109/JSTSP.2007.910971
             At = self.A.T
             y  = self.get_y()
             Aty = np.asarray(At.dot(y))
             return np.max(np.abs(Aty[start:start+size]) / w_coeff)
 
         def compute_lambda_max_group(w_group, idx_group):
-            # Ref. Yuan, Lin - 'Model selection and estimation in regression with grouped variables'
+            # Ref. Yuan, Lin - 'Model selection and estimation in regression with grouped variables' https://doi.org/10.1111/j.1467-9868.2005.00532.x
             At = self.A.T
             y  = self.get_y()
             Aty = np.asarray(At.dot(y))
@@ -860,7 +979,17 @@ cdef class Evaluation :
             for g in range(w_group.size):
                 norm_group[g] = np.sqrt(np.sum(Aty[idx_group[g]]**2)) / w_group[g]
             return np.max(norm_group)
-            
+
+        if self.niiDWI is None :
+            logger.error( 'Data not loaded; call "load_data()" first' )
+        if self.DICTIONARY is None :
+            logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
+        if self.KERNELS is None :
+            logger.error( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
+        if self.THREADS is None :
+            logger.error( 'Threads not set; call "set_threads()" first' )
+        if self.A is None :
+            logger.error( 'Operator not built; call "build_operator()" first' )
 
         regularisation = {}
 
@@ -880,16 +1009,21 @@ cdef class Evaluation :
         regularisation['nnISO'] = is_nonnegative[2]
 
         dictIC_params, dictEC_params, dictISO_params = params
+        if dictIC_params is not None:
+            keys_IC = dictIC_params.keys()
+            for key in keys_IC:
+                if key not in ['group_idx', 'group_weights_cardinality', 'group_weights_adaptive', 'group_weights_extra', 'coeff_weights', 'group_weights', 'group_idx_kept', 'coeff_weights_kept']:
+                    logger.warning(f'Unexpected key "{key}" in the dictionary of additional parameters for the IC compartment. Ignoring it.')
 
         tr = time.time()
         logger.subinfo('')
         logger.info( 'Setting regularisation' )
-        
+
         ############################
         # INTRACELLULAR COMPARTMENT#
         ############################
         logger.subinfo( 'IC compartment:', indent_char='*', indent_lvl=1)
-    
+
         if regularisation['regIC'] == 'lasso':
             if lambdas[0] is None:
                 logger.error('Missing regularisation parameter for the IC compartment')
@@ -984,6 +1118,13 @@ cdef class Evaluation :
                 else:
                     logger.error('"group_weights_adaptive" must be a boolean or a string')
 
+        # check if group_idx contains all the indices of the input streamlines
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            all_idx_in = np.sort(np.unique(np.concatenate(dictIC_params['group_idx'])))
+            all_idx = np.arange(self.DICTIONARY['IC']['nF'], dtype=np.int32)
+            if np.any(all_idx_in != all_idx):
+                logger.error('Group indices must contain all the indices of the input streamlines')
+
         # check if group_weights_extra is consistent with the number of groups
         if (regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso') and 'group_weights_extra' in dictIC_params:
             if type(dictIC_params['group_weights_extra']) not in [list, np.ndarray]:
@@ -1024,12 +1165,10 @@ cdef class Evaluation :
                 newweightsIC_group = np.array(newweightsIC_group, dtype=np.float64)
                 dictIC_params['group_idx_kept'] = np.array(newICgroup_idx, dtype=np.object_)
                 if weightsIC_group.size != newweightsIC_group.size:
-                    logger.warning(f"""\
-                    Not all the original groups are kept. 
-                    {weightsIC_group.size - newweightsIC_group.size} groups have been removed because their streamlines didn't satisfy the criteria set in trk2dictionary.""")
+                    logger.debug(f"""{weightsIC_group.size - newweightsIC_group.size} groups removed because their streamlines didn't satisfy the criteria set in trk2dictionary.""")
             else:
                 newweightsIC_group = weightsIC_group
-                dictIC_params['group_idx_kept'] = dictIC_params['group_idx']
+                dictIC_params['group_idx_kept'] = dictIC_params['group_idx'].copy()
 
             # compute group weights
             if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
@@ -1090,9 +1229,9 @@ cdef class Evaluation :
                 logger.debug( str_weights )
 
 
-        ###########################
-        # EXTRCELLULAR COMPARTMENT#
-        ###########################
+        #############################
+        # EXTRACELLULAR COMPARTMENT #
+        #############################
         logger.subinfo( 'EC compartment:', indent_char='*', indent_lvl=1 )
 
         if regularisation['regEC'] == 'lasso':
@@ -1162,9 +1301,9 @@ cdef class Evaluation :
                 regularisation['lambdaISO_perc'] = lambdas[2]
             else:
                 regularisation['lambdaISO_perc'] = lambdas[2]
-            # if dictISO_params is not None and 'coeff_weights' in dictISO_params:
-            #     if dictISO_params['coeff_weights'].size != regularisation['sizeISO']:
-            #         logger.error(f'"coeff_weights" must have the same size as the number of elements in the ISO compartment (got {dictISO_params["coeff_weights"].size} but {regularisation["sizeISO"]} expected)')
+            if dictISO_params is not None and 'coeff_weights' in dictISO_params:
+                if dictISO_params['coeff_weights'].size != regularisation['sizeISO']:
+                    logger.error(f'"coeff_weights" must have the same size as the number of elements in the ISO compartment (got {dictISO_params["coeff_weights"].size} but {regularisation["sizeISO"]} expected)')
         elif regularisation['regISO'] == 'smoothness':
             logger.error('Not yet implemented')
         elif regularisation['regISO'] == 'group_lasso':
@@ -1178,21 +1317,21 @@ cdef class Evaluation :
 
         # update lambdas using lambda_max
         if regularisation['regISO'] == 'lasso':
-            # if dictISO_params is not None and 'coeff_weights' in dictISO_params:
-            #     regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], dictISO_params['coeff_weights'])
-            # else:
-            regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], np.ones(regularisation['sizeISO'], dtype=np.float64))
+            if dictISO_params is not None and 'coeff_weights' in dictISO_params:
+                regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], dictISO_params['coeff_weights'])
+            else:
+                regularisation['lambdaISO_max'] = compute_lambda_max_lasso(regularisation['startISO'], regularisation['sizeISO'], np.ones(regularisation['sizeISO'], dtype=np.float64))
             regularisation['lambdaISO'] = regularisation['lambdaISO_perc'] * regularisation['lambdaISO_max']
 
         # print
         if regularisation['regISO'] is not None:
-            # if regularisation['regISO'] == 'lasso' and dictISO_params is not None and 'coeff_weights' in dictISO_params:
-            #     logger.subinfo( f'Regularisation type: {regularisation["regISO"]} (weighted version)', indent_lvl=2, indent_char='-' )
-            # else:
-            logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=2, indent_char='-' )
+            if regularisation['regISO'] == 'lasso' and dictISO_params is not None and 'coeff_weights' in dictISO_params:
+                logger.subinfo( f'Regularisation type: {regularisation["regISO"]} (weighted version)', indent_lvl=2, indent_char='-' )
+            else:
+                logger.subinfo( f'Regularisation type: {regularisation["regISO"]}', indent_lvl=2, indent_char='-' )
 
         logger.subinfo( f'Non-negativity constraint: {regularisation["nnISO"]}', indent_char='-', indent_lvl=2 )
-        if regularisation['regISO'] is not None: 
+        if regularisation['regISO'] is not None:
             logger.debug( f'Lambda max: {regularisation["lambdaISO_max"]}' )
             logger.debug( f'% lambda: {regularisation["lambdaISO_perc"]}' )
             logger.debug( f'Lambda used: {regularisation["lambdaISO"]}' )
@@ -1203,7 +1342,7 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tr)} ]' )
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=False ) :
         """Fit the model to the data.
 
         Parameters
@@ -1301,7 +1440,7 @@ cdef class Evaluation :
 
             elif(confidence_map_rescale):
                 confidence_array = ( confidence_array - cMIN ) / ( cMAX - cMIN )
-                logger.subinfo ( '[Confidence map interval was scaled from the original [%.1f, %.1f] to the intended [%.1f, %.1f] linearly]' % ( cMIN, cMAX, np.min(confidence_array), np.max(confidence_array) ), indent_lvl=3 )
+                logger.subinfo ( f'[Confidence map interval was scaled from the original [{cMIN:.1f}, {cMAX:.1f}] to the intended [{np.min(confidence_array):.1f}, {np.max(confidence_array):.1f}] linearly]', indent_lvl=3 )
                 confidence_array_changed = True
 
             if(confidence_array_changed):
@@ -1323,6 +1462,49 @@ cdef class Evaluation :
         t = time.time()
         with ProgressBar(disable=self.verbose!=3, hide_on_exit=True):
             self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+
+        if (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and debias:
+
+            from commit.operator import operator
+            temp_verb = self.verbose
+            logger.info( 'Running debias' )
+            self.set_verbose(0)
+
+            nF = self.DICTIONARY['IC']['nF']
+
+            offset1 = nF * self.KERNELS['wmr'].shape[0]
+            xic = self.x[:offset1]
+
+            mask = np.ones(offset1, dtype=np.uint32)
+            mask[xic<0.000000000000001] = 0
+
+            self.DICTIONARY["IC"]["eval"] = mask
+
+            self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
+
+            self.set_regularisation()
+
+            self.set_verbose(temp_verb)
+
+            logger.subinfo('Recomputing coefficients', indent_lvl=1, indent_char='*', with_progress=True)
+
+            x_debias = self.x.copy()
+            x_debias[:offset1] *= mask
+            x_debias[offset1:] = 0
+
+            y_mask = np.asarray(self.A.dot(x_debias))
+            # binarize y_debias
+            y_mask[y_mask<0] = 0
+            y_mask[y_mask>0] = 1
+
+            self.debias_mask = y_mask
+
+            with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
+                self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+
+        elif (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and not debias:
+            logger.warning('Fitting with regularisation but without debiasing. The coefficients will be biased, use "debias=True" to debias the coefficients')
+
 
         self.CONFIG['optimization']['fit_details'] = opt_details
         self.CONFIG['optimization']['fit_time'] = time.time()-t
@@ -1374,7 +1556,7 @@ cdef class Evaluation :
         return xic, xec, xiso
 
 
-    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False, do_reweighting=True ) :
+    def save_results( self, path_suffix=None, coeffs_format='%.5e', stat_coeffs='sum', save_est_dwi=False ) :
         """Save the output (coefficients, errors, maps etc).
 
         Parameters
@@ -1395,7 +1577,7 @@ cdef class Evaluation :
             RESULTS_path = RESULTS_path + path_suffix
 
         logger.subinfo('')
-        logger.info( 'Saving results to "%s/*"' % RESULTS_path )
+        logger.info( f'Saving output to "{RESULTS_path}/*"' )
         tic = time.time()
 
         if self.x is None :
@@ -1405,8 +1587,7 @@ cdef class Evaluation :
         nE = self.DICTIONARY['EC']['nE']
         nV = self.DICTIONARY['nV']
         norm_fib = np.ones( nF )
-        # x is the x of the original problem
-        # self.x is the x preconditioned
+        # NB: x correspond to the original problem, self.x are the preconditioned ones
         if self.get_config('doNormalizeKernels') :
             # renormalize the coefficients
             norm1 = np.repeat(self.KERNELS['wmr_norm'],nF)
@@ -1433,29 +1614,73 @@ cdef class Evaluation :
         affine = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
         niiMAP     = nibabel.Nifti1Image( niiMAP_img, affine )
         niiMAP_hdr = niiMAP.header if nibabel.__version__ >= '2.0.0' else niiMAP.get_header()
-        niiMAP_hdr['descrip'] = 'Created with COMMIT %s'%self.get_config('version')
+        niiMAP_hdr['descrip'] = f'Created with COMMIT {self.get_config("version")}'
         niiMAP_hdr['db_name'] = ''
 
-        y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
-        y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
+        if self.debias_mask is not None:
+            nV = int(np.sum(self.debias_mask)/self.niiDWI_img.shape[3])
+            ind_mask = np.where(self.debias_mask>0)[0]
+            vox_mask = np.reshape( self.debias_mask[ind_mask], (nV,-1) )
 
-        tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-        logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-        niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-        niiMAP_hdr['cal_min'] = 0
-        niiMAP_hdr['cal_max'] = tmp.max()
-        nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
+            y_mea = np.reshape( self.get_y()[ind_mask], (nV,-1) )
 
-        tmp = np.sum(y_mea**2,axis=1)
-        idx = np.where( tmp < 1E-12 )
-        tmp[ idx ] = 1
-        tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
-        tmp[ idx ] = 0
-        logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-        niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-        niiMAP_hdr['cal_min'] = 0
-        niiMAP_hdr['cal_max'] = 1
-        nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
+            y_est_ = np.asarray(self.A.dot(self.x))
+            y_est = np.reshape( y_est_[ind_mask], (nV,-1) )
+
+            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+
+            logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+
+            tmp = np.sum(y_mea**2,axis=1)
+            idx = np.where( tmp < 1E-12 )
+            tmp[ idx ] = 1
+            tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
+            tmp[ idx ] = 0
+            logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+
+            y_mea = np.reshape( self.get_y(), (self.DICTIONARY['nV'],-1) )
+
+            y_est_ = np.asarray(self.A.dot(self.x))
+            y_est = np.reshape( y_est_, (self.DICTIONARY['nV'],-1) )
+            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+
+            niiMAP_img[self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz']] = tmp
+            niiMAP_hdr['cal_min'] = 0
+            niiMAP_hdr['cal_max'] = tmp.max()
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
+
+            tmp = np.sum(y_mea**2,axis=1)
+            idx = np.where( tmp < 1E-12 )
+            tmp[ idx ] = 1
+            tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
+            tmp[ idx ] = 0
+
+            niiMAP_img[self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz']] = tmp
+            niiMAP_hdr['cal_min'] = 0
+            niiMAP_hdr['cal_max'] = 1
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
+
+        else:
+            y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
+            y_est = np.reshape( self.A.dot(self.x), (nV,-1) ).astype(np.float32)
+
+            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+            logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+            niiMAP_hdr['cal_min'] = 0
+            niiMAP_hdr['cal_max'] = tmp.max()
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
+
+            tmp = np.sum(y_mea**2,axis=1)
+            idx = np.where( tmp < 1E-12 )
+            tmp[ idx ] = 1
+            tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
+            tmp[ idx ] = 0
+            logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+            niiMAP_hdr['cal_min'] = 0
+            niiMAP_hdr['cal_max'] = 1
+            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
 
         if self.confidence_map_img is not None:
             confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nV,-1) )
@@ -1532,12 +1757,16 @@ cdef class Evaluation :
         nibabel.save( niiEC , pjoin(RESULTS_path,'compartment_EC.nii.gz') )
         nibabel.save( niiISO , pjoin(RESULTS_path,'compartment_ISO.nii.gz') )
 
-        # Configuration and results
-        logger.subinfo('Configuration and results:', indent_char='*', indent_lvl=1)
-        log_list = []
-        ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
-            xic, _, _ = self.get_coeffs()
+        # process and save streamline_weights.txt
+        logger.subinfo('Streamline weights:', indent_char='*', indent_lvl=1)
+        xic, _, _ = self.get_coeffs()
+
+        ret_subinfo = logger.subinfo(f'Handling multiple coeffs per streamline: "{stat_coeffs}"', indent_lvl=2, indent_char='-', with_progress=True)
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
+            self.set_config('stat_coeffs', stat_coeffs)
+            if stat_coeffs == 'all' :
+                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
+                    logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             if stat_coeffs != 'all' and xic.size > 0 :
                 xic = np.reshape( xic, (-1,self.DICTIONARY['TRK']['kept'].size) )
                 if stat_coeffs == 'sum' :
@@ -1554,16 +1783,12 @@ cdef class Evaluation :
                     logger.error( 'Stat not allowed. Possible values: sum, mean, median, min, max, all' )
 
             # scale output weights if blur was used
-            dictionary_info = load_dictionary_info( pjoin(self.get_config('TRACKING_path'), 'dictionary_info.pickle') )
-            if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0 :
-                if stat_coeffs == 'all' :
-                    logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
-            if "tractogram_centr_idx" in dictionary_info.keys():
-                ordered_idx = dictionary_info["tractogram_centr_idx"].astype(np.int64)
-                unravel_weights = np.zeros( dictionary_info['n_count'], dtype=np.float64)
+            if "tractogram_centr_idx" in self.dictionary_info.keys():
+                ordered_idx = self.dictionary_info["tractogram_centr_idx"].astype(np.int64)
+                unravel_weights = np.zeros( self.dictionary_info['n_count'], dtype=np.float64)
                 unravel_weights[ordered_idx] = self.DICTIONARY['TRK']['kept'].astype(np.float64)
-                temp_weights = unravel_weights[ordered_idx] 
-                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                temp_weights = unravel_weights[ordered_idx]
+                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0] * self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
                     unravel_weights[ordered_idx] = temp_weights
                     xic = unravel_weights
@@ -1571,42 +1796,37 @@ cdef class Evaluation :
                     temp_weights[temp_weights>0] = xic[self.DICTIONARY['TRK']['kept']>0]
                     unravel_weights[ordered_idx] = temp_weights
                     xic = unravel_weights
-
             else:
-                if dictionary_info['blur_gauss_extent'] > 0 or dictionary_info['blur_core_extent'] > 0:
+                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0:
                     xic[ self.DICTIONARY['TRK']['kept']==1 ] *= self.DICTIONARY['TRK']['lenTot'] / self.DICTIONARY['TRK']['len']
 
-            
-            self.temp_data['DICTIONARY'] = self.DICTIONARY
-            self.temp_data['niiIC_img'] = niiIC_img
-            self.temp_data['niiEC_img'] = niiEC_img
-            self.temp_data['niiISO_img'] = niiISO_img
-            self.temp_data['streamline_weights'] = xic
-            self.temp_data['RESULTS_path'] = RESULTS_path
-            self.temp_data['affine'] = self.niiDWI.affine if nibabel.__version__ >= '2.0.0' else self.niiDWI.get_affine()
+        # call (potential) postprocessing required by the specific model
+        if hasattr(self.model, '_postprocess') :
+            ret_subinfo = logger.subinfo('Calling model-specific postprocessing', indent_lvl=2, indent_char='-', with_progress=True)
+            with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
+                #TODO: make this part "model independent" passing all variables of this context
+                xic = self.model._postprocess(self, xic)
 
-            if hasattr(self.model, '_postprocess') and do_reweighting:
-                self.model._postprocess(self.temp_data, verbose=self.verbose)
-
+        # Save xic to streamline_weights.txt
+        ret_subinfo = logger.subinfo('streamline_weights.txt', indent_lvl=2, indent_char='-', with_progress=True)
+        with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
             np.savetxt( pjoin(RESULTS_path,'streamline_weights.txt'), xic, fmt=coeffs_format )
-            self.set_config('stat_coeffs', stat_coeffs)
 
         # Save to a pickle file the following items:
         #   item 0: dictionary with all the configuration details
         #   item 1: np.array obtained through the optimisation process with the normalised kernels
         #   item 2: np.array renormalisation of coeffs in item 1
-        log_list = []
-        ret_subinfo = logger.subinfo('results.pickle', indent_char='-', indent_lvl=2, with_progress=True)
-        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        logger.subinfo('Configuration settings:', indent_lvl=1, indent_char='*')
+        ret_subinfo = logger.subinfo('results.pickle', indent_lvl=2, indent_char='-', with_progress=True)
+        with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
             with open( pjoin(RESULTS_path,'results.pickle'), 'wb+' ) as fid :
                 self.CONFIG['optimization']['regularisation'].pop('omega', None)
                 self.CONFIG['optimization']['regularisation'].pop('prox', None)
                 pickle.dump( [self.CONFIG, self.x, x], fid, protocol=2 )
 
         if save_est_dwi:
-            log_list = []
-            ret_subinfo = logger.subinfo('Estimated signal:', indent_char='-', indent_lvl=2, with_progress=True)
-            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):                    
+            ret_subinfo = logger.subinfo('Estimated signal', indent_lvl=2, indent_char='-', with_progress=True)
+            with ProgressBar(disable=self.verbose < 3, hide_on_exit=True, subinfo=ret_subinfo):
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_est
                 nibabel.save( nibabel.Nifti1Image( self.niiDWI_img , affine ), pjoin(RESULTS_path,'fit_signal_estimated.nii.gz') )
                 self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ] = y_mea
