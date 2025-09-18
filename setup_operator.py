@@ -220,7 +220,7 @@ xPtr0 = x + (*t_f);
     s: str = '''\
 //
 // Compute a sub-block of the A*x MATRIX-VECTOR product
-// 
+//
 void* COMMIT_A__block( void *ptr )
 {
     int      id = (long)ptr;
@@ -309,11 +309,12 @@ def add_commit_a() -> str:
 
     s: str = '''\
 //
-// Function called by Cython
+// Functions called by Cython
 //
 void COMMIT_A(
-    int _nF, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
+    int _nS, int _ndirs,
+    int _nF, int _nE, int _nV,
     uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
@@ -382,7 +383,7 @@ def add_commit_at_block() -> str:
         s1: str = 'SFP0ptr = wmrSFP0 + offset;'
         s2: str = '''\
 x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;    
+                        eval0 = ICeval + *t_f;
 '''
         s3: str = 'x0 += (*SFP0ptr++) * YTmp;'
         s4: str = 'x[*t_f] += w * x0 * (double)(*eval0);'
@@ -657,8 +658,8 @@ def add_commit_at() -> str:
 // Function called by Cython
 //
 void COMMIT_At(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
     double *_vIN, double *_vOUT,
+    int _nS, int _ndirs, int _nF, int _n, int _nE, int _nV,
     uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
@@ -776,8 +777,8 @@ def add_commit_a_nolut() -> str:
 // Function called by Cython
 //
 void COMMIT_A_nolut(
-    int _nF,
     double *_vIN, double *_vOUT,
+    int _nF,
     uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, float *_ICl,
     uint32_t *_ISOv,
     uint32_t* _ICthreads, uint32_t* _ISOthreads,
@@ -877,8 +878,8 @@ def add_commit_at_nolut() -> str:
 // Function called by Cython
 //
 void COMMIT_At_nolut(
-    int _nF, int _n,
     double *_vIN, double *_vOUT,
+    int _nF, int _n,
     uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, float *_ICl,
     uint32_t *_ISOv,
     uint8_t* _ICthreadsT, uint32_t* _ISOthreadsT,
