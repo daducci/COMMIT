@@ -1,6 +1,18 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.4.1`<br>_2025-09-18_
+
+### 🛠️Changed
+- Names of the output files of the "lesion" model
+
+### 🐛Fixed
+- Error when calling "fit" again after "save_results"
+- Minor fixes and improvements
+
+---
+---
+
 ## `v2.4.0`<br>_2025-04-24_
 
 ### ✨Added
