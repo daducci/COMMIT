@@ -827,6 +827,7 @@ cdef class Evaluation :
 
         # compute array of weights from image
         array_weights = weights_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ].flatten().astype(np.float32)
+        array_weights = array_weights[self.DICTIONARY['ISO']['vox']]
         if array_weights.size != self.DICTIONARY['ISO']['n']:
             logger.error( 'Number of voxels in the weights image does not match the number of voxels in the dictionary' )
         if np.any(array_weights < 1):
