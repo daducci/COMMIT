@@ -796,10 +796,10 @@ cdef class Evaluation :
         if self.A is None :
             logger.error( 'Operator not built; call "build_operator()" first' )
 
-        if self.DICTIONARY['IC']['nF'] <= 0 :
+        if self.DICTIONARY['IC']['nSTR'] <= 0 :
             logger.error( 'No streamline found in the dictionary; check your data' )
 
-        if int( self.DICTIONARY['nV'] * self.KERNELS['iso'].shape[0] ) == 0 :
+        if int( self.DICTIONARY['ISO']['n'] * self.KERNELS['iso'].shape[0] ) == 0 :
             logger.error( 'Unable to set regularisation because no isotropic compartment found in the dictionary.' )
 
         # load image and check it
@@ -827,7 +827,7 @@ cdef class Evaluation :
 
         # compute array of weights from image
         array_weights = weights_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ].flatten().astype(np.float32)
-        if array_weights.size != self.DICTIONARY['nV']:
+        if array_weights.size != self.DICTIONARY['ISO']['n']:
             logger.error( 'Number of voxels in the weights image does not match the number of voxels in the dictionary' )
         if np.any(array_weights < 1):
             logger.error('All weights must be greater or equal to 1')
