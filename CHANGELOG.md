@@ -6,7 +6,7 @@
 ### 🐛Fixed
 - Error when checking the number of streamlines in the weighted LASSO function
 - Error in verifying voxel correspondence between the lesion mask passed through the dictionary and the ISO weights map
-- Error in params_IC and input tractogram dimension mismatch during set_regularization()
+- Error when checking the number of streamlines in the grouping structure for group LASSO regularization
 
 ---
 ---
