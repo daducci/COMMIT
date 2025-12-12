@@ -1119,6 +1119,19 @@ cdef class Evaluation :
             if np.any(all_idx_in != all_idx):
                 logger.error('Group indices must contain all the indices of the input streamlines')
 
+        # check if in the provided group indices there is at least one empty group and remove it
+        if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
+            count_empty_groups = 0
+            list_non_empty_groups = []
+            for g in dictIC_params['group_idx']:
+                if g.size == 0:
+                    count_empty_groups += 1
+                else:
+                    list_non_empty_groups.append(g)
+            if count_empty_groups > 0:
+                logger.warning('At least one of the provided groups is empty; removing it from the group structure')
+            dictIC_params['group_idx'] = np.array(list_non_empty_groups, dtype=np.object_)
+
         # check if group_weights_extra is consistent with the number of groups
         if (regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso') and 'group_weights_extra' in dictIC_params:
             if type(dictIC_params['group_weights_extra']) not in [list, np.ndarray]:
