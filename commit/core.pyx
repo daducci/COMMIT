@@ -911,15 +911,16 @@ cdef class Evaluation :
             Available options:
                 'group_idx' - np.array(np.int32) :
                     group indices for the IC compartment (not implemented for EC and ISO).
-                    This field is necessary only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
+                    NB: Each element of the array corresponds to a group and contains the indices of the streamlines
+                    belonging to that group. All streamlines must belong to at least one group.
+                    NB: This field is necessary only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
                     Example:
-                        structureIC = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
+                        group_idx = np.array([[0,2,5],[1,3,4],[0,1,2,3,4,5],[6]], dtype=np.object_)
                         that is equivalent to
                                     [0,1,2,3,4,5]        [6]
                                     /       \
                                 [0,2,5]       [1,3,4]
-                        which has two non-overlapping groups, one of which is the union
-                        of two other non-overlapping groups.
+                        which has two non-overlapping groups, one of which is the union of two other non-overlapping groups.
                 Group weights computation (if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'):
                     w[k] = ( 1 * sqrt(|g[k]|) * group_weights_extra[k] ) / ( ||x_nnls[g[k]]||_2 )
                     where:
@@ -943,7 +944,7 @@ cdef class Evaluation :
                     This field can be specified only if regularisers[0] is 'group_lasso' or 'sparse_group_lasso'.
                     NB: this array must have the same size as the number of groups in the IC compartment and contain only non-negative values.
                 'coeff_weights' - np.array(np.float64) :
-                    weights associated to each individual element of the compartment (for the moment implemented only for IC compartment).
+                    weights associated to each individual element of the compartment (for the moment implemented only for IC and ISO compartments).
                     This field can be specified only if the chosen regulariser is 'lasso' or 'sparse_group_lasso'.
                     NB: this array must have the same size as the number of elements in the compartment and contain only non-negative values.
 
