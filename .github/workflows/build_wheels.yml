@@ -59,23 +59,23 @@ jobs:
           [
             {
               py: cp38,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-13]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15]
             },
             {
               py: cp39,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-13]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15]
             },
             {
               py: cp310,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-13]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15]
             },
             {
               py: cp311,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-13]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15]
             },
             {
               py: cp312,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-13]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15]
             },
             {
               py: cp38,
