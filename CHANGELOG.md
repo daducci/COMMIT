@@ -6,6 +6,7 @@
 ### 🐛Fixed
 - Error when checking the number of streamlines in the weighted LASSO function
 - Error in verifying voxel correspondence between the lesion mask passed through the dictionary and the ISO weights map
+- Tests fail using numpy >= 2.0.0
 
 ---
 ---
