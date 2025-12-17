@@ -8,6 +8,7 @@
 - Error in verifying voxel correspondence between the lesion mask passed through the dictionary and the ISO weights map
 - Error when checking the number of streamlines in the grouping structure for group LASSO regularization
 - Added check on empty groups when setting group LASSO regularization
+- Typo in test script and reference results
 
 ---
 ---
