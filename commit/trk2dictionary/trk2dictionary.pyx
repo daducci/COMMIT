@@ -410,7 +410,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrToVOXMM
     if extension == ".tck":
         M = _get_affine( niiREF ).copy()
-        M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
+        # float64 conversion added to comply with the new cast policy of numpy v2
+        M[:3, :3] = M[:3, :3].dot( np.diag([np.float64(1)/Px,np.float64(1)/Py,np.float64(1)/Pz]) )
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
         ptrToVOXMM = &toVOXMM[0]
 
