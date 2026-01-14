@@ -90,7 +90,10 @@ class ScalarMap( BaseModel ) :
         KERNELS = {}
         KERNELS['model'] = self.id
         KERNELS['wmr']   = np.ones( (1,ndirs,nS), dtype=np.float32 )
-        KERNELS["wmc"]   = self.compute_dct_base(nprofiles, nsamples) # TODO: fix if nprofiles==1
+        if nprofiles == 1:
+            KERNELS["wmc"]   = np.ones( (1,nsamples), dtype=np.float64 )
+        else:
+            KERNELS["wmc"]   = self.compute_dct_base(nprofiles, nsamples)
         KERNELS['wmh']   = np.ones( (0,ndirs,nS), dtype=np.float32 )
         if self.lesion_mask:
             KERNELS['iso']   = -1 * np.ones( (1,nS), dtype=np.float32 )
