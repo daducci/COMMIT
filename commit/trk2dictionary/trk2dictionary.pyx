@@ -1,35 +1,26 @@
 #!python
 # cython: language_level=3, c_string_type=str, c_string_encoding=ascii, boundscheck=False, wraparound=False, profile=False
-
 from libc.stdlib cimport malloc, free
 from libcpp cimport bool
 cimport numpy as np
-
 import nibabel
 import numpy as np
-
 import os
 from os.path import join, exists, splitext, dirname, isdir, isfile
 from os import makedirs, remove
-
 import amico
-
 from dicelib.clustering import run_clustering
 from dicelib.ui import _in_notebook
 from dicelib.ui import ProgressBar, setup_logger
 from dicelib import ui
 from dicelib.utils import format_time
-
 import pickle
-
-from pkg_resources import get_distribution
-
+from importlib import metadata
 import shutil
-
 import time
 
- 
 logger = setup_logger('trk2dictionary')
+
 
 # Interface to actual C code
 cdef extern from "trk2dictionary_c.cpp":
@@ -54,12 +45,12 @@ cpdef cat_function( infilename, outfilename ):
         for fname in infilename:
             with open( fname, 'rb' ) as inFile:
                 shutil.copyfileobj( inFile, outfile )
-                remove( fname )
+            remove( fname )
 
 cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int nz, int verbose):
     cdef np.float32_t [::1] tdi = np.zeros( nx*ny*nz, dtype=np.float32 )
     cdef unsigned long long i=0
-    with ProgressBar(total=v.size, disable=(verbose in [0, 1, 3]), hide_on_exit=True) as pbar:
+    with ProgressBar(total=v.size, disable=verbose<3, hide_on_exit=True) as pbar:
 
         for i in range(v.size):
             tdi[ v[i] ] += l[i]
@@ -68,7 +59,7 @@ cpdef compute_tdi( np.uint32_t[::1] v, np.float32_t[::1] l, int nx, int ny, int 
     return tdi
 
 
-cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_ISO=None,
+cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filename_mask=None, filename_iso_mask=None,
             do_intersect=True, fiber_shift=0, min_seg_len=1e-3, min_fiber_len=0.0, max_fiber_len=250.0,
             vf_THR=0.1, peaks_use_affine=False, flip_peaks=[False,False,False], blur_clust_groupby=None,
             blur_clust_thr=0, blur_spacing=0.25, blur_core_extent=0.0, blur_gauss_extent=0.0,
@@ -94,12 +85,13 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         a folder name "COMMIT" will be created in the same folder of the tractogram.
 
     filename_mask : string
-        Path to a binary mask for restricting the analysis to specific areas.
+        Path to a binary mask for restricting the fit to a subset of voxels.
         Segments outside this mask are discarded. If not specified (default),
         the mask is created from all voxels intersected by the tracts.
 
-    filename_ISO : string
-        Path to a binary mask for WIP models.
+    filename_iso_mask : string
+        Path to a binary mask that defines the position(s) of the lesion(s). If not specified (default),
+        ISO compartments will be potentially inserted in all voxels traversed by streamlines.
 
     do_intersect : boolean
         If True then streamline segments that intersect voxel boundaries are splitted (default).
@@ -322,14 +314,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
             temp_idx = np.arange(int(hdr['count']))
             log_list = []
-            subinfo = logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
-            with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=subinfo, log_list=log_list) as pbar:
+            ret_subinfo = logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
+            with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
                 idx_centroids, _ = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                             temp_folder=path_temp, atlas=blur_clust_groupby, clust_thr=blur_clust_thr[0],
                                             n_threads=n_threads, keep_temp_files=True, force=True, verbose=1, log_list=log_list)
         else:
-            logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
-            with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
+            log_list = []
+            ret_subinfo = logger.subinfo(f'Clustering with threshold = {blur_clust_thr[0]}', indent_lvl=2, indent_char='-', with_progress=verbose>2)
+            with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
                 idx_centroids, _ = run_clustering(tractogram_in=filename_tractogram, tractogram_out=filename_out,
                                             temp_folder=path_temp, clust_thr=blur_clust_thr[0],
                                             keep_temp_files=True, force=True, verbose=1)
@@ -396,7 +389,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         n_threads = n_count
 
     logger.subinfo( f'{Nx} x {Ny} x {Nz}', indent_lvl=3, indent_char='-' )
-    logger.subinfo( f'{Px:.4f} x {Py:.4f} x {Pz:.4f}', indent_lvl=3, indent_char='-' )
+    logger.subinfo( f'{Px:.3f} x {Py:.3f} x {Pz:.3f}', indent_lvl=3, indent_char='-' )
     if blur_clust_thr[0]> 0:
         logger.subinfo( f'{input_n_count} streamlines', indent_lvl=3, indent_char='-' )
     else:
@@ -418,7 +411,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrToVOXMM
     if extension == ".tck":
         M = _get_affine( niiREF ).copy()
-        M[:3, :3] = M[:3, :3].dot( np.diag([1./Px,1./Py,1./Pz]) )
+        # float64 conversion added to comply with the new cast policy of numpy v2
+        M[:3, :3] = M[:3, :3].dot( np.diag([np.float64(1)/Px,np.float64(1)/Py,np.float64(1)/Pz]) )
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
         ptrToVOXMM = &toVOXMM[0]
 
@@ -426,18 +420,19 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     cdef float* ptrMASK
     cdef float [:, :, ::1] niiMASK_img
     if filename_mask is not None :
-        logger.subinfo( 'Filtering mask:', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'Restricting (potential) IC compartments to mask:', indent_lvl=2, indent_char='-' )
         niiMASK = nibabel.load( filename_mask )
         niiMASK_hdr = _get_header( niiMASK )
         logger.subinfo( f'{niiMASK.shape[0]} x {niiMASK.shape[1]} x {niiMASK.shape[2]}', indent_lvl=3, indent_char='-' )
-        logger.subinfo( f'{niiMASK_hdr["pixdim"][1]:.4f} x {niiMASK_hdr["pixdim"][2]:.4f} x {niiMASK_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
-        if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or 
+        logger.subinfo( f'{niiMASK_hdr["pixdim"][1]:.3f} x {niiMASK_hdr["pixdim"][2]:.3f} x {niiMASK_hdr["pixdim"][3]:.3f}', indent_lvl=3, indent_char='-' )
+        if ( Nx!=niiMASK.shape[0] or Ny!=niiMASK.shape[1] or Nz!=niiMASK.shape[2] or
             abs(Px-niiMASK_hdr['pixdim'][1])>1e-3 or abs(Py-niiMASK_hdr['pixdim'][2])>1e-3 or abs(Pz-niiMASK_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dataset does not have the same geometry as the tractogram' )
         niiMASK_img = np.ascontiguousarray( np.asanyarray( niiMASK.dataobj ).astype(np.float32) )
+        logger.subinfo( f'{np.count_nonzero(niiMASK_img)} non-zero voxels', indent_lvl=3, indent_char='-' )
         ptrMASK  = &niiMASK_img[0,0,0]
     else :
-        logger.subinfo( 'No mask specified to filter IC compartments', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'No mask specified to restrict IC compartments', indent_lvl=2, indent_char='-' )
         ptrMASK = NULL
 
     # peaks file for EC contributions
@@ -457,8 +452,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         niiPEAKS = nibabel.load( filename_peaks )
         niiPEAKS_hdr = _get_header( niiPEAKS )
         logger.subinfo( f'{niiPEAKS.shape[0]} x {niiPEAKS.shape[1]} x {niiPEAKS.shape[2]} x {niiPEAKS.shape[3]}', indent_lvl=3, indent_char='-' )
-        logger.subinfo( f'{niiPEAKS_hdr["pixdim"][1]:.4f} x {niiPEAKS_hdr["pixdim"][2]:.4f} x {niiPEAKS_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
-        
+        logger.subinfo( f'{niiPEAKS_hdr["pixdim"][1]:.3f} x {niiPEAKS_hdr["pixdim"][2]:.3f} x {niiPEAKS_hdr["pixdim"][3]:.3f}', indent_lvl=3, indent_char='-' )
+
         logger.subinfo( f'ignoring peaks < {vf_THR:.2f} * MaxPeak', indent_lvl=3, indent_char='-' )
         logger.subinfo( f'{"" if peaks_use_affine else "not "}using affine matrix', indent_lvl=3, indent_char='-' )
         logger.subinfo( f'flipping axes : [ x={flip_peaks[0]}, y={flip_peaks[1]}, z={flip_peaks[2]} ]', indent_lvl=3, indent_char='-' )
@@ -484,23 +479,24 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Np = 0
         ptrPEAKS = NULL
         ptrPeaksAffine = NULL
-    
+
     # ISO map for isotropic compartment
     cdef float* ptrISO
     cdef float [:, :, ::1] niiISO_img
-    if filename_ISO is not None :
-        logger.subinfo( 'Restricted ISO map', indent_lvl=2, indent_char='-' )
-        niiISO = nibabel.load( filename_ISO )
+    if filename_iso_mask is not None :
+        logger.subinfo( 'Restricting (potential) ISO compartments to mask:', indent_lvl=2, indent_char='-' )
+        niiISO = nibabel.load( filename_iso_mask )
         niiISO_hdr = _get_header( niiISO )
         logger.subinfo( f'{niiISO.shape[0]} x {niiISO.shape[1]} x {niiISO.shape[2]}', indent_lvl=3, indent_char='-' )
-        logger.subinfo( f'{niiISO_hdr["pixdim"][1]:.4f} x {niiISO_hdr["pixdim"][2]:.4f} x {niiISO_hdr["pixdim"][3]:.4f}', indent_lvl=3, indent_char='-' )
+        logger.subinfo( f'{niiISO_hdr["pixdim"][1]:.3f} x {niiISO_hdr["pixdim"][2]:.3f} x {niiISO_hdr["pixdim"][3]:.3f}', indent_lvl=3, indent_char='-' )
         if ( Nx!=niiISO.shape[0] or Ny!=niiISO.shape[1] or Nz!=niiISO.shape[2] or
             abs(Px-niiISO_hdr['pixdim'][1])>1e-3 or abs(Py-niiISO_hdr['pixdim'][2])>1e-3 or abs(Pz-niiISO_hdr['pixdim'][3])>1e-3 ) :
             logger.warning( 'Dataset does not have the same geometry as the tractogram' )
         niiISO_img = np.ascontiguousarray( np.asanyarray( niiISO.dataobj ).astype(np.float32) )
+        logger.subinfo( f'{np.count_nonzero(niiISO_img)} non-zero voxels', indent_lvl=3, indent_char='-' )
         ptrISO  = &niiISO_img[0,0,0]
     else :
-        logger.subinfo( 'No ISO map specified, using tdi', indent_lvl=2, indent_char='-' )
+        logger.subinfo( 'No mask specified to restrict ISO compartments', indent_lvl=2, indent_char='-' )
         ptrISO = NULL
 
     # write dictionary information info file
@@ -510,6 +506,8 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         idx_centroids = np.array(idx_centroids, dtype=np.uint32)
         dictionary_info['n_count'] = input_n_count
         dictionary_info['tractogram_centr_idx'] = idx_centroids
+
+    dictionary_info['iso_mask'] = True if filename_iso_mask is not None else False
     dictionary_info['TCK_ref_image'] = TCK_ref_image
     dictionary_info['path_out'] = path_out
     dictionary_info['filename_peaks'] = filename_peaks
@@ -544,14 +542,22 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         logger.warning( 'DICTIONARY not generated' )
         return None
 
+    # free memory
+    free(ptrTDI)
+
+    # NOTE: this is to ensure flushing all the output from the cpp code
+    print(end='', flush=True)
+    time.sleep(0.5)
+
     # Concatenate files together
-    logger.subinfo( 'Saving data structure', indent_char='*', indent_lvl=1, with_progress=True )
+    log_list = []
+    ret_subinfo = logger.subinfo( f'Saving data structure in "{path_out}" ', indent_char='*', indent_lvl=1, with_progress=verbose>2 )
     cdef int discarded = 0
-    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=True) as pbar:
+    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
         for j in range(n_threads-1):
-            path_IC_f = path_temp + f'/dictionary_IC_f_{j+1}.dict'
-            kept = np.fromfile( path_temp + f'/dictionary_TRK_kept_{j}.dict', dtype=np.uint8 )
-            IC_f = np.fromfile( path_temp + f'/dictionary_IC_f_{j+1}.dict', dtype=np.uint32 )
+            path_IC_f = join(path_temp, f'dictionary_IC_f_{j+1}.dict')
+            kept = np.fromfile( join(path_temp, f'dictionary_TRK_kept_{j}.dict'), dtype=np.uint8 )
+            IC_f = np.fromfile( join(path_temp, f'dictionary_IC_f_{j+1}.dict'), dtype=np.uint32 )
             discarded += np.count_nonzero(kept==0)
             IC_f -= discarded
             IC_f_save = np.memmap( path_IC_f, dtype="uint32", mode='w+', shape=IC_f.shape )
@@ -560,59 +566,59 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             del IC_f_save
             # np.save( path_out + f'/dictionary_IC_f_{j+1}.dict', IC_f, allow_pickle=True)
 
-        fileout = path_out + '/dictionary_TRK_kept.dict'
+        fileout = join(path_out, 'dictionary_TRK_kept.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_kept_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_kept_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_norm.dict'
+        fileout = join(path_out, 'dictionary_TRK_norm.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_norm_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_norm_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_len.dict'
+        fileout = join(path_out, 'dictionary_TRK_len.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_len_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_len_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_TRK_lenTot.dict'
+        fileout = join(path_out, 'dictionary_TRK_lenTot.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_TRK_lenTot_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_TRK_lenTot_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_f.dict'
+        fileout = join(path_out, 'dictionary_IC_f.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_f_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_f_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_v.dict'
+        fileout = join(path_out, 'dictionary_IC_v.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_v_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_v_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_o.dict'
+        fileout = join(path_out, 'dictionary_IC_o.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_o_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_o_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-        fileout = path_out + '/dictionary_IC_len.dict'
+        fileout = join(path_out, 'dictionary_IC_len.dict')
         dict_list = []
         for j in range(n_threads):
-            dict_list += [ path_temp + f'/dictionary_IC_len_{j}.dict' ]
+            dict_list += [ join(path_temp, f'dictionary_IC_len_{j}.dict') ]
         cat_function( dict_list, fileout )
 
-    fileout = path_out + '/dictionary_IC_pos.dict'
-    dict_list = []
-    for j in range(n_threads):
-        dict_list += [ path_temp + f'/dictionary_IC_pos_{j}.dict' ]
-    cat_function( dict_list, fileout )
+        fileout = path_out + '/dictionary_IC_pos.dict'
+        dict_list = []
+        for j in range(n_threads):
+            dict_list += [ path_temp + f'/dictionary_IC_pos_{j}.dict' ]
+        cat_function( dict_list, fileout )
 
     # save TDI and MASK maps
     if TCK_ref_image is not None:
@@ -625,29 +631,31 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         TDI_affine = np.diag( [Px, Py, Pz, 1] )
 
     # save TDI and MASK maps
-    logger.subinfo( 'Saving TDI and MASK maps', indent_char='*', indent_lvl=1 )
-    v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
-    l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
-
     cdef np.float32_t [::1] niiTDI_mem = np.zeros( Nx*Ny*Nz, dtype=np.float32 )
-    niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose )
-    niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
+    log_list = []
+    ret_subinfo = logger.subinfo( 'Saving TDI and MASK maps', indent_char='*', indent_lvl=1, with_progress=verbose>2)
+    with ProgressBar(disable=verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
+        v = np.fromfile( join(path_out, 'dictionary_IC_v.dict'),   dtype=np.uint32 )
+        l = np.fromfile( join(path_out, 'dictionary_IC_len.dict'), dtype=np.float32 )
 
-    niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
-    niiTDI_hdr = _get_header( niiTDI )
-    niiTDI_hdr['descrip'] = f'Created with COMMIT {get_distribution("dmri-commit").version}'
-    nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
+        niiTDI_mem = compute_tdi( v, l, Nx, Ny, Nz, verbose=0 )
+        niiTDI_img_save = np.reshape( niiTDI_mem, (Nx,Ny,Nz), order='F' )
 
-    if filename_mask is not None :
-        niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
-    else :
-        niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img_save)>0).astype(np.float32), TDI_affine )
+        niiTDI = nibabel.Nifti1Image( niiTDI_img_save, TDI_affine )
+        niiTDI_hdr = _get_header( niiTDI )
+        niiTDI_hdr['descrip'] = f'Created with COMMIT {metadata.version("dmri-commit")}'
+        nibabel.save( niiTDI, join(path_out,'dictionary_tdi.nii.gz') )
 
-    niiMASK_hdr = _get_header( niiMASK )
-    niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
-    nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
+        if filename_mask is not None :
+            niiMASK = nibabel.Nifti1Image( niiMASK_img, TDI_affine )
+        else :
+            niiMASK = nibabel.Nifti1Image( (np.asarray(niiTDI_img_save)>0).astype(np.float32), TDI_affine )
 
-    if not keep_temp:
-        shutil.rmtree(path_temp)
+        niiMASK_hdr = _get_header( niiMASK )
+        niiMASK_hdr['descrip'] = niiTDI_hdr['descrip']
+        nibabel.save( niiMASK, join(path_out,'dictionary_mask.nii.gz') )
+
+        if not keep_temp:
+            shutil.rmtree(path_temp)
 
     logger.info( f'[ {format_time(time.time() - tic)} ]' )

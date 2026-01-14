@@ -78,7 +78,7 @@ float           minSegLen, minFiberLen, maxFiberLen;
 
 // Threads variables
 vector<thread>  threads;
-vector<unsigned long int>   totICSegments; 
+vector<unsigned long int>   totICSegments;
 vector<unsigned int>        totFibers;
 unsigned int                totECVoxels = 0;
 unsigned int                totECSegments = 0;
@@ -96,7 +96,7 @@ unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOX
 
 // ---------- Parallel fuction --------------
 int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
-double* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
+double* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out,
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos );
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
@@ -150,7 +150,7 @@ int trk2dictionary(
         batch_size[i%p_size] += 1;
     }
 
-    
+
     // Compute the starting position
     // -----------------------------------------
     unsigned int elements = threads_count + 1;
@@ -174,20 +174,20 @@ int trk2dictionary(
     else if (strcmp(ext,".tck")==0) // for .tck file
         isTRK = 0;
         else
-        return 0;    
+        return 0;
 
 
     // Open tractogram file and compute the offset for each thread
     // -----------------------------------------------------------------
     unsigned long long int current;
-    unsigned long long int OffsetArr[threads_count];
+    unsigned long long int *OffsetArr = new unsigned long long int[threads_count]();
     int f = 0;
-    float Buff[3];
+    float *Buff = new float[3]();
     int N;
 
     FILE* fpTractogram = fopen(str_filename,"rb");
     if (fpTractogram == NULL) return 0;
-    fseek( fpTractogram, data_offset, SEEK_SET ); // skip the header   
+    fseek( fpTractogram, data_offset, SEEK_SET ); // skip the header
 
     OffsetArr[0] = ftell( fpTractogram );
 
@@ -202,7 +202,7 @@ int trk2dictionary(
             f++;
             current = ftell( fpTractogram );
             for( int i = 1; i < threads_count; i++ ){
-                    if( f == Pos[i] ) 
+                    if( f == Pos[i] )
                         OffsetArr[i] = current;
                 }
         }
@@ -217,7 +217,7 @@ int trk2dictionary(
                 current = ftell( fpTractogram );
 
                 for( int i = 1; i < threads_count; i++ ){
-                    if( f == Pos[i] ) 
+                    if( f == Pos[i] )
                         OffsetArr[i] = current;
                 }
 
@@ -235,7 +235,7 @@ int trk2dictionary(
     //          Parallel IC compartments
     // ==========================================
 
-    printf( "   * Exporting IC compartments:\033[0m\n" );
+    std::cout << "   * Exporting IC compartments:" << std::endl;
     // unsigned int width = 25;
     // PROGRESS = new ProgressBar( (unsigned int) n_count, (unsigned int) width);
     if (verbosity > 2)
@@ -246,7 +246,7 @@ int trk2dictionary(
     // ---- Original ------
     for( int i = 0; i<threads_count; i++ ){
         threads.push_back( thread( ICSegments, str_filename, isTRK, n_count, nReplicas, n_scalars, n_properties, ptrToVOXMM,
-        ptrTDI[i] , ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo, ptrHashTable, path_out, OffsetArr[i], 
+        ptrTDI[i] , ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo, ptrHashTable, path_out, OffsetArr[i],
         i, Pos[i], Pos[i+1]  ) );
     }
 
@@ -258,7 +258,7 @@ int trk2dictionary(
     if (verbosity > 2)
         PROGRESS->close();
 
-    printf( "      [ %d streamlines kept, %ld segments in total ]\n", std::accumulate(totFibers.begin(), totFibers.end(), 0), std::accumulate( totICSegments.begin(), totICSegments.end(), 0) );
+    std::cout << "      [ " << std::accumulate(totFibers.begin(), totFibers.end(), 0) << " streamlines kept, " << std::accumulate( totICSegments.begin(), totICSegments.end(), 0) << " segments in total ]" << std::endl;
     totFibers.clear();
     threads.clear();
 
@@ -266,39 +266,37 @@ int trk2dictionary(
     //          Parallel EC compartments
     // ==========================================
 
-    printf( "   * Exporting EC compartments:\033[0m\n" );
-
+    std::cout << "   * Exporting EC compartments:" << std::endl;
     int EC = ECSegments( ptrPEAKS, Np, vf_THR, ECix, ECiy, ECiz, ptrTDI, ptrHashTable, path_out, ptrPeaksAffine, threads_count );
 
-    printf("      [ %d voxels, %d segments ]\n", totECVoxels, totECSegments );
+    std::cout << "      [ " << totECVoxels << " voxels, " << totECSegments << " segments ]" << std::endl;
 
     /*=========================*/
     /*     Restricted ISO compartments     */
     /*=========================*/
-    printf( "   * Exporting ISO compartments:\033[0m\n" );
-
+    std::cout << "   * Exporting ISO compartments:" << std::endl;
     int totISO = ISOcompartments(ptrTDI, path_out, threads_count);
 
-    printf("      [ %d voxels ]\n", totISO );
+    std::cout << "      [ " << totISO << " voxels ]" << std::endl;
+
+    delete[] batch_size;
+    delete[] Pos;
+    delete[] OffsetArr;
+    delete[] Buff;
 
     return 1;
-
 }
 
 
 int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int ECiz,
-    double** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads){
-
-    // Variables definition
+    double** ptrTDI, short* ptrHashTable, char* path_out, double* ptrPeaksAffine, int threads)
+{
     string    filename;
     string    OUTPUT_path(path_out);
-    std::size_t pos = OUTPUT_path.find("/temp");
-    OUTPUT_path = OUTPUT_path.substr (0,pos);
-
+    OUTPUT_path = OUTPUT_path.substr (0,OUTPUT_path.size()-5);
     unsigned short o;
     unsigned int v;
     unsigned int temp_totECSegments = 0, temp_totECVoxels = 0;
-
 
     filename = OUTPUT_path+"/dictionary_EC_v.dict";        FILE* pDict_EC_v       = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_EC_o.dict";        FILE* pDict_EC_o       = fopen(filename.c_str(),"wb");
@@ -310,7 +308,7 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
         segKey         ec_seg;
         int            ix, iy, iz, id, atLeastOne;
         float          peakMax;
-        float          norms[ Np ];
+        float          *norms = new float[Np]();
         float          *ptr;
         int            ox, oy;
         int            skip = 0;
@@ -351,44 +349,45 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
                         atLeastOne = 0;
                         for(id=0; id<Np ;id++)
                         {
-                        if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
+                            if ( norms[id]==0 || norms[id] < vf_THR*peakMax ) continue; // peak too small, don't consider it
 
-                        // get the orientation of the current peak
-                        ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
+                            // get the orientation of the current peak
+                            ptr = ptrPEAKS + 3*(id + Np * ( iz + dim.z * ( iy + dim.y * ix ) ));
 
-                        // multiply by the affine matrix
-                        dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
-                        dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
-                        dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
+                            // multiply by the affine matrix
+                            dir.x = ptr[0] * ptrPeaksAffine[0] + ptr[1] * ptrPeaksAffine[1] + ptr[2] * ptrPeaksAffine[2];
+                            dir.y = ptr[0] * ptrPeaksAffine[3] + ptr[1] * ptrPeaksAffine[4] + ptr[2] * ptrPeaksAffine[5];
+                            dir.z = ptr[0] * ptrPeaksAffine[6] + ptr[1] * ptrPeaksAffine[7] + ptr[2] * ptrPeaksAffine[8];
 
-                        // flip axes if requested
-                        dir.x *= ECix;
-                        dir.y *= ECiy;
-                        dir.z *= ECiz;
-                        if ( dir.y < 0 )
-                        {
-                            // ensure to be in the right hemisphere (the one where kernels were pre-computed)
-                            dir.x = -dir.x;
-                            dir.y = -dir.y;
-                            dir.z = -dir.z;
-                        }
-                        colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
-                        longitude  = atan2( dir.y, dir.x );
-                        ox = (int)round(colatitude/M_PI*180.0);
-                        oy = (int)round(longitude/M_PI*180.0);
+                            // flip axes if requested
+                            dir.x *= ECix;
+                            dir.y *= ECiy;
+                            dir.z *= ECiz;
+                            if ( dir.y < 0 )
+                            {
+                                // ensure to be in the right hemisphere (the one where kernels were pre-computed)
+                                dir.x = -dir.x;
+                                dir.y = -dir.y;
+                                dir.z = -dir.z;
+                            }
+                            colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
+                            longitude  = atan2( dir.y, dir.x );
+                            ox = (int)round(colatitude/M_PI*180.0);
+                            oy = (int)round(longitude/M_PI*180.0);
 
-                        v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
-                        o = ptrHashTable[ox*181 + oy];
-                        fwrite( &v, 4, 1, pDict_EC_v );
-                        fwrite( &o, 2, 1, pDict_EC_o );
-                        temp_totECSegments++;
-                        atLeastOne = 1;
+                            v = ec_seg.x + dim.x * ( ec_seg.y + dim.y * ec_seg.z );
+                            o = ptrHashTable[ox*181 + oy];
+                            fwrite( &v, 4, 1, pDict_EC_v );
+                            fwrite( &o, 2, 1, pDict_EC_o );
+                            temp_totECSegments++;
+                            atLeastOne = 1;
                         }
                     if ( atLeastOne>0 )
                         temp_totECVoxels++;
                     }
                 }
         }
+        delete[] norms;
     }
     totECSegments = temp_totECSegments;
     totECVoxels = temp_totECVoxels;
@@ -397,49 +396,42 @@ int ECSegments(float* ptrPEAKS, int Np, float vf_THR, int ECix, int ECiy, int EC
     fclose( pDict_EC_o );
 
     return 1;
-
 }
 
 
-
-int ISOcompartments(double** ptrTDI, char* path_out, int threads){
-    // Variables definition
+int ISOcompartments(double** ptrTDI, char* path_out, int threads)
+{
     string    filename;
     string    OUTPUT_path(path_out);
-    std::size_t pos = OUTPUT_path.find("/temp");
-    OUTPUT_path = OUTPUT_path.substr (0,pos);
-    unsigned int totISOVoxels = 0, v=0;
+    OUTPUT_path = OUTPUT_path.substr (0,OUTPUT_path.size()-5);
+    unsigned int totISOVoxels=0, v=0;
+    filename = OUTPUT_path+"/dictionary_ISO_v.dict";
+    FILE* pDict_ISO_v = fopen( filename.c_str(),   "wb" );
+    int  ix, iy, iz, id;
+    int  skip=0;
 
-    filename = OUTPUT_path+"/dictionary_ISO_v.dict";        FILE* pDict_ISO_v   = fopen( filename.c_str(),   "wb" );
-
-    int            ix, iy, iz, id, atLeastOne;
-    int            skip = 0;
-
-    for(iz=0; iz<dim.z ;iz++){
-        for(iy=0; iy<dim.y ;iy++)
-        for(ix=0; ix<dim.x ;ix++){
-            // check if ptrISO and ptrMASK are not NULL
-            if ( ptrISO != NULL ){
-                if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-            }
-            if ( ptrMASK != NULL ){
-                if ( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
-            }
-            // check if in mask previously computed from IC segments
-            for(int i =0; i<threads; i++){
-                if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ){
-                    skip += 1;
-                }
-            }
-            if(skip==threads){
-                skip = 0;
-                continue;
-            }
+    for(iz=0; iz<dim.z ;iz++)
+    for(iy=0; iy<dim.y ;iy++)
+    for(ix=0; ix<dim.x ;ix++)
+    {
+        // check if ptrISO and ptrMASK are not NULL
+        if ( ptrISO != NULL )
+            if ( ptrISO[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+        if ( ptrMASK != NULL )
+            if ( ptrMASK[ iz + dim.z * ( iy + dim.y * ix ) ] == 0 ) continue;
+        // check if in mask previously computed from IC segments
+        for(int i =0; i<threads; i++)
+            if ( ptrTDI[i][ iz + dim.z * ( iy + dim.y * ix ) ] == 0 )
+                skip += 1;
+        if(skip==threads)
+        {
             skip = 0;
-            v = ix + dim.x * ( iy + dim.y * iz );
-            fwrite( &v, 4, 1, pDict_ISO_v );    
-            totISOVoxels++; 
+            continue;
         }
+        skip = 0;
+        v = ix + dim.x * ( iy + dim.y * iz );
+        fwrite( &v, 4, 1, pDict_ISO_v );
+        totISOVoxels++;
     }
     fclose( pDict_ISO_v );
 
@@ -453,9 +445,9 @@ int ISOcompartments(double** ptrTDI, char* path_out, int threads){
 /*                                                Parallel Function                                                 */
 /********************************************************************************************************************/
 
-int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, double* ptrBlurRho, 
-double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out, 
-unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos ) 
+int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, double* ptrBlurRho,
+double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out,
+unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos )
 {
 
     // Variables definition
@@ -476,7 +468,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     map<segInVoxKey,float> FiberNorm;
     map<segInVoxKey,float>::iterator itNorm;
 
-    segInVoxKey inVoxKey; 
+    segInVoxKey inVoxKey;
 
     P.resize(nReplicas);
 
@@ -485,7 +477,7 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     filename = OUTPUT_path+"/dictionary_TRK_norm_" + std::to_string(idx) + ".dict";   FILE* pDict_TRK_norm = fopen(filename.c_str(),"wb");
     if ( !pDict_TRK_norm )
     {
-        printf( "\n[trk2dictionary] Unable to create output files" );
+        std::cout << "\n[trk2dictionary] Unable to create output files";
     }
     filename = OUTPUT_path+"/dictionary_IC_f_" + std::to_string(idx) + ".dict";        FILE* pDict_IC_f       = fopen(filename.c_str(),"wb");
     filename = OUTPUT_path+"/dictionary_IC_v_" + std::to_string(idx) + ".dict";        FILE* pDict_IC_v       = fopen(filename.c_str(),"wb");
@@ -509,8 +501,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     int incr_old = 0;
     // Iterate over streamlines
 
-    for(int f=startpos; f<endpos; f++) 
-    {        
+    for(int f=startpos; f<endpos; f++)
+    {
 
         if ( isTRK )
             N = read_fiberTRK( fpTractogram1, fiber, n_scalars, n_properties );
@@ -813,7 +805,7 @@ void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, in
     if ( ptrMASK && ptrMASK[ vox.z + dim.z * ( vox.y + dim.y * vox.x ) ]==0 )
         return;
 
-        // add the segment to the data structure
+    // add the segment to the data structure
     longitude  = atan2(dir.y, dir.x);
     colatitude = atan2( sqrt(dir.x*dir.x + dir.y*dir.y), dir.z );
     ox = (int)round(colatitude/M_PI*180.0); // theta // i1

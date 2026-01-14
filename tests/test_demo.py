@@ -19,14 +19,15 @@ def run_commit_StickZeppelinBall(local_path):
     trk2dictionary.run(
         filename_tractogram=os.path.join(local_path, 'demo01_fibers.tck'),
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
-        filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
+        filename_mask=os.path.join(local_path, 'WM.nii.gz'), 
         fiber_shift=0.5,
         peaks_use_affine=True,
         verbose=False
     )
 
-    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
-        local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
+    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), 
+                          os.path.join(local_path, 'bvecs.txt'), 
+                          os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
     mit.set_verbose(2)
@@ -34,15 +35,14 @@ def run_commit_StickZeppelinBall(local_path):
                   os.path.join(local_path, 'DWI.scheme'))
 
     mit.set_model('StickZeppelinBall')
-    d_par = 1.7E-3             # Parallel diffusivity [mm^2/s]
-    d_perps = [0.51E-3]        # Perpendicular diffusivity(s) [mm^2/s]
-    # d_perps = []        # Perpendicular diffusivity(s) [mm^2/s]
-    d_isos = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
+    d_par   = 1.7E-3            # Parallel diffusivity [mm^2/s]
+    d_perps = [0.51E-3]         # Perpendicular diffusivity(s) [mm^2/s]
+    d_isos  = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
     mit.model.set(d_par, d_perps, d_isos)
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
 
-    mit.load_dictionary(os.path.join(local_path, 'COMMIT'))
+    mit.load_dictionary()
 
     mit.set_threads()
     mit.build_operator()
@@ -55,14 +55,15 @@ def run_commit_BallandStick(local_path):
     trk2dictionary.run(
         filename_tractogram=os.path.join(local_path, 'demo01_fibers.tck'),
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
-        filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
+        filename_mask=os.path.join(local_path, 'WM.nii.gz'), 
         fiber_shift=0.5,
         peaks_use_affine=True,
         verbose=False
     )
 
-    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
-        local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
+    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), 
+                          os.path.join(local_path, 'bvecs.txt'), 
+                          os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
     mit.set_verbose(2)
@@ -70,14 +71,14 @@ def run_commit_BallandStick(local_path):
                   os.path.join(local_path, 'DWI.scheme'))
 
     mit.set_model('StickZeppelinBall')
-    d_par = 1.7E-3             # Parallel diffusivity [mm^2/s]
-    d_perps = []        # Perpendicular diffusivity(s) [mm^2/s]
-    d_isos = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
+    d_par   = 1.7E-3            # Parallel diffusivity [mm^2/s]
+    d_perps = []                # Perpendicular diffusivity(s) [mm^2/s]
+    d_isos  = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
     mit.model.set(d_par, d_perps, d_isos)
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
 
-    mit.load_dictionary(os.path.join(local_path, 'COMMIT'))
+    mit.load_dictionary()
 
     mit.set_threads()
     mit.build_operator()
@@ -90,14 +91,15 @@ def run_commit_VolumeFractions(local_path):
     trk2dictionary.run(
         filename_tractogram=os.path.join(local_path, 'demo01_fibers.tck'),
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
-        filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
+        filename_mask=os.path.join(local_path, 'WM.nii.gz'),
         fiber_shift=0.5,
         peaks_use_affine=True,
         verbose=False
     )
 
-    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
-        local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
+    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), 
+                          os.path.join(local_path, 'bvecs.txt'), 
+                          os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
     mit.set_verbose(2)
@@ -105,14 +107,14 @@ def run_commit_VolumeFractions(local_path):
                   os.path.join(local_path, 'DWI.scheme'))
 
     mit.set_model('StickZeppelinBall')
-    d_par = 1.7E-3             # Parallel diffusivity [mm^2/s]
-    d_perps = []        # Perpendicular diffusivity(s) [mm^2/s]
-    d_isos = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
+    d_par   = 1.7E-3            # Parallel diffusivity [mm^2/s]
+    d_perps = []                # Perpendicular diffusivity(s) [mm^2/s]
+    d_isos  = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
     mit.model.set(d_par, d_perps, d_isos)
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
 
-    mit.load_dictionary(os.path.join(local_path, 'COMMIT'))
+    mit.load_dictionary()
 
     mit.set_threads()
     mit.build_operator()
@@ -130,28 +132,19 @@ def check_results(pickle_result, ref_pickle):
     result_optimization = data[0]["optimization"]
     ref_optimization = ref_data[0]["optimization"]
 
-    # try:
-    print(f'residual: {result_optimization["fit_details"]["residual"]} vs {ref_optimization["fit_details"]["residual"]}, condition: {abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4}')
-    print(f'regterm: {result_optimization["fit_details"]["regterm"]} vs {ref_optimization["fit_details"]["regterm"]}, condition: {abs(result_optimization["fit_details"]["regterm"] - ref_optimization["fit_details"]["regterm"]) < 1e-4}')
-    print(f'cost_function: {result_optimization["fit_details"]["cost_function"]} vs {ref_optimization["fit_details"]["cost_function"]}, condition: {abs(result_optimization["fit_details"]["cost_function"] - ref_optimization["fit_details"]["cost_function"]) < 1e-4}')
-    print(f'abs_cost: {result_optimization["fit_details"]["abs_cost"]} vs {ref_optimization["fit_details"]["abs_cost"]}, condition: {abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4}')
-    print(f'rel_cost: {result_optimization["fit_details"]["rel_cost"]} vs {ref_optimization["fit_details"]["rel_cost"]}, condition: {abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4}')
-    print(f'abs_x: {result_optimization["fit_details"]["abs_x"]} vs {ref_optimization["fit_details"]["abs_x"]}, condition: {abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4}')
-    print(f'rel_x: {result_optimization["fit_details"]["rel_x"]} vs {ref_optimization["fit_details"]["rel _x"]}, condition: {abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel _x"]) < 1e-4}') #NOTE: There is a space in the key name
-    print(f'iterations: {result_optimization["fit_details"]["iterations"]} vs {ref_optimization["fit_details"]["iterations"]}, condition: {result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]}')
+    try:
+        assert abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["regterm"] - ref_optimization["fit_details"]["regterm"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["cost_function"] - ref_optimization["fit_details"]["cost_function"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4
+        assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel_x"]) < 1e-4
+        assert result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]
 
-    assert abs(result_optimization["fit_details"]["residual"] - ref_optimization["fit_details"]["residual"]) < 1e-4
-    assert abs(result_optimization["fit_details"]["regterm"] - ref_optimization["fit_details"]["regterm"]) < 1e-4
-    assert abs(result_optimization["fit_details"]["cost_function"] - ref_optimization["fit_details"]["cost_function"]) < 1e-4
-    assert abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4
-    assert abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4
-    assert abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4
-    assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel _x"]) < 1e-4 #NOTE: There is a space in the key name
-    assert result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]
-
-    # except AssertionError:
-    #     logger.error("Results do not match")
-    #     sys.exit(1)
+    except AssertionError:
+        logger.error("Results do not match")
+        sys.exit(1)
 
 
 def run_tests():

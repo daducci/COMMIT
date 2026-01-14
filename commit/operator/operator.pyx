@@ -5,87 +5,40 @@ import numpy as np
 
 from dicelib.ui import setup_logger
 
-# Interfaces to actual C code performing the multiplications
-cdef extern void COMMIT_A(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
-    double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
-    unsigned int *_ECv, unsigned short *_ECo,
-    unsigned int *_ISOv,
-    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned int* _ICthreads, unsigned int* _ECthreads, unsigned int* _ISOthreads,
-    unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
-) nogil
-
-cdef extern void COMMIT_At(
-    int _nF, int _n, int _nE, int _nV, int _nS, int _ndirs,
-    double *_v_in, double *_v_out,
-    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, unsigned short *_ICo, float *_ICl,
-    unsigned int *_ECv, unsigned short *_ECo,
-    unsigned int *_ISOv,
-    float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
-    unsigned char *_ICthreadsT, unsigned int *_ECthreadsT, unsigned int *_ISOthreadsT,
-    unsigned int _nIC, unsigned int _nEC, unsigned int _nISO, unsigned int _nThreads
-) nogil
-
-cdef extern void COMMIT_A_nolut(
-    int _nF, int _n, int _nSf,
-    double* _vIN, double* _vOUT,
-    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
-    unsigned int *_ISOv,
-    double *_ICmod,
-    unsigned int* _ICthreads, unsigned int* _ISOthreads,
-    unsigned int _nICs, unsigned int _nISO, unsigned int _nThreads
-) nogil
-
-cdef extern void COMMIT_At_nolut(
-    int _nF, int _n, int _nSf,
-    double *_vIN, double *_vOUT,
-    unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
-    unsigned int *_ISOv,
-    double *_ICmod,
-    unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
-    unsigned int _nICs, unsigned int _nISO, unsigned int _nThreads
-) nogil
-
-
 logger = setup_logger('operator')
 
 cdef class LinearOperator :
-    """This class is a wrapper to the C code for performing marix-vector multiplications
-    with the COMMIT linear operator A. The multiplications are done using C code
+    """This class is a wrapper to the C code for performing matrix-vector multiplications
+    with the COMMIT linear operator A. The calculations are done using C code
     that uses information from the DICTIONARY, KERNELS and THREADS data structures.
     """
-    cdef int nS, nF, nR, nC, nE, nT, nV, nI, n, ndirs, nSf
-    cdef public int adjoint, n1, n2
+    cdef public int adjoint, nROWS, nCOLS
+    cdef:
+        DICTIONARY, KERNELS, THREADS
+        int nSAMPLES, ndirs, nolut
+        int ICn, ICnVOX, ICnSTR, ICnRF, ICnDCTf, ICnDCTs, ECn, ECnRF, ISOn, ISOnRF
+        unsigned int [::1] ICf
+        unsigned int [::1] ICv
+        unsigned int [::1] ECv
+        unsigned int [::1] ISOv
+        unsigned int [::1] ICeval
+        unsigned int [::1] ICpos
+        float [::1]        ICl
+        float [:, :, ::1]  LUT_IC
+        double [:, :, ::1] LUT_IC_DCT
+        # double* LUT_IC_modulation
 
-    cdef DICTIONARY
-    cdef KERNELS
-    cdef THREADS
-    cdef nolut
-
-    cdef unsigned int*   ICf
-    cdef unsigned int*   ICeval
-    cdef float*          ICl
-    cdef unsigned int*   ICp
-    cdef unsigned int*   ICv
-    cdef unsigned short* ICo
-    cdef unsigned int*   ECv
-    cdef unsigned short* ECo
-    cdef unsigned int*   ISOv
-
-    cdef float* LUT_IC
-    cdef double* LUT_IC_modulation
-    cdef float* LUT_EC
-    cdef float* LUT_ISO
-
-    cdef unsigned int*   ICthreads
-    cdef unsigned int*   ECthreads
-    cdef unsigned int*   ISOthreads
-
-    cdef unsigned char*  ICthreadsT
-    cdef unsigned int*   ECthreadsT
-    cdef unsigned int*   ISOthreadsT
+        float [:, :, ::1]  LUT_EC
+        float [:, ::1]     LUT_ISO
+        unsigned short [::1] ICo
+        unsigned short [::1] ECo
+        unsigned int [::1]  ICthreads
+        unsigned int [::1]  ECthreads
+        unsigned int [::1]  ISOthreads
+        unsigned int [::1]  ECthreadsT
+        unsigned int [::1]  ISOthreadsT
+        unsigned char [::1] ICthreadsT
+        unsigned int nThreads
 
 
     def __init__( self, DICTIONARY, KERNELS, THREADS, nolut=False ) :
@@ -93,97 +46,70 @@ cdef class LinearOperator :
         self.DICTIONARY = DICTIONARY
         self.KERNELS    = KERNELS
         self.THREADS    = THREADS
-        self.nolut      = nolut
 
-        self.nF         = DICTIONARY['IC']['nF']    # number of FIBERS
-        self.nR         = KERNELS['wmr'].shape[0]   # number of FIBER RADII
+        self.ICn    = DICTIONARY['IC']['n']     # number of IC contributions (i.e. segments)
+        self.ICnSTR = DICTIONARY['IC']['nSTR']  # number of IC streamlines
+        self.ICnRF  = KERNELS['wmr'].shape[0]   # number of IC response functions
+        self.ICnVOX = DICTIONARY['IC']['nVOX']  # number of IC voxels
+        self.ECn    = DICTIONARY['EC']['n']     # number of EC contributions (i.e. peaks)
+        self.ECnRF  = KERNELS['wmh'].shape[0]   # number of EC response functions
+        self.ISOn   = DICTIONARY['ISO']['n']    # number of ISO contributions (i.e. voxels)
+        self.ISOnRF = KERNELS['iso'].shape[0]   # number of ISO response functions
 
-        if self.nolut:
-            self.nC = KERNELS['wmc'].shape[0]   # number of DCT profiles
-            self.nSf = KERNELS['wmc'].shape[1]   # number of SAMPLES for Cosine coefficients
-        else:
-            self.nC = 1
-
-        self.nE         = DICTIONARY['EC']['nE']    # number of EC segments
-        self.nT         = KERNELS['wmh'].shape[0]   # number of EC TORTUOSITY values
-        self.nV         = DICTIONARY['nV']          # number of VOXELS
-        self.nI         = KERNELS['iso'].shape[0]   # number of ISO contributions
-        self.n          = DICTIONARY['IC']['n']     # number of IC segments
-        self.ndirs      = KERNELS['wmr'].shape[1]   # number of directions
-
+        # number of SAMPLES
         if KERNELS['wmr'].size > 0 :
-            self.nS = KERNELS['wmr'].shape[2]       # number of SAMPLES
+            self.nSAMPLES = KERNELS['wmr'].shape[2]
         elif KERNELS['wmh'].size > 0 :
-            self.nS = KERNELS['wmh'].shape[2]
+            self.nSAMPLES = KERNELS['wmh'].shape[2]
         else :
-            self.nS = KERNELS['wmr'].shape[1]
-
-        self.adjoint    = 0                         # direct of inverse product
-
-        self.n1 = self.nV*self.nS
-        self.n2 = self.nR*self.nF*self.nC + self.nT*self.nE + self.nI*self.nV
-
-        # get C pointers to arrays in DICTIONARY
-        cdef unsigned int [::1]   ICf  = DICTIONARY['IC']['fiber']
-        self.ICf = &ICf[0]
-
-        cdef unsigned int [::1]   ICeval  = DICTIONARY['IC']['eval']
-        self.ICeval = &ICeval[0]
-
-        # for v in range(DICTIONARY['IC']['p'].shape[0]):
-        #     print(f"fiber: {DICTIONARY['IC']['fiber'][v]}, pos: {DICTIONARY['IC']['p'][v]}, len: {DICTIONARY['IC']['len'][v]}, voxel: {DICTIONARY['IC']['v'][v]}")
-
-
-
-        cdef float [::1]          ICl  = DICTIONARY['IC']['len']
-        self.ICl = &ICl[0]
-
-        cdef unsigned int [::1]   ICp  = DICTIONARY['IC']['p']
-        self.ICp = &ICp[0]
-
-        cdef unsigned int [::1]   ICv  = DICTIONARY['IC']['v']
-        self.ICv = &ICv[0]
-
-        cdef unsigned short [::1] ICo  = DICTIONARY['IC']['o']
-        self.ICo = &ICo[0]
-
-        cdef unsigned int [::1]   ECv  = DICTIONARY['EC']['v']
-        self.ECv = &ECv[0]
-
-        cdef unsigned short [::1] ECo  = DICTIONARY['EC']['o']
-        self.ECo = &ECo[0]
-
-        cdef unsigned int [::1]   ISOv = DICTIONARY['ISO']['v']
-        self.ISOv = &ISOv[0]
-
-        # get C pointers to arrays in KERNELS
-        cdef float [:, :, ::1] wmrSFP = KERNELS['wmr']
-        self.LUT_IC  = &wmrSFP[0,0,0]
-
-        cdef double [:, ::1] wmcSFP
+            self.nSAMPLES = KERNELS['wmr'].shape[1]
+        # number of SAMPLING DIRECTIONS
+        self.ndirs = KERNELS['wmr'].shape[1]
+        # use lut or not
+        self.nolut = nolut
+        # number of DCT basis functions and samples
         if self.nolut:
-            wmcSFP = KERNELS['wmc']
-            self.LUT_IC_modulation = &wmcSFP[0,0]
+            self.ICnDCTf = KERNELS['wmc'].shape[0]   # number of DCT basis functions
+            self.ICnDCTs = KERNELS['wmc'].shape[1]   # number of samples for DCT basis functions
+        else:
+            self.ICnDCTf = 1
+        # direct of inverse product
+        self.adjoint = 0
+        # actual size of matrix A
+        self.nROWS   = self.ICnVOX*self.nSAMPLES
+        self.nCOLS   = self.ICnSTR*self.ICnRF*self.ICnDCTf + self.ECn*self.ECnRF + self.ISOn*self.ISOnRF
 
-        cdef float [:, :, ::1] wmhSFP = KERNELS['wmh']
-        self.LUT_EC  = &wmhSFP[0,0,0]
-        cdef float [:, ::1] isoSFP = KERNELS['iso']
-        self.LUT_ISO = &isoSFP[0,0]
+        # get pointers to arrays in DICTIONARY
+        self.ICf    = DICTIONARY['IC']['str']
+        self.ICl    = DICTIONARY['IC']['len']
+        self.ICv    = DICTIONARY['IC']['vox']
+        self.ICo    = DICTIONARY['IC']['dir']
+        self.ICpos  = DICTIONARY['IC']['pos']
+        self.ICeval = DICTIONARY['IC']['eval']
+        self.ECv    = DICTIONARY['EC']['vox']
+        self.ECo    = DICTIONARY['EC']['dir']
+        self.ISOv   = DICTIONARY['ISO']['vox']
 
-        # get C pointers to arrays in THREADS
-        cdef unsigned int [::1] ICthreads = THREADS['IC']
-        self.ICthreads  = &ICthreads[0]
-        cdef unsigned int [::1] ECthreads = THREADS['EC']
-        self.ECthreads  = &ECthreads[0]
-        cdef unsigned int [::1] ISOthreads = THREADS['ISO']
-        self.ISOthreads = &ISOthreads[0]
+        # get pointers to arrays in KERNELS
+        self.LUT_IC     = KERNELS['wmr']
+        if self.nolut: 
+            self.LUT_IC_DCT = KERNELS['wmc']
+        # cdef double [:, ::1] wmcSFP
+        # if self.nolut:
+        #     wmcSFP = KERNELS['wmc']
+        #     self.LUT_IC_DCT = &wmcSFP[0,0]
 
-        cdef unsigned char [::1] ICthreadsT = THREADS['ICt']
-        self.ICthreadsT  = &ICthreadsT[0]
-        cdef unsigned int  [::1] ECthreadsT = THREADS['ECt']
-        self.ECthreadsT  = &ECthreadsT[0]
-        cdef unsigned int  [::1] ISOthreadsT = THREADS['ISOt']
-        self.ISOthreadsT = &ISOthreadsT[0]
+        self.LUT_EC     = KERNELS['wmh']
+        self.LUT_ISO    = KERNELS['iso']
+
+        # get pointers to arrays in THREADS
+        self.nThreads    = THREADS['n']
+        self.ICthreads   = THREADS['IC']
+        self.ECthreads   = THREADS['EC']
+        self.ISOthreads  = THREADS['ISO']
+        self.ICthreadsT  = THREADS['ICt']
+        self.ECthreadsT  = THREADS['ECt']
+        self.ISOthreadsT = THREADS['ISOt']
 
         # print(f"LinearOperator: n1={self.n1}, n2={self.n2}, nF={self.nF}, nR={self.nR}, nC={self.nC}, nV={self.nV}, nI={self.nI}, n={self.n}, ndirs={self.ndirs}, nS={self.nS}, nSf={self.nSf}")
 
@@ -200,9 +126,9 @@ cdef class LinearOperator :
     def shape( self ) :
         """Size of the explicit matrix."""
         if not self.adjoint :
-            return ( self.n1, self.n2 )
+            return ( self.nROWS, self.nCOLS )
         else :
-            return ( self.n2, self.n1 )
+            return ( self.nCOLS, self.nROWS )
 
 
     def dot( self, double [::1] v_in  ):
@@ -221,81 +147,130 @@ cdef class LinearOperator :
 
         # Permit only matrix-vector multiplications
         if v_in.size != self.shape[1] :
-            raise RuntimeError( "A.dot(): dimensions do not match" )
+            raise RuntimeError( "A.dot(): dimensions do not match" ) #TODO: use logger?
 
         # Create output array
         cdef double [::1] v_out = np.zeros( self.shape[0], dtype=np.float64 )
 
-        cdef unsigned int nthreads = self.THREADS['n']
-        cdef unsigned int nIC = self.KERNELS['wmr'].shape[0]
-        cdef unsigned int nICs
-        if self.nolut:
-            nICs = self.KERNELS['wmc'].shape[0]
-        cdef unsigned int nEC = self.KERNELS['wmh'].shape[0]
-        cdef unsigned int nISO = self.KERNELS['iso'].shape[0]
-
-        # # print v_in
-        # for i in range(v_in.size):
-        #     print(f"v_in[{i}]={v_in[i]}")
-
-        if self.nolut:
-            # Call the cython function to read the memory pointers
+        # Call the c++ function to perform the multiplications
+        with nogil:
             if not self.adjoint :
                 # DIRECT PRODUCT A*x
-                with nogil :
+                if self.nolut:
                     COMMIT_A_nolut(
-                        self.nF, self.n, self.nSf,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval, self.ICv, self.ICl, self.ICp,
-                        self.ISOv,
-                        self.LUT_IC_modulation,
-                        self.ICthreads, self.ISOthreads,
-                        nICs, nISO, nthreads
+                        self.ICnSTR, self.ICn, self.ICnDCTs, self.ICnDCTf, # add n=ICn, and nSf=ICnDCTs
+                        &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICl[0], &self.ICpos[0], # add ICp=ICpos
+                        &self.ISOv[0],
+                        &self.LUT_IC_DCT[0,0,0], # add LUT_IC_modulation=LUT_IC_DCT
+                        &self.ICthreads[0], &self.ISOthreads[0],
+                        self.ISOnRF, self.nThreads # add nICs=ICnDCTf (above)
                     )
-
-            else :
-                # INVERSE PRODUCT A'*y
-                with nogil :
-                    COMMIT_At_nolut(
-                        self.nF, self.n, self.nSf,
-                        &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval, self.ICv, self.ICl, self.ICp,
-                        self.ISOv,
-                        self.LUT_IC_modulation,
-                        self.ICthreadsT, self.ISOthreadsT,
-                        nICs, nISO, nthreads
-                    )
-        else:
-            # Call the cython function to read the memory pointers
-            if not self.adjoint :
-                # DIRECT PRODUCT A*x
-                with nogil :
+                else:
                     COMMIT_A(
-                        self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval, self.ICv, self.ICo, self.ICl,
-                        self.ECv, self.ECo,
-                        self.ISOv,
-                        self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                        self.ICthreads, self.ECthreads, self.ISOthreads,
-                        nIC, nEC, nISO, nthreads
+                        self.nSAMPLES, self.ndirs,
+                        self.ICnSTR, self.ECn, self.ISOn,
+                        &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICo[0], &self.ICl[0],
+                        &self.ECv[0], &self.ECo[0],
+                        &self.ISOv[0],
+                        &self.LUT_IC[0,0,0], &self.LUT_EC[0,0,0], &self.LUT_ISO[0,0],
+                        &self.ICthreads[0], &self.ECthreads[0], &self.ISOthreads[0],
+                        self.ICnRF, self.ECnRF, self.ISOnRF, self.nThreads
                     )
-
             else :
                 # INVERSE PRODUCT A'*y
-                with nogil :
-                    COMMIT_At(
-                        self.nF, self.n, self.nE, self.nV, self.nS, self.ndirs,
+                if self.nolut:
+                    COMMIT_At_nolut(
                         &v_in[0], &v_out[0],
-                        self.ICf, self.ICeval, self.ICv, self.ICo, self.ICl,
-                        self.ECv, self.ECo,
-                        self.ISOv,
-                        self.LUT_IC, self.LUT_EC, self.LUT_ISO,
-                        self.ICthreadsT, self.ECthreadsT, self.ISOthreadsT,
-                        nIC, nEC, nISO, nthreads
+                        self.ICnSTR, self.ICn, self.ICnDCTs, self.ICnDCTf, # add nSf=ICnDCTs
+                        &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICl[0], &self.ICpos[0], # add ICp=ICpos
+                        &self.ISOv[0],
+                        &self.LUT_IC_DCT[0,0,0], # add LUT_IC_modulation=LUT_IC_DCT
+                        &self.ICthreadsT[0], &self.ISOthreadsT[0],
+                        self.ISOnRF, self.nThreads # add nICs=ICnDCTf (above)
+                    )
+                else:
+                    COMMIT_At(
+                        &v_in[0], &v_out[0],
+                        self.nSAMPLES, self.ndirs,
+                        self.ICnSTR, self.ICn, self.ECn, self.ISOn,
+                        &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICo[0], &self.ICl[0],
+                        &self.ECv[0], &self.ECo[0],
+                        &self.ISOv[0],
+                        &self.LUT_IC[0,0,0], &self.LUT_EC[0,0,0], &self.LUT_ISO[0,0],
+                        &self.ICthreadsT[0], &self.ECthreadsT[0], &self.ISOthreadsT[0],
+                        self.ICnRF, self.ECnRF, self.ISOnRF, self.nThreads
                     )
 
-        # print v_out
-        # for i in range(v_out.size):
-        #     print(f"v_out[{i}]={v_out[i]}")
         return v_out
+
+
+# Interfaces of the external C functions performing the multiplications
+# =====================================================================
+cdef extern void COMMIT_A(
+    double *, double *,
+    int, int, int, int, int,
+    unsigned int *, unsigned int *, unsigned int *, unsigned short *, float *,
+    unsigned int *, unsigned short *,
+    unsigned int *,
+    float *, float *, float *,
+    unsigned int*, unsigned int*, unsigned int*,
+    unsigned int, unsigned int, unsigned int, unsigned int
+) nogil
+
+cdef extern void COMMIT_At(
+    double *, double *,
+    int, int, int, int, int, int,
+    unsigned int *, unsigned int *, unsigned int *, unsigned short *, float *,
+    unsigned int *, unsigned short *,
+    unsigned int *,
+    float *, float *, float *,
+    unsigned char*, unsigned int*, unsigned int*,
+    unsigned int, unsigned int, unsigned int, unsigned int
+) nogil
+
+cdef extern void COMMIT_A_nolut(
+    double *, double *,
+    int, int, int, unsigned int, #added int for ICnDCTs and unsigned int for ICnDCTf. Add also int for ICn ? yes
+    unsigned int *,  unsigned int *, unsigned int *, float *, unsigned int *, # added unsigned int* for ICpos
+    unsigned int *,
+    double *, # added double* for LUT_IC_DCT
+    unsigned int *, unsigned int *,
+    unsigned int, unsigned int
+) nogil
+
+cdef extern void COMMIT_At_nolut(
+    double *, double *,
+    int, int, int, unsigned int, # added int for ICnDCTs and unsigned int for ICnDCTf
+    unsigned int *,  unsigned int *, unsigned int *, float *, unsigned int *, # added unsigned int* for ICpos
+    unsigned int *,
+    double *, # added double* for LUT_IC_DCT
+    unsigned char*, unsigned int*,
+    unsigned int, unsigned int
+) nogil
+
+
+
+# Interfaces to actual C code performing the multiplications #TODO: check if compatible with above
+
+# cdef extern void COMMIT_A_nolut(
+#     int _nF, int _n, int _nSf,
+#     double* _vIN, double* _vOUT,
+#     unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
+#     unsigned int *_ISOv,
+#     double *_ICmod,
+#     unsigned int* _ICthreads, unsigned int* _ISOthreads,
+#     unsigned int _nICs, unsigned int _nISO, unsigned int _nThreads
+# ) nogil
+
+# cdef extern void COMMIT_At_nolut(
+#     int _nF, int _n, int _nSf,
+#     double *_vIN, double *_vOUT,
+#     unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
+#     unsigned int *_ISOv,
+#     double *_ICmod,
+#     unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
+#     unsigned int _nICs, unsigned int _nISO, unsigned int _nThreads
+# ) nogil
+

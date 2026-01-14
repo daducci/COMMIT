@@ -1,6 +1,72 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.4.2`<br>_2025-10-06_
+
+### 🐛Fixed
+- Error when checking the number of streamlines in the weighted LASSO function
+- Error in verifying voxel correspondence between the lesion mask passed through the dictionary and the ISO weights map
+- Error when checking the number of streamlines in the grouping structure for group LASSO regularization (Fixes #154)
+- Added check on empty groups when setting group LASSO regularization (Fixes #153)
+- Tests fail using numpy >= 2.0.0
+- Typo in test script and reference results
+
+---
+---
+
+## `v2.4.1`<br>_2025-09-18_
+
+### 🛠️Changed
+- Names of the output files of the "lesion" model
+
+### 🐛Fixed
+- Error when calling "fit" again after "save_results"
+- Minor fixes and improvements
+
+---
+---
+
+## `v2.4.0`<br>_2025-04-24_
+
+### ✨Added
+- Lesion mask support using ScalarMap models.
+- Debias option in `fit()` to remove bias from the estimated coefficients when using regularization (e.g. `COMMIT2`).
+- Public `dictionary_info` attribute on `Evaluation` for reuse (e.g. lesion masks, blur settings, thread counts).
+- Two options to change the `argsort` algorithm (`sortDictionaryWith` and `sortThreadsWith`)
+
+### 🛠️Changed
+- `VolumeFractions` model now is called `ScalarMap` for clarity.
+- Refactored `Evaluation` to load and store `dictionary_info` once and reference it in `load_data()`, `set_model()` and `save_results()`.
+- Bumped package version to 2.4.0 in `pyproject.toml`.
+
+### 🐛Fixed
+- Logger prints
+
+---
+---
+
+## `v2.3.1`<br>_2024-09-24_
+### 🐛Fixed
+- Revert changes when save results in `results.pickle`
+- Add checks on `group_weights_extra`
+
+---
+---
+
+## `v2.3.0`<br>_2024-07-04_
+### ✨Added
+- Added support for Windows (requires the `pthread-win32` library)
+- Precompiled wheels for Windows, MacOS, and Linux are now available on PyPI
+
+### 🛠️Changed
+- `operator.pyx` no more compiled at runtime
+- Restict the `numpy` version to `<2.0.0`
+
+### 🐛Fixed
+- Improved output when running from Jupyter notebooks
+
+---
+---
 
 ## `v2.2.0`<br>_2024-04-12_
 ### 🐛Fixed

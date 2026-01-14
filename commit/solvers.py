@@ -24,7 +24,7 @@ def init_regularisation(regularisation_params):
     # check if regularisations are in the list
     if regularisation_params['regIC'] not in list_regularizers or regularisation_params['regEC'] not in list_regularizers or regularisation_params['regISO'] not in list_regularizers:
         logger.error('Regularisation not in the list')
-    
+
     startIC  = regularisation_params.get('startIC')
     sizeIC   = regularisation_params.get('sizeIC')
     startEC  = regularisation_params.get('startEC')
@@ -38,8 +38,8 @@ def init_regularisation(regularisation_params):
         all_coeff_weights[startIC:(startIC+sizeIC)] = regularisation_params['dictIC_params']["coeff_weights_kept"]
     # if regularisation_params.get('dictEC_params') is not None and "coeff_weights" in regularisation_params['dictEC_params'].keys():
     #     all_coeff_weights[startEC:(startEC+sizeEC)] = regularisation_params['dictEC_params']["coeff_weights"]
-    # if regularisation_params.get('dictISO_params') is not None and "coeff_weights" in regularisation_params['dictISO_params'].keys():
-    #     all_coeff_weights[startISO:(startISO+sizeISO)] = regularisation_params['dictISO_params']["coeff_weights"]
+    if regularisation_params.get('dictISO_params') is not None and "coeff_weights" in regularisation_params['dictISO_params'].keys():
+        all_coeff_weights[startISO:(startISO+sizeISO)] = regularisation_params['dictISO_params']["coeff_weights"]
 
     ############################
     # INTRACELLULAR COMPARTMENT#
@@ -97,7 +97,7 @@ def init_regularisation(regularisation_params):
             proxIC = lambda x, scaling: non_negativity(prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC),startIC,sizeIC)
         else:
             proxIC = lambda x, scaling: prox_group_lasso(x,groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
-  
+
     elif regularisation_params['regIC'] == 'sparse_group_lasso':
         if not len(dictIC_params['group_idx_kept']) == len(dictIC_params['group_weights']):
             logger.error('Number of groups and weights do not match')
@@ -132,12 +132,10 @@ def init_regularisation(regularisation_params):
                 proxIC = lambda x, scaling: prox_group_lasso(soft_thresholding(x,scaling*lambdaIC,startIC,sizeIC),groupIdxIC,groupSizeIC,dictIC_params['group_weights'],scaling*lambda_group_IC)
 
 
-    ###########################
-    # EXTRCELLULAR COMPARTMENT#
-    ###########################
-
-    dictEC_params = regularisation_params.get('dictEC_params')
-
+    #############################
+    # EXTRACELLULAR COMPARTMENT #
+    #############################
+    # dictEC_params = regularisation_params.get('dictEC_params')
     if regularisation_params['regEC'] is None:
         omegaEC = lambda x: 0.0
         if regularisation_params.get('nnEC')==True:
@@ -167,12 +165,10 @@ def init_regularisation(regularisation_params):
     #     proxEC  = lambda x: projection_onto_l2_ball(x, lambdaEC, startEC, sizeEC)
 
 
-    ########################
-    # ISOTROPIC COMPARTMENT#
-    ########################
-
+    #########################
+    # ISOTROPIC COMPARTMENT #
+    #########################
     dictISO_params = regularisation_params.get('dictISO_params')
-
     if regularisation_params['regISO'] is None:
         omegaISO = lambda x: 0.0
         if regularisation_params.get('nnISO')==True:
@@ -352,10 +348,10 @@ def fista(y, A, At, omega, prox, sqrt_W=None, tol_fun=1e-4, tol_x=1e-6, max_iter
             criterion = "Relative tolerance on the objective"
             break
         elif abs_x < eps :
-            criterion = "Absolute tolerance on the unknown"
+            criterion = "Absolute tolerance on the unknowns"
             break
         elif rel_x < tol_x :
-            criterion = "Relative tolerance on the unknown"
+            criterion = "Relative tolerance on the unknowns"
             break
         elif iter >= max_iter :
             criterion = "Maximum number of iterations"
