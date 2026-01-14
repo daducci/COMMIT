@@ -373,27 +373,28 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Loading the kernels' )
+        if nprof > 1 and self.model.lesion_mask:
+            logger.error( 'Not yet possible to use more than one profile in combination with the lesion mask' )
         log_list = []
-        ret_subinfo = logger.subinfo( f'Resampling LUT for subject "{self.get_config("subject")}":', indent_char='*', indent_lvl=1, with_progress=True )
+        ret_subinfo = logger.subinfo( f'Resampling LUT for subject "{self.get_config("subject")}":', indent_char='*', indent_lvl=1, with_progress=True ) # TODO: check why not printed
         with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo, log_list=log_list):
             # auxiliary data structures
             idx_OUT, Ylm_OUT = amico.lut.aux_structures_resample( self.scheme, self.get_config('lmax') )
+
+            if self.model.id == "ScalarMap":
+                self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
+            else:
+                self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
+
+            nIC  = self.KERNELS['wmr'].shape[0]
+            nEC  = self.KERNELS['wmh'].shape[0]
+            nISO = self.KERNELS['iso'].shape[0]
 
         # Dispatch to the right handler for each model
         if self.get_config('doMergeB0') :
             logger.subinfo( 'Merging multiple b0 volume(s)', indent_char='-', indent_lvl=2 )
         else :
             logger.subinfo( 'Keeping all b0 volume(s)', indent_char='-', indent_lvl=2 )
-        
-        if self.model.id == "VolumeFractions":
-            self.KERNELS = self.model.resample( self.get_config('doMergeB0'), self.get_config('ndirs'), nprof, nsamples )
-        else:
-            self.KERNELS = self.model.resample( self.get_config('ATOMS_path'), idx_OUT, Ylm_OUT, self.get_config('doMergeB0'), self.get_config('ndirs') )
-
-        
-        nIC  = self.KERNELS['wmr'].shape[0]
-        nEC  = self.KERNELS['wmh'].shape[0]
-        nISO = self.KERNELS['iso'].shape[0]
 
         # ensure contiguous arrays for C part
         self.KERNELS['wmr'] = np.ascontiguousarray( self.KERNELS['wmr'] )

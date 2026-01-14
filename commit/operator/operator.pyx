@@ -25,7 +25,7 @@ cdef class LinearOperator :
         unsigned int [::1] ICpos
         float [::1]        ICl
         float [:, :, ::1]  LUT_IC
-        double [:, :, ::1] LUT_IC_DCT
+        double [:, ::1] LUT_IC_DCT
         # double* LUT_IC_modulation
 
         float [:, :, ::1]  LUT_EC
@@ -162,7 +162,7 @@ cdef class LinearOperator :
                         self.ICnSTR, self.ICn, self.ICnDCTs, self.ICnDCTf, # add n=ICn, and nSf=ICnDCTs
                         &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICl[0], &self.ICpos[0], # add ICp=ICpos
                         &self.ISOv[0],
-                        &self.LUT_IC_DCT[0,0,0], # add LUT_IC_modulation=LUT_IC_DCT
+                        &self.LUT_IC_DCT[0,0], # add LUT_IC_modulation=LUT_IC_DCT
                         &self.ICthreads[0], &self.ISOthreads[0],
                         self.ISOnRF, self.nThreads # add nICs=ICnDCTf (above)
                     )
@@ -186,7 +186,7 @@ cdef class LinearOperator :
                         self.ICnSTR, self.ICn, self.ICnDCTs, self.ICnDCTf, # add nSf=ICnDCTs
                         &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICl[0], &self.ICpos[0], # add ICp=ICpos
                         &self.ISOv[0],
-                        &self.LUT_IC_DCT[0,0,0], # add LUT_IC_modulation=LUT_IC_DCT
+                        &self.LUT_IC_DCT[0,0], # add LUT_IC_modulation=LUT_IC_DCT
                         &self.ICthreadsT[0], &self.ISOthreadsT[0],
                         self.ISOnRF, self.nThreads # add nICs=ICnDCTf (above)
                     )
