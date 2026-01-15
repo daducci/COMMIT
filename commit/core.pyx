@@ -1950,9 +1950,6 @@ cdef class Evaluation :
         ret_subinfo = logger.subinfo(f'Handling multiple coeffs per streamline: "{stat_coeffs}"', indent_lvl=2, indent_char='-', with_progress=True)
         with ProgressBar(disable=self.verbose<3, hide_on_exit=True, subinfo=ret_subinfo):
             self.set_config('stat_coeffs', stat_coeffs)
-            if stat_coeffs == 'all' :
-                if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
-                    logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
             if stat_coeffs != 'all' and xic.size > 0 :
                 xic_kept = self.DICTIONARY['TRK']['kept']
                 if stat_coeffs == 'sum' :
@@ -1995,6 +1992,9 @@ cdef class Evaluation :
 
             # scale output weights if blur was used
             if self.KERNELS['wmc'].shape[0] == 1 :
+                if stat_coeffs == 'all' :
+                    if self.dictionary_info['blur_gauss_extent'] > 0 or self.dictionary_info['blur_core_extent'] > 0 :
+                        logger.error( 'Not yet implemented. Unable to account for blur in case of multiple streamline constributions.' )
                 if "tractogram_centr_idx" in self.dictionary_info.keys():
                     ordered_idx = self.dictionary_info["tractogram_centr_idx"].astype(np.int64)
                     unravel_weights = np.zeros( self.dictionary_info['n_count'], dtype=np.float64)
