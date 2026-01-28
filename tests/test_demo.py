@@ -19,23 +19,23 @@ def run_commit_StickZeppelinBall(local_path):
     trk2dictionary.run(
         filename_tractogram=os.path.join(local_path, 'demo01_fibers.tck'),
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
-        filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
+        filename_mask=os.path.join(local_path, 'WM.nii.gz'), 
         fiber_shift=0.5,
         peaks_use_affine=True
     )
 
-    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
-        local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
+    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), 
+                          os.path.join(local_path, 'bvecs.txt'), 
+                          os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
     mit.load_data(os.path.join(local_path, 'DWI.nii.gz'),
                   os.path.join(local_path, 'DWI.scheme'))
 
     mit.set_model('StickZeppelinBall')
-    d_par = 1.7E-3             # Parallel diffusivity [mm^2/s]
-    d_perps = [0.51E-3]        # Perpendicular diffusivity(s) [mm^2/s]
-    # d_perps = []        # Perpendicular diffusivity(s) [mm^2/s]
-    d_isos = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
+    d_par   = 1.7E-3            # Parallel diffusivity [mm^2/s]
+    d_perps = [0.51E-3]         # Perpendicular diffusivity(s) [mm^2/s]
+    d_isos  = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
     mit.model.set(d_par, d_perps, d_isos)
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
@@ -53,22 +53,23 @@ def run_commit_BallandStick(local_path):
     trk2dictionary.run(
         filename_tractogram=os.path.join(local_path, 'demo01_fibers.tck'),
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
-        filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
+        filename_mask=os.path.join(local_path, 'WM.nii.gz'), 
         fiber_shift=0.5,
         peaks_use_affine=True
     )
 
-    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
-        local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
+    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), 
+                          os.path.join(local_path, 'bvecs.txt'), 
+                          os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
     mit.load_data(os.path.join(local_path, 'DWI.nii.gz'),
                   os.path.join(local_path, 'DWI.scheme'))
 
     mit.set_model('StickZeppelinBall')
-    d_par = 1.7E-3             # Parallel diffusivity [mm^2/s]
-    d_perps = []        # Perpendicular diffusivity(s) [mm^2/s]
-    d_isos = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
+    d_par   = 1.7E-3            # Parallel diffusivity [mm^2/s]
+    d_perps = []                # Perpendicular diffusivity(s) [mm^2/s]
+    d_isos  = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
     mit.model.set(d_par, d_perps, d_isos)
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
@@ -86,22 +87,23 @@ def run_commit_VolumeFractions(local_path):
     trk2dictionary.run(
         filename_tractogram=os.path.join(local_path, 'demo01_fibers.tck'),
         filename_peaks=os.path.join(local_path, 'peaks.nii.gz'),
-        filename_mask=os.path.join(local_path, 'WM.nii.gz'),  # 'WM.nii.gz',
+        filename_mask=os.path.join(local_path, 'WM.nii.gz'),
         fiber_shift=0.5,
         peaks_use_affine=True
     )
 
-    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), os.path.join(
-        local_path, 'bvecs.txt'), os.path.join(local_path, 'DWI.scheme'))
+    amico.util.fsl2scheme(os.path.join(local_path, 'bvals.txt'), 
+                          os.path.join(local_path, 'bvecs.txt'), 
+                          os.path.join(local_path, 'DWI.scheme'))
 
     mit = commit.Evaluation(local_path, '.')
     mit.load_data(os.path.join(local_path, 'DWI.nii.gz'),
                   os.path.join(local_path, 'DWI.scheme'))
 
     mit.set_model('StickZeppelinBall')
-    d_par = 1.7E-3             # Parallel diffusivity [mm^2/s]
-    d_perps = []        # Perpendicular diffusivity(s) [mm^2/s]
-    d_isos = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
+    d_par   = 1.7E-3            # Parallel diffusivity [mm^2/s]
+    d_perps = []                # Perpendicular diffusivity(s) [mm^2/s]
+    d_isos  = [1.7E-3, 3.0E-3]  # Isotropic diffusivity(s) [mm^2/s]
     mit.model.set(d_par, d_perps, d_isos)
     mit.generate_kernels(regenerate=True)
     mit.load_kernels()
@@ -131,7 +133,7 @@ def check_results(pickle_result, ref_pickle):
         assert abs(result_optimization["fit_details"]["abs_cost"] - ref_optimization["fit_details"]["abs_cost"]) < 1e-4
         assert abs(result_optimization["fit_details"]["rel_cost"] - ref_optimization["fit_details"]["rel_cost"]) < 1e-4
         assert abs(result_optimization["fit_details"]["abs_x"] - ref_optimization["fit_details"]["abs_x"]) < 1e-4
-        assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel _x"]) < 1e-4 #NOTE: There is a space in the key name
+        assert abs(result_optimization["fit_details"]["rel_x"] - ref_optimization["fit_details"]["rel_x"]) < 1e-4
         assert result_optimization["fit_details"]["iterations"] == ref_optimization["fit_details"]["iterations"]
 
     except AssertionError:

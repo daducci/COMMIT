@@ -1,6 +1,19 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.4.2`<br>_2025-10-06_
+
+### 🐛Fixed
+- Error when checking the number of streamlines in the weighted LASSO function
+- Error in verifying voxel correspondence between the lesion mask passed through the dictionary and the ISO weights map
+- Error when checking the number of streamlines in the grouping structure for group LASSO regularization (Fixes #154)
+- Added check on empty groups when setting group LASSO regularization (Fixes #153)
+- Tests fail using numpy >= 2.0.0
+- Typo in test script and reference results
+
+---
+---
+
 ## `v2.4.1`<br>_2025-09-18_
 
 ### 🛠️Changed
