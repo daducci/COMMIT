@@ -1432,13 +1432,15 @@ cdef class Evaluation :
 
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=False ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=False, debias_cond=0.0 ) :
         """Fit the model to the data.
 
         Parameters
         ----------
         tol_fun : float
             Tolerance on the objective function (default : 1e-3)
+        tol_x : float
+            Tolerance on the unknowns (default : 1e-6)
         max_iter : integer
             Maximum number of iterations (default : 100)
         x0 : np.array
@@ -1453,6 +1455,15 @@ cdef class Evaluation :
             If true, the values of the confidence map will be rescaled to the
             range [0.0,1.0]. Only the voxels considered in the mask will be affected.
             (default : False)
+        debias : boolean
+            If true, a debiasing step will be performed after the main fitting
+            procedure. Highly suggested when using a regularisation. (default : False)
+        debias_cond : float
+            Condition used to select the coefficients to be debiased. 
+            A second fit (without regularisation) will be performed on the reduced
+            problem defined by as a subset of the original linear operator. This is obtained
+            by selecting only the columns corresponding to estimated coefficients greater 
+            than debias_cond in the main fitting procedure. (default : 0.0)
         """
         if self.niiDWI is None :
             logger.error( 'Data not loaded; call "load_data()" first' )
@@ -1564,7 +1575,7 @@ cdef class Evaluation :
             offset = self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
             xic = self.x[:offset]
             mask = np.ones(offset, dtype=np.uint32)
-            mask[xic<0.000000000000001] = 0
+            mask[xic <= debias_cond] = 0
 
             self.DICTIONARY["IC"]["eval"] = mask
 
@@ -1590,7 +1601,7 @@ cdef class Evaluation :
             self.debias_mask = y_mask
 
             with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
-                self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=x0, regularisation=self.regularisation_params, confidence_array=confidence_array)
+                self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=None, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         elif (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and not debias:
             logger.warning('Fitting with regularisation but without debiasing. The coefficients will be biased, use "debias=True" to debias the coefficients')
