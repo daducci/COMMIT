@@ -249,28 +249,3 @@ cdef extern void COMMIT_At_nolut(
     unsigned char*, unsigned int*,
     unsigned int, unsigned int
 ) nogil
-
-
-
-# Interfaces to actual C code performing the multiplications #TODO: check if compatible with above
-
-# cdef extern void COMMIT_A_nolut(
-#     int _nF, int _n, int _nSf,
-#     double* _vIN, double* _vOUT,
-#     unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
-#     unsigned int *_ISOv,
-#     double *_ICmod,
-#     unsigned int* _ICthreads, unsigned int* _ISOthreads,
-#     unsigned int _nICs, unsigned int _nISO, unsigned int _nThreads
-# ) nogil
-
-# cdef extern void COMMIT_At_nolut(
-#     int _nF, int _n, int _nSf,
-#     double *_vIN, double *_vOUT,
-#     unsigned int *_ICf, unsigned int *_ICeval, unsigned int *_ICv, float *_ICl, unsigned int *_ICp,
-#     unsigned int *_ISOv,
-#     double *_ICmod,
-#     unsigned char* _ICthreadsT, unsigned int* _ISOthreadsT,
-#     unsigned int _nICs, unsigned int _nISO, unsigned int _nThreads
-# ) nogil
-

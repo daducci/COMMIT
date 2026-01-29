@@ -727,62 +727,57 @@ def add_commit_a_block_nolut() -> str:
         t_p    = ICp + ICthreads[id];
 
         switch (nICs)
-        {'''
-        s1: str = ''
-        s2: str = ''
-        s3: str = ''
-        s4: str = 'x0 != 0'
-        s5: str = 'SFP0ptr = icSFB0 + offset;'
-        s6: str = 'x0 *= (*SFP0ptr);'
-        s7: str = 'x0'
-
-        for i in range(0, 10):
-            if i == 0:
-                s1 = f'''\
-
-                    x_Ptr0 = x + *t_f;
-                    eval0 = ICeval + *t_f;'''
-            else:
-                s1 = f'''\
+        {
+            case 1: // only one DCT basis funtion (constant), using the same code as standard COMMIT
+                while( t_v != t_vEnd )
+                {
+                    x0 = x[*t_f] * (double)(ICeval[*t_f]);
+                    if ( x0 != 0 )
+                        Y[*t_v] += (double)(*t_l) * x0;
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                }
+                break;'''
+        s1: str = f'''\
 
                     x_Ptr0 = x + nICs * (*t_f);
-                    eval0 = ICeval + nICs * (*t_f);'''
-            s1 += f'''\
-
+                    eval0 = ICeval + nICs * (*t_f);
                     x0 = *x_Ptr0 * (double)(*eval0);'''
+        s2: str = 'x0 != 0'
+        s3: str = 'SFP0ptr = icSFB0 + offset;'
+        s4: str = 'x0 *= (*SFP0ptr);'
+        s5: str = 'x0'
 
-            if i > 0:
-                s2 += f'''\
+        for i in range(1, 10): # for 2 to 10 DCT basis functions. NOTE: the '-1' in the offset is a bug (IC_pos has value from 0 to 255)
+            s1 += f'''\
 
                     x_Ptr{i} = x_Ptr{i - 1} + 1;
                     eval{i} = eval{i - 1} + 1;
-                    x{i} = *x_Ptr{i} * (double)(*eval{i});'''
-
-                s3 += f'''\
-
+                    x{i} = *x_Ptr{i} * (double)(*eval{i});
                     x{i}_tmp = 0;'''
 
-                s4 += f' || x{i} != 0'
-                s5 += f'''\
+            s2 += f' || x{i} != 0'
+            s3 += f'''\
 
                         SFP{i}ptr = icSFB{i} + offset;'''
-                s6 += f'''\
+            s4 += f'''\
 
                         x{i}_tmp += x{i} * (*SFP{i}ptr);'''
-                s7 += f' + x{i}_tmp'
+            s5 += f' + x{i}_tmp'
             s += f'''\
 
             case {i + 1}:
                 while (t_v != t_vEnd)
-                {{{s1}{s2}{s3}
-                    if ({s4})
+                {{{s1}
+                    if ({s2})
                     {{
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
-                        {s5}
-                        {s6}
-                        (*Yptr++) += w * ({s7});
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
+                        {s3}
+                        {s4}
+                        (*Yptr++) += w * ({s5}); //TODO: no need for the increment of Yptr?
                     }}
                     t_f++;
                     t_v++;
@@ -876,7 +871,7 @@ void COMMIT_A_nolut(
 )
 {
     nF  = _nF;
-    n   = _n;
+    n   = _n; //TODO: necessary?
     nSf = _ICnDCTs;
 
     x = _vIN;
@@ -891,8 +886,6 @@ void COMMIT_A_nolut(
 
     nICs = _ICnDCTf;
     nISO = _nISO;\n\n'''
-    # // printf("A_nolut");
-    # // printf("nF: %d, n: %d, nSf: %d, nICs: %d, ICf: %d, ICeval: %d, ICv: %d, ICl: %d, ICp: %d, ISOv: %d, ICmod: %d, nF, n, nSf, nICs, ICf, ICeval, ICv, ICl, ICp, ISOv, _ICmod");
     s += add_intracellular_compartments()
     s += '''\
     ICthreads  = _ICthreads;
@@ -925,19 +918,27 @@ def add_commit_at_block_nolut() -> str:
         t_t    = ICthreadsT;
 
         switch (nICs)
-        {'''
-        s1: str = ''
-        s2: str = ''
-        s3: str = ''
-
-        for i in range(0, 10):
-            if i == 0:
-                s1 += f'''\
+        {
+            case 1: // only one DCT basis funtion (constant), using the same code as standard COMMIT
+                while( t_v != t_vEnd )
+                {
+                    if ( *t_t == id )
+                        x[*t_f] += (double)(*t_l) * Y[*t_v] * (double)(ICeval[*t_f]);
+                    t_f++;
+                    t_v++;
+                    t_l++;
+                    t_t++;
+                }
+                break;'''
+        s1: str = '''\
 
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);'''
-            else:    
-                s1 += f'''\
+        s2: str = 'x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);'
+        s3: str = 'x[nICs*(*t_f)+0] += w * x0;'
+
+        for i in range(1, 10):    
+            s1 += f'''\
 
                         SFP{i}ptr = icSFB{i} + offset;
                         eval{i} = eval{i-1} +1;'''
@@ -956,8 +957,10 @@ def add_commit_at_block_nolut() -> str:
                     {{
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;{s1}{s2}
-                        w = (double)(*t_l);{s3}
+                        offset = (*t_p);{s1}
+                        {s2}
+                        w = (double)(*t_l);
+                        {s3}
                     }}
                     t_f++;
                     t_v++;
@@ -1005,7 +1008,7 @@ void* COMMIT_At__block_nolut( void *ptr )
     s += add_isotropic_compartments()
     s += '''\
 
-    pthread_exit( 0 ); // TODO: keep this?
+    pthread_exit( 0 );
 }\n\n'''
     return s
 
@@ -1062,8 +1065,6 @@ void COMMIT_At_nolut(
 
     nICs = _ICnDCTf;
     nISO = _nISO;\n\n'''
-    # // printf("At_nolut");
-    # // printf("nF: %d, n: %d, nSf: %d, nICs: %d, ICf: %d, ICeval: %d, ICv: %d, ICl: %d, ICp: %d, ISOv: %d, ICmod: %d, nF, n, nSf, nICs, ICf, ICeval, ICv, ICl, ICp, ISOv, _ICmod");
     s += add_intracellular_compartments()
     s += '''\
     ICthreadsT  = _ICthreadsT;

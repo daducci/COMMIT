@@ -8898,25 +8898,15 @@ void* COMMIT_A__block_nolut( void *ptr )
 
         switch (nICs)
         {
-            case 1:
-                while (t_v != t_vEnd)
+            case 1: // only one DCT basis funtion (constant), using the same code as standard COMMIT
+                while( t_v != t_vEnd )
                 {
-                    x_Ptr0 = x + *t_f;
-                    eval0 = ICeval + *t_f;
-                    x0 = *x_Ptr0 * (double)(*eval0);
-                    if (x0 != 0)
-                    {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
-                        SFP0ptr = icSFB0 + offset;
-                        x0 *= (*SFP0ptr);
-                        (*Yptr++) += w * (x0);
-                    }
+                    x0 = x[*t_f] * (double)(ICeval[*t_f]);
+                    if ( x0 != 0 )
+                        Y[*t_v] += (double)(*t_l) * x0;
                     t_f++;
                     t_v++;
                     t_l++;
-                    t_p++;
                 }
                 break;
             case 2:
@@ -8931,9 +8921,9 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x1_tmp = 0;
                     if (x0 != 0 || x1 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         x0 *= (*SFP0ptr);
@@ -8955,16 +8945,16 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x_Ptr1 = x_Ptr0 + 1;
                     eval1 = eval0 + 1;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x1_tmp = 0;
                     x_Ptr2 = x_Ptr1 + 1;
                     eval2 = eval1 + 1;
                     x2 = *x_Ptr2 * (double)(*eval2);
-                    x1_tmp = 0;
                     x2_tmp = 0;
                     if (x0 != 0 || x1 != 0 || x2 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         SFP2ptr = icSFB2 + offset;
@@ -8988,20 +8978,20 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x_Ptr1 = x_Ptr0 + 1;
                     eval1 = eval0 + 1;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x1_tmp = 0;
                     x_Ptr2 = x_Ptr1 + 1;
                     eval2 = eval1 + 1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x2_tmp = 0;
                     x_Ptr3 = x_Ptr2 + 1;
                     eval3 = eval2 + 1;
                     x3 = *x_Ptr3 * (double)(*eval3);
-                    x1_tmp = 0;
-                    x2_tmp = 0;
                     x3_tmp = 0;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         SFP2ptr = icSFB2 + offset;
@@ -9027,24 +9017,24 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x_Ptr1 = x_Ptr0 + 1;
                     eval1 = eval0 + 1;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x1_tmp = 0;
                     x_Ptr2 = x_Ptr1 + 1;
                     eval2 = eval1 + 1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x2_tmp = 0;
                     x_Ptr3 = x_Ptr2 + 1;
                     eval3 = eval2 + 1;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x3_tmp = 0;
                     x_Ptr4 = x_Ptr3 + 1;
                     eval4 = eval3 + 1;
                     x4 = *x_Ptr4 * (double)(*eval4);
-                    x1_tmp = 0;
-                    x2_tmp = 0;
-                    x3_tmp = 0;
                     x4_tmp = 0;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         SFP2ptr = icSFB2 + offset;
@@ -9072,28 +9062,28 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x_Ptr1 = x_Ptr0 + 1;
                     eval1 = eval0 + 1;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x1_tmp = 0;
                     x_Ptr2 = x_Ptr1 + 1;
                     eval2 = eval1 + 1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x2_tmp = 0;
                     x_Ptr3 = x_Ptr2 + 1;
                     eval3 = eval2 + 1;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x3_tmp = 0;
                     x_Ptr4 = x_Ptr3 + 1;
                     eval4 = eval3 + 1;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x4_tmp = 0;
                     x_Ptr5 = x_Ptr4 + 1;
                     eval5 = eval4 + 1;
                     x5 = *x_Ptr5 * (double)(*eval5);
-                    x1_tmp = 0;
-                    x2_tmp = 0;
-                    x3_tmp = 0;
-                    x4_tmp = 0;
                     x5_tmp = 0;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         SFP2ptr = icSFB2 + offset;
@@ -9123,32 +9113,32 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x_Ptr1 = x_Ptr0 + 1;
                     eval1 = eval0 + 1;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x1_tmp = 0;
                     x_Ptr2 = x_Ptr1 + 1;
                     eval2 = eval1 + 1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x2_tmp = 0;
                     x_Ptr3 = x_Ptr2 + 1;
                     eval3 = eval2 + 1;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x3_tmp = 0;
                     x_Ptr4 = x_Ptr3 + 1;
                     eval4 = eval3 + 1;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x4_tmp = 0;
                     x_Ptr5 = x_Ptr4 + 1;
                     eval5 = eval4 + 1;
                     x5 = *x_Ptr5 * (double)(*eval5);
+                    x5_tmp = 0;
                     x_Ptr6 = x_Ptr5 + 1;
                     eval6 = eval5 + 1;
                     x6 = *x_Ptr6 * (double)(*eval6);
-                    x1_tmp = 0;
-                    x2_tmp = 0;
-                    x3_tmp = 0;
-                    x4_tmp = 0;
-                    x5_tmp = 0;
                     x6_tmp = 0;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         SFP2ptr = icSFB2 + offset;
@@ -9180,36 +9170,36 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x_Ptr1 = x_Ptr0 + 1;
                     eval1 = eval0 + 1;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x1_tmp = 0;
                     x_Ptr2 = x_Ptr1 + 1;
                     eval2 = eval1 + 1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x2_tmp = 0;
                     x_Ptr3 = x_Ptr2 + 1;
                     eval3 = eval2 + 1;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x3_tmp = 0;
                     x_Ptr4 = x_Ptr3 + 1;
                     eval4 = eval3 + 1;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x4_tmp = 0;
                     x_Ptr5 = x_Ptr4 + 1;
                     eval5 = eval4 + 1;
                     x5 = *x_Ptr5 * (double)(*eval5);
+                    x5_tmp = 0;
                     x_Ptr6 = x_Ptr5 + 1;
                     eval6 = eval5 + 1;
                     x6 = *x_Ptr6 * (double)(*eval6);
+                    x6_tmp = 0;
                     x_Ptr7 = x_Ptr6 + 1;
                     eval7 = eval6 + 1;
                     x7 = *x_Ptr7 * (double)(*eval7);
-                    x1_tmp = 0;
-                    x2_tmp = 0;
-                    x3_tmp = 0;
-                    x4_tmp = 0;
-                    x5_tmp = 0;
-                    x6_tmp = 0;
                     x7_tmp = 0;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         SFP2ptr = icSFB2 + offset;
@@ -9243,40 +9233,40 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x_Ptr1 = x_Ptr0 + 1;
                     eval1 = eval0 + 1;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x1_tmp = 0;
                     x_Ptr2 = x_Ptr1 + 1;
                     eval2 = eval1 + 1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x2_tmp = 0;
                     x_Ptr3 = x_Ptr2 + 1;
                     eval3 = eval2 + 1;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x3_tmp = 0;
                     x_Ptr4 = x_Ptr3 + 1;
                     eval4 = eval3 + 1;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x4_tmp = 0;
                     x_Ptr5 = x_Ptr4 + 1;
                     eval5 = eval4 + 1;
                     x5 = *x_Ptr5 * (double)(*eval5);
+                    x5_tmp = 0;
                     x_Ptr6 = x_Ptr5 + 1;
                     eval6 = eval5 + 1;
                     x6 = *x_Ptr6 * (double)(*eval6);
+                    x6_tmp = 0;
                     x_Ptr7 = x_Ptr6 + 1;
                     eval7 = eval6 + 1;
                     x7 = *x_Ptr7 * (double)(*eval7);
+                    x7_tmp = 0;
                     x_Ptr8 = x_Ptr7 + 1;
                     eval8 = eval7 + 1;
                     x8 = *x_Ptr8 * (double)(*eval8);
-                    x1_tmp = 0;
-                    x2_tmp = 0;
-                    x3_tmp = 0;
-                    x4_tmp = 0;
-                    x5_tmp = 0;
-                    x6_tmp = 0;
-                    x7_tmp = 0;
                     x8_tmp = 0;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         SFP2ptr = icSFB2 + offset;
@@ -9312,44 +9302,44 @@ void* COMMIT_A__block_nolut( void *ptr )
                     x_Ptr1 = x_Ptr0 + 1;
                     eval1 = eval0 + 1;
                     x1 = *x_Ptr1 * (double)(*eval1);
+                    x1_tmp = 0;
                     x_Ptr2 = x_Ptr1 + 1;
                     eval2 = eval1 + 1;
                     x2 = *x_Ptr2 * (double)(*eval2);
+                    x2_tmp = 0;
                     x_Ptr3 = x_Ptr2 + 1;
                     eval3 = eval2 + 1;
                     x3 = *x_Ptr3 * (double)(*eval3);
+                    x3_tmp = 0;
                     x_Ptr4 = x_Ptr3 + 1;
                     eval4 = eval3 + 1;
                     x4 = *x_Ptr4 * (double)(*eval4);
+                    x4_tmp = 0;
                     x_Ptr5 = x_Ptr4 + 1;
                     eval5 = eval4 + 1;
                     x5 = *x_Ptr5 * (double)(*eval5);
+                    x5_tmp = 0;
                     x_Ptr6 = x_Ptr5 + 1;
                     eval6 = eval5 + 1;
                     x6 = *x_Ptr6 * (double)(*eval6);
+                    x6_tmp = 0;
                     x_Ptr7 = x_Ptr6 + 1;
                     eval7 = eval6 + 1;
                     x7 = *x_Ptr7 * (double)(*eval7);
+                    x7_tmp = 0;
                     x_Ptr8 = x_Ptr7 + 1;
                     eval8 = eval7 + 1;
                     x8 = *x_Ptr8 * (double)(*eval8);
+                    x8_tmp = 0;
                     x_Ptr9 = x_Ptr8 + 1;
                     eval9 = eval8 + 1;
                     x9 = *x_Ptr9 * (double)(*eval9);
-                    x1_tmp = 0;
-                    x2_tmp = 0;
-                    x3_tmp = 0;
-                    x4_tmp = 0;
-                    x5_tmp = 0;
-                    x6_tmp = 0;
-                    x7_tmp = 0;
-                    x8_tmp = 0;
                     x9_tmp = 0;
                     if (x0 != 0 || x1 != 0 || x2 != 0 || x3 != 0 || x4 != 0 || x5 != 0 || x6 != 0 || x7 != 0 || x8 != 0 || x9 != 0)
                     {
-                        Yptr = Y + (*t_v);
-                        w = (double)(*t_l);
-                        offset = (*t_p) - 1;
+                        Yptr = Y + (*t_v); // TODO: remove Yptr and use directly Y[*t_v] in the multiplication with w?
+                        w = (double)(*t_l); // TODO: remove w and use directly (double)(*t_l) in the multiplication wit s5?
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         SFP1ptr = icSFB1 + offset;
                         SFP2ptr = icSFB2 + offset;
@@ -9414,7 +9404,7 @@ void COMMIT_A_nolut(
 )
 {
     nF  = _nF;
-    n   = _n;
+    n   = _n; //TODO: necessary?
     nSf = _ICnDCTs;
 
     x = _vIN;
@@ -9549,24 +9539,14 @@ void* COMMIT_At__block_nolut( void *ptr )
 
         switch (nICs)
         {
-            case 1:
-                while (t_v != t_vEnd)
+            case 1: // only one DCT basis funtion (constant), using the same code as standard COMMIT
+                while( t_v != t_vEnd )
                 {
-                    if (*t_t == id)
-                    {
-                        Yptr = Y + (*t_v);
-                        Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
-                        SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + nICs * (*t_f);
-                        x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);
-                        w = (double)(*t_l);
-                        x[nICs*(*t_f)+0] += w * x0;
-                    }
+                    if ( *t_t == id )
+                        x[*t_f] += (double)(*t_l) * Y[*t_v] * (double)(ICeval[*t_f]);
                     t_f++;
                     t_v++;
                     t_l++;
-                    t_p++;
                     t_t++;
                 }
                 break;
@@ -9577,7 +9557,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
@@ -9602,7 +9582,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
@@ -9631,7 +9611,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
@@ -9664,7 +9644,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
@@ -9701,7 +9681,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
@@ -9742,7 +9722,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
@@ -9787,7 +9767,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
@@ -9836,7 +9816,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
@@ -9889,7 +9869,7 @@ void* COMMIT_At__block_nolut( void *ptr )
                     {
                         Yptr = Y + (*t_v);
                         Y_tmp = *Yptr;
-                        offset = (*t_p) - 1;
+                        offset = (*t_p);
                         SFP0ptr = icSFB0 + offset;
                         eval0 = ICeval + nICs * (*t_f);
                         SFP1ptr = icSFB1 + offset;
