@@ -1152,7 +1152,7 @@ cdef class Evaluation :
                     logger.error('Invalid kernels shape (wmr and wmc)')
                 if dictIC_params['coeff_weights'].size != dict_kept.size:
                     logger.error(f'"coeff_weights" must have the same size as the number of elements in the IC compartment (got {dictIC_params["coeff_weights"].size} but {len(self.DICTIONARY["TRK"]["kept"])} expected)')
-                dictIC_params['coeff_weights_kept'] = dictIC_params['coeff_weights'][self.DICTIONARY['TRK']['kept']==1]
+                dictIC_params['coeff_weights_kept'] = dictIC_params['coeff_weights'][dict_kept==1]
 
         # check if group parameters are consistent with the regularisation
         if regularisation['regIC'] not in ['group_lasso', 'sparse_group_lasso'] and dictIC_params is not None:
