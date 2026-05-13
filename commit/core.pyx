@@ -1490,6 +1490,10 @@ cdef class Evaluation :
         if self.A is None :
             logger.error( 'Operator not built; call "build_operator()" first' )
 
+        # Build operator
+        self.build_operator()
+
+        # Set default regularisation parameters if not set by the user
         if self.regularisation_params is None:
             self.set_regularisation()
 
@@ -1582,9 +1586,10 @@ cdef class Evaluation :
 
         # DEBIAS
         if (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and debias:
-            from commit.operator import operator
             temp_verb = self.verbose
-            logger.info( 'Running debias' )
+            logger.subinfo('')
+            logger.info('Running debias')
+            logger.subinfo(f'Creating mask for IC compartment with the condition: <= {debias_cond:.2e}', indent_lvl=1, indent_char='*')
             self.set_verbose(0)
 
             offset = self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
