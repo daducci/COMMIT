@@ -1123,6 +1123,8 @@ cdef class Evaluation :
             if dictIC_params['group_idx'] is None:
                 logger.error('Group structure for the IC compartment not provided')
         elif regularisation['regIC'] == 'sparse_group_lasso':
+            if type(lambdas[0]) not in [tuple, list]:
+                logger.error('Regularisation parameters for the IC compartment must be a tuple or a list of two elements (l1 and l2 penalties)')
             if len(lambdas[0]) != 2:
                 logger.error('Regularisation parameters for the IC compartment ara not exactly two')
             elif lambdas[0][0] < 0 or lambdas[0][1] < 0:
@@ -1262,6 +1264,14 @@ cdef class Evaluation :
             else:
                 newweightsIC_group = weightsIC_group
                 dictIC_params['group_idx_kept'] = dictIC_params['group_idx'].copy()
+            # duplicate idx if there are multiple profiles
+            n_bf = self.KERNELS['wmc'].shape[0]
+            if n_bf > 1:
+                group_idx_pro = np.empty(dictIC_params['group_idx_kept'].shape, dtype=np.object_)
+                group_idx_all = np.arange(self.DICTIONARY['TRK']['kept'].size*n_bf, dtype=np.int32).reshape(self.DICTIONARY['TRK']['kept'].size, n_bf)
+                for g_i in range(len(dictIC_params['group_idx_kept'])):
+                    group_idx_pro[g_i] = group_idx_all[dictIC_params['group_idx_kept'][g_i], :].flatten()
+                dictIC_params['group_idx_kept'] = group_idx_pro
 
             # compute group weights
             if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
