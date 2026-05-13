@@ -21,7 +21,7 @@ cdef class LinearOperator :
         unsigned int [::1] ICv
         unsigned int [::1] ECv
         unsigned int [::1] ISOv
-        unsigned int [::1] ICeval
+        unsigned int [::1] ICm
         unsigned int [::1] ICpos
         float [::1]        ICl
         float [:, :, ::1]  LUT_IC
@@ -85,7 +85,7 @@ cdef class LinearOperator :
         self.ICv    = DICTIONARY['IC']['vox']
         self.ICo    = DICTIONARY['IC']['dir']
         self.ICpos  = DICTIONARY['IC']['pos']
-        self.ICeval = DICTIONARY['IC']['eval']
+        self.ICm    = DICTIONARY['IC']['mask']
         self.ECv    = DICTIONARY['EC']['vox']
         self.ECo    = DICTIONARY['EC']['dir']
         self.ISOv   = DICTIONARY['ISO']['vox']
@@ -160,7 +160,7 @@ cdef class LinearOperator :
                     COMMIT_A_nolut(
                         &v_in[0], &v_out[0],
                         self.ICnSTR, self.ICn, self.ICnDCTs, self.ICnDCTf, # add n=ICn, and nSf=ICnDCTs
-                        &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICl[0], &self.ICpos[0], # add ICp=ICpos
+                        &self.ICf[0], &self.ICm[0], &self.ICv[0], &self.ICl[0], &self.ICpos[0], # add ICp=ICpos
                         &self.ISOv[0],
                         &self.LUT_IC_DCT[0,0], # add LUT_IC_modulation=LUT_IC_DCT
                         &self.ICthreads[0], &self.ISOthreads[0],
@@ -171,7 +171,7 @@ cdef class LinearOperator :
                         &v_in[0], &v_out[0],
                         self.nSAMPLES, self.ndirs,
                         self.ICnSTR, self.ECn, self.ISOn,
-                        &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICo[0], &self.ICl[0],
+                        &self.ICf[0], &self.ICm[0], &self.ICv[0], &self.ICo[0], &self.ICl[0],
                         &self.ECv[0], &self.ECo[0],
                         &self.ISOv[0],
                         &self.LUT_IC[0,0,0], &self.LUT_EC[0,0,0], &self.LUT_ISO[0,0],
@@ -184,7 +184,7 @@ cdef class LinearOperator :
                     COMMIT_At_nolut(
                         &v_in[0], &v_out[0],
                         self.ICnSTR, self.ICn, self.ICnDCTs, self.ICnDCTf, # add nSf=ICnDCTs
-                        &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICl[0], &self.ICpos[0], # add ICp=ICpos
+                        &self.ICf[0], &self.ICm[0], &self.ICv[0], &self.ICl[0], &self.ICpos[0], # add ICp=ICpos
                         &self.ISOv[0],
                         &self.LUT_IC_DCT[0,0], # add LUT_IC_modulation=LUT_IC_DCT
                         &self.ICthreadsT[0], &self.ISOthreadsT[0],
@@ -195,7 +195,7 @@ cdef class LinearOperator :
                         &v_in[0], &v_out[0],
                         self.nSAMPLES, self.ndirs,
                         self.ICnSTR, self.ICn, self.ECn, self.ISOn,
-                        &self.ICf[0], &self.ICeval[0], &self.ICv[0], &self.ICo[0], &self.ICl[0],
+                        &self.ICf[0], &self.ICm[0], &self.ICv[0], &self.ICo[0], &self.ICl[0],
                         &self.ECv[0], &self.ECo[0],
                         &self.ISOv[0],
                         &self.LUT_IC[0,0,0], &self.LUT_EC[0,0,0], &self.LUT_ISO[0,0],

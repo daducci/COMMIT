@@ -35,7 +35,7 @@ double      *x, *Y;
 uint32_t    *ICthreads, *ECthreads, *ISOthreads;
 uint8_t     *ICthreadsT;
 uint32_t    *ECthreadsT, *ISOthreadsT;
-uint32_t    *ICf, *ICeval, *ICv, *ECv, *ISOv;
+uint32_t    *ICf, *ICm, *ICv, *ECv, *ISOv;
 uint16_t    *ICo, *ECo;
 float       *ICl;
 float       *wmrSFP0, *wmrSFP1, *wmrSFP2, *wmrSFP3, *wmrSFP4, *wmrSFP5, *wmrSFP6, *wmrSFP7, *wmrSFP8, *wmrSFP9, *wmrSFP10, *wmrSFP11, *wmrSFP12, *wmrSFP13, *wmrSFP14, *wmrSFP15, *wmrSFP16, *wmrSFP17, *wmrSFP18, *wmrSFP19;
@@ -64,8 +64,8 @@ def add_commit_a_block() -> str:
         {'''
         s1: str = '''\
 xPtr0 = x + (*t_f);
-                    eval0 = ICeval + *t_f;
-                    x0 = *xPtr0 * (double)(*eval0);'''
+                    m0 = ICm + *t_f;
+                    x0 = *xPtr0 * (double)(*m0);'''
         s2: str = 'if (x0 != 0'
         s3: str = 'SFP0ptr = wmrSFP0 + offset;'
         s4: str = 'x0 * (*SFP0ptr++)'
@@ -75,8 +75,8 @@ xPtr0 = x + (*t_f);
                 s1 += f'''\
 
                     xPtr{i} = xPtr{i - 1} + nF;
-                    eval{i} = eval{i - 1} + nF;
-                    x{i} = *xPtr{i} * (double)(*eval{i});'''
+                    m{i} = m{i - 1} + nF;
+                    x{i} = *xPtr{i} * (double)(*m{i});'''
                 s2 += f' || x{i} != 0'
                 s3 += f'''\
 
@@ -228,7 +228,7 @@ void* COMMIT_A__block( void *ptr )
 {
     int      id = (long)ptr;
     int      offset;
-    uint32_t *eval0, *eval1, *eval2, *eval3, *eval4, *eval5, *eval6, *eval7, *eval8, *eval9, *eval10, *eval11, *eval12, *eval13, *eval14, *eval15, *eval16, *eval17, *eval18, *eval19;
+    uint32_t *m0, *m1, *m2, *m3, *m4, *m5, *m6, *m7, *m8, *m9, *m10, *m11, *m12, *m13, *m14, *m15, *m16, *m17, *m18, *m19;
     double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, w;
     double   *xPtr0, *xPtr1, *xPtr2, *xPtr3, *xPtr4, *xPtr5, *xPtr6, *xPtr7, *xPtr8, *xPtr9, *xPtr10, *xPtr11, *xPtr12, *xPtr13, *xPtr14, *xPtr15, *xPtr16, *xPtr17, *xPtr18, *xPtr19;
     double   *YPtr, *YPtrEnd;
@@ -318,7 +318,7 @@ void COMMIT_A(
     double *_vIN, double *_vOUT,
     int _nS, int _ndirs,
     int _nF, int _nE, int _nV,
-    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICm, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -336,7 +336,7 @@ void COMMIT_A(
     Y = _vOUT;
 
     ICf  = _ICf;
-    ICeval = _ICeval;
+    ICm  = _ICm;
     ICv  = _ICv;
     ICo  = _ICo;
     ICl  = _ICl;
@@ -386,10 +386,10 @@ def add_commit_at_block() -> str:
         s1: str = 'SFP0ptr = wmrSFP0 + offset;'
         s2: str = '''\
 x0 = (*SFP0ptr++) * YTmp;
-                        eval0 = ICeval + *t_f;
+                        m0 = ICm + *t_f;
 '''
         s3: str = 'x0 += (*SFP0ptr++) * YTmp;'
-        s4: str = 'x[*t_f] += w * x0 * (double)(*eval0);'
+        s4: str = 'x[*t_f] += w * x0 * (double)(*m0);'
         s5: str = ''
 
         for i in range(0, 20):
@@ -402,13 +402,13 @@ x0 = (*SFP0ptr++) * YTmp;
                 s2 += f'''\
 
                         x{i} = (*SFP{i}ptr++) * YTmp;
-                        eval{i} = eval{i - 1} + nF;'''
+                        m{i} = m{i - 1} + nF;'''
                 s3 += f'''\
 
                         x{i} += (*SFP{i}ptr++) * YTmp;'''
                 s4 += f'''\
 
-                        x[*t_f+{s5}nF] += w * x{i} * (double)(*eval{i});'''
+                        x[*t_f+{s5}nF] += w * x{i} * (double)(*m{i});'''
             s += f'''\
 
             case {i + 1}:
@@ -573,7 +573,7 @@ void* COMMIT_At__block( void *ptr )
 {
     int      id = (long)ptr;
     int      offset;
-    uint32_t *eval0, *eval1, *eval2, *eval3, *eval4, *eval5, *eval6, *eval7, *eval8, *eval9, *eval10, *eval11, *eval12, *eval13, *eval14, *eval15, *eval16, *eval17, *eval18, *eval19;
+    uint32_t *m0, *m1, *m2, *m3, *m4, *m5, *m6, *m7, *m8, *m9, *m10, *m11, *m12, *m13, *m14, *m15, *m16, *m17, *m18, *m19;
     double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, w, YTmp;
     double   *xPtr0, *xPtr1, *xPtr2, *xPtr3, *xPtr4, *xPtr5, *xPtr6, *xPtr7, *xPtr8, *xPtr9, *xPtr10, *xPtr11, *xPtr12, *xPtr13, *xPtr14, *xPtr15, *xPtr16, *xPtr17, *xPtr18, *xPtr19;
     double   *YPtr, *YPtrEnd;
@@ -663,7 +663,7 @@ def add_commit_at() -> str:
 void COMMIT_At(
     double *_vIN, double *_vOUT,
     int _nS, int _ndirs, int _nF, int _n, int _nE, int _nV,
-    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
+    uint32_t *_ICf, uint32_t *_ICm, uint32_t *_ICv, uint16_t *_ICo, float *_ICl,
     uint32_t *_ECv, uint16_t *_ECo,
     uint32_t *_ISOv,
     float *_wmrSFP, float *_wmhSFP, float *_isoSFP,
@@ -682,7 +682,7 @@ void COMMIT_At(
     Y = _vIN;
 
     ICf  = _ICf;
-    ICeval = _ICeval;
+    ICm  = _ICm;
     ICv  = _ICv;
     ICo  = _ICo;
     ICl  = _ICl;
@@ -731,7 +731,7 @@ def add_commit_a_block_nolut() -> str:
             case 1: // only one DCT basis funtion (constant), using the same code as standard COMMIT
                 while( t_v != t_vEnd )
                 {
-                    x0 = x[*t_f] * (double)(ICeval[*t_f]);
+                    x0 = x[*t_f] * (double)(ICm[*t_f]);
                     if ( x0 != 0 )
                         Y[*t_v] += (double)(*t_l) * x0;
                     t_f++;
@@ -742,8 +742,8 @@ def add_commit_a_block_nolut() -> str:
         s1: str = f'''\
 
                     x_Ptr0 = x + nICs * (*t_f);
-                    eval0 = ICeval + nICs * (*t_f);
-                    x0 = *x_Ptr0 * (double)(*eval0);'''
+                    m0 = ICm + nICs * (*t_f);
+                    x0 = *x_Ptr0 * (double)(*m0);'''
         s2: str = 'x0 != 0'
         s3: str = 'SFP0ptr = icSFB0 + offset;'
         s4: str = 'x0 *= (*SFP0ptr);'
@@ -753,8 +753,8 @@ def add_commit_a_block_nolut() -> str:
             s1 += f'''\
 
                     x_Ptr{i} = x_Ptr{i - 1} + 1;
-                    eval{i} = eval{i - 1} + 1;
-                    x{i} = *x_Ptr{i} * (double)(*eval{i});
+                    m{i} = m{i - 1} + 1;
+                    x{i} = *x_Ptr{i} * (double)(*m{i});
                     x{i}_tmp = 0;'''
 
             s2 += f' || x{i} != 0'
@@ -818,7 +818,7 @@ void* COMMIT_A__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
     double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, w;
-    uint32_t *eval0, *eval1, *eval2, *eval3, *eval4, *eval5, *eval6, *eval7, *eval8, *eval9;
+    uint32_t *m0, *m1, *m2, *m3, *m4, *m5, *m6, *m7, *m8, *m9;
     double   x1_tmp, x2_tmp, x3_tmp, x4_tmp, x5_tmp, x6_tmp, x7_tmp, x8_tmp, x9_tmp;
     double   *x_Ptr0, *x_Ptr1, *x_Ptr2, *x_Ptr3, *x_Ptr4, *x_Ptr5, *x_Ptr6, *x_Ptr7, *x_Ptr8, *x_Ptr9;
     double   *Yptr, *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
@@ -863,7 +863,7 @@ def add_commit_a_nolut() -> str:
 void COMMIT_A_nolut(
     double *_vIN, double *_vOUT,
     int _nF, int _n, int _ICnDCTs, uint32_t _ICnDCTf,
-    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, float *_ICl, uint32_t *_ICpos,
+    uint32_t *_ICf, uint32_t *_ICm, uint32_t *_ICv, float *_ICl, uint32_t *_ICpos,
     uint32_t *_ISOv,
     double *_ICmod,
     uint32_t* _ICthreads, uint32_t* _ISOthreads,
@@ -878,7 +878,7 @@ void COMMIT_A_nolut(
     Y = _vOUT;
 
     ICf  = _ICf;
-    ICeval = _ICeval;
+    ICm = _ICm;
     ICv  = _ICv;
     ICl  = _ICl;
     ICp  = _ICpos;
@@ -923,7 +923,7 @@ def add_commit_at_block_nolut() -> str:
                 while( t_v != t_vEnd )
                 {
                     if ( *t_t == id )
-                        x[*t_f] += (double)(*t_l) * Y[*t_v] * (double)(ICeval[*t_f]);
+                        x[*t_f] += (double)(*t_l) * Y[*t_v] * (double)(ICm[*t_f]);
                     t_f++;
                     t_v++;
                     t_l++;
@@ -933,18 +933,18 @@ def add_commit_at_block_nolut() -> str:
         s1: str = '''\
 
                         SFP0ptr = icSFB0 + offset;
-                        eval0 = ICeval + nICs * (*t_f);'''
-        s2: str = 'x0 = (*SFP0ptr) * Y_tmp * (double)(*eval0);'
+                        m0 = ICm + nICs * (*t_f);'''
+        s2: str = 'x0 = (*SFP0ptr) * Y_tmp * (double)(*m0);'
         s3: str = 'x[nICs*(*t_f)+0] += w * x0;'
 
         for i in range(1, 10):    
             s1 += f'''\
 
                         SFP{i}ptr = icSFB{i} + offset;
-                        eval{i} = eval{i-1} +1;'''
+                        m{i} = m{i-1} +1;'''
             s2 += f'''\
 
-                        x{i} = (*SFP{i}ptr) * Y_tmp * (double)(*eval{i});'''
+                        x{i} = (*SFP{i}ptr) * Y_tmp * (double)(*m{i});'''
             s3 += f'''\
 
                         x[nICs*(*t_f)+{i}] += w * x{i};'''
@@ -997,7 +997,7 @@ void* COMMIT_At__block_nolut( void *ptr )
 {
     int      id = (long)ptr;
     double   x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, w, Y_tmp;
-    uint32_t *eval0, *eval1, *eval2, *eval3, *eval4, *eval5, *eval6, *eval7, *eval8, *eval9;
+    uint32_t *m0, *m1, *m2, *m3, *m4, *m5, *m6, *m7, *m8, *m9;
     double   *Yptr, *SFP0ptr, *SFP1ptr, *SFP2ptr, *SFP3ptr, *SFP4ptr, *SFP5ptr, *SFP6ptr, *SFP7ptr, *SFP8ptr, *SFP9ptr;
     uint32_t *t_v, *t_vEnd, *t_f, *t_p, *t_f_tmp;
     float    *t_l;
@@ -1042,7 +1042,7 @@ def add_commit_at_nolut() -> str:
 void COMMIT_At_nolut(
     double *_vIN, double *_vOUT,
     int _nF, int _n, int _ICnDCTs, uint32_t _ICnDCTf,
-    uint32_t *_ICf, uint32_t *_ICeval, uint32_t *_ICv, float *_ICl, uint32_t *_ICpos,
+    uint32_t *_ICf, uint32_t *_ICm, uint32_t *_ICv, float *_ICl, uint32_t *_ICpos,
     uint32_t *_ISOv,
     double *_ICmod,
     uint8_t* _ICthreadsT, uint32_t* _ISOthreadsT,
@@ -1057,7 +1057,7 @@ void COMMIT_At_nolut(
     Y = _vIN;
 
     ICf  = _ICf;
-    ICeval = _ICeval;
+    ICm = _ICm;
     ICv  = _ICv;
     ICl  = _ICl;
     ICp  = _ICpos;

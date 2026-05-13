@@ -759,9 +759,9 @@ cdef class Evaluation :
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
         if mask_ic is not None:
-            self.DICTIONARY["IC"]["eval"] = mask_ic
+            self.DICTIONARY["IC"]["mask"] = mask_ic
         else:
-            self.DICTIONARY["IC"]["eval"] = np.ones( int(self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]), dtype=np.uint32)
+            self.DICTIONARY["IC"]["mask"] = np.ones( int(self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]), dtype=np.uint32)
         self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
@@ -1570,6 +1570,7 @@ cdef class Evaluation :
             logger.subinfo(f'Stopped after {opt_details["iterations"]} iterations', indent_lvl=1, indent_char='*', with_progress=True)
             logger.subinfo(f'Stopping condition: \"{opt_details["stopping_criterion"]}\"', indent_lvl=1, indent_char='*')
 
+        # DEBIAS
         if (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and debias:
             from commit.operator import operator
             temp_verb = self.verbose
