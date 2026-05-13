@@ -76,7 +76,6 @@ cdef class Evaluation :
     cdef public CONFIG
     cdef public temp_data
     cdef public confidence_map_img
-    cdef public debias_mask
     cdef public verbose
 
     def __init__( self, study_path='.', subject='.', dictionary_path='COMMIT'):
@@ -102,7 +101,6 @@ cdef class Evaluation :
         self.regularisation_params  = None # set by "set_regularisation" method
         self.x                      = None # set by "fit" method
         self.confidence_map_img     = None # set by "fit" method
-        self.debias_mask            = None # set by "fit" method
         self.x_nnls                 = None # set by "fit" method (coefficients of IC compartment estimated without regularization)
         self.verbose                = 3
 
@@ -736,9 +734,14 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    def build_operator( self ) :
+    def build_operator( self, mask_ic=None ) :
         """Build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
+
+        Parameters
+        ----------
+        mask_ic : np.array
+            Binary mask to restrict the evaluation on a subset of columns of the IC compartment.
         """
         if self.DICTIONARY is None :
             logger.error( 'Dictionary not loaded; call "load_dictionary()" first' )
@@ -755,7 +758,10 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
-        self.DICTIONARY["IC"]["eval"] = np.ones( int(self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]), dtype=np.uint32)
+        if mask_ic is not None:
+            self.DICTIONARY["IC"]["eval"] = mask_ic
+        else:
+            self.DICTIONARY["IC"]["eval"] = np.ones( int(self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]), dtype=np.uint32)
         self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
@@ -772,8 +778,6 @@ cdef class Evaluation :
             logger.error( 'Data not loaded; call "load_data()" first' )
 
         y = self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float64)
-        if self.debias_mask is not None :
-            y *= self.debias_mask
 
         return y
 
@@ -1577,31 +1581,21 @@ cdef class Evaluation :
             mask = np.ones(offset, dtype=np.uint32)
             mask[xic <= debias_cond] = 0
 
-            self.DICTIONARY["IC"]["eval"] = mask
-
-            self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, nolut=True if hasattr(self.model, 'nolut') else False )
-
-            if self.KERNELS['wmc'].shape[0] > 1:
-                self.set_regularisation(is_nonnegative = (False, True, True))
+            if np.sum(mask)==0:
+                self.set_verbose(temp_verb)
+                logger.warning('All coefficients of the IC compartment are below the debias condition. The debias step will not be performed. Note: consider softening the regularisation by decreasing the lambda value(s).')
             else:
-                self.set_regularisation()
-            self.set_verbose(temp_verb)
-
-            logger.subinfo('Recomputing coefficients', indent_lvl=1, indent_char='*', with_progress=True)
-
-            x_debias = self.x.copy()
-            x_debias[:offset] *= mask
-            x_debias[offset:] = 0
-
-            y_mask = np.asarray(self.A.dot(x_debias))
-            # binarize y_debias
-            y_mask[y_mask<0] = 0
-            y_mask[y_mask>0] = 1
-
-            self.debias_mask = y_mask
-
-            with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
-                self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=None, regularisation=self.regularisation_params, confidence_array=confidence_array)
+                # update the operator with the new mask for the IC compartment
+                self.build_operator(mask_ic=mask)
+                # run fit on the debiased problem
+                if self.KERNELS['wmc'].shape[0] > 1:
+                    self.set_regularisation(is_nonnegative = (False, True, True))
+                else:
+                    self.set_regularisation()
+                self.set_verbose(temp_verb)
+                logger.subinfo('Recomputing coefficients', indent_lvl=1, indent_char='*', with_progress=True)
+                with ProgressBar(disable=self.verbose!=3, hide_on_exit=True, subinfo=True) as pbar:
+                    self.x, opt_details = commit.solvers.solve(self.get_y(), self.A, self.A.T, tol_fun=tol_fun, tol_x=tol_x, max_iter=max_iter, verbose=self.verbose, x0=None, regularisation=self.regularisation_params, confidence_array=confidence_array)
 
         elif (self.regularisation_params['regIC']!=None or self.regularisation_params['regEC']!= None or self.regularisation_params['regISO']!= None) and not debias:
             logger.warning('Fitting with regularisation but without debiasing. The coefficients will be biased, use "debias=True" to debias the coefficients')
@@ -1813,67 +1807,26 @@ cdef class Evaluation :
         niiMAP_hdr['descrip'] = f'Created with COMMIT {self.get_config("version")}'
         niiMAP_hdr['db_name'] = ''
 
-        if self.debias_mask is not None:
-            nVOX = int(np.sum(self.debias_mask)/self.niiDWI_img.shape[3])
-            if nVOX == 0: #TODO: check this case
-                logger.error("Streamlines contributions are all zero.")
-            ind_mask = np.where(self.debias_mask>0)[0]
-            
-            y_mea = np.reshape( self.get_y()[ind_mask], (nVOX,-1) )
-            y_est = np.reshape( np.asarray(self.A.dot(self.x))[ind_mask], (nVOX,-1) )
-            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+        nVOX = self.DICTIONARY['IC']['nVOX']
+        y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nVOX,-1) )
+        y_est = np.reshape( self.A.dot(self.x), (nVOX,-1) ).astype(np.float32)
+        tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
+        logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+        niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+        niiMAP_hdr['cal_min'] = 0
+        niiMAP_hdr['cal_max'] = tmp.max()
+        nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
 
-            logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-
-            tmp = np.sum(y_mea**2,axis=1)
-            idx = np.where( tmp < 1E-12 )
-            tmp[ idx ] = 1
-            tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
-            tmp[ idx ] = 0
-            logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-
-            y_mea = np.reshape( self.get_y(), (self.DICTIONARY['IC']['nVOX'],-1) )
-            y_est = np.reshape( self.A.dot(self.x), (self.DICTIONARY['IC']['nVOX'],-1) ).astype(np.float32)
-            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-
-            niiMAP_img[self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz']] = tmp
-            niiMAP_hdr['cal_min'] = 0
-            niiMAP_hdr['cal_max'] = tmp.max()
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
-
-            tmp = np.sum(y_mea**2,axis=1)
-            idx = np.where( tmp < 1E-12 )
-            tmp[ idx ] = 1
-            tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
-            tmp[ idx ] = 0
-
-            niiMAP_img[self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz']] = tmp
-            niiMAP_hdr['cal_min'] = 0
-            niiMAP_hdr['cal_max'] = 1
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
-
-        else:
-            nVOX = self.DICTIONARY['IC']['nVOX'] #TODO: check if this line is necessary and correct. Above (l. 1764) nVOX = self.DICTIONARY['ISO']['n']
-            y_mea = np.reshape( self.niiDWI_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nVOX,-1) )
-            y_est = np.reshape( self.A.dot(self.x), (nVOX,-1) ).astype(np.float32)
-            tmp = np.sqrt( np.mean((y_mea-y_est)**2,axis=1) )
-
-            logger.subinfo(f'RMSE:  {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-            niiMAP_hdr['cal_min'] = 0
-            niiMAP_hdr['cal_max'] = tmp.max()
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_RMSE.nii.gz') )
-
-            tmp = np.sum(y_mea**2,axis=1)
-            idx = np.where( tmp < 1E-12 )
-            tmp[ idx ] = 1
-            tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
-            tmp[ idx ] = 0
-            logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
-            niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
-            niiMAP_hdr['cal_min'] = 0
-            niiMAP_hdr['cal_max'] = 1
-            nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
+        tmp = np.sum(y_mea**2,axis=1)
+        idx = np.where( tmp < 1E-12 )
+        tmp[ idx ] = 1
+        tmp = np.sqrt( np.sum((y_mea-y_est)**2,axis=1) / tmp )
+        tmp[ idx ] = 0
+        logger.subinfo(f'NRMSE: {tmp.mean():.3f} +/- {tmp.std():.3f}', indent_lvl=2, indent_char='-')
+        niiMAP_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'] ] = tmp
+        niiMAP_hdr['cal_min'] = 0
+        niiMAP_hdr['cal_max'] = 1
+        nibabel.save( niiMAP, pjoin(RESULTS_path,'fit_NRMSE.nii.gz') )
 
         if self.confidence_map_img is not None:
             confidence_array = np.reshape( self.confidence_map_img[ self.DICTIONARY['MASK_ix'], self.DICTIONARY['MASK_iy'], self.DICTIONARY['MASK_iz'], : ].flatten().astype(np.float32), (nVOX,-1) )
