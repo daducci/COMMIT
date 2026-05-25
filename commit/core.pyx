@@ -734,13 +734,13 @@ cdef class Evaluation :
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
 
-    def build_operator( self, mask_ic=None ) :
+    def build_operator( self, ic_debias_mask=None ) :
         """Build the operator for computing the matrix-vector multiplications by A and A'
         using the informations from self.DICTIONARY, self.KERNELS and self.THREADS.
 
         Parameters
         ----------
-        mask_ic : np.array
+        ic_debias_mask : np.array
             Binary mask to restrict the evaluation on a subset of columns of the IC compartment.
         """
         if self.DICTIONARY is None :
@@ -758,10 +758,10 @@ cdef class Evaluation :
         tic = time.time()
         logger.subinfo('')
         logger.info( 'Building linear operator A' )
-        if mask_ic is not None:
-            self.DICTIONARY["IC"]["mask"] = mask_ic
+        if ic_debias_mask is not None:
+            self.DICTIONARY['IC']['debias_mask'] = ic_debias_mask
         else:
-            self.DICTIONARY["IC"]["mask"] = np.ones( int(self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]), dtype=np.uint32)
+            self.DICTIONARY['IC']['debias_mask'] = np.ones( int(self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]), dtype=np.uint32)
         self.A = operator.LinearOperator( self.DICTIONARY, self.KERNELS, self.THREADS, True if hasattr(self.model, 'nolut') else False )
         logger.info( f'[ {format_time(time.time() - tic)} ]' )
 
@@ -1446,7 +1446,7 @@ cdef class Evaluation :
 
 
 
-    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=False, debias_cond=0.0 ) :
+    def fit( self, tol_fun=1e-3, tol_x=1e-6, max_iter=100, x0=None, confidence_map_filename=None, confidence_map_rescale=False, debias=False, debias_thr=0.0 ) :
         """Fit the model to the data.
 
         Parameters
@@ -1472,12 +1472,12 @@ cdef class Evaluation :
         debias : boolean
             If true, a debiasing step will be performed after the main fitting
             procedure. Highly suggested when using a regularisation. (default : False)
-        debias_cond : float
-            Condition used to select the coefficients to be debiased. 
+        debias_thr : float
+            Threshold used to select the coefficients to be debiased.
             A second fit (without regularisation) will be performed on the reduced
             problem defined by as a subset of the original linear operator. This is obtained
             by selecting only the columns corresponding to estimated coefficients greater 
-            than debias_cond in the main fitting procedure. (default : 0.0)
+            than debias_thr in the main fitting procedure. (default : 0.0)
         """
         if self.niiDWI is None :
             logger.error( 'Data not loaded; call "load_data()" first' )
@@ -1487,8 +1487,6 @@ cdef class Evaluation :
             logger.error( 'Response functions not generated; call "generate_kernels()" and "load_kernels()" first' )
         if self.THREADS is None :
             logger.error( 'Threads not set; call "set_threads()" first' )
-        if self.A is None :
-            logger.error( 'Operator not built; call "build_operator()" first' )
 
         # Build operator
         self.build_operator()
@@ -1589,20 +1587,20 @@ cdef class Evaluation :
             temp_verb = self.verbose
             logger.subinfo('')
             logger.info('Running debias')
-            logger.subinfo(f'Creating mask for IC compartment with the condition: <= {debias_cond:.2e}', indent_lvl=1, indent_char='*')
+            logger.subinfo( f'Keeping columns in the IC compartment whose corresponding coefficient is greater than {debias_thr}', indent_lvl=1, indent_char='*' )
             self.set_verbose(0)
 
             offset = self.DICTIONARY['IC']['nSTR'] * self.KERNELS['wmr'].shape[0] * self.KERNELS['wmc'].shape[0]
             xic = self.x[:offset]
             mask = np.ones(offset, dtype=np.uint32)
-            mask[xic <= debias_cond] = 0
+            mask[xic<=debias_thr] = 0
 
             if np.sum(mask)==0:
                 self.set_verbose(temp_verb)
-                logger.warning('All coefficients of the IC compartment are below the debias condition. The debias step will not be performed. Note: consider softening the regularisation by decreasing the lambda value(s).')
+                logger.warning('All coefficients of the IC compartment are below the debias threshold. The debias step will not be performed. Note: consider softening the regularisation by decreasing the lambda value(s).')
             else:
                 # update the operator with the new mask for the IC compartment
-                self.build_operator(mask_ic=mask)
+                self.build_operator(ic_debias_mask=mask)
                 # run fit on the debiased problem
                 if self.KERNELS['wmc'].shape[0] > 1:
                     self.set_regularisation(is_nonnegative = (False, True, True))

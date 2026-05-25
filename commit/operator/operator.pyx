@@ -21,7 +21,7 @@ cdef class LinearOperator :
         unsigned int [::1] ICv
         unsigned int [::1] ECv
         unsigned int [::1] ISOv
-        unsigned int [::1] ICm
+        unsigned int [::1] ICm # debias mask for IC columns
         unsigned int [::1] ICpos
         float [::1]        ICl
         float [:, :, ::1]  LUT_IC
