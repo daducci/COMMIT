@@ -85,7 +85,7 @@ cdef class LinearOperator :
         self.ICv    = DICTIONARY['IC']['vox']
         self.ICo    = DICTIONARY['IC']['dir']
         self.ICpos  = DICTIONARY['IC']['pos']
-        self.ICm    = DICTIONARY['IC']['mask']
+        self.ICm    = DICTIONARY['IC']['debias_mask']
         self.ECv    = DICTIONARY['EC']['vox']
         self.ECo    = DICTIONARY['EC']['dir']
         self.ISOv   = DICTIONARY['ISO']['vox']
