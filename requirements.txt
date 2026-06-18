@@ -1,8 +1,10 @@
 wheel
 setuptools>=46.1
 Cython>=0.29
+cmake>=3.16
 numpy>=1.12
 scipy>=1.0
 dipy>=1.0
 dmri-dicelib==1.1.0
 dmri-amico>=2.0.1
+trx-python>=0.1
