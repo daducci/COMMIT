@@ -353,15 +353,15 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         Nx = int(hdr['DIMENSIONS'][0])
         Ny = int(hdr['DIMENSIONS'][1])
         Nz = int(hdr['DIMENSIONS'][2])
-        Px = voxel_sizes[1]
-        Py = voxel_sizes[2]
-        Pz = voxel_sizes[3]
+        Px = voxel_sizes[0]
+        Py = voxel_sizes[1]
+        Pz = voxel_sizes[2]
 
         data_offset = 0  # stored separately in .trx
         n_count = hdr['NB_STREAMLINES']
         n_scalars = 0  # stored separately in .trx
         n_properties = 0  # stored separately in .trx
-    if extension == ".trk":
+    elif extension == ".trk":
         logger.subinfo ( f'geometry taken from "{filename_tractogram}"', indent_lvl=3, indent_char='-' )
         hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
         
