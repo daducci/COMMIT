@@ -426,8 +426,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # get toVOXMM matrix (remove voxel scaling from affine) in case of TCK
     cdef float [:] toVOXMM
     cdef float* ptrToVOXMM
-    if extension == ".tck":
-        M = _get_affine( niiREF ).copy()
+    if extension == ".tck" or extension == ".trx":
+        if extension == ".tck":
+            M = _get_affine( niiREF ).copy()
+        else:
+            M = np.asarray(affine, dtype=np.float64).copy()
         # float64 conversion added to comply with the new cast policy of numpy v2
         M[:3, :3] = M[:3, :3].dot( np.diag([np.float64(1)/Px,np.float64(1)/Py,np.float64(1)/Pz]) )
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
