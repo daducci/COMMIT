@@ -345,7 +345,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         logger.error( 'Invalid input file: only .trx, .trk, and .tck are supported')
 
     if extension == ".trx":
-        logger.subinfo ( f'geometry taken from "{filename_tractogram}"', indent_lvl=3, indent_char='-' )
         hdr = load_trx(filename_tractogram, "same").header
         affine = hdr["VOXEL_TO_RASMM"]
         voxel_sizes = nibabel.affines.voxel_sizes(affine)
@@ -362,7 +361,6 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
         n_scalars = 0  # stored separately in .trx
         n_properties = 0  # stored separately in .trx
     elif extension == ".trk":
-        logger.subinfo ( f'geometry taken from "{filename_tractogram}"', indent_lvl=3, indent_char='-' )
         hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
         
         Nx = int(hdr['dimensions'][0])
