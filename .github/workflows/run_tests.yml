@@ -1,6 +1,6 @@
 name: Run tests
 run-name: Run tests - ${{ github.sha }}
-on: push
+on: [push, pull_request]
 env:
   OPENBLAS_NUM_THREADS: 1
 jobs:
