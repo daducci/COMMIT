@@ -1,10 +1,12 @@
 [build-system]
 requires = [
+    "scikit-build-core>=0.5",
+    "cmake>=3.21",
     "cython>=3.0.10",
+    "cython-cmake",
     "numpy>=1.24.4",
-    "setuptools>=69.2.0"
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "dmri-commit"
@@ -13,7 +15,8 @@ dependencies = [
     "dmri-amico>=2.0.1",
     "dmri-dicelib>=1.1.0",
     "numpy>=1.24.4",
-    "scipy>=1.10.1"
+    "scipy>=1.10.1",
+    "trx-python>=0.1"
 ]
 requires-python = ">=3.8"
 authors = [
@@ -49,19 +52,8 @@ Repository = "https://github.com/daducci/COMMIT.git"
 Issues = "https://github.com/daducci/COMMIT/issues"
 Changelog = "https://github.com/daducci/COMMIT/blob/master/CHANGELOG.md"
 
-[tool.setuptools]
-packages = [
-    "commit",
-    "commit.operator"
-]
-include-package-data = false
-
-[tool.setuptools.package-data]
-"commit.operator" = [
-    "*.c",
-    "*.pyx",
-    "*.pyxbld"
-]
+[tool.scikit-build]
+wheel.packages = ["commit"]
 
 [tool.cibuildwheel]
 build-verbosity = 3
