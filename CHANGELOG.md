@@ -1,6 +1,14 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.4.3`<br>_2026-05-12_
+
+### 🐛Fixed
+- Occasional error in saving results (RMSE and NRMSE maps) after debias when using BS or SZB models (Fixes #159)
+
+---
+---
+
 ## `v2.4.2`<br>_2025-10-06_
 
 ### 🐛Fixed
