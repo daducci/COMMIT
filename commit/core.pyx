@@ -1120,6 +1120,8 @@ cdef class Evaluation :
         if regularisation['regIC'] == 'group_lasso' or regularisation['regIC'] == 'sparse_group_lasso':
             all_idx_in = np.sort(np.unique(np.concatenate(dictIC_params['group_idx'])))
             all_idx = np.arange(self.DICTIONARY['TRK']['kept'].size, dtype=np.int32)
+            if all_idx_in.size != all_idx.size:
+                logger.error(f'Group indices must contain all the indices of the input streamlines. Got {all_idx_in.size} unique streamline indices from the groups, but {all_idx.size} expected.')
             if np.any(all_idx_in != all_idx):
                 logger.error('Group indices must contain all the indices of the input streamlines')
 
