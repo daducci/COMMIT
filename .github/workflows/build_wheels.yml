@@ -24,7 +24,7 @@ jobs:
 
       - name: Compile pthread-win32
         run: |
-          git clone https://github.com/GerHobbelt/pthread-win32.git
+          git clone https://github.com/GerHobbelt/pthread-win32.git C:\pthread-win32
           cd C:\pthread-win32\windows\VS2022
           msbuild .\pthread.2022.sln -t:pthread_static_lib -p:Configuration=Release,Platform=${{ matrix.arch[3] }}
           cd C:\
