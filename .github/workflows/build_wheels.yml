@@ -26,7 +26,7 @@ jobs:
         run: |
           git clone https://github.com/GerHobbelt/pthread-win32.git C:\pthread-win32
           cd C:\pthread-win32\windows\VS2022
-          msbuild .\pthread.2022.sln -t:pthread_static_lib -p:Configuration=Release,Platform=${{ matrix.arch[3] }}
+          msbuild .\pthread.2022.sln -t:pthread_static_lib -p:Configuration=Release,Platform=${{ matrix.arch[3] }},PlatformToolset=v145
           cd C:\
           mkdir C:\pthread-win32_static_lib
           mkdir C:\pthread-win32_static_lib\include
