@@ -19,13 +19,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Compile pthread-win32
         run: |
-          Import-Module 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
-          Enter-VsDevShell -VsInstallPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' -DevCmdArguments '-arch=x64' -StartInPath 'C:\'
-          git clone https://github.com/GerHobbelt/pthread-win32.git
+          git clone https://github.com/GerHobbelt/pthread-win32.git C:\pthread-win32
           cd C:\pthread-win32\windows\VS2022
-          msbuild .\pthread.2022.sln -t:pthread_static_lib -p:Configuration=Release,Platform=${{ matrix.arch[3] }}
+          msbuild .\pthread.2022.sln -t:pthread_static_lib -p:Configuration=Release,Platform=${{ matrix.arch[3] }},PlatformToolset=v145
           cd C:\
           mkdir C:\pthread-win32_static_lib
           mkdir C:\pthread-win32_static_lib\include
@@ -59,43 +60,43 @@ jobs:
           [
             {
               py: cp38,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-14]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15-intel]
             },
             {
               py: cp39,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-14]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15-intel]
             },
             {
               py: cp310,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-14]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15-intel]
             },
             {
               py: cp311,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-14]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15-intel]
             },
             {
               py: cp312,
-              arch: [x86_64, macosx_x86_64, 12.0, macos-14]
+              arch: [x86_64, macosx_x86_64, 12.0, macos-15-intel]
             },
             {
               py: cp38,
-              arch: [arm64, macosx_arm64, 12.0, macos-14]
+              arch: [arm64, macosx_arm64, 12.0, macos-15]
             },
             {
               py: cp39,
-              arch: [arm64, macosx_arm64, 12.0, macos-14]
+              arch: [arm64, macosx_arm64, 12.0, macos-15]
             },
             {
               py: cp310,
-              arch: [arm64, macosx_arm64, 12.0, macos-14]
+              arch: [arm64, macosx_arm64, 12.0, macos-15]
             },
             {
               py: cp311,
-              arch: [arm64, macosx_arm64, 12.0, macos-14]
+              arch: [arm64, macosx_arm64, 12.0, macos-15]
             },
             {
               py: cp312,
-              arch: [arm64, macosx_arm64, 12.0, macos-14]
+              arch: [arm64, macosx_arm64, 12.0, macos-15]
             }
           ]
     name: ${{ matrix.config.py }}-${{ matrix.config.arch[1] }}
@@ -130,18 +131,13 @@ jobs:
       matrix:
         py: [cp38, cp39, cp310, cp311, cp312]
         arch:
-          - [x86_64, manylinux_x86_64, amd64]
-          - [aarch64, manylinux_aarch64, arm64]
+          - [x86_64, manylinux_x86_64, ubuntu-24.04]
+          - [aarch64, manylinux_aarch64, ubuntu-24.04-arm]
     name: ${{ matrix.py }}-${{ matrix.arch[1] }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.arch[2] }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.0.0
-        with:
-          platforms: ${{ matrix.arch[2] }}
 
       - name: Build wheel ${{ matrix.py }}-${{ matrix.arch[1] }}
         uses: pypa/cibuildwheel@v2.19.1
