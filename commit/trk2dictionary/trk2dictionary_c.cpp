@@ -9,8 +9,10 @@
 #include <math.h>
 #include <iostream>
 #include <thread>
+#include <functional>
 #include <numeric>
 #include <chrono>
+#include <trx/trx.h>
 
 #define _FILE_OFFSET_BITS 64
 #define MAX_FIB_LEN 10000
@@ -88,12 +90,13 @@ int verbosity = 0;
 bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vector<double>& vmin, Vector<double>& vmax, double & t);
 void fiberForwardModel( float fiber[3][MAX_FIB_LEN], unsigned int pts, int nReplicas, double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool doApplyBlur, short* ptrHashTable, vector<Vector<double>>& P );
 void segmentForwardModel( const Vector<double>& P1, const Vector<double>& P2, int k, double w, short* ptrHashTable);
+unsigned int read_fiberTRX(const trx::AnyTrxFile& fp, float fiber[3][MAX_FIB_LEN], int idx, float* ptrToVOXMM);
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np );
 unsigned int read_fiberTCK( FILE* fp, float fiber[3][MAX_FIB_LEN] , float* toVOXMM );
 
 
 // ---------- Parallel fuction --------------
-int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
+int ICSegments( char* str_filename, const trx::AnyTrxFile& trxFile, int isTRX, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM,
 double* ptrTDI , double* ptrBlurRho, double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out,
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos );
 
@@ -165,68 +168,80 @@ int trk2dictionary(
     // Check the file extension
     // -------------------------------------
     int isTRK;
+    int isTRX;
 
     char *ext = strrchr(str_filename, '.');
-    if (strcmp(ext,".trk")==0) // for .trk file
-        isTRK = 1;
-    else if (strcmp(ext,".tck")==0) // for .tck file
+    if (strcmp(ext,".trx")==0) {  // for .trx file
         isTRK = 0;
-        else
-        return 0;
+        isTRX = 1;
+    } else if (strcmp(ext,".trk")==0) {  // for .trk file
+        isTRK = 1;
+        isTRX = 0;
+    } else if (strcmp(ext,".tck")==0) { // for .tck file
+        isTRK = 0;
+        isTRX = 0;
+    } else return 0;
 
 
     // Open tractogram file and compute the offset for each thread
+    // This is only needed for .trk and .tck files
+    // For trx, we can use the trx::AnyTrxFile class to read
+    // the streamlines in parallel
     // -----------------------------------------------------------------
+    trx::AnyTrxFile trxFile;
     unsigned long long int current;
     unsigned long long int *OffsetArr = new unsigned long long int[threads_count]();
     int f = 0;
     float *Buff = new float[3]();
     int N;
 
-    FILE* fpTractogram = fopen(str_filename,"rb");
-    if (fpTractogram == NULL) return 0;
-    fseek( fpTractogram, data_offset, SEEK_SET ); // skip the header
-
-    OffsetArr[0] = ftell( fpTractogram );
-
-    if(isTRK) {
-        while( f != n_count) {
-            fread( (char*)&N, 1, 4, fpTractogram ); // read the number of points in each streamline
-            if( N >= MAX_FIB_LEN || N <= 0 ) return 0;   // check
-            for( int k=0; k<N; k++){
-                fread((char*)Buff, 1, 12, fpTractogram);
-            }
-            fseek(fpTractogram,4*n_properties,SEEK_CUR);
-            f++;
-            current = ftell( fpTractogram );
-            for( int i = 1; i < threads_count; i++ ){
-                    if( f == Pos[i] )
-                        OffsetArr[i] = current;
-                }
-        }
+    if (isTRX) {
+        trxFile = trx::AnyTrxFile::load(str_filename);
     } else {
+        FILE* fpTractogram = fopen(str_filename,"rb");
+        if (fpTractogram == NULL) return 0;
+        fseek( fpTractogram, data_offset, SEEK_SET ); // skip the header
 
-        while( f != n_count ) {
+        OffsetArr[0] = ftell( fpTractogram );
 
-            fread((char*)Buff, 1, 12, fpTractogram );
-
-            if( isnan(Buff[0]) ){
+        if(isTRK) {
+            while( f != n_count) {
+                fread( (char*)&N, 1, 4, fpTractogram ); // read the number of points in each streamline
+                if( N >= MAX_FIB_LEN || N <= 0 ) return 0;   // check
+                for( int k=0; k<N; k++){
+                    fread((char*)Buff, 1, 12, fpTractogram);
+                }
+                fseek(fpTractogram,4*n_properties,SEEK_CUR);
                 f++;
                 current = ftell( fpTractogram );
-
                 for( int i = 1; i < threads_count; i++ ){
-                    if( f == Pos[i] )
-                        OffsetArr[i] = current;
+                        if( f == Pos[i] )
+                            OffsetArr[i] = current;
+                    }
+            }
+        } else {
+
+            while( f != n_count ) {
+
+                fread((char*)Buff, 1, 12, fpTractogram );
+
+                if( isnan(Buff[0]) ){
+                    f++;
+                    current = ftell( fpTractogram );
+
+                    for( int i = 1; i < threads_count; i++ ){
+                        if( f == Pos[i] )
+                            OffsetArr[i] = current;
+                    }
+
                 }
 
             }
 
         }
 
+        fclose(fpTractogram);
     }
-
-    fclose(fpTractogram);
-
 
 
     // ==========================================
@@ -243,7 +258,7 @@ int trk2dictionary(
     }
     // ---- Original ------
     for( int i = 0; i<threads_count; i++ ){
-        threads.push_back( thread( ICSegments, str_filename, isTRK, n_count, nReplicas, n_scalars, n_properties, ptrToVOXMM,
+        threads.push_back( thread( ICSegments, str_filename, std::ref(trxFile), isTRX, isTRK, n_count, nReplicas, n_scalars, n_properties, ptrToVOXMM,
         ptrTDI[i] , ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo, ptrHashTable, path_out, OffsetArr[i],
         i, Pos[i], Pos[i+1]  ) );
     }
@@ -281,6 +296,9 @@ int trk2dictionary(
     delete[] Pos;
     delete[] OffsetArr;
     delete[] Buff;
+
+    if (isTRX)
+        trxFile.close();
 
     return 1;
 }
@@ -443,7 +461,7 @@ int ISOcompartments(double** ptrTDI, char* path_out, int threads)
 /*                                                Parallel Function                                                 */
 /********************************************************************************************************************/
 
-int ICSegments( char* str_filename, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, double* ptrBlurRho,
+int ICSegments( char* str_filename, const trx::AnyTrxFile& trxFile, int isTRX, int isTRK, int n_count, int nReplicas, int n_scalars, int n_properties, float* ptrToVOXMM, double* ptrTDI, double* ptrBlurRho,
 double* ptrBlurAngle, double* ptrBlurWeights, bool* ptrBlurApplyTo, short* ptrHashTable, char* path_out,
 unsigned long long int offset, int idx, unsigned int startpos, unsigned int endpos )
 {
@@ -486,9 +504,14 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
 
     // ---- Original -----
     // Open tractogram file
-    FILE* fpTractogram1 = fopen( str_filename,"rb" );
-    if ( fpTractogram1 == NULL ) return 0; // if there's no tractogram file, then return 0
-    fseek(fpTractogram1, offset, SEEK_SET);
+    FILE* fpTractogram1;
+
+    if ( !isTRX ) {
+        FILE* fp = fopen( str_filename, "rb" );
+        if ( fp == NULL ) return 0;
+        fseek(fp, offset, SEEK_SET);
+        fpTractogram1 = fp;
+    }
 
     tempTotFibers = 0;
     temp_totICSegments = 0;
@@ -499,11 +522,12 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
     for(int f=startpos; f<endpos; f++)
     {
 
-        if ( isTRK )
+        if ( isTRX )
+            N = read_fiberTRX( trxFile, fiber, idx, ptrToVOXMM );
+        else if ( isTRK )
             N = read_fiberTRK( fpTractogram1, fiber, n_scalars, n_properties );
         else
-            N = read_fiberTCK( fpTractogram1, fiber , ptrToVOXMM );
-
+            N = read_fiberTCK( fpTractogram1, fiber, ptrToVOXMM );
 
         fiberForwardModel( fiber, N, nReplicas, ptrBlurRho, ptrBlurAngle, ptrBlurWeights, ptrBlurApplyTo[f], ptrHashTable, P );
 
@@ -564,7 +588,8 @@ unsigned long long int offset, int idx, unsigned int startpos, unsigned int endp
             }
         }
     }
-    fclose( fpTractogram1 );
+    if ( !isTRX )
+        fclose( fpTractogram1 );
     fclose( pDict_TRK_norm );
     fclose( pDict_IC_f );
     fclose( pDict_IC_v );
@@ -868,6 +893,25 @@ bool rayBoxIntersection( Vector<double>& origin, Vector<double>& direction, Vect
     return true;
 }
 
+
+unsigned int read_fiberTRX(const trx::AnyTrxFile& fp, float fiber[3][MAX_FIB_LEN], int idx, float* ptrToVOXMM)
+{
+    std::vector<std::array<double, 3>> streamline = fp.get_streamline(idx);
+    const unsigned int N = streamline.size();
+
+    if ( N >= MAX_FIB_LEN || N <= 0 )
+        return 0;
+
+    for (uint64_t i = 0; i < N; i++) {
+        const float x = static_cast<float>(streamline[i][0]);
+        const float y = static_cast<float>(streamline[i][1]);
+        const float z = static_cast<float>(streamline[i][2]);
+        fiber[0][i] = x * ptrToVOXMM[0] + y * ptrToVOXMM[1]  + z * ptrToVOXMM[2]  + ptrToVOXMM[3];
+        fiber[1][i] = x * ptrToVOXMM[4] + y * ptrToVOXMM[5]  + z * ptrToVOXMM[6]  + ptrToVOXMM[7];
+        fiber[2][i] = x * ptrToVOXMM[8] + y * ptrToVOXMM[9]  + z * ptrToVOXMM[10] + ptrToVOXMM[11];
+    }
+    return N;
+}
 
 // Read a fiber from file .trk
 unsigned int read_fiberTRK( FILE* fp, float fiber[3][MAX_FIB_LEN], int ns, int np )

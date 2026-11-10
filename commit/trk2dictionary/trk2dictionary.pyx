@@ -18,6 +18,7 @@ import pickle
 from importlib import metadata
 import shutil
 import time
+from trx.io import load as load_trx
 
 logger = setup_logger('trk2dictionary')
 
@@ -340,14 +341,28 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     if not exists(filename_tractogram):
         logger.error( f'Tractogram file not found: {filename_tractogram}' )
     extension = splitext(filename_tractogram)[1]
-    if extension != ".trk" and extension != ".tck":
-        logger.error( 'Invalid input file: only .trk and .tck are supported' )
+    if extension != ".trx" and extension != ".trk" and extension != ".tck":
+        logger.error( 'Invalid input file: only .trx, .trk, and .tck are supported')
 
-    hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
+    if extension == ".trx":
+        hdr = load_trx(filename_tractogram, "same").header
+        affine = hdr["VOXEL_TO_RASMM"]
+        voxel_sizes = nibabel.affines.voxel_sizes(affine)
 
+        Nx = int(hdr['DIMENSIONS'][0])
+        Ny = int(hdr['DIMENSIONS'][1])
+        Nz = int(hdr['DIMENSIONS'][2])
+        Px = voxel_sizes[0]
+        Py = voxel_sizes[1]
+        Pz = voxel_sizes[2]
 
-    if extension == ".trk":
-        logger.subinfo ( f'geometry taken from "{filename_tractogram}"', indent_lvl=3, indent_char='-' )
+        data_offset = 0  # stored separately in .trx
+        n_count = hdr['NB_STREAMLINES']
+        n_scalars = 0  # stored separately in .trx
+        n_properties = 0  # stored separately in .trx
+    elif extension == ".trk":
+        hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
+        
         Nx = int(hdr['dimensions'][0])
         Ny = int(hdr['dimensions'][1])
         Nz = int(hdr['dimensions'][2])
@@ -369,6 +384,7 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
             else:
                 logger.error( 'TCK files do not contain information about the geometry. Use "TCK_ref_image" for that' )
         logger.subinfo ( f'geometry taken from "{TCK_ref_image}"', indent_lvl=3, indent_char='-' )
+        hdr = nibabel.streamlines.load( filename_tractogram, lazy_load=True ).header
 
         niiREF = nibabel.load( TCK_ref_image )
         niiREF_hdr = _get_header( niiREF )
@@ -408,8 +424,11 @@ cpdef run( filename_tractogram=None, path_out=None, filename_peaks=None, filenam
     # get toVOXMM matrix (remove voxel scaling from affine) in case of TCK
     cdef float [:] toVOXMM
     cdef float* ptrToVOXMM
-    if extension == ".tck":
-        M = _get_affine( niiREF ).copy()
+    if extension == ".tck" or extension == ".trx":
+        if extension == ".tck":
+            M = _get_affine( niiREF ).copy()
+        else:
+            M = np.asarray(affine, dtype=np.float64).copy()
         # float64 conversion added to comply with the new cast policy of numpy v2
         M[:3, :3] = M[:3, :3].dot( np.diag([np.float64(1)/Px,np.float64(1)/Py,np.float64(1)/Pz]) )
         toVOXMM = np.ravel(np.linalg.inv(M)).astype('<f4')
