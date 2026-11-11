@@ -8,9 +8,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dmri-commit"
-version = "2.4.2"
+version = "3.0.0"
 dependencies = [
-    "dmri-amico>=2.0.1",
+    "dmri-amico>=2.2.0",
     "dmri-dicelib>=1.1.0",
     "numpy>=1.24.4",
     "scipy>=1.10.1"

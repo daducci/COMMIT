@@ -323,7 +323,7 @@ cdef class Evaluation :
         logger.info( f'Simulating with "{self.model.name}" model' )
 
         if not amico.lut.is_valid( ndirs ):
-            logger.error( 'Unsupported value for "ndirs".\nNote: Supported values for "ndirs" are [1, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
+            logger.error( 'Unsupported value for "ndirs".\nNote: Supported values for "ndirs" are [1, 16, 32, 64, 128, 256, 500 (default), 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 32761]' )
         if self.scheme is None :
             logger.error( 'Scheme not loaded; call "load_data()" first' )
         if self.model is None :
