@@ -1,6 +1,14 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v3.0.0`<br>_2026-11-11_
+
+### ✨Added
+- More supported values for the number of directions (`ndirs`)
+
+---
+---
+
 ## `v2.4.2`<br>_2025-10-06_
 
 ### 🐛Fixed
