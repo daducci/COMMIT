@@ -649,7 +649,7 @@ cdef class Evaluation :
                     self.THREADS['EC'][i] = np.searchsorted( self.DICTIONARY['EC']['vox'], self.DICTIONARY['IC']['vox'][ self.THREADS['IC'][i] ] )
                 self.THREADS['EC'][n] = self.DICTIONARY['EC']['n']
 
-                # check if some threads are not assigned any segment
+                # check if some threads are not assigned any segment # TODO: check if this is really needed (EC is treated like ISO, but in that case this check is not needed)
                 if np.count_nonzero( np.diff( self.THREADS['EC'].astype(np.int32) ) <= 0 ) :
                     self.THREADS = None
                     logger.error( 'Too many threads for the EC compartments to evaluate; try decreasing the number' )
@@ -706,16 +706,15 @@ cdef class Evaluation :
 
             if self.DICTIONARY['ISO']['n'] > 0 :
                 self.THREADS['ISOt'] = np.zeros( n+1, dtype=np.uint32 )
-                N = np.floor( self.DICTIONARY['ISO']['n']/n )
-
-                for i in xrange(1,n) :
-                    self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
-                self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['n']
-
-                # check if some threads are not assigned any segment
-                if np.count_nonzero( np.diff( self.THREADS['ISOt'].astype(np.int32) ) <= 0 ) :
-                    self.THREADS = None
-                    logger.error( 'Too many threads for the ISO compartments to evaluate; try decreasing the number' )
+                if self.DICTIONARY['ISO']['n'] < n:
+                    n_iso = self.DICTIONARY['ISO']['n']
+                    self.THREADS['ISOt'][:n_iso+1] = np.arange( n_iso+1 )
+                    self.THREADS['ISOt'][n_iso+1:] = n_iso
+                else:
+                    N = np.floor( self.DICTIONARY['ISO']['n']/n )
+                    for i in xrange(1,n) :
+                        self.THREADS['ISOt'][i] = self.THREADS['ISOt'][i-1] + N
+                    self.THREADS['ISOt'][n] = self.DICTIONARY['ISO']['n']
             else :
                 self.THREADS['ISOt'] = None
 
