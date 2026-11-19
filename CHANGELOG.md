@@ -1,6 +1,19 @@
 # Change Log
 ### All notable changes to `COMMIT` will be documented in this file.
 
+## `v2.4.3`<br>_2026-05-12_
+
+### 🛠️Changed
+- Version of `dmri-dicelib` dependency
+- Threads assignment for ISO compartments
+
+### 🐛Fixed
+- Occasional error in saving results (RMSE and NRMSE maps) after debias when using BS or SZB models (Fixes #159)
+- Minor fixes and improvements
+
+---
+---
+
 ## `v2.4.2`<br>_2025-10-06_
 
 ### 🐛Fixed
